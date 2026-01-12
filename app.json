@@ -25,6 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.mccal.abridged",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
