@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mccal.abridged"
+      "bundleIdentifier": "com.mccal.abridged",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -30,6 +33,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b4182600-fb7c-4d97-a405-1fc367232289"
+      }
+    },
+    "owner": "mccal-media"
   }
 }

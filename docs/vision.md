@@ -26,3 +26,8 @@ Abridged introduces a secondary reading mode based on RSVP. This technology flas
 
 - **Why?** To allow users to ingest information quickly without eye movement fatigue.
 - **When?** Specific "Abridged Mode" for commuting or quick scanning.
+
+## Emotional Safety & Grounding
+News can be traumatic. Abridged implements a "Grounding Mode" for sensitive or breaking news.
+*   **Consent First:** Graphic content is never shown without explicit tap-through consent.
+*   **Calming Alternatives:** Users can choose to "Ground Themselves" instead of reading. This displays a soothing, non-news experience (e.g., a breathing exercise or abstract pleasant imagery) to reset the nervous system.

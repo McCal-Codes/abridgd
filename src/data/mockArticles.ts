@@ -19,6 +19,18 @@ export const MOCK_ARTICLES: Article[] = [
     readTimeMinutes: 5,
   },
   {
+    id: '99',
+    headline: 'Major Traffic Accident Cleared on I-376',
+    summary: 'Authorities have reopened all lanes following a multi-vehicle collision early this morning.',
+    body: BODY_TEXT,
+    source: 'Breaking News',
+    timestamp: '1 hour ago',
+    category: 'Top',
+    readTimeMinutes: 2,
+    isSensitive: true,
+    sensitivityWarning: 'Contains descriptions of a vehicle accident.',
+  },
+  {
     id: '2',
     headline: 'Steelers Training Camp: Top Takeaways',
     summary: 'As the season approaches, the defense is looking sharper than ever, but questions remain about the offensive line.',

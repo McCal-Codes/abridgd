@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
@@ -8,6 +8,7 @@ import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { AbridgedReader } from '../components/AbridgedReader';
 import { ScaleButton } from '../components/ScaleButton';
+import { GroundingOverlay } from '../components/GroundingOverlay';
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, 'Article'>;
 
@@ -16,10 +17,37 @@ export const ArticleScreen: React.FC = () => {
     const { articleId } = route.params;
     const article = MOCK_ARTICLES.find(a => a.id === articleId);
 
+    // If article is sensitive, show warning by default.
+    const [isGroundingActive, setIsGroundingActive] = useState(false);
+    const [hasConsented, setHasConsented] = useState(!article?.isSensitive);
+
     if (!article) {
         return (
             <View style={styles.container}>
                 <Text>Article not found</Text>
+            </View>
+        );
+    }
+
+    if (isGroundingActive) {
+        return <GroundingOverlay onClose={() => setIsGroundingActive(false)} />;
+    }
+
+    if (!hasConsented) {
+        return (
+            <View style={styles.warningContainer}>
+                <Text style={styles.warningTitle}>Sensitive Content</Text>
+                <Text style={styles.warningText}>
+                    {article.sensitivityWarning || "This article contains sensitive material."}
+                </Text>
+
+                <ScaleButton style={styles.warningButton} onPress={() => setHasConsented(true)}>
+                    <Text style={styles.warningButtonText}>View Article</Text>
+                </ScaleButton>
+
+                <ScaleButton style={styles.groundButton} onPress={() => setIsGroundingActive(true)}>
+                    <Text style={styles.groundButtonText}>I need a moment (Grounding Mode)</Text>
+                </ScaleButton>
             </View>
         );
     }
@@ -126,4 +154,54 @@ const styles = StyleSheet.create({
         fontSize: typography.size.md,
         fontWeight: '600',
     },
+    warningContainer: {
+        flex: 1,
+        backgroundColor: colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+    },
+    warningTitle: {
+        fontFamily: typography.fontFamily.serif,
+        fontSize: typography.size.xl,
+        fontWeight: '700',
+        color: colors.text,
+        marginBottom: spacing.md,
+    },
+    warningText: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: typography.size.md,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        marginBottom: spacing.xl,
+    },
+    warningButton: {
+        backgroundColor: colors.text, // Stark/Bold
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        borderRadius: 4,
+        marginBottom: spacing.md,
+        width: '100%',
+        alignItems: 'center',
+    },
+    warningButtonText: {
+        color: colors.surface,
+        fontFamily: typography.fontFamily.sans,
+        fontWeight: '600',
+    },
+    groundButton: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: colors.primary,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        borderRadius: 4,
+        width: '100%',
+        alignItems: 'center',
+    },
+    groundButtonText: {
+        color: colors.primary,
+        fontFamily: typography.fontFamily.sans,
+        fontWeight: '600',
+    }
 });

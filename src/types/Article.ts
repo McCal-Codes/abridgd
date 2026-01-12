@@ -10,4 +10,6 @@ export interface Article {
   category: ArticleCategory;
   imageUrl?: string;
   readTimeMinutes: number;
+  isSensitive?: boolean;
+  sensitivityWarning?: string;
 }
