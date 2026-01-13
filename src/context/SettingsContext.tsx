@@ -39,6 +39,8 @@ interface SettingsContextType {
   setReadingSpeed: (speed: number) => Promise<void>;
   fontSize: number; // Base font size multiplier (0.8 - 1.5)
   setFontSize: (size: number) => Promise<void>;
+  activeTabs: string[]; // Array of active tab IDs
+  setActiveTabs: (tabs: string[]) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -59,6 +61,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [groundingAnimationStyle, setGroundingAnimationStyleState] = useState<GroundingAnimationStyle>('waves');
   const [readingSpeed, setReadingSpeedState] = useState(300); // 300 WPM default
   const [fontSize, setFontSizeState] = useState(1.0); // 1.0x default
+  const [activeTabs, setActiveTabsState] = useState<string[]>(['top', 'local', 'business', 'sports', 'digest']); // Default tabs
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -82,6 +85,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedAnimationStyle = await AsyncStorage.getItem('groundingAnimationStyle');
       const savedReadingSpeed = await AsyncStorage.getItem('readingSpeed');
       const savedFontSize = await AsyncStorage.getItem('fontSize');
+      const savedActiveTabs = await AsyncStorage.getItem('activeTabs');
 
       if (onboarding === 'true') setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -113,6 +117,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       if (savedFontSize) {
         setFontSizeState(parseFloat(savedFontSize));
+      }
+      if (savedActiveTabs) {
+        try {
+          const tabs = JSON.parse(savedActiveTabs);
+          if (Array.isArray(tabs) && tabs.length >= 2 && tabs.length <= 5) {
+            setActiveTabsState(tabs);
+          }
+        } catch (e) {
+          console.error('Failed to parse active tabs', e);
+        }
       }
     } catch (e) {
       console.error('Failed to load settings', e);
@@ -266,6 +280,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setActiveTabs = async (tabs: string[]) => {
+    try {
+        await AsyncStorage.setItem('activeTabs', JSON.stringify(tabs));
+        setActiveTabsState(tabs);
+    } catch (e) {
+        console.error("Failed to save active tabs", e);
+    }
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -301,6 +324,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setReadingSpeed,
         fontSize,
         setFontSize,
+        activeTabs,
+        setActiveTabs,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
@@ -6,6 +6,7 @@ import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { GripVertical, Check } from 'lucide-react-native';
 import { ArticleCategory } from '../types/Article';
+import { useSettings } from '../context/SettingsContext';
 
 interface TabOption {
     id: string;
@@ -25,10 +26,13 @@ const AVAILABLE_TABS: TabOption[] = [
 ];
 
 export const TabBarSettingsScreen: React.FC = () => {
-    // Default tabs: Top, Local, Business, Sports, Digest
-    const [selectedTabs, setSelectedTabs] = useState<string[]>([
-        'top', 'local', 'business', 'sports', 'digest'
-    ]);
+    const { activeTabs, setActiveTabs } = useSettings();
+    const [selectedTabs, setSelectedTabs] = useState<string[]>(activeTabs);
+
+    // Sync with context when it changes
+    useEffect(() => {
+        setSelectedTabs(activeTabs);
+    }, [activeTabs]);
 
     const toggleTab = (tabId: string) => {
         if (selectedTabs.includes(tabId)) {
@@ -36,13 +40,17 @@ export const TabBarSettingsScreen: React.FC = () => {
                 Alert.alert('Minimum Required', 'You must have at least 2 tabs enabled');
                 return;
             }
-            setSelectedTabs(selectedTabs.filter(id => id !== tabId));
+            const newTabs = selectedTabs.filter(id => id !== tabId);
+            setSelectedTabs(newTabs);
+            setActiveTabs(newTabs); // Persist immediately
         } else {
             if (selectedTabs.length >= 5) {
                 Alert.alert('Maximum Reached', 'You can only have up to 5 tabs in the navigation bar');
                 return;
             }
-            setSelectedTabs([...selectedTabs, tabId]);
+            const newTabs = [...selectedTabs, tabId];
+            setSelectedTabs(newTabs);
+            setActiveTabs(newTabs); // Persist immediately
         }
     };
 
@@ -51,6 +59,7 @@ export const TabBarSettingsScreen: React.FC = () => {
         const [movedTab] = newTabs.splice(fromIndex, 1);
         newTabs.splice(toIndex, 0, movedTab);
         setSelectedTabs(newTabs);
+        setActiveTabs(newTabs); // Persist immediately
     };
 
     const getTabInfo = (tabId: string) => AVAILABLE_TABS.find(t => t.id === tabId);
