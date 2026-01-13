@@ -461,5 +461,19 @@ const styles = StyleSheet.create({
         fontSize: typography.size.sm,
         color: colors.primary,
         fontWeight: '600',
+    },
+    sourceButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        borderRadius: 8,
+        marginTop: spacing.lg,
+        alignItems: 'center',
+    },
+    sourceButtonText: {
+        color: colors.surface,
+        fontFamily: typography.fontFamily.sans,
+        fontSize: typography.size.md,
+        fontWeight: '600',
     }
 });

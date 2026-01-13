@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import { View, FlatList, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArticleCard } from '../components/ArticleCard';
+import { FunLoadingIndicator } from '../components/FunLoadingIndicator';
 import { fetchArticlesByCategory } from '../services/RssService';
 import { Article } from '../types/Article';
 import { colors } from '../theme/colors';
@@ -31,9 +32,7 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
             {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
+                <FunLoadingIndicator message="Fetching top stories..." />
             ) : (
                 <FlatList
                     data={articles}

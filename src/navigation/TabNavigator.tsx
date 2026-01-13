@@ -9,91 +9,113 @@ import { typography } from '../theme/typography';
 import { TabParamList } from './types';
 import { useSettings } from '../context/SettingsContext';
 
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
-import { Flame, MapPin, Briefcase, Trophy, Palette, Newspaper, Bookmark, Settings } from 'lucide-react-native';
+import { Flame, MapPin, Briefcase, Trophy, Palette, Newspaper, Bookmark, Settings, Home, Search, Star } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
-// Tab configuration mapping with icons
-const TAB_CONFIG = {
-  top: { name: 'Top', component: HomeScreen, title: 'Top Stories', Icon: Flame },
-  local: { name: 'Local', component: SectionScreen, params: { category: 'Local' }, Icon: MapPin },
-  business: { name: 'Business', component: SectionScreen, params: { category: 'Business' }, Icon: Briefcase },
-  sports: { name: 'Sports', component: SectionScreen, params: { category: 'Sports' }, Icon: Trophy },
-  culture: { name: 'Culture', component: SectionScreen, params: { category: 'Culture' }, Icon: Palette },
-  digest: { name: 'Digest', component: DigestScreen, title: 'Daily Digest', label: 'Digest', Icon: Newspaper },
-  saved: { name: 'Saved', component: SavedScreen, Icon: Bookmark },
+// Tab configurations based on layout preference
+type TabConfig = {
+  name: string;
+  component: React.ComponentType<any>;
+  Icon: LucideIcon;
+  title?: string;
+  params?: Record<string, any>;
 };
+
+const getTabConfig = (layout: 'minimal' | 'comprehensive'): Record<string, TabConfig> => ({
+  minimal: {
+    home: { name: 'Home', component: HomeScreen, title: 'Home', Icon: Home },
+    discover: { name: 'Discover', component: SectionScreen, params: { category: 'Local' }, Icon: Search },
+    saved: { name: 'Saved', component: SavedScreen, Icon: Bookmark },
+    digest: { name: 'Digest', component: DigestScreen, title: 'Daily Digest', Icon: Star },
+  },
+  comprehensive: {
+    top: { name: 'Top', component: HomeScreen, title: 'Top Stories', Icon: Flame },
+    local: { name: 'Local', component: SectionScreen, params: { category: 'Local' }, Icon: MapPin },
+    business: { name: 'Business', component: SectionScreen, params: { category: 'Business' }, Icon: Briefcase },
+    sports: { name: 'Sports', component: SectionScreen, params: { category: 'Sports' }, Icon: Trophy },
+    culture: { name: 'Culture', component: SectionScreen, params: { category: 'Culture' }, Icon: Palette },
+    digest: { name: 'Digest', component: DigestScreen, title: 'Daily Digest', Icon: Newspaper },
+    saved: { name: 'Saved', component: SavedScreen, Icon: Bookmark },
+  }
+}[layout]);
 
 export const TabNavigator = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { activeTabs } = useSettings();
+  const { activeTabs, tabLayout } = useSettings();
+
+  console.log('TabNavigator rendering with activeTabs:', activeTabs, 'tabLayout:', tabLayout);
+  console.log('Navigation object:', navigation);
+  console.log('Navigation state:', navigation.getState());
+
+  const TAB_CONFIG = getTabConfig(tabLayout);
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: true,
-        headerStyle: { 
-            backgroundColor: colors.background, 
-            borderBottomWidth: 1, 
-            borderBottomColor: colors.border,
-            shadowColor: 'transparent',
-            elevation: 0,
+        headerStyle: {
+          backgroundColor: colors.background,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          shadowColor: 'transparent',
+          elevation: 0,
+          minHeight: 80, // Increase height for settings icon
+          paddingTop: 24 // Extra top padding for safe area
         },
-        headerTitleStyle: { 
-            fontFamily: typography.fontFamily.serif, 
-            fontWeight: '700', 
-            fontSize: typography.size.xl, 
-            color: colors.text 
+        headerTitleStyle: {
+          fontFamily: typography.fontFamily.serif,
+          fontWeight: '700',
+          fontSize: typography.size.xl,
+          color: colors.text,
         },
-        tabBarStyle: { 
-            backgroundColor: colors.surface, 
-            borderTopColor: colors.border,
-            paddingTop: 10,
-            paddingBottom: 10,
-            height: 70,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 8,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarLabelStyle: {
-            fontSize: 11, 
-            fontWeight: '600',
-            marginTop: 4,
-        },
+        tabBarShowLabel: false, // NYT-style: icon-only tabs
         headerRight: () => (
-            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={{ marginRight: 16 }}>
-                <Settings size={24} color={colors.text} />
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Settings')}
+            style={{ padding: 8, marginRight: 8 }}
+          >
+            <Settings size={24} color={colors.text} />
+          </TouchableOpacity>
         ),
       }}
     >
-      {activeTabs.map((tabId) => {
+      {activeTabs.map((tabId: string) => {
         const config = TAB_CONFIG[tabId as keyof typeof TAB_CONFIG];
         if (!config) return null;
-
-        const TabIcon = config.Icon;
 
         return (
           <Tab.Screen
             key={tabId}
-            name={config.name as any}
+            name={config.name as keyof TabParamList}
             component={config.component}
+            initialParams={config.params}
             options={{
               title: config.title || config.name,
-              tabBarLabel: config.label || config.name,
-              tabBarIcon: ({ color, focused }) => (
-                <View style={{ 
-                  transform: [{ scale: focused ? 1.1 : 1 }],
-                  opacity: focused ? 1 : 0.7,
-                }}>
-                  <TabIcon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-                </View>
+              tabBarIcon: ({ color, size }) => (
+                <config.Icon color={color} size={size} />
               ),
             }}
-            initialParams={config.params}
           />
         );
       })}

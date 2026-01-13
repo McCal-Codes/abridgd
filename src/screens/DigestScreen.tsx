@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { fetchDailyDigest, DigestItem } from '../services/AiService';
+import { FunLoadingIndicator } from '../components/FunLoadingIndicator';
 import { ArrowRight, Newspaper } from 'lucide-react-native';
 import { ScaleButton } from '../components/ScaleButton';
 import { useNavigation } from '@react-navigation/native';
@@ -69,10 +70,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
     return (
         <View style={styles.container}>
             {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={styles.loadingText}>Loading your digest...</Text>
-                </View>
+                <FunLoadingIndicator message="Brewing your daily digest..." />
             ) : (
                 <ScrollView contentContainerStyle={styles.content}>
                     <View style={styles.headerRow}>

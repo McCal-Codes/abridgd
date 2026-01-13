@@ -41,6 +41,8 @@ interface SettingsContextType {
   setFontSize: (size: number) => Promise<void>;
   activeTabs: string[]; // Array of active tab IDs
   setActiveTabs: (tabs: string[]) => Promise<void>;
+  tabLayout: 'minimal' | 'comprehensive'; // Tab layout style
+  setTabLayout: (layout: 'minimal' | 'comprehensive') => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -61,7 +63,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [groundingAnimationStyle, setGroundingAnimationStyleState] = useState<GroundingAnimationStyle>('waves');
   const [readingSpeed, setReadingSpeedState] = useState(300); // 300 WPM default
   const [fontSize, setFontSizeState] = useState(1.0); // 1.0x default
-  const [activeTabs, setActiveTabsState] = useState<string[]>(['top', 'local', 'business', 'sports', 'digest']); // Default tabs
+  const [activeTabs, setActiveTabsState] = useState<string[]>(['home', 'discover', 'saved', 'digest']); // NYT-style minimal tabs
+  const [tabLayout, setTabLayoutState] = useState<'minimal' | 'comprehensive'>('minimal'); // Default to minimal
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -128,8 +131,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.error('Failed to parse active tabs', e);
         }
       }
-    } catch (e) {
-      console.error('Failed to load settings', e);
+
+      // Load tab layout preference
+      const savedTabLayout = await AsyncStorage.getItem('tabLayout');
+      if (savedTabLayout && ['minimal', 'comprehensive'].includes(savedTabLayout)) {
+        setTabLayoutState(savedTabLayout as 'minimal' | 'comprehensive');
+      }
+    } catch (error) {
+      console.error('Failed to load settings', error);
     } finally {
       setIsLoadingSettings(false);
     }
@@ -289,6 +298,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setTabLayout = async (layout: 'minimal' | 'comprehensive') => {
+    try {
+        await AsyncStorage.setItem('tabLayout', layout);
+        setTabLayoutState(layout);
+        // Reset active tabs to defaults for the new layout
+        const defaultTabs = layout === 'minimal' 
+            ? ['home', 'discover', 'saved', 'digest']
+            : ['top', 'local', 'business', 'sports', 'digest'];
+        setActiveTabsState(defaultTabs);
+        await AsyncStorage.setItem('activeTabs', JSON.stringify(defaultTabs));
+    } catch (e) {
+        console.error("Failed to save tab layout", e);
+    }
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -326,6 +350,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setFontSize,
         activeTabs,
         setActiveTabs,
+        tabLayout,
+        setTabLayout,
       }}
     >
       {children}

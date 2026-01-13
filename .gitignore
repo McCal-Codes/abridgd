@@ -36,7 +36,31 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
-.npm-cache/
+# iOS Build Artifacts
+ios/build/
+ios/*.xcarchive/
+ios/*.ipa
+ios/Packaging.log
+ios/DistributionSummary.plist
+ios/Pods/
+ios/Podfile.lock
+
+# Android Build Artifacts
+android/app/build/
+android/build/
+
+# EAS Build
+.eas/
+.eas-builds/
+
+# Generated files
+npm-cache/
+.env
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Agent workflows (keep the directory but ignore generated files)
+.agent/workflows/*.log
+.agent/cache/

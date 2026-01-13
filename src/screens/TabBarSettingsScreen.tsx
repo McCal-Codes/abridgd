@@ -15,24 +15,37 @@ interface TabOption {
     category?: ArticleCategory;
 }
 
-const AVAILABLE_TABS: TabOption[] = [
-    { id: 'top', label: 'Top Stories', icon: '🔥', category: 'Top' },
-    { id: 'local', label: 'Local', icon: '📍', category: 'Local' },
-    { id: 'business', label: 'Business', icon: '💼', category: 'Business' },
-    { id: 'sports', label: 'Sports', icon: '⚽', category: 'Sports' },
-    { id: 'culture', label: 'Culture', icon: '🎭', category: 'Culture' },
-    { id: 'digest', label: 'Digest', icon: '📰' },
-    { id: 'saved', label: 'Saved', icon: '🔖' },
-];
+const getAvailableTabs = (layout: 'minimal' | 'comprehensive'): TabOption[] => {
+    if (layout === 'minimal') {
+        return [
+            { id: 'home', label: 'Home', icon: '🏠' },
+            { id: 'discover', label: 'Discover', icon: '🔍' },
+            { id: 'saved', label: 'Saved', icon: '🔖' },
+            { id: 'digest', label: 'Digest', icon: '⭐' },
+        ];
+    } else {
+        return [
+            { id: 'top', label: 'Top Stories', icon: '🔥', category: 'Top' },
+            { id: 'local', label: 'Local', icon: '📍', category: 'Local' },
+            { id: 'business', label: 'Business', icon: '💼', category: 'Business' },
+            { id: 'sports', label: 'Sports', icon: '⚽', category: 'Sports' },
+            { id: 'culture', label: 'Culture', icon: '🎭', category: 'Culture' },
+            { id: 'digest', label: 'Digest', icon: '📰' },
+            { id: 'saved', label: 'Saved', icon: '🔖' },
+        ];
+    }
+};
 
 export const TabBarSettingsScreen: React.FC = () => {
-    const { activeTabs, setActiveTabs } = useSettings();
+    const { activeTabs, setActiveTabs, tabLayout, setTabLayout } = useSettings();
     const [selectedTabs, setSelectedTabs] = useState<string[]>(activeTabs);
+
+    const AVAILABLE_TABS = getAvailableTabs(tabLayout);
 
     // Sync with context when it changes
     useEffect(() => {
         setSelectedTabs(activeTabs);
-    }, [activeTabs]);
+    }, [activeTabs, tabLayout]);
 
     const toggleTab = (tabId: string) => {
         if (selectedTabs.includes(tabId)) {
@@ -71,6 +84,52 @@ export const TabBarSettingsScreen: React.FC = () => {
                 <Text style={styles.description}>
                     Customize which tabs appear in your bottom navigation. Select up to 5 tabs and drag to reorder.
                 </Text>
+
+                {/* LAYOUT STYLE SELECTOR */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Tab Style</Text>
+                    <Text style={styles.sectionDesc}>
+                        Choose between a clean, minimal layout or comprehensive category tabs
+                    </Text>
+                    
+                    <View style={styles.layoutOptions}>
+                        <TouchableOpacity
+                            style={[
+                                styles.layoutOption,
+                                tabLayout === 'minimal' && styles.layoutOptionSelected
+                            ]}
+                            onPress={() => setTabLayout('minimal')}
+                        >
+                            <Text style={[
+                                styles.layoutOptionText,
+                                tabLayout === 'minimal' && styles.layoutOptionTextSelected
+                            ]}>
+                                📰 Minimal
+                            </Text>
+                            <Text style={styles.layoutOptionDesc}>
+                                Clean, NYT-style with 4 essential tabs
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={[
+                                styles.layoutOption,
+                                tabLayout === 'comprehensive' && styles.layoutOptionSelected
+                            ]}
+                            onPress={() => setTabLayout('comprehensive')}
+                        >
+                            <Text style={[
+                                styles.layoutOptionText,
+                                tabLayout === 'comprehensive' && styles.layoutOptionTextSelected
+                            ]}>
+                                📱 Comprehensive
+                            </Text>
+                            <Text style={styles.layoutOptionDesc}>
+                                Full category coverage with 7 tabs
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
                 {/* ACTIVE TABS */}
                 <View style={styles.section}>
@@ -275,5 +334,40 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.text,
         lineHeight: 20,
+    },
+    layoutOptions: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        marginTop: spacing.md,
+    },
+    layoutOption: {
+        flex: 1,
+        padding: spacing.lg,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+    },
+    layoutOptionSelected: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primary + '10', // 10% opacity
+    },
+    layoutOptionText: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.textSecondary,
+        marginBottom: spacing.xs,
+    },
+    layoutOptionTextSelected: {
+        color: colors.primary,
+    },
+    layoutOptionDesc: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 12,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        lineHeight: 16,
     },
 });

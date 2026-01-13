@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { View, FlatList, StyleSheet, Text } from 'react-native';
 import { ArticleCard } from '../components/ArticleCard';
+import { FunLoadingIndicator } from '../components/FunLoadingIndicator';
 import { fetchArticlesByCategory } from '../services/RssService';
 import { colors } from '../theme/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -11,7 +12,7 @@ import { Article, ArticleCategory } from '../types/Article';
 import { typography } from '../theme/typography';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type SectionRouteProp = RouteProp<TabParamList, 'Local'>; 
+type SectionRouteProp = RouteProp<TabParamList, 'Discover'>; 
 
 export const SectionScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -42,9 +43,7 @@ export const SectionScreen: React.FC = () => {
     return (
         <View style={styles.container}>
             {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
+                <FunLoadingIndicator message={`Loading ${category} news...`} />
             ) : (
                 <FlatList
                     data={articles}

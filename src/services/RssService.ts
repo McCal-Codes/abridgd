@@ -101,6 +101,7 @@ const mapRssItemToArticle = (item: any, category: ArticleCategory, sourceName: s
     body: content, // Pass RAW content
     source: sourceName,
     timestamp: item.pubDate ? new Date(item.pubDate).toLocaleDateString() : 'Recently',
+    publishedAt: item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
     category: category,
     imageUrl: imageUrl,
     readTimeMinutes: calculateReadTime(summaryText), // Approx

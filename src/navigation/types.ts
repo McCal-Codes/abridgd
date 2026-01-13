@@ -16,11 +16,8 @@ export type RootStackParamList = {
 };
 
 export type TabParamList = {
-  Top: undefined;
-  Local: { category: string };
-  Business: { category: string };
-  Sports: { category: string };
-  Culture: { category: string };
+  Home: undefined;
+  Discover: { category: string };
   Saved: undefined;
   Digest: undefined;
 };
