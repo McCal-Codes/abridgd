@@ -1,22 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, FlatList, StyleSheet, Text } from 'react-native';
 import { ArticleCard } from '../components/ArticleCard';
-import { MOCK_ARTICLES } from '../data/mockArticles';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import { useSavedArticles } from '../context/SavedArticlesContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const SavedScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
-    // Mock saved state: assume first article is saved
-    const [savedArticleIds] = useState<string[]>(['1']);
-
-    const savedArticles = MOCK_ARTICLES.filter(a => savedArticleIds.includes(a.id));
+    const { savedArticles } = useSavedArticles();
 
     return (
         <View style={styles.container}>
@@ -35,6 +32,7 @@ export const SavedScreen: React.FC = () => {
             ) : (
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>No saved articles</Text>
+                    <Text style={styles.emptySubText}>You can save articles from the article view.</Text>
                 </View>
             )}
         </View>
@@ -58,5 +56,11 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily.sans,
         fontSize: typography.size.md,
         color: colors.textSecondary,
+    },
+    emptySubText: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: typography.size.sm,
+        color: colors.textSecondary,
+        marginTop: spacing.xs,
     }
 });

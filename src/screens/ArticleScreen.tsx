@@ -11,7 +11,8 @@ import { AbridgedReader } from '../components/AbridgedReader';
 import { ScaleButton } from '../components/ScaleButton';
 import { GroundingOverlay } from '../components/GroundingOverlay';
 import { parseHtmlContent } from '../utils/contentParser';
-import { Waypoints, Zap } from 'lucide-react-native';
+import { Waypoints, Zap, Bookmark } from 'lucide-react-native';
+import { useSavedArticles } from '../context/SavedArticlesContext';
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, 'Article'>;
 
@@ -21,6 +22,8 @@ import { summarizeArticle } from '../services/AiService';
 export const ArticleScreen: React.FC = () => {
     const route = useRoute<ArticleScreenRouteProp>();
     const { article } = route.params;
+    const { saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
+    const isSaved = isArticleSaved(article.id);
 
     // Use local state for body so we can update it
     const [bodyContent, setBodyContent] = useState(article.body);
@@ -194,7 +197,15 @@ export const ArticleScreen: React.FC = () => {
                     </ScaleButton>
                  )}
 
-
+                <ScaleButton 
+                    style={[styles.actionButton, isSaved && styles.actionButtonSaved]} 
+                    onPress={() => isSaved ? unsaveArticle(article.id) : saveArticle(article)}
+                >
+                    <Bookmark size={18} color={isSaved ? colors.surface : colors.primary} />
+                    <Text style={[styles.actionButtonText, isSaved && styles.actionButtonTextSaved]}>
+                        {isSaved ? 'Saved' : 'Save for Later'}
+                    </Text>
+                </ScaleButton>
             </View>
         </ScrollView>
     );
@@ -475,5 +486,30 @@ const styles = StyleSheet.create({
         fontFamily: typography.fontFamily.sans,
         fontSize: typography.size.md,
         fontWeight: '600',
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: colors.primary,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        borderRadius: 8,
+        marginTop: spacing.sm,
+    },
+    actionButtonSaved: {
+        backgroundColor: colors.primary,
+    },
+    actionButtonText: {
+        color: colors.primary,
+        fontFamily: typography.fontFamily.sans,
+        fontSize: typography.size.md,
+        fontWeight: '600',
+    },
+    actionButtonTextSaved: {
+        color: colors.surface,
     }
 });
