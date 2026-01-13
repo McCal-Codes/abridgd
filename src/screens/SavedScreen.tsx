@@ -27,7 +27,7 @@ export const SavedScreen: React.FC = () => {
                     renderItem={({ item }) => (
                         <ArticleCard 
                             article={item} 
-                            onPress={(article) => navigation.navigate('Article', { articleId: article.id })} 
+                            onPress={(article) => navigation.navigate('Article', { article: article })} 
                         />
                     )}
                     contentContainerStyle={styles.listContent}

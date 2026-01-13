@@ -1,8 +1,18 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
+import { Article } from '../types/Article';
 
 export type RootStackParamList = {
   Main: undefined;
-  Article: { articleId: string };
+  Article: { article: Article };
+  Settings: undefined;
+  ReadingSettings: undefined;
+  DigestSettings: undefined;
+  CustomizationSettings: undefined;
+  SourcesSettings: undefined;
+  TabBarSettings: undefined;
+  DebugSettings: undefined;
+  Onboarding: undefined;
+  Digest: undefined;
 };
 
 export type TabParamList = {
@@ -12,4 +22,5 @@ export type TabParamList = {
   Sports: { category: string };
   Culture: { category: string };
   Saved: undefined;
+  Digest: undefined;
 };

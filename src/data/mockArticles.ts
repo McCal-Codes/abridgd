@@ -15,6 +15,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'City Desk',
     timestamp: '2 hours ago',
+    publishedAt: Date.now() - (2 * 60 * 60 * 1000), // 2 hours ago
     category: 'Top',
     readTimeMinutes: 5,
   },
@@ -25,6 +26,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Breaking News',
     timestamp: '1 hour ago',
+    publishedAt: Date.now() - (1 * 60 * 60 * 1000), // 1 hour ago
     category: 'Top',
     readTimeMinutes: 2,
     isSensitive: true,
@@ -37,6 +39,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Sports Desk',
     timestamp: '4 hours ago',
+    publishedAt: Date.now() - (4 * 60 * 60 * 1000), // 4 hours ago
     category: 'Top',
     readTimeMinutes: 3,
   },
@@ -49,6 +52,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Neighborhood Watch',
     timestamp: '1 day ago',
+    publishedAt: Date.now() - (24 * 60 * 60 * 1000), // 1 day ago
     category: 'Local',
     readTimeMinutes: 4,
   },
@@ -59,6 +63,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Education Beat',
     timestamp: '2 days ago',
+    publishedAt: Date.now() - (2 * 24 * 60 * 60 * 1000), // 2 days ago
     category: 'Local',
     readTimeMinutes: 6,
   },
@@ -71,6 +76,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Biz Journals',
     timestamp: '5 hours ago',
+    publishedAt: Date.now() - (5 * 60 * 60 * 1000), // 5 hours ago
     category: 'Business',
     readTimeMinutes: 7,
   },
@@ -83,6 +89,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Sports Desk',
     timestamp: '30 mins ago',
+    publishedAt: Date.now() - (30 * 60 * 1000), // 30 mins ago
     category: 'Sports',
     readTimeMinutes: 2,
   },
@@ -95,6 +102,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Arts & Life',
     timestamp: '1 week ago',
+    publishedAt: Date.now() - (7 * 24 * 60 * 60 * 1000), // 1 week ago
     category: 'Culture',
     readTimeMinutes: 8,
   },
@@ -105,6 +113,7 @@ export const MOCK_ARTICLES: Article[] = [
     body: BODY_TEXT,
     source: 'Food & Drink',
     timestamp: '3 days ago',
+    publishedAt: Date.now() - (3 * 24 * 60 * 60 * 1000), // 3 days ago
     category: 'Culture',
     readTimeMinutes: 5,
   },

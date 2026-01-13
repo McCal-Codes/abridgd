@@ -19,3 +19,7 @@
     - `architecture.md`: Technical decisions.
     - `roadmap.md`: Future plans.
     - `rsvp-notes.md`: Research on RSVP.
+- [x] **Project Cleanup (2026-01-13)**:
+    - Centralized source code in `src/`.
+    - Organized scripts into active `scripts/` and `_archive/`.
+    - Removed redundant directories.

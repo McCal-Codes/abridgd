@@ -7,9 +7,11 @@ export interface Article {
   body: string;
   source: string;
   timestamp: string;
+  publishedAt: number; // Unix timestamp for when article was published
   category: ArticleCategory;
   imageUrl?: string;
   readTimeMinutes: number;
   isSensitive?: boolean;
   sensitivityWarning?: string;
+  link?: string;
 }

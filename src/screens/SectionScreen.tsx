@@ -1,13 +1,13 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { ArticleCard } from '../components/ArticleCard';
-import { MOCK_ARTICLES } from '../data/mockArticles';
+import { fetchArticlesByCategory } from '../services/RssService';
 import { colors } from '../theme/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, TabParamList } from '../navigation/types';
 import { spacing } from '../theme/spacing';
-import { ArticleCategory } from '../types/Article';
+import { Article, ArticleCategory } from '../types/Article';
 import { typography } from '../theme/typography';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -17,10 +17,21 @@ export const SectionScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
     const route = useRoute<SectionRouteProp>();
     const category = route.params?.category as ArticleCategory;
+    
+    const [articles, setArticles] = React.useState<Article[]>([]);
+    const [loading, setLoading] = React.useState(true);
 
-    const articles = MOCK_ARTICLES.filter(a => a.category === category);
+    React.useEffect(() => {
+        setLoading(true);
+        const load = async () => {
+             const data = await fetchArticlesByCategory(category);
+             setArticles(data);
+             setLoading(false);
+        };
+        load();
+    }, [category]);
 
-    if (articles.length === 0) {
+    if (!loading && articles.length === 0) {
         return (
              <View style={[styles.container, styles.center]}>
                 <Text style={styles.emptyText}>No articles in {category}</Text>
@@ -30,17 +41,31 @@ export const SectionScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <FlatList
-                data={articles}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <ArticleCard 
-                        article={item} 
-                        onPress={(article) => navigation.navigate('Article', { articleId: article.id })} 
-                    />
-                )}
-                contentContainerStyle={styles.listContent}
-            />
+            {loading ? (
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={articles}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <ArticleCard 
+                            article={item} 
+                            onPress={(article) => navigation.navigate('Article', { article: article })} 
+                        />
+                    )}
+                    contentContainerStyle={styles.listContent}
+                    refreshing={loading}
+                    onRefresh={() => {
+                        setLoading(true);
+                        fetchArticlesByCategory(category).then(data => {
+                            setArticles(data);
+                            setLoading(false);
+                        });
+                    }}
+                />
+            )}
         </View>
     );
 };

@@ -2,6 +2,7 @@ export const typography = {
   fontFamily: {
     serif: 'Serif', // Placeholder
     sans: 'System',
+    mono: 'Courier', // or 'Menlo', 'Monospace'
   },
   size: {
     xs: 12,

@@ -35,12 +35,15 @@ It features two distinct reading modes:
 
 ## Project Structure
 
-*   `app/`: Entry point.
+*   `src/`: Main source code.
+    *   `src/App.tsx`: Main application component.
 *   `src/screens/`: Feature screens (Home, Section, Article).
 *   `src/components/`: Reusable UI components.
 *   `src/navigation/`: Navigation configuration.
 *   `src/theme/`: Design tokens (Colors, Typography).
 *   `src/data/`: Mock data sources.
+*   `scripts/`: Active maintenance and testing scripts.
+*   `_archive/`: Deprecated scripts and experiments.
 *   `docs/`: Project documentation and architecture decisions.
 
 ## Documentation

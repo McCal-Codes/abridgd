@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Article } from '../types/Article';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -17,12 +17,19 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) =>
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
         <ScaleButton style={styles.card} onPress={() => onPress(article)}>
-        <Text style={styles.headline}>{article.headline}</Text>
-        <Text style={styles.summary} numberOfLines={2}>{article.summary}</Text>
-        <View style={styles.metaContainer}>
-            <Text style={styles.metaText}>{article.source}</Text>
-            <Text style={styles.metaText}> • </Text>
-            <Text style={styles.metaText}>{article.timestamp}</Text>
+        <View style={styles.cardContent}>
+            <View style={styles.textContainer}>
+                <Text style={styles.headline}>{article.headline}</Text>
+                <Text style={styles.summary} numberOfLines={2}>{article.summary}</Text>
+                <View style={styles.metaContainer}>
+                    <Text style={styles.metaText}>{article.source}</Text>
+                    <Text style={styles.metaText}> • </Text>
+                    <Text style={styles.metaText}>{article.timestamp}</Text>
+                </View>
+            </View>
+            {article.imageUrl && (
+                <Image source={{ uri: article.imageUrl }} style={styles.thumbnail} />
+            )}
         </View>
         </ScaleButton>
     </Animated.View>
@@ -36,6 +43,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
+  },
+  cardContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+  },
+  textContainer: {
+      flex: 1,
+  },
+  thumbnail: {
+      width: 80,
+      height: 80,
+      borderRadius: 4,
+      backgroundColor: colors.border,
   },
   headline: {
     // Falls back to system font if serif not loaded, handled at App level
