@@ -3,9 +3,8 @@ import { Article } from '../types/Article';
 import { MOCK_ARTICLES } from '../data/mockArticles';
 
 /**
- * Digest Service
- * Provides fact-based digest of articles published since user's last visit.
- * No AI-generated content - uses actual article summaries.
+ * Digest Service with AI Summarization using Perplexity
+ * Provides fact-based digest or AI-generated summaries of articles.
  */
 
 export interface DigestItem {
@@ -13,20 +12,77 @@ export interface DigestItem {
     article: Article;
 }
 
+// Perplexity API configuration
+const PERPLEXITY_API_KEY = process.env.EXPO_PUBLIC_PERPLEXITY_API_KEY || '';
+const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
+
+/**
+ * Generate AI summary using Perplexity
+ */
+const generateAISummary = async (article: Article): Promise<string> => {
+    // If no API key, return extractive summary
+    if (!PERPLEXITY_API_KEY) {
+        const firstSentence = article.summary.split('.')[0];
+        return firstSentence.length > 120 ? `${firstSentence.substring(0, 117)}...` : `${firstSentence}.`;
+    }
+
+    try {
+        const response = await fetch(PERPLEXITY_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-sonar-small-128k-online',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a news summarizer. Create a concise, one-sentence summary that captures the key point. Keep it under 100 characters. Be direct and factual.'
+                    },
+                    {
+                        role: 'user',
+                        content: `Summarize this in one sentence (max 100 chars):\n\nHeadline: ${article.headline}\n\n${article.summary}`
+                    }
+                ],
+                max_tokens: 50,
+                temperature: 0.2,
+            }),
+        });
+
+        if (!response.ok) {
+            console.error(`Perplexity API error: ${response.status}`);
+            throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const aiSummary = data.choices[0]?.message?.content?.trim();
+        
+        if (aiSummary && aiSummary.length > 0) {
+            return aiSummary;
+        }
+        
+        // Fallback to extractive summary
+        const firstSentence = article.summary.split('.')[0];
+        return firstSentence.length > 120 ? `${firstSentence.substring(0, 117)}...` : `${firstSentence}.`;
+        
+    } catch (error) {
+        console.error('AI summarization error:', error);
+        // Fallback to extractive summary (first sentence)
+        const firstSentence = article.summary.split('.')[0];
+        return firstSentence.length > 120 ? `${firstSentence.substring(0, 117)}...` : `${firstSentence}.`;
+    }
+};
+
 export const summarizeArticle = async (content: string, headline: string): Promise<string | null> => {
     if (!content || content.length < 200) return null;
 
     try {
         console.log(`Summarizing: ${headline}`);
         
-        // Simulating an API call delay
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // For now, we'll implement a VERY basic heuristic "summary" 
-        // to show the UI working, while leaving room for a real API.
         
-        // This is a placeholder! In a real app, you'd fetch from your backend.
-        return `[AI Summary]: This article explores ${headline}. It covers the key events and context surrounding the topic, providing a condensed view of the full story. (In a production build, this would be replaced with a real LLM-generated summary from your backend).`;
+        return `[AI Summary]: This article explores ${headline}. It covers the key events and context surrounding the topic, providing a condensed view of the full story.`;
 
     } catch (error) {
         console.error('Error during summarization:', error);
@@ -52,13 +108,12 @@ export const fetchDailyDigest = async (
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Filter articles published since last visit
-    // If no last visit (first time), show articles from last 24 hours
     const cutoffTime = lastVisitTime || (Date.now() - (24 * 60 * 60 * 1000));
     
     const recentArticles = MOCK_ARTICLES
         .filter(article => article.publishedAt > cutoffTime)
-        .sort((a, b) => b.publishedAt - a.publishedAt) // Most recent first
-        .slice(0, 5); // Limit to top 5 articles
+        .sort((a, b) => b.publishedAt - a.publishedAt)
+        .slice(0, 5);
     
     console.log(`Found ${recentArticles.length} articles since last visit`);
     
@@ -69,12 +124,18 @@ export const fetchDailyDigest = async (
             article: article
         }));
     } else if (digestMode === 'ai-summary') {
-        // In production, this would call your AI service
-        // For now, we'll add a prefix to indicate it's AI-generated
-        return recentArticles.map(article => ({
-            summary: `[AI] ${article.summary}`, // Placeholder - would be actual AI summary
-            article: article
-        }));
+        console.log('Generating AI summaries with Perplexity...');
+        // Generate AI summaries for each article
+        const digestItems = await Promise.all(
+            recentArticles.map(async (article) => {
+                const aiSummary = await generateAISummary(article);
+                return {
+                    summary: aiSummary,
+                    article: article
+                };
+            })
+        );
+        return digestItems;
     } else {
         // fact-based: Use actual article summaries
         return recentArticles.map(article => ({

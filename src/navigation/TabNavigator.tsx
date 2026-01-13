@@ -52,9 +52,9 @@ export const TabNavigator = () => {
         tabBarStyle: { 
             backgroundColor: colors.surface, 
             borderTopColor: colors.border,
-            paddingTop: 8,
-            paddingBottom: 8,
-            height: 60,
+            paddingTop: 10,
+            paddingBottom: 10,
+            height: 70,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
