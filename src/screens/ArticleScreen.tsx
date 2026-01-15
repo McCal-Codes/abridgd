@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Image, ActivityIndicator, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 // MOCK_ARTICLES import removed
@@ -31,6 +32,8 @@ export const ArticleScreen: React.FC = () => {
     const [summary, setSummary] = useState<string | null>(null);
     const [isLoadingSummary, setIsLoadingSummary] = useState(false);
     const { isReaderEnabled, isGroundingEnabled, isSummarizationEnabled } = useSettings();
+    const insets = useSafeAreaInsets();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
 
     // If article is sensitive, show warning by default.
     const [isGroundingActive, setIsGroundingActive] = useState(false);
@@ -107,7 +110,10 @@ export const ArticleScreen: React.FC = () => {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.container} contentContainerStyle={[
+            styles.content,
+            { paddingBottom: allowContentUnderTabBar ? spacing.xxl + insets.bottom + 8 : spacing.xxl + tabBarHeight + insets.bottom + 16 }
+        ]}>
             <Text style={styles.headline}>{article.headline}</Text>
             
             <View style={styles.metaRow}>

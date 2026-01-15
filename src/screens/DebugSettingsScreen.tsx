@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform, DevSettings, NativeModules } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -10,6 +10,7 @@ import { Trash2, RefreshCw, Database, FileText } from 'lucide-react-native';
 
 export const DebugSettingsScreen: React.FC = () => {
     const settings = useSettings();
+    const [verboseLogging, setVerboseLogging] = React.useState(false);
 
     const clearAllData = async () => {
         Alert.alert(
@@ -44,6 +45,60 @@ export const DebugSettingsScreen: React.FC = () => {
         }
     };
 
+    const shareStoredSettings = async () => {
+        try {
+            const keys = await AsyncStorage.getAllKeys();
+            const items = await AsyncStorage.multiGet(keys);
+            const settingsData = items.map(([key, value]) => `${key}: ${value}`).join('\n\n') || 'No data stored';
+            await Share.share({ message: settingsData, title: 'Stored Settings' });
+        } catch (e) {
+            Alert.alert('Error', 'Failed to share settings');
+        }
+    };
+
+    const logSettingsToConsole = async () => {
+        try {
+            const keys = await AsyncStorage.getAllKeys();
+            const items = await AsyncStorage.multiGet(keys);
+            const obj: Record<string, any> = {};
+            items.forEach(([k, v]) => { obj[k] = v; });
+            console.log('[DebugSettings] Settings snapshot:', obj);
+            console.log('[DebugSettings] Settings context:', settings);
+            Alert.alert('Logged', 'Settings dumped to console');
+        } catch (e) {
+            Alert.alert('Error', 'Failed to log settings');
+        }
+    };
+
+    const openDevMenu = () => {
+        try {
+            const ds: any = DevSettings;
+            if (ds && typeof ds.show === 'function') ds.show();
+            else Alert.alert('Dev Menu', 'Dev menu unavailable on this build');
+        } catch (e) {
+            Alert.alert('Error', 'Failed to open dev menu');
+        }
+    };
+
+    const triggerTestException = () => {
+        Alert.alert(
+            'Trigger Test Exception',
+            'This will throw a JS error to test crash reporting. Continue?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Throw', style: 'destructive', onPress: () => { throw new Error('Test exception from DebugSettingsScreen'); } }
+            ]
+        );
+    };
+
+    const getDeviceInfo = () => {
+        const platform = Platform.OS;
+        const version = Platform.Version;
+        // PlatformConstants may provide more details on some platforms
+        const constants = (NativeModules.PlatformConstants || NativeModules.RNCConfig || {});
+        return { platform, version, constants };
+    };
+
     const resetToDefaults = async () => {
         Alert.alert(
             'Reset to Defaults',
@@ -72,6 +127,8 @@ export const DebugSettingsScreen: React.FC = () => {
             ]
         );
     };
+
+    const deviceInfo = getDeviceInfo();
 
     return (
         <SafeAreaView style={styles.container}>
@@ -138,6 +195,10 @@ export const DebugSettingsScreen: React.FC = () => {
                         <Text style={styles.infoLabel}>Environment</Text>
                         <Text style={styles.infoValue}>Development</Text>
                     </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Platform</Text>
+                        <Text style={styles.infoValue}>{deviceInfo.platform} {deviceInfo.version}</Text>
+                    </View>
                 </View>
 
                 <View style={styles.section}>
@@ -167,6 +228,10 @@ export const DebugSettingsScreen: React.FC = () => {
                             <Text style={styles.settingLabel}>Breath Cycles</Text>
                             <Text style={styles.settingValue}>{settings.groundingCycles}</Text>
                         </View>
+                        <TouchableOpacity style={styles.settingItem} onPress={() => { setVerboseLogging(v => !v); Alert.alert('Verbose Logging', `Verbose logging ${!verboseLogging ? 'enabled' : 'disabled'}`); }}>
+                            <Text style={styles.settingLabel}>Verbose Logging</Text>
+                            <Text style={[styles.settingValue, { color: verboseLogging ? colors.primary : colors.textSecondary }]}>{verboseLogging ? 'On' : 'Off'}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ScrollView>

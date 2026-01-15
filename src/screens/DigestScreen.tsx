@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSettings } from '../context/SettingsContext';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -11,7 +13,6 @@ import { ScaleButton } from '../components/ScaleButton';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { useSettings } from '../context/SettingsContext';
 
 interface DigestScreenProps {
     isWelcomeBack?: boolean;
@@ -23,6 +24,8 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
     const { lastAppVisit, updateLastAppVisit, digestSummaryMode } = useSettings();
     const [digest, setDigest] = useState<DigestItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const insets = useSafeAreaInsets();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
 
     useEffect(() => {
         const load = async () => {
@@ -72,7 +75,10 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
             {loading ? (
                 <FunLoadingIndicator message="Brewing your daily digest..." />
             ) : (
-                <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView contentContainerStyle={[
+                    styles.content,
+                    { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                ]}>
                     <View style={styles.headerRow}>
                         <Newspaper size={24} color={colors.primary} />
                         <Text style={styles.title}>{isWelcomeBack ? 'Welcome Back' : 'Daily Digest'}</Text>

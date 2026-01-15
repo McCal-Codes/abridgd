@@ -5,6 +5,7 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { GripVertical, Check } from 'lucide-react-native';
+import { Switch } from 'react-native';
 import { ArticleCategory } from '../types/Article';
 import { useSettings } from '../context/SettingsContext';
 
@@ -25,11 +26,11 @@ const getAvailableTabs = (layout: 'minimal' | 'comprehensive'): TabOption[] => {
         ];
     } else {
         return [
-            { id: 'top', label: 'Top Stories', icon: '🔥', category: 'Top' },
+            { id: 'top', label: 'Top', icon: '🔥', category: 'Top' },
             { id: 'local', label: 'Local', icon: '📍', category: 'Local' },
             { id: 'business', label: 'Business', icon: '💼', category: 'Business' },
-            { id: 'sports', label: 'Sports', icon: '⚽', category: 'Sports' },
-            { id: 'culture', label: 'Culture', icon: '🎭', category: 'Culture' },
+            { id: 'sports', label: 'Sports', icon: '🏆', category: 'Sports' },
+            { id: 'culture', label: 'Culture', icon: '🎨', category: 'Culture' },
             { id: 'digest', label: 'Digest', icon: '📰' },
             { id: 'saved', label: 'Saved', icon: '🔖' },
         ];
@@ -37,7 +38,7 @@ const getAvailableTabs = (layout: 'minimal' | 'comprehensive'): TabOption[] => {
 };
 
 export const TabBarSettingsScreen: React.FC = () => {
-    const { activeTabs, setActiveTabs, tabLayout, setTabLayout } = useSettings();
+    const { activeTabs, setActiveTabs, tabLayout, setTabLayout, tabBarStyle, setTabBarStyle, showTabLabels, setShowTabLabels, tabIconSize, setTabIconSize, tabBarBlur, setTabBarBlur, allowContentUnderTabBar, setAllowContentUnderTabBar, tabBadgeStyle, setTabBadgeStyle, tabIndicatorStyle, setTabIndicatorStyle } = useSettings();
     const [selectedTabs, setSelectedTabs] = useState<string[]>(activeTabs);
 
     const AVAILABLE_TABS = getAvailableTabs(tabLayout);
@@ -131,6 +132,84 @@ export const TabBarSettingsScreen: React.FC = () => {
                     </View>
                 </View>
 
+                {/* TAB BAR APPEARANCE */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Tab Bar Appearance</Text>
+                    <Text style={styles.sectionDesc}>Fine-tune the look and behavior of the bottom tab bar.</Text>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Style</Text>
+                        <View style={styles.optionRow}>
+                            <TouchableOpacity style={[styles.smallOption, tabBarStyle === 'floating' && styles.smallOptionSelected]} onPress={() => setTabBarStyle('floating')}>
+                                <Text style={[styles.smallOptionText, tabBarStyle === 'floating' && styles.smallOptionTextSelected]}>Floating</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabBarStyle === 'standard' && styles.smallOptionSelected]} onPress={() => setTabBarStyle('standard')}>
+                                <Text style={[styles.smallOptionText, tabBarStyle === 'standard' && styles.smallOptionTextSelected]}>Standard</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Show Labels</Text>
+                        <Switch value={showTabLabels} onValueChange={v => setShowTabLabels(v)} />
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Icon Size</Text>
+                        <View style={styles.optionRow}>
+                            <TouchableOpacity style={[styles.smallOption, tabIconSize === 20 && styles.smallOptionSelected]} onPress={() => setTabIconSize(20)}>
+                                <Text style={[styles.smallOptionText, tabIconSize === 20 && styles.smallOptionTextSelected]}>Small</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabIconSize === 25 && styles.smallOptionSelected]} onPress={() => setTabIconSize(25)}>
+                                <Text style={[styles.smallOptionText, tabIconSize === 25 && styles.smallOptionTextSelected]}>Medium</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabIconSize === 30 && styles.smallOptionSelected]} onPress={() => setTabIconSize(30)}>
+                                <Text style={[styles.smallOptionText, tabIconSize === 30 && styles.smallOptionTextSelected]}>Large</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Background Blur</Text>
+                        <Switch value={tabBarBlur} onValueChange={v => setTabBarBlur(v)} />
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Allow content under tab bar</Text>
+                        <Switch value={allowContentUnderTabBar} onValueChange={v => setAllowContentUnderTabBar(v)} />
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Badge Style</Text>
+                        <View style={styles.optionRow}>
+                            <TouchableOpacity style={[styles.smallOption, tabBadgeStyle === 'count' && styles.smallOptionSelected]} onPress={() => setTabBadgeStyle('count')}>
+                                <Text style={[styles.smallOptionText, tabBadgeStyle === 'count' && styles.smallOptionTextSelected]}>Count</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabBadgeStyle === 'dot' && styles.smallOptionSelected]} onPress={() => setTabBadgeStyle('dot')}>
+                                <Text style={[styles.smallOptionText, tabBadgeStyle === 'dot' && styles.smallOptionTextSelected]}>Dot</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabBadgeStyle === 'none' && styles.smallOptionSelected]} onPress={() => setTabBadgeStyle('none')}>
+                                <Text style={[styles.smallOptionText, tabBadgeStyle === 'none' && styles.smallOptionTextSelected]}>None</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Indicator</Text>
+                        <View style={styles.optionRow}>
+                            <TouchableOpacity style={[styles.smallOption, tabIndicatorStyle === 'bubble' && styles.smallOptionSelected]} onPress={() => setTabIndicatorStyle('bubble')}>
+                                <Text style={[styles.smallOptionText, tabIndicatorStyle === 'bubble' && styles.smallOptionTextSelected]}>Bubble</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabIndicatorStyle === 'underline' && styles.smallOptionSelected]} onPress={() => setTabIndicatorStyle('underline')}>
+                                <Text style={[styles.smallOptionText, tabIndicatorStyle === 'underline' && styles.smallOptionTextSelected]}>Underline</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabIndicatorStyle === 'none' && styles.smallOptionSelected]} onPress={() => setTabIndicatorStyle('none')}>
+                                <Text style={[styles.smallOptionText, tabIndicatorStyle === 'none' && styles.smallOptionTextSelected]}>None</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+
                 {/* ACTIVE TABS */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>
@@ -192,7 +271,7 @@ export const TabBarSettingsScreen: React.FC = () => {
 
                 <View style={styles.infoBox}>
                     <Text style={styles.infoText}>
-                        💡 Changes will take effect after restarting the app
+                        💡 Changes apply immediately — the tab bar will update as soon as you toggle or reorder tabs.
                     </Text>
                 </View>
             </ScrollView>
@@ -369,5 +448,41 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         textAlign: 'center',
         lineHeight: 16,
+    },
+    settingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: spacing.md,
+    },
+    settingLabel: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 16,
+        color: colors.text,
+    },
+    optionRow: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        alignItems: 'center',
+    },
+    smallOption: {
+        paddingVertical: spacing.xs,
+        paddingHorizontal: spacing.md,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+    },
+    smallOptionSelected: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primary + '10',
+    },
+    smallOptionText: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 14,
+        color: colors.textSecondary,
+    },
+    smallOptionTextSelected: {
+        color: colors.primary,
     },
 });

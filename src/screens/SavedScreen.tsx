@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSettings } from '../context/SettingsContext';
 import { ArticleCard } from '../components/ArticleCard';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -14,6 +16,8 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export const SavedScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
     const { savedArticles } = useSavedArticles();
+    const insets = useSafeAreaInsets();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
 
     return (
         <View style={styles.container}>
@@ -27,7 +31,10 @@ export const SavedScreen: React.FC = () => {
                             onPress={(article) => navigation.navigate('Article', { article: article })} 
                         />
                     )}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[
+                        styles.listContent,
+                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                    ]}
                 />
             ) : (
                 <View style={styles.emptyContainer}>

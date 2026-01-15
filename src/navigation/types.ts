@@ -20,4 +20,14 @@ export type TabParamList = {
   Discover: { category: string };
   Saved: undefined;
   Digest: undefined;
+  Top?: { category: string };
+  Local?: { category: string };
+  Business?: { category: string };
+  Technology?: { category: string };
+  Sports?: { category: string };
+  Science?: { category: string };
+  Health?: { category: string };
+  Entertainment?: { category: string };
+  Culture?: { category: string };
+  Opinion?: { category: string };
 };

@@ -1,0 +1,50 @@
+# <type>: <subject>
+#
+# BREAKING: <yes/no - describe if yes>
+#
+# ## <Section Title>
+# - <change description>
+# - <change description>
+#
+# ## <Section Title>
+# - <change description>
+#
+# --- COMMIT END ---
+# Type can be:
+#   feat     (new feature)
+#   fix      (bug fix)
+#   refactor (refactoring code)
+#   style    (formatting, missing semi colons, etc; no code change)
+#   docs     (changes to documentation)
+#   test     (adding or refactoring tests; no production code change)
+#   chore    (updating build tasks, package manager configs, etc; no production code change)
+#   perf     (performance improvements)
+# --------------------
+# Subject:
+#   - Use imperative mood ("add" not "added")
+#   - Don't capitalize first letter
+#   - No period at the end
+#   - Limit to 50 characters
+# --------------------
+# Body:
+#   - Use bullet points for clarity
+#   - Group related changes under section headers
+#   - Explain WHAT and WHY (not HOW)
+#   - Wrap at 72 characters
+# --------------------
+# Common sections:
+#   - Repository Organization
+#   - Standards & Documentation
+#   - Testing Infrastructure
+#   - UI Improvements / UI Changes
+#   - API Changes
+#   - Performance
+#   - Bug Fixes
+#   - Dependencies
+#   - Build & Deploy
+#   - Scripts Moved/Added
+# --------------------
+# Breaking Changes:
+#   - Always declare "BREAKING: None" or explain breaking changes
+#   - List migration steps if breaking
+# --------------------

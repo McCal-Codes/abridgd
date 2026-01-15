@@ -43,6 +43,28 @@ interface SettingsContextType {
   setActiveTabs: (tabs: string[]) => Promise<void>;
   tabLayout: 'minimal' | 'comprehensive'; // Tab layout style
   setTabLayout: (layout: 'minimal' | 'comprehensive') => Promise<void>;
+  // Tab bar appearance
+  tabBarStyle: 'floating' | 'standard';
+  setTabBarStyle: (style: 'floating' | 'standard') => Promise<void>;
+  showTabLabels: boolean;
+  setShowTabLabels: (show: boolean) => Promise<void>;
+  tabIconSize: number;
+  setTabIconSize: (size: number) => Promise<void>;
+  tabBarHeight: number;
+  setTabBarHeight: (height: number) => Promise<void>;
+  // Heights for different tab bar states
+  tabBarDockedHeight: number; // when the bar is docked / standard
+  setTabBarDockedHeight: (height: number) => Promise<void>;
+  tabBarHiddenHeight: number; // when the bar is hidden/collapsed (we may want it taller)
+  setTabBarHiddenHeight: (height: number) => Promise<void>;
+  tabBarBlur: boolean;
+  setTabBarBlur: (enabled: boolean) => Promise<void>;
+  allowContentUnderTabBar: boolean;
+  setAllowContentUnderTabBar: (enabled: boolean) => Promise<void>;
+  tabBadgeStyle: 'dot' | 'count' | 'none';
+  setTabBadgeStyle: (style: 'dot' | 'count' | 'none') => Promise<void>;
+  tabIndicatorStyle: 'underline' | 'bubble' | 'none';
+  setTabIndicatorStyle: (style: 'underline' | 'bubble' | 'none') => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -65,6 +87,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [fontSize, setFontSizeState] = useState(1.0); // 1.0x default
   const [activeTabs, setActiveTabsState] = useState<string[]>(['home', 'discover', 'saved', 'digest']); // NYT-style minimal tabs
   const [tabLayout, setTabLayoutState] = useState<'minimal' | 'comprehensive'>('minimal'); // Default to minimal
+  // Tab bar appearance defaults
+  const [tabBarStyle, setTabBarStyleState] = useState<'floating' | 'standard'>('floating');
+  const [showTabLabels, setShowTabLabelsState] = useState(true);
+  const [tabIconSize, setTabIconSizeState] = useState(25);
+  const [tabBarHeight, setTabBarHeightState] = useState(49);
+  const [tabBarDockedHeight, setTabBarDockedHeightState] = useState(56);
+  const [tabBarHiddenHeight, setTabBarHiddenHeightState] = useState(64);
+  const [tabBarBlur, setTabBarBlurState] = useState(true);
+  const [allowContentUnderTabBar, setAllowContentUnderTabBarState] = useState(true);
+  const [tabBadgeStyle, setTabBadgeStyleState] = useState<'dot' | 'count' | 'none'>('count');
+  const [tabIndicatorStyle, setTabIndicatorStyleState] = useState<'underline' | 'bubble' | 'none'>('bubble');
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -89,6 +122,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedReadingSpeed = await AsyncStorage.getItem('readingSpeed');
       const savedFontSize = await AsyncStorage.getItem('fontSize');
       const savedActiveTabs = await AsyncStorage.getItem('activeTabs');
+
+      // Load tab bar appearance
+      const savedTabBarStyle = await AsyncStorage.getItem('tabBarStyle');
+      const savedShowLabels = await AsyncStorage.getItem('showTabLabels');
+      const savedIconSize = await AsyncStorage.getItem('tabIconSize');
+      const savedTabBarHeight = await AsyncStorage.getItem('tabBarHeight');
+      const savedTabBarDockedHeight = await AsyncStorage.getItem('tabBarDockedHeight');
+      const savedTabBarHiddenHeight = await AsyncStorage.getItem('tabBarHiddenHeight');
+      const savedTabBarBlur = await AsyncStorage.getItem('tabBarBlur');
+      const savedAllowUnder = await AsyncStorage.getItem('allowContentUnderTabBar');
+      const savedBadgeStyle = await AsyncStorage.getItem('tabBadgeStyle');
+      const savedIndicatorStyle = await AsyncStorage.getItem('tabIndicatorStyle');
 
       if (onboarding === 'true') setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -131,6 +176,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.error('Failed to parse active tabs', e);
         }
       }
+
+      if (savedTabBarStyle && ['floating', 'standard'].includes(savedTabBarStyle)) {
+        setTabBarStyleState(savedTabBarStyle as 'floating' | 'standard');
+      }
+      if (savedShowLabels !== null) setShowTabLabelsState(savedShowLabels === 'true');
+      if (savedIconSize) setTabIconSizeState(parseInt(savedIconSize, 10));
+      if (savedTabBarHeight) setTabBarHeightState(parseInt(savedTabBarHeight, 10));
+      if (savedTabBarDockedHeight) setTabBarDockedHeightState(parseInt(savedTabBarDockedHeight, 10));
+      if (savedTabBarHiddenHeight) setTabBarHiddenHeightState(parseInt(savedTabBarHiddenHeight, 10));
+      if (savedTabBarBlur !== null) setTabBarBlurState(savedTabBarBlur === 'true');
+      if (savedAllowUnder !== null) setAllowContentUnderTabBarState(savedAllowUnder === 'true');
+      if (savedBadgeStyle && ['dot', 'count', 'none'].includes(savedBadgeStyle)) setTabBadgeStyleState(savedBadgeStyle as any);
+      if (savedIndicatorStyle && ['underline', 'bubble', 'none'].includes(savedIndicatorStyle)) setTabIndicatorStyleState(savedIndicatorStyle as any);
 
       // Load tab layout preference
       const savedTabLayout = await AsyncStorage.getItem('tabLayout');
@@ -298,14 +356,104 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setTabBarStyle = async (style: 'floating' | 'standard') => {
+    try {
+      await AsyncStorage.setItem('tabBarStyle', style);
+      setTabBarStyleState(style);
+    } catch (e) {
+      console.error('Failed to save tab bar style', e);
+    }
+  };
+
+  const setShowTabLabels = async (show: boolean) => {
+    try {
+      await AsyncStorage.setItem('showTabLabels', show.toString());
+      setShowTabLabelsState(show);
+    } catch (e) {
+      console.error('Failed to save show tab labels', e);
+    }
+  };
+
+  const setTabIconSize = async (size: number) => {
+    try {
+      await AsyncStorage.setItem('tabIconSize', size.toString());
+      setTabIconSizeState(size);
+    } catch (e) {
+      console.error('Failed to save tab icon size', e);
+    }
+  };
+
+  const setTabBarHeight = async (height: number) => {
+    try {
+      await AsyncStorage.setItem('tabBarHeight', height.toString());
+      setTabBarHeightState(height);
+    } catch (e) {
+      console.error('Failed to save tab bar height', e);
+    }
+  };
+
+  const setTabBarDockedHeight = async (height: number) => {
+    try {
+      await AsyncStorage.setItem('tabBarDockedHeight', height.toString());
+      setTabBarDockedHeightState(height);
+    } catch (e) {
+      console.error('Failed to save tab bar docked height', e);
+    }
+  };
+
+  const setTabBarHiddenHeight = async (height: number) => {
+    try {
+      await AsyncStorage.setItem('tabBarHiddenHeight', height.toString());
+      setTabBarHiddenHeightState(height);
+    } catch (e) {
+      console.error('Failed to save tab bar hidden height', e);
+    }
+  };
+
+  const setTabBarBlur = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem('tabBarBlur', enabled.toString());
+      setTabBarBlurState(enabled);
+    } catch (e) {
+      console.error('Failed to save tab bar blur', e);
+    }
+  };
+
+  const setAllowContentUnderTabBar = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem('allowContentUnderTabBar', enabled.toString());
+      setAllowContentUnderTabBarState(enabled);
+    } catch (e) {
+      console.error('Failed to save allowContentUnderTabBar', e);
+    }
+  };
+
+  const setTabBadgeStyle = async (style: 'dot' | 'count' | 'none') => {
+    try {
+      await AsyncStorage.setItem('tabBadgeStyle', style);
+      setTabBadgeStyleState(style);
+    } catch (e) {
+      console.error('Failed to save tab badge style', e);
+    }
+  };
+
+  const setTabIndicatorStyle = async (style: 'underline' | 'bubble' | 'none') => {
+    try {
+      await AsyncStorage.setItem('tabIndicatorStyle', style);
+      setTabIndicatorStyleState(style);
+    } catch (e) {
+      console.error('Failed to save tab indicator style', e);
+    }
+  };
+
   const setTabLayout = async (layout: 'minimal' | 'comprehensive') => {
     try {
         await AsyncStorage.setItem('tabLayout', layout);
         setTabLayoutState(layout);
         // Reset active tabs to defaults for the new layout
-        const defaultTabs = layout === 'minimal' 
-            ? ['home', 'discover', 'saved', 'digest']
-            : ['top', 'local', 'business', 'sports', 'digest'];
+          const defaultTabs = layout === 'minimal'
+              ? ['home', 'discover', 'saved', 'digest']
+              : ['top', 'local', 'business', 'digest', 'saved'];
         setActiveTabsState(defaultTabs);
         await AsyncStorage.setItem('activeTabs', JSON.stringify(defaultTabs));
     } catch (e) {
@@ -352,6 +500,26 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setActiveTabs,
         tabLayout,
         setTabLayout,
+        tabBarStyle,
+        setTabBarStyle,
+        showTabLabels,
+        setShowTabLabels,
+        tabIconSize,
+        setTabIconSize,
+        tabBarHeight,
+        tabBarDockedHeight,
+        setTabBarDockedHeight,
+        tabBarHiddenHeight,
+        setTabBarHiddenHeight,
+        setTabBarHeight,
+        tabBarBlur,
+        allowContentUnderTabBar,
+        setTabBarBlur,
+        setAllowContentUnderTabBar,
+        tabBadgeStyle,
+        setTabBadgeStyle,
+        tabIndicatorStyle,
+        setTabIndicatorStyle,
       }}
     >
       {children}

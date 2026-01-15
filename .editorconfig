@@ -1,0 +1,68 @@
+# EditorConfig helps maintain consistent coding styles for multiple developers working on the same project across various editors and IDEs
+# https://editorconfig.org
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Source code files (JavaScript, TypeScript, JSX, TSX)
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Swift files (iOS)
+[*.swift]
+indent_style = space
+indent_size = 4
+
+# Objective-C files
+[*.{h,m}]
+indent_style = space
+indent_size = 4
+
+# CSS/SCSS
+[*.{css,scss,less}]
+indent_style = space
+indent_size = 2
+
+# HTML
+[*.html]
+indent_style = space
+indent_size = 2
+
+# Gradle/Maven build files
+[*.{gradle,xml}]
+indent_style = space
+indent_size = 2
+
+# Package manifests
+[{package.json,package-lock.json,.npmrc,.yarnrc}]
+indent_style = space
+indent_size = 2

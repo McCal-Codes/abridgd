@@ -20,7 +20,18 @@ const FUN_FACTS = [
   "🏈 Pittsburgh's football team has 6 Super Bowl victories",
   "📰 The first daily newspaper was published in 1702",
   "🌆 Pittsburgh's skyline inspired the layout of many modern cities",
-  "📱 Social media changed news delivery forever in the 2000s"
+  "📱 Social media changed news delivery forever in the 2000s",
+  "🔊 The Associated Press was founded in 1846",
+  "📡 The internet transformed how news is consumed globally",
+  "✍️ Ernest Hemingway was a journalist before becoming a novelist",
+  "🎬 The first televised news broadcast was in 1948",
+  "🗣️ Fact-checking became a major part of journalism in the 21st century",
+  "🌍 Reuters is the oldest news agency still operating",
+  "💡 Investigative journalism has exposed major corruption scandals",
+  "📚 The first newspaper cartoon appeared in 1754",
+  "🎙️ Podcast journalism is one of the fastest-growing news formats",
+  "🤝 Community journalism helps local stories reach local audiences",
+  "⏰ News cycles are now measured in hours instead of days"
 ];
 
 interface FunLoadingIndicatorProps {

@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSettings } from '../context/SettingsContext';
 import { ArticleCard } from '../components/ArticleCard';
 import { FunLoadingIndicator } from '../components/FunLoadingIndicator';
 import { fetchArticlesByCategory } from '../services/RssService';
@@ -21,6 +23,8 @@ export const SectionScreen: React.FC = () => {
     
     const [articles, setArticles] = React.useState<Article[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const insets = useSafeAreaInsets();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
 
     React.useEffect(() => {
         setLoading(true);
@@ -54,7 +58,10 @@ export const SectionScreen: React.FC = () => {
                             onPress={(article) => navigation.navigate('Article', { article: article })} 
                         />
                     )}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[
+                        styles.listContent,
+                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                    ]}
                     refreshing={loading}
                     onRefresh={() => {
                         setLoading(true);

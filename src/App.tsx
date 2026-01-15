@@ -11,19 +11,19 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <ProfileProvider>
-        <SavedArticlesProvider>
-          <SettingsProvider>
-            <SafeAreaProvider>
-              <NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <ErrorBoundary>
+          <ProfileProvider>
+            <SavedArticlesProvider>
+              <SettingsProvider>
                 <RootNavigator />
                 <StatusBar style="dark" />
-              </NavigationContainer>
-            </SafeAreaProvider>
-          </SettingsProvider>
-        </SavedArticlesProvider>
-      </ProfileProvider>
-    </ErrorBoundary>
+              </SettingsProvider>
+            </SavedArticlesProvider>
+          </ProfileProvider>
+        </ErrorBoundary>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

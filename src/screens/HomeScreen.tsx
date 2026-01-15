@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, StatusBar } from 'react-native';
+import { View, FlatList, StyleSheet, StatusBar, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSettings } from '../context/SettingsContext';
+import { ScrollContext } from '../context/ScrollContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArticleCard } from '../components/ArticleCard';
 import { FunLoadingIndicator } from '../components/FunLoadingIndicator';
@@ -15,9 +18,22 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HomeScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
-    
+
     const [articles, setArticles] = React.useState<Article[]>([]);
     const [loading, setLoading] = React.useState(true);
+
+    const { scrollY } = React.useContext(ScrollContext);
+    const insets = useSafeAreaInsets();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
+
+    // Define onScroll callback unconditionally to preserve hook order between renders
+    const onScroll = React.useCallback(
+        Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+        ),
+        [scrollY]
+    );
 
     React.useEffect(() => {
         const load = async () => {
@@ -34,7 +50,7 @@ export const HomeScreen: React.FC = () => {
             {loading ? (
                 <FunLoadingIndicator message="Fetching top stories..." />
             ) : (
-                <FlatList
+                <Animated.FlatList
                     data={articles}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
@@ -43,8 +59,14 @@ export const HomeScreen: React.FC = () => {
                             onPress={(article) => navigation.navigate('Article', { article: article })} 
                         />
                     )}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[
+                        styles.listContent,
+                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                    ]}
                     refreshing={loading}
+                    // wire scroll to the shared scrollY value so tab bar can animate
+                    onScroll={onScroll}
+                    scrollEventThrottle={16}
                     onRefresh={() => {
                         setLoading(true);
                         fetchArticlesByCategory('Top').then(data => {

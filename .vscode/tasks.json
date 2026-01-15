@@ -1,80 +1,122 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Build iOS IPA",
-      "type": "shell",
-      "command": "npm run build:ipa",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "problemMatcher": [],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
-      "label": "Clean iOS Build",
-      "type": "shell",
-      "command": "npm run build:ipa clean",
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "problemMatcher": [],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
-      "label": "Archive iOS Build",
-      "type": "shell",
-      "command": "npm run build:ipa archive",
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "problemMatcher": [],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
-      "label": "Export iOS IPA",
-      "type": "shell",
-      "command": "./scripts/build/build-ipa.sh export",
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "problemMatcher": [],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build iOS IPA",
+			"type": "shell",
+			"command": "npm run build:ipa",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Clean iOS Build",
+			"type": "shell",
+			"command": "npm run build:ipa clean",
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Archive iOS Build",
+			"type": "shell",
+			"command": "npm run build:ipa archive",
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Export iOS IPA",
+			"type": "shell",
+			"command": "./scripts/build/build-ipa.sh export",
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Run Jest tests (all)",
+			"type": "shell",
+			"command": "npx jest --runInBand",
+			"group": "build"
+		},
+		{
+			"label": "Run ArticleScreen test verbose",
+			"type": "shell",
+			"command": "npx jest src/screens/__tests__/ArticleScreen.test.tsx --runInBand --verbose",
+			"group": "build"
+		},
+		{
+			"label": "Run ArticleScreen test verbose (no console suppression)",
+			"type": "shell",
+			"command": "npx jest src/screens/__tests__/ArticleScreen.test.tsx --runInBand --verbose",
+			"group": "build"
+		},
+		{
+			"label": "Run ArticleScreen test (retry)",
+			"type": "shell",
+			"command": "npx jest src/screens/__tests__/ArticleScreen.test.tsx --runInBand --verbose",
+			"group": "build"
+		},
+		{
+			"label": "Run ArticleScreen test (updated mocks)",
+			"type": "shell",
+			"command": "npx jest src/screens/__tests__/ArticleScreen.test.tsx --runInBand 2>&1 | tail -50",
+			"group": "build"
+		},
+		{
+			"label": "Run ArticleScreen test with SafeArea mock",
+			"type": "shell",
+			"command": "npx jest src/screens/__tests__/ArticleScreen.test.tsx --runInBand 2>&1 | head -80",
+			"group": "build"
+		},
+		{
+			"label": "Run all jest tests (with lucide icons mocked)",
+			"type": "shell",
+			"command": "npx jest --runInBand",
+			"group": "build"
+		}
+	]
 }
