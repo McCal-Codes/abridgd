@@ -1,5 +1,5 @@
 # Abridged App — Standards Home
-Version 1.0  
+Version 1.0
 Last Updated: January 15, 2026
 
 Welcome to the authoritative source for all standards, workflows, and decision records for the Abridged app.
@@ -11,31 +11,31 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 ## Quick Start: Which Doc to Read?
 
 ### I'm about to start working on a change
-→ Read [**Preflight**](preflight.md)  
+→ Read [**Preflight**](preflight.md)
 *Scope, standards alignment, repo health, accessibility/perf checks before you begin.*
 
 ### I'm about to merge a PR or ship a release
-→ Read [**Afterflight**](afterflight.md)  
+→ Read [**Afterflight**](afterflight.md)
 *Code review gates, changelog, regression tests, release metadata before merge.*
 
 ### I want to understand how we make engineering decisions
-→ Read [**Standards Governance Agent**](standards-governance-agent.md)  
+→ Read [**Standards Governance Agent**](standards-governance-agent.md)
 *Roles, responsibilities, acceptance criteria, how to propose standards changes.*
 
 ### I'm building or changing the UI
-→ Read [**UI & Design Standards**](ui-design.md)  
+→ Read [**UI & Design Standards**](ui-design.md)
 *Navigation, layout, visual hierarchy, dark mode, typography.*
 
 ### I need to write or run tests
-→ Read [**Testing Baseline**](testing-baseline.md)  
+→ Read [**Testing Baseline**](testing-baseline.md)
 *Jest setup, test suites, mocking strategy, how to run tests.*
 
 ### I'm architecting a feature or refactoring
-→ Read [**Architecture Decisions (ADRs)**](adr/)  
+→ Read [**Architecture Decisions (ADRs)**](adr/)
 *Load-bearing decisions: navigation model, state management, RSS parsing, theming.*
 
 ### I want to know the project's engineering principles
-→ Read [**Engineering Standards**](engineering.md)  
+→ Read [**Engineering Standards**](engineering.md)
 *Versioning, git strategy, code quality gates, testing, dependencies, observability.*
 
 ---
@@ -76,7 +76,7 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 
 ## Standards evolution
 
-Standards live in this folder and are versioned alongside the code.  
+Standards live in this folder and are versioned alongside the code.
 Significant changes are recorded in:
 - `CHANGELOG.md` (root level) — user-facing summaries
 - `adr/` — architectural decisions

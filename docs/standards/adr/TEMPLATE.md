@@ -1,8 +1,8 @@
 # ADR-XXXX: [Short Title]
 
-**Date:** YYYY-MM-DD  
-**Status:** Proposed | Accepted | Deprecated | Superseded  
-**Deciders:** [Name(s)]  
+**Date:** YYYY-MM-DD
+**Status:** Proposed | Accepted | Deprecated | Superseded
+**Deciders:** [Name(s)]
 **Context:** [Issue/discussion link if applicable]
 
 ---

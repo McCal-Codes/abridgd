@@ -15,7 +15,7 @@ Complete guide for setting up your local development environment for Abridged.
    # Using nvm (recommended)
    nvm install
    nvm use
-   
+
    # Verify
    node --version  # Should match .nvmrc
    ```
