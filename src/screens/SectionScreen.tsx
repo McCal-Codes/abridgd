@@ -24,7 +24,7 @@ export const SectionScreen: React.FC = () => {
     const [articles, setArticles] = React.useState<Article[]>([]);
     const [loading, setLoading] = React.useState(true);
     const insets = useSafeAreaInsets();
-    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar, tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight } = useSettings();
 
     React.useEffect(() => {
         setLoading(true);
@@ -60,7 +60,7 @@ export const SectionScreen: React.FC = () => {
                     )}
                     contentContainerStyle={[
                         styles.listContent,
-                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + (tabBarStyle === 'floating' ? (tabBarFloatingHeight || 64) : (tabBarDockedHeight || tabBarHeight)) + insets.bottom + 16 }
                     ]}
                     refreshing={loading}
                     onRefresh={() => {

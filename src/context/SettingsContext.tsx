@@ -44,14 +44,25 @@ interface SettingsContextType {
   tabLayout: 'minimal' | 'comprehensive'; // Tab layout style
   setTabLayout: (layout: 'minimal' | 'comprehensive') => Promise<void>;
   // Tab bar appearance
-  tabBarStyle: 'floating' | 'standard';
-  setTabBarStyle: (style: 'floating' | 'standard') => Promise<void>;
+  tabBarStyle: 'floating' | 'standard' | 'compact';
+  setTabBarStyle: (style: 'floating' | 'standard' | 'compact') => Promise<void>;
   showTabLabels: boolean;
   setShowTabLabels: (show: boolean) => Promise<void>;
   tabIconSize: number;
   setTabIconSize: (size: number) => Promise<void>;
   tabBarHeight: number;
   setTabBarHeight: (height: number) => Promise<void>;
+  tabBarFloatingHeight: number; // height when using floating capsule style
+  setTabBarFloatingHeight: (height: number) => Promise<void>;
+  // Developer/advanced controls for fine-grained increments
+  enableAdvancedHeightControls: boolean;
+  setEnableAdvancedHeightControls: (enabled: boolean) => Promise<void>;
+  dockedHeightStep: number;
+  setDockedHeightStep: (step: number) => Promise<void>;
+  hiddenHeightStep: number;
+  setHiddenHeightStep: (step: number) => Promise<void>;
+  floatingHeightStep: number;
+  setFloatingHeightStep: (step: number) => Promise<void>;
   // Heights for different tab bar states
   tabBarDockedHeight: number; // when the bar is docked / standard
   setTabBarDockedHeight: (height: number) => Promise<void>;
@@ -67,7 +78,79 @@ interface SettingsContextType {
   setTabIndicatorStyle: (style: 'underline' | 'bubble' | 'none') => Promise<void>;
 }
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+// Provide a safe default context so components can render in tests without a provider
+const noopAsync = async () => {};
+
+const defaultSettingsContext: SettingsContextType = {
+  hasCompletedOnboarding: false,
+  completeOnboarding: async () => {},
+  resetOnboarding: async () => {},
+  rsvpHighlightColor: colors.error,
+  setRsvpHighlightColor: async (c: string) => {},
+  rsvpAnchorStrategy: 'standard',
+  setRsvpAnchorStrategy: async (_s: AnchorStrategy) => {},
+  groundingColor: '#A8C3B3',
+  setGroundingColor: async (_c: string) => {},
+  isReaderEnabled: true,
+  setIsReaderEnabled: async (_b: boolean) => {},
+  isGroundingEnabled: true,
+  setIsGroundingEnabled: async (_b: boolean) => {},
+  isSummarizationEnabled: false,
+  setIsSummarizationEnabled: async (_b: boolean) => {},
+  isWelcomeBackEnabled: true,
+  setIsWelcomeBackEnabled: async (_b: boolean) => {},
+  isLoadingSettings: false,
+  lastAppVisit: null,
+  updateLastAppVisit: async () => {},
+  digestSummaryMode: 'fact-based',
+  setDigestSummaryMode: async (_m: DigestSummaryMode) => {},
+  groundingBreathDuration: 4,
+  setGroundingBreathDuration: async (_n: number) => {},
+  groundingCycles: 5,
+  setGroundingCycles: async (_n: number) => {},
+  groundingAnimationStyle: 'waves',
+  setGroundingAnimationStyle: async (_s: GroundingAnimationStyle) => {},
+  readingSpeed: 300,
+  setReadingSpeed: async (_n: number) => {},
+  fontSize: 1.0,
+  setFontSize: async (_n: number) => {},
+  activeTabs: ['home', 'discover', 'saved', 'digest'],
+  setActiveTabs: async (_t: string[]) => {},
+  tabLayout: 'minimal',
+  setTabLayout: async (_l: 'minimal' | 'comprehensive') => {},
+  tabBarStyle: 'floating',
+  setTabBarStyle: async (_s: 'floating' | 'standard' | 'compact') => {},
+  showTabLabels: true,
+  setShowTabLabels: async (_b: boolean) => {},
+  tabIconSize: 25,
+  setTabIconSize: async (_n: number) => {},
+  tabBarHeight: 49,
+  setTabBarHeight: async (_n: number) => {},
+  tabBarFloatingHeight: 64,
+  setTabBarFloatingHeight: async (_n: number) => {},
+  enableAdvancedHeightControls: false,
+  setEnableAdvancedHeightControls: async (_b: boolean) => {},
+  dockedHeightStep: 2,
+  setDockedHeightStep: async (_n: number) => {},
+  hiddenHeightStep: 2,
+  setHiddenHeightStep: async (_n: number) => {},
+  floatingHeightStep: 2,
+  setFloatingHeightStep: async (_n: number) => {},
+  tabBarDockedHeight: 56,
+  setTabBarDockedHeight: async (_n: number) => {},
+  tabBarHiddenHeight: 64,
+  setTabBarHiddenHeight: async (_n: number) => {},
+  tabBarBlur: true,
+  setTabBarBlur: async (_b: boolean) => {},
+  allowContentUnderTabBar: true,
+  setAllowContentUnderTabBar: async (_b: boolean) => {},
+  tabBadgeStyle: 'count',
+  setTabBadgeStyle: async (_s: 'dot' | 'count' | 'none') => {},
+  tabIndicatorStyle: 'bubble',
+  setTabIndicatorStyle: async (_s: 'underline' | 'bubble' | 'none') => {},
+};
+
+const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -88,12 +171,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activeTabs, setActiveTabsState] = useState<string[]>(['home', 'discover', 'saved', 'digest']); // NYT-style minimal tabs
   const [tabLayout, setTabLayoutState] = useState<'minimal' | 'comprehensive'>('minimal'); // Default to minimal
   // Tab bar appearance defaults
-  const [tabBarStyle, setTabBarStyleState] = useState<'floating' | 'standard'>('floating');
+  const [tabBarStyle, setTabBarStyleState] = useState<'floating' | 'standard' | 'compact'>('floating');
   const [showTabLabels, setShowTabLabelsState] = useState(true);
   const [tabIconSize, setTabIconSizeState] = useState(25);
   const [tabBarHeight, setTabBarHeightState] = useState(49);
-  const [tabBarDockedHeight, setTabBarDockedHeightState] = useState(56);
-  const [tabBarHiddenHeight, setTabBarHiddenHeightState] = useState(64);
+  // Minimum docked height enforced at 92 per design
+  const [tabBarDockedHeight, setTabBarDockedHeightState] = useState(92);
+  // floating capsule height (thinner than docked by default)
+  const [tabBarFloatingHeight, setTabBarFloatingHeightState] = useState(64);
+  const [enableAdvancedHeightControls, setEnableAdvancedHeightControlsState] = useState(false);
+  const [dockedHeightStep, setDockedHeightStepState] = useState(2);
+  const [hiddenHeightStep, setHiddenHeightStepState] = useState(2);
+  const [floatingHeightStep, setFloatingHeightStepState] = useState(2);
+  const [tabBarHiddenHeight, setTabBarHiddenHeightState] = useState(100);
   const [tabBarBlur, setTabBarBlurState] = useState(true);
   const [allowContentUnderTabBar, setAllowContentUnderTabBarState] = useState(true);
   const [tabBadgeStyle, setTabBadgeStyleState] = useState<'dot' | 'count' | 'none'>('count');
@@ -131,6 +221,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedTabBarDockedHeight = await AsyncStorage.getItem('tabBarDockedHeight');
       const savedTabBarHiddenHeight = await AsyncStorage.getItem('tabBarHiddenHeight');
       const savedTabBarBlur = await AsyncStorage.getItem('tabBarBlur');
+      const savedTabBarFloatingHeight = await AsyncStorage.getItem('tabBarFloatingHeight');
+      const savedEnableAdvanced = await AsyncStorage.getItem('enableAdvancedHeightControls');
+      const savedDockedStep = await AsyncStorage.getItem('dockedHeightStep');
+      const savedHiddenStep = await AsyncStorage.getItem('hiddenHeightStep');
+      const savedFloatingStep = await AsyncStorage.getItem('floatingHeightStep');
       const savedAllowUnder = await AsyncStorage.getItem('allowContentUnderTabBar');
       const savedBadgeStyle = await AsyncStorage.getItem('tabBadgeStyle');
       const savedIndicatorStyle = await AsyncStorage.getItem('tabIndicatorStyle');
@@ -177,14 +272,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       }
 
-      if (savedTabBarStyle && ['floating', 'standard'].includes(savedTabBarStyle)) {
-        setTabBarStyleState(savedTabBarStyle as 'floating' | 'standard');
+      if (savedTabBarStyle && ['floating', 'standard', 'compact'].includes(savedTabBarStyle)) {
+        setTabBarStyleState(savedTabBarStyle as 'floating' | 'standard' | 'compact');
       }
       if (savedShowLabels !== null) setShowTabLabelsState(savedShowLabels === 'true');
       if (savedIconSize) setTabIconSizeState(parseInt(savedIconSize, 10));
       if (savedTabBarHeight) setTabBarHeightState(parseInt(savedTabBarHeight, 10));
-      if (savedTabBarDockedHeight) setTabBarDockedHeightState(parseInt(savedTabBarDockedHeight, 10));
-      if (savedTabBarHiddenHeight) setTabBarHiddenHeightState(parseInt(savedTabBarHiddenHeight, 10));
+      if (savedTabBarFloatingHeight) setTabBarFloatingHeightState(parseInt(savedTabBarFloatingHeight, 10));
+      if (savedEnableAdvanced !== null) setEnableAdvancedHeightControlsState(savedEnableAdvanced === 'true');
+      if (savedDockedStep) setDockedHeightStepState(parseInt(savedDockedStep, 10));
+      if (savedHiddenStep) setHiddenHeightStepState(parseInt(savedHiddenStep, 10));
+      if (savedFloatingStep) setFloatingHeightStepState(parseInt(savedFloatingStep, 10));
+      // enforce minimum dock height of 92
+      const parsedDock = savedTabBarDockedHeight ? parseInt(savedTabBarDockedHeight, 10) : 92;
+      const dockVal = Math.max(92, parsedDock);
+      const parsedHidden = savedTabBarHiddenHeight ? parseInt(savedTabBarHiddenHeight, 10) : dockVal + 8;
+      const hiddenVal = Math.max(dockVal, parsedHidden);
+      setTabBarDockedHeightState(dockVal);
+      setTabBarHiddenHeightState(hiddenVal);
       if (savedTabBarBlur !== null) setTabBarBlurState(savedTabBarBlur === 'true');
       if (savedAllowUnder !== null) setAllowContentUnderTabBarState(savedAllowUnder === 'true');
       if (savedBadgeStyle && ['dot', 'count', 'none'].includes(savedBadgeStyle)) setTabBadgeStyleState(savedBadgeStyle as any);
@@ -356,7 +461,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const setTabBarStyle = async (style: 'floating' | 'standard') => {
+  const setTabBarStyle = async (style: 'floating' | 'standard' | 'compact') => {
     try {
       await AsyncStorage.setItem('tabBarStyle', style);
       setTabBarStyleState(style);
@@ -392,10 +497,64 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setTabBarFloatingHeight = async (height: number) => {
+    try {
+      // floating capsule should be thinner but not too small
+      const clamped = Math.max(48, Math.round(height));
+      await AsyncStorage.setItem('tabBarFloatingHeight', clamped.toString());
+      setTabBarFloatingHeightState(clamped);
+    } catch (e) {
+      console.error('Failed to save tab bar floating height', e);
+    }
+  };
+
+  const setEnableAdvancedHeightControls = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem('enableAdvancedHeightControls', enabled.toString());
+      setEnableAdvancedHeightControlsState(enabled);
+    } catch (e) {
+      console.error('Failed to save enableAdvancedHeightControls', e);
+    }
+  };
+
+  const setDockedHeightStep = async (step: number) => {
+    try {
+      const clamped = Math.max(1, Math.round(step));
+      await AsyncStorage.setItem('dockedHeightStep', clamped.toString());
+      setDockedHeightStepState(clamped);
+    } catch (e) {
+      console.error('Failed to save dockedHeightStep', e);
+    }
+  };
+
+  const setHiddenHeightStep = async (step: number) => {
+    try {
+      const clamped = Math.max(1, Math.round(step));
+      await AsyncStorage.setItem('hiddenHeightStep', clamped.toString());
+      setHiddenHeightStepState(clamped);
+    } catch (e) {
+      console.error('Failed to save hiddenHeightStep', e);
+    }
+  };
+
+  const setFloatingHeightStep = async (step: number) => {
+    try {
+      const clamped = Math.max(1, Math.round(step));
+      await AsyncStorage.setItem('floatingHeightStep', clamped.toString());
+      setFloatingHeightStepState(clamped);
+    } catch (e) {
+      console.error('Failed to save floatingHeightStep', e);
+    }
+  };
+
   const setTabBarDockedHeight = async (height: number) => {
     try {
-      await AsyncStorage.setItem('tabBarDockedHeight', height.toString());
-      setTabBarDockedHeightState(height);
+      const clamped = Math.max(92, Math.round(height));
+      await AsyncStorage.setItem('tabBarDockedHeight', clamped.toString());
+      setTabBarDockedHeightState(clamped);
+      // Ensure hidden height is at least docked
+      setTabBarHiddenHeightState(prev => Math.max(prev, clamped));
+      await AsyncStorage.setItem('tabBarHiddenHeight', Math.max(tabBarHiddenHeight, clamped).toString());
     } catch (e) {
       console.error('Failed to save tab bar docked height', e);
     }
@@ -403,8 +562,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setTabBarHiddenHeight = async (height: number) => {
     try {
-      await AsyncStorage.setItem('tabBarHiddenHeight', height.toString());
-      setTabBarHiddenHeightState(height);
+      const min = tabBarDockedHeight || 92;
+      const clamped = Math.max(min, Math.round(height));
+      await AsyncStorage.setItem('tabBarHiddenHeight', clamped.toString());
+      setTabBarHiddenHeightState(clamped);
     } catch (e) {
       console.error('Failed to save tab bar hidden height', e);
     }
@@ -505,10 +666,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         showTabLabels,
         setShowTabLabels,
         tabIconSize,
+        tabBarFloatingHeight,
         setTabIconSize,
+        enableAdvancedHeightControls,
+        setEnableAdvancedHeightControls,
+        dockedHeightStep,
+        setDockedHeightStep,
+        hiddenHeightStep,
+        setHiddenHeightStep,
+        floatingHeightStep,
+        setFloatingHeightStep,
         tabBarHeight,
         tabBarDockedHeight,
         setTabBarDockedHeight,
+        setTabBarFloatingHeight,
         tabBarHiddenHeight,
         setTabBarHiddenHeight,
         setTabBarHeight,

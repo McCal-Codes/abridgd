@@ -26,6 +26,10 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 → Read [**UI & Design Standards**](ui-design.md)  
 *Navigation, layout, visual hierarchy, dark mode, typography.*
 
+### I need to write or run tests
+→ Read [**Testing Baseline**](testing-baseline.md)  
+*Jest setup, test suites, mocking strategy, how to run tests.*
+
 ### I'm architecting a feature or refactoring
 → Read [**Architecture Decisions (ADRs)**](adr/)  
 *Load-bearing decisions: navigation model, state management, RSS parsing, theming.*
@@ -44,6 +48,7 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 | [Afterflight](afterflight.md) | Pre-merge/release checklist | All developers, reviewers, release engineer |
 | [Standards Governance Agent](standards-governance-agent.md) | How standards evolve | Tech lead, standards steward |
 | [Standards Drift Check](standards-drift-check.md) | CI automation and PR label enforcement | DevOps, tech lead |
+| [Testing Baseline](testing-baseline.md) | Jest test harness + baseline tests | All engineers, QA |
 | [UI & Design Standards](ui-design.md) | Design principles, HIG alignment | Product designers, frontend engineers |
 | [Engineering Standards](engineering.md) | Versioning, quality gates, dependencies | All engineers |
 | [Accessibility Audit](a11y-audit.md) | Dark mode, Dynamic Type, VoiceOver test matrix | QA, frontend engineers, designers |

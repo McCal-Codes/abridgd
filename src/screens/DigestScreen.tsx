@@ -25,7 +25,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
     const [digest, setDigest] = useState<DigestItem[]>([]);
     const [loading, setLoading] = useState(true);
     const insets = useSafeAreaInsets();
-    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar, tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight } = useSettings();
 
     useEffect(() => {
         const load = async () => {
@@ -77,7 +77,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
             ) : (
                 <ScrollView contentContainerStyle={[
                     styles.content,
-                    { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                    { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + (tabBarStyle === 'floating' ? (tabBarFloatingHeight || 64) : (tabBarDockedHeight || tabBarHeight)) + insets.bottom + 16 }
                 ]}>
                     <View style={styles.headerRow}>
                         <Newspaper size={24} color={colors.primary} />

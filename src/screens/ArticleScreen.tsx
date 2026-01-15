@@ -33,7 +33,7 @@ export const ArticleScreen: React.FC = () => {
     const [isLoadingSummary, setIsLoadingSummary] = useState(false);
     const { isReaderEnabled, isGroundingEnabled, isSummarizationEnabled } = useSettings();
     const insets = useSafeAreaInsets();
-    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar, tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight } = useSettings();
 
     // If article is sensitive, show warning by default.
     const [isGroundingActive, setIsGroundingActive] = useState(false);
@@ -112,7 +112,7 @@ export const ArticleScreen: React.FC = () => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={[
             styles.content,
-            { paddingBottom: allowContentUnderTabBar ? spacing.xxl + insets.bottom + 8 : spacing.xxl + tabBarHeight + insets.bottom + 16 }
+            { paddingBottom: allowContentUnderTabBar ? spacing.xxl + insets.bottom + 8 : spacing.xxl + (tabBarStyle === 'floating' ? (tabBarFloatingHeight || 64) : (tabBarDockedHeight || tabBarHeight)) + insets.bottom + 16 }
         ]}>
             <Text style={styles.headline}>{article.headline}</Text>
             

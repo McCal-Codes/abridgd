@@ -3,6 +3,7 @@ import { Animated, StyleSheet, View, Platform, TouchableOpacity, Text, LayoutCha
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSettings } from '../context/SettingsContext';
+import { colors } from '../theme/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollContext } from '../context/ScrollContext';
 
@@ -20,15 +21,19 @@ const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
 export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const insets = useSafeAreaInsets();
   const { scrollY } = React.useContext(ScrollContext);
-  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight } = useSettings();
+  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight, tabBarFloatingHeight } = useSettings();
   const isStandard = tabBarStyle === 'standard';
 
   // animate translateY and opacity from the shared scrollY value
-  const translateY = scrollY.interpolate({
-    inputRange: [0, 120],
-    outputRange: [0, 42],
-    extrapolate: 'clamp',
-  });
+  // compute base heights: standard (docked) has enforced minimum; floating capsule may be thinner
+  const dockedHeight = Math.max(92, tabBarDockedHeight || 92);
+  const floatingHeight = Math.max(48, tabBarFloatingHeight || 64);
+  const normalHeight = isStandard ? dockedHeight : floatingHeight;
+  const hiddenHeight = Math.max(dockedHeight, tabBarHiddenHeight || (dockedHeight + 8));
+
+  // Keep the tab bar fully visible at all times (do not allow it to be cut off)
+  // Use a static zero translate so scrolling does not move the bar offscreen.
+  const translateY = React.useRef(new Animated.Value(0)).current;
 
   // Animate blur opacity based on scroll but respect user preference
   const blurOpacityAnimated = scrollY.interpolate({
@@ -39,30 +44,21 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const blurOpacity = tabBarBlur ? blurOpacityAnimated : 1;
 
   // allow the visual height of the tab bar to change as it is docked/hidden
-  const normalHeight = isStandard ? (tabBarDockedHeight || 56) : (tabBarDockedHeight || 56);
-  const hiddenHeight = tabBarHiddenHeight || (normalHeight + 8);
-  const animatedHeight = scrollY.interpolate({
-    inputRange: [0, 120],
-    outputRange: [normalHeight, hiddenHeight],
-    extrapolate: 'clamp',
-  });
+  // (normalHeight/hiddenHeight already computed above)
 
   // Place the capsule very close to the bottom; keep a small base offset and add the inset
-  // Reduced base offset to place the capsule even lower
   const containerStyle = [
     styles.container,
     {
       // anchor to the absolute bottom so we can visually cover the safe area
       left: isStandard ? 0 : 16,
       right: isStandard ? 0 : 16,
-      bottom: 0,
+      // Floating style should sit above the safe area rather than flush to bottom
+      bottom: isStandard ? 0 : (insets.bottom + 12),
       transform: [{ translateY }],
     },
   ];
 
-  // Debug: log insets so we can see placement in device logs
-  // eslint-disable-next-line no-console
-  console.log('[LiquidTabBar] insets', insets, 'containerBottom', 6 + insets.bottom);
 
   return (
     <Animated.View style={containerStyle} pointerEvents="box-none">
@@ -91,7 +87,21 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#tabGrad)" />
           </Svg>
         </View>
-        <Animated.View style={[styles.inner, { height: animatedHeight, paddingBottom: 8 + insets.bottom }]} pointerEvents="auto">
+        {/* inner padding: when floating we avoid duplicating safe area padding because container is already above it */}
+        <Animated.View
+          style={[
+            styles.inner,
+            {
+              height: normalHeight,
+              // center content vertically when in standard (docked) mode
+              justifyContent: isStandard ? 'center' : styles.inner.justifyContent,
+              // floating: small bottom padding so capsule visually floats; standard: include safe area but keep centered
+              paddingBottom: isStandard ? insets.bottom : 8,
+              paddingTop: isStandard ? 0 : styles.inner.paddingTop,
+            },
+          ]}
+          pointerEvents="auto"
+        >
           {/* Custom tab items so we can animate indicator and icon scale */}
           <AnimatedIndicator
             state={props.state}
@@ -205,11 +215,18 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({ state, descriptors, navig
 
   const tabWidth = containerWidth.current && count > 0 ? containerWidth.current / count : 0;
 
-  const translateX = active.interpolate({
-    inputRange: routes.map((_: any, i: number) => i),
-    outputRange: routes.map((_: any, i: number) => (tabWidth * i) + (tabWidth / 2) - 20),
-    extrapolate: 'clamp',
-  });
+  // If there's only one tab, Animated.interpolate requires at least 2 points.
+  // Guard to produce a no-op translate when count < 2.
+  let translateX: any;
+  if (count > 1) {
+    translateX = active.interpolate({
+      inputRange: routes.map((_: any, i: number) => i),
+      outputRange: routes.map((_: any, i: number) => (tabWidth * i) + (tabWidth / 2) - 20),
+      extrapolate: 'clamp',
+    });
+  } else {
+    translateX = active.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
+  }
 
   return (
     <View onLayout={onLayout} style={{ width: '100%' }}>
@@ -219,7 +236,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({ state, descriptors, navig
         {routes.map((route: any, idx: number) => {
           const descriptor = descriptors[route.key];
           const focused = state.index === idx;
-          const activeTint = descriptor.options.tabBarActiveTintColor || '#0a84ff';
+          const activeTint = descriptor.options.tabBarActiveTintColor || colors.primary;
           const inactiveTint = descriptor.options.tabBarInactiveTintColor || '#8e8e93';
           const color = focused ? activeTint : inactiveTint;
           const IconRenderer = (descriptor.options.tabBarIcon as any) || null;
@@ -236,10 +253,10 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({ state, descriptors, navig
                 {IconRenderer ? IconRenderer({ color, size: descriptor.options.tabBarIconSize || 25, focused }) : null}
               </Animated.View>
               {descriptor.options.tabBarShowLabel === false ? null : (
-                <Text style={[styles.label, { color }]}>{label}</Text>
+                <Text style={[styles.label, { color, marginTop: settingsOverrides?.isStandard ? 0 : styles.label.marginTop }]}>{label}</Text>
               )}
               {descriptor.options.tabBarBadge ? (
-                <View style={styles.badge}><Text style={styles.badgeText}>{descriptor.options.tabBarBadge}</Text></View>
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}><Text style={styles.badgeText}>{descriptor.options.tabBarBadge}</Text></View>
               ) : null}
             </AnimatedTouchable>
           );

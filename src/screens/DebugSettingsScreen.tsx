@@ -11,6 +11,8 @@ import { Trash2, RefreshCw, Database, FileText } from 'lucide-react-native';
 export const DebugSettingsScreen: React.FC = () => {
     const settings = useSettings();
     const [verboseLogging, setVerboseLogging] = React.useState(false);
+    const [presetApplying, setPresetApplying] = React.useState(false);
+    const [advEnabled, setAdvEnabled] = React.useState(settings.enableAdvancedHeightControls);
 
     const clearAllData = async () => {
         Alert.alert(
@@ -128,6 +130,37 @@ export const DebugSettingsScreen: React.FC = () => {
         );
     };
 
+    const applyTabBarPreset = async (preset: 'compact' | 'default' | 'tall') => {
+        setPresetApplying(true);
+        try {
+            if (preset === 'compact') {
+                // compact but still enforce minimum dock height
+                await settings.setTabBarDockedHeight(92);
+                await settings.setTabBarHiddenHeight(100);
+            } else if (preset === 'default') {
+                await settings.setTabBarDockedHeight(92);
+                await settings.setTabBarHiddenHeight(100);
+            } else {
+                await settings.setTabBarDockedHeight(110);
+                await settings.setTabBarHiddenHeight(128);
+            }
+            Alert.alert('Applied', `Tab bar preset ‘${preset}’ applied`);
+        } catch (e) {
+            Alert.alert('Error', 'Failed to apply preset');
+        } finally {
+            setPresetApplying(false);
+        }
+    };
+
+    const forceTabBarStyle = async (style: 'floating' | 'standard') => {
+        try {
+            await settings.setTabBarStyle(style);
+            Alert.alert('Applied', `Tab bar style set to ${style}`);
+        } catch (e) {
+            Alert.alert('Error', 'Failed to set style');
+        }
+    };
+
     const deviceInfo = getDeviceInfo();
 
     return (
@@ -228,9 +261,46 @@ export const DebugSettingsScreen: React.FC = () => {
                             <Text style={styles.settingLabel}>Breath Cycles</Text>
                             <Text style={styles.settingValue}>{settings.groundingCycles}</Text>
                         </View>
+                        <View style={styles.settingItem}>
+                            <Text style={styles.settingLabel}>Advanced height controls</Text>
+                            <Text style={styles.settingValue}>{settings.enableAdvancedHeightControls ? 'On' : 'Off'}</Text>
+                        </View>
                         <TouchableOpacity style={styles.settingItem} onPress={() => { setVerboseLogging(v => !v); Alert.alert('Verbose Logging', `Verbose logging ${!verboseLogging ? 'enabled' : 'disabled'}`); }}>
                             <Text style={styles.settingLabel}>Verbose Logging</Text>
                             <Text style={[styles.settingValue, { color: verboseLogging ? colors.primary : colors.textSecondary }]}>{verboseLogging ? 'On' : 'Off'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Developer Toggles</Text>
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Enable advanced height controls</Text>
+                        <Switch value={settings.enableAdvancedHeightControls} onValueChange={v => settings.setEnableAdvancedHeightControls(v)} />
+                    </View>
+                </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Tab Bar Presets</Text>
+                    <Text style={styles.sectionDesc}>Quick presets for testing different bar heights</Text>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                        <TouchableOpacity style={styles.smallOption} onPress={() => applyTabBarPreset('compact')}>
+                            <Text style={styles.smallOptionText}>Compact</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.smallOption} onPress={() => applyTabBarPreset('default')}>
+                            <Text style={styles.smallOptionText}>Default</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.smallOption} onPress={() => applyTabBarPreset('tall')}>
+                            <Text style={styles.smallOptionText}>Tall</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={[styles.sectionTitle, { marginTop: spacing.md }]}>Force Tab Bar Style</Text>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                        <TouchableOpacity style={styles.smallOption} onPress={() => forceTabBarStyle('floating')}>
+                            <Text style={styles.smallOptionText}>Floating</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.smallOption} onPress={() => forceTabBarStyle('standard')}>
+                            <Text style={styles.smallOptionText}>Standard</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -359,5 +429,25 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: colors.text,
+    },
+    sectionDesc: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginBottom: spacing.md,
+    },
+    smallOption: {
+        paddingVertical: spacing.xs,
+        paddingHorizontal: spacing.md,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        marginRight: spacing.sm,
+    },
+    smallOptionText: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 14,
+        color: colors.textSecondary,
     },
 });

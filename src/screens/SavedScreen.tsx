@@ -17,7 +17,7 @@ export const SavedScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
     const { savedArticles } = useSavedArticles();
     const insets = useSafeAreaInsets();
-    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar, tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight } = useSettings();
 
     return (
         <View style={styles.container}>
@@ -33,7 +33,7 @@ export const SavedScreen: React.FC = () => {
                     )}
                     contentContainerStyle={[
                         styles.listContent,
-                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + (tabBarStyle === 'floating' ? (tabBarFloatingHeight || 64) : (tabBarDockedHeight || tabBarHeight)) + insets.bottom + 16 }
                     ]}
                 />
             ) : (

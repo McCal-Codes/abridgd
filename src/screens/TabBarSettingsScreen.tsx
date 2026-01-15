@@ -38,10 +38,44 @@ const getAvailableTabs = (layout: 'minimal' | 'comprehensive'): TabOption[] => {
 };
 
 export const TabBarSettingsScreen: React.FC = () => {
-    const { activeTabs, setActiveTabs, tabLayout, setTabLayout, tabBarStyle, setTabBarStyle, showTabLabels, setShowTabLabels, tabIconSize, setTabIconSize, tabBarBlur, setTabBarBlur, allowContentUnderTabBar, setAllowContentUnderTabBar, tabBadgeStyle, setTabBadgeStyle, tabIndicatorStyle, setTabIndicatorStyle } = useSettings();
+    const { activeTabs, setActiveTabs, tabLayout, setTabLayout, tabBarStyle, setTabBarStyle, showTabLabels, setShowTabLabels, tabIconSize, setTabIconSize, tabBarBlur, setTabBarBlur, allowContentUnderTabBar, setAllowContentUnderTabBar, tabBadgeStyle, setTabBadgeStyle, tabIndicatorStyle, setTabIndicatorStyle, tabBarDockedHeight, setTabBarDockedHeight, tabBarHiddenHeight, setTabBarHiddenHeight, tabBarFloatingHeight, setTabBarFloatingHeight, enableAdvancedHeightControls, dockedHeightStep, hiddenHeightStep, floatingHeightStep, setDockedHeightStep, setHiddenHeightStep, setFloatingHeightStep } = useSettings();
     const [selectedTabs, setSelectedTabs] = useState<string[]>(activeTabs);
 
     const AVAILABLE_TABS = getAvailableTabs(tabLayout);
+
+    const PreviewBar: React.FC = () => {
+        const { tabBarStyle, showTabLabels, tabIconSize, tabBadgeStyle, tabIndicatorStyle, tabBarDockedHeight } = useSettings();
+        const isStandardPreview = tabBarStyle === 'standard';
+        const height = isStandardPreview ? (tabBarDockedHeight || 92) : (tabBarFloatingHeight || 64);
+
+        const previewTabs = AVAILABLE_TABS.slice(0, 4);
+
+        return (
+            <View style={styles.previewWrapper}>
+                <Text style={styles.previewLabel}>Preview</Text>
+                <View
+                    style={[
+                        styles.previewCapsule,
+                        isStandardPreview ? styles.previewStandard : styles.previewFloating,
+                        { height },
+                    ]}
+                >
+                    <View style={styles.previewRow}>
+                        {previewTabs.map((t, i) => (
+                            <View key={t.id} style={styles.previewItem}>
+                                <View style={[styles.previewIcon, { width: tabIconSize, height: tabIconSize, borderRadius: tabIconSize / 2 }]}>
+                                    <Text style={styles.previewIconText}>{t.icon}</Text>
+                                </View>
+                                {showTabLabels ? <Text style={styles.previewItemLabel}>{t.label}</Text> : null}
+                                {tabBadgeStyle === 'count' && i === 1 ? <View style={styles.previewBadge}><Text style={styles.previewBadgeText}>3</Text></View> : null}
+                            </View>
+                        ))}
+                    </View>
+                    {tabIndicatorStyle !== 'none' ? <View style={[styles.previewIndicator, tabIndicatorStyle === 'underline' ? styles.previewIndicatorUnderline : styles.previewIndicatorBubble]} /> : null}
+                </View>
+            </View>
+        );
+    };
 
     // Sync with context when it changes
     useEffect(() => {
@@ -137,11 +171,17 @@ export const TabBarSettingsScreen: React.FC = () => {
                     <Text style={styles.sectionTitle}>Tab Bar Appearance</Text>
                     <Text style={styles.sectionDesc}>Fine-tune the look and behavior of the bottom tab bar.</Text>
 
+                    {/* Preview */}
+                    <PreviewBar />
+
                     <View style={styles.settingRow}>
                         <Text style={styles.settingLabel}>Style</Text>
                         <View style={styles.optionRow}>
                             <TouchableOpacity style={[styles.smallOption, tabBarStyle === 'floating' && styles.smallOptionSelected]} onPress={() => setTabBarStyle('floating')}>
                                 <Text style={[styles.smallOptionText, tabBarStyle === 'floating' && styles.smallOptionTextSelected]}>Floating</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.smallOption, tabBarStyle === 'compact' && styles.smallOptionSelected]} onPress={() => setTabBarStyle('compact')}>
+                                <Text style={[styles.smallOptionText, tabBarStyle === 'compact' && styles.smallOptionTextSelected]}>Compact</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.smallOption, tabBarStyle === 'standard' && styles.smallOptionSelected]} onPress={() => setTabBarStyle('standard')}>
                                 <Text style={[styles.smallOptionText, tabBarStyle === 'standard' && styles.smallOptionTextSelected]}>Standard</Text>
@@ -173,6 +213,81 @@ export const TabBarSettingsScreen: React.FC = () => {
                         <Text style={styles.settingLabel}>Background Blur</Text>
                         <Switch value={tabBarBlur} onValueChange={v => setTabBarBlur(v)} />
                     </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Docked Height</Text>
+                        <View style={styles.heightControlRow}>
+                            <TouchableOpacity style={styles.heightBtn} onPress={() => setTabBarDockedHeight(Math.max(92, (tabBarDockedHeight || 92) - (dockedHeightStep || 2)))}>
+                                <Text style={styles.heightBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.heightValue}>{tabBarDockedHeight || 92}px</Text>
+                            <TouchableOpacity style={styles.heightBtn} onPress={() => setTabBarDockedHeight((tabBarDockedHeight || 92) + (dockedHeightStep || 2))}>
+                                <Text style={styles.heightBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    {enableAdvancedHeightControls && (
+                        <View style={[styles.settingRow, { marginTop: spacing.xs }]}> 
+                            <Text style={styles.settingLabel}>Docked step</Text>
+                            <View style={styles.optionRow}>
+                                {[1,2,4].map(s => (
+                                    <TouchableOpacity key={`dock-step-${s}`} style={[styles.smallOption, dockedHeightStep === s && styles.smallOptionSelected]} onPress={() => setDockedHeightStep(s)}>
+                                        <Text style={[styles.smallOptionText, dockedHeightStep === s && styles.smallOptionTextSelected]}>{s}px</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Hidden/Collapsed Height</Text>
+                        <View style={styles.heightControlRow}>
+                            <TouchableOpacity style={styles.heightBtn} onPress={() => setTabBarHiddenHeight(Math.max((tabBarDockedHeight || 92), (tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8) - (hiddenHeightStep || 2)))}>
+                                <Text style={styles.heightBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.heightValue}>{tabBarHiddenHeight || ((tabBarDockedHeight || 92) + 8)}px</Text>
+                            <TouchableOpacity style={styles.heightBtn} onPress={() => setTabBarHiddenHeight((tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8) + (hiddenHeightStep || 2))}>
+                                <Text style={styles.heightBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    {enableAdvancedHeightControls && (
+                        <View style={[styles.settingRow, { marginTop: spacing.xs }]}> 
+                            <Text style={styles.settingLabel}>Hidden step</Text>
+                            <View style={styles.optionRow}>
+                                {[1,2,4].map(s => (
+                                    <TouchableOpacity key={`hidden-step-${s}`} style={[styles.smallOption, hiddenHeightStep === s && styles.smallOptionSelected]} onPress={() => setHiddenHeightStep(s)}>
+                                        <Text style={[styles.smallOptionText, hiddenHeightStep === s && styles.smallOptionTextSelected]}>{s}px</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Floating Height</Text>
+                        <View style={styles.heightControlRow}>
+                            <TouchableOpacity style={styles.heightBtn} onPress={() => setTabBarFloatingHeight(Math.max(48, (tabBarFloatingHeight || 64) - (floatingHeightStep || 2)))}>
+                                <Text style={styles.heightBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.heightValue}>{tabBarFloatingHeight || 64}px</Text>
+                            <TouchableOpacity style={styles.heightBtn} onPress={() => setTabBarFloatingHeight((tabBarFloatingHeight || 64) + (floatingHeightStep || 2))}>
+                                <Text style={styles.heightBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    {enableAdvancedHeightControls && (
+                        <View style={[styles.settingRow, { marginTop: spacing.xs }]}> 
+                            <Text style={styles.settingLabel}>Floating step</Text>
+                            <View style={styles.optionRow}>
+                                {[1,2,4].map(s => (
+                                    <TouchableOpacity key={`float-step-${s}`} style={[styles.smallOption, floatingHeightStep === s && styles.smallOptionSelected]} onPress={() => setFloatingHeightStep(s)}>
+                                        <Text style={[styles.smallOptionText, floatingHeightStep === s && styles.smallOptionTextSelected]}>{s}px</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
 
                     <View style={styles.settingRow}>
                         <Text style={styles.settingLabel}>Allow content under tab bar</Text>
@@ -484,5 +599,106 @@ const styles = StyleSheet.create({
     },
     smallOptionTextSelected: {
         color: colors.primary,
+    },
+    heightControlRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    heightBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    heightBtnText: {
+        fontSize: 20,
+        color: colors.text,
+    },
+    heightValue: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 14,
+        color: colors.text,
+        minWidth: 64,
+        textAlign: 'center',
+    },
+    previewWrapper: {
+        marginTop: spacing.md,
+        marginBottom: spacing.md,
+        alignItems: 'stretch',
+    },
+    previewLabel: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginBottom: spacing.sm,
+    },
+    previewCapsule: {
+        borderRadius: 28,
+        overflow: 'hidden',
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.md,
+    },
+    previewFloating: {
+        marginHorizontal: 16,
+    },
+    previewStandard: {
+        marginHorizontal: 0,
+    },
+    previewRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        width: '100%',
+    },
+    previewItem: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: spacing.xs,
+    },
+    previewIcon: {
+        backgroundColor: '#f2f4f7',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    previewIconText: {
+        fontSize: 12,
+    },
+    previewItemLabel: {
+        fontFamily: typography.fontFamily.sans,
+        fontSize: 11,
+        color: colors.textSecondary,
+        marginTop: spacing.xs,
+    },
+    previewBadge: {
+        position: 'absolute',
+        top: 6,
+        right: -6,
+        backgroundColor: '#ff3b30',
+        borderRadius: 8,
+        paddingHorizontal: 5,
+    },
+    previewBadgeText: {
+        color: '#fff',
+        fontSize: 10,
+    },
+    previewIndicator: {
+        position: 'absolute',
+        bottom: 6,
+        height: 4,
+        width: '30%',
+        borderRadius: 2,
+    },
+    previewIndicatorUnderline: {
+        backgroundColor: '#0a84ff',
+    },
+    previewIndicatorBubble: {
+        backgroundColor: '#e6f0ff',
     },
 });

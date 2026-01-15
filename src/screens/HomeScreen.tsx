@@ -24,7 +24,7 @@ export const HomeScreen: React.FC = () => {
 
     const { scrollY } = React.useContext(ScrollContext);
     const insets = useSafeAreaInsets();
-    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar } = useSettings();
+    const { tabBarHeight, tabBarBlur, allowContentUnderTabBar, tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight } = useSettings();
 
     // Define onScroll callback unconditionally to preserve hook order between renders
     const onScroll = React.useCallback(
@@ -61,7 +61,11 @@ export const HomeScreen: React.FC = () => {
                     )}
                     contentContainerStyle={[
                         styles.listContent,
-                        { paddingBottom: allowContentUnderTabBar ? spacing.lg + insets.bottom + 8 : spacing.lg + tabBarHeight + insets.bottom + 16 }
+                        {
+                            paddingBottom: allowContentUnderTabBar
+                                ? spacing.lg + insets.bottom + 8
+                                : spacing.lg + (tabBarStyle === 'floating' ? (tabBarFloatingHeight || 64) : (tabBarDockedHeight || tabBarHeight)) + insets.bottom + 16,
+                        },
                     ]}
                     refreshing={loading}
                     // wire scroll to the shared scrollY value so tab bar can animate
