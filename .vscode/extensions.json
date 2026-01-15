@@ -1,0 +1,30 @@
+{
+  "recommendations": [
+    // React Native & Expo
+    "msjsdiag.vscode-react-native",
+    "expo.vscode-expo-tools",
+    
+    // TypeScript & JavaScript
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    
+    // Editor Config
+    "editorconfig.editorconfig",
+    
+    // Testing
+    "orta.vscode-jest",
+    
+    // Git
+    "eamodio.gitlens",
+    
+    // Utilities
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    
+    // Markdown
+    "yzhang.markdown-all-in-one",
+    
+    // Icons
+    "vscode-icons-team.vscode-icons"
+  ]
+}
