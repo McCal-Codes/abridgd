@@ -22,6 +22,14 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 → Read [**Standards Governance Agent**](standards-governance-agent.md)
 *Roles, responsibilities, acceptance criteria, how to propose standards changes.*
 
+### I want to know repo policies for pushing and merging
+→ Read [**Push & Pull Request Policy**](../push-policy.md)
+*When to open PRs, branch naming, hotfix process, and agent rules.*
+
+### Agent runtime reference
+→ Read [**Agent Reference**](../agent-reference.md)
+*The authoritative instructions automation and agents must follow when working on this repo.*
+
 ### I want to automate EAS CLI tasks or CI
 → Read [**EAS Workflows**](../eas-workflows.md)
 *Guidance and example workflows to automate builds, submits, and updates via EAS.*
