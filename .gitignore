@@ -64,3 +64,4 @@ npm-cache/
 # Agent workflows (keep the directory but ignore generated files)
 .agent/workflows/*.log
 .agent/cache/
+ios/
