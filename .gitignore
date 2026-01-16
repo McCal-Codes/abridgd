@@ -65,3 +65,7 @@ npm-cache/
 .agent/workflows/*.log
 .agent/cache/
 ios/
+
+# Ignore VSCode heap snapshots
+vscode-profile-*.heapsnapshot
+*.heapsnapshot
