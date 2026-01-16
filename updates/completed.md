@@ -17,7 +17,7 @@ This file tracks all completed tasks for project transparency and historical ref
   - **Commit**: [TODO-001]
 
 - [x] **Rebranded App to "Abridgd"** — Updated display name and created branding standards
-  - **Changes**: 
+  - **Changes**:
     - app.json: displayName changed from "abridged" to "Abridgd"
     - Created docs/standards/branding.md documenting official naming convention
     - Updated all screens and component references

@@ -50,7 +50,7 @@ You've established a complete project tracking system for Abridgd with versioned
 ### v1.2.0 Sprint (Next Release)
 
 - **TODO-006** — Article sharing functionality
-- **TODO-007** — Search/filtering improvements  
+- **TODO-007** — Search/filtering improvements
 - **TODO-008** — Offline reading support
 
 See [updates/todo.md](./todo.md#-v12-0-next-release--enhanced-features--ux) for details.
@@ -70,10 +70,10 @@ See [updates/todo.md](./todo.md#-v12-0-next-release--enhanced-features--ux) for 
 
 ## 💡 Key Rules (Locked In)
 
-✅ **App Naming**: Always "Abridgd" (never "abridged")  
-✅ **Bundle IDs**: iOS = com.mccalmedia.abridged | Android = com.mccal.abridged  
-✅ **ios/android folders**: Excluded from git (.easignore + .gitignore)  
-✅ **Task Format**: `[TODO-XXX] | [vX.Y.Z] | Task Title`  
+✅ **App Naming**: Always "Abridgd" (never "abridged")
+✅ **Bundle IDs**: iOS = com.mccalmedia.abridged | Android = com.mccal.abridged
+✅ **ios/android folders**: Excluded from git (.easignore + .gitignore)
+✅ **Task Format**: `[TODO-XXX] | [vX.Y.Z] | Task Title`
 ✅ **On Completion**: Update ACHIEVED.md, CHANGELOG.md, commit with tag
 
 ---
@@ -119,7 +119,7 @@ See [updates/todo.md](./todo.md#-v12-0-next-release--enhanced-features--ux) for 
 
 ---
 
-**Last Updated**: January 16, 2026  
+**Last Updated**: January 16, 2026
 **Next Review**: After EAS build completes + TestFlight submission
 
 _Tip: Run any of these commands to continue:_

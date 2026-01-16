@@ -12,9 +12,9 @@
     "test:coverage": "jest --coverage",
     "build:ipa": "cd ios && bash ../scripts/build/build-ipa.sh",
     "build:ipa:quick": "cd ios && bash ../scripts/build/build-ipa-quick.sh",
-    "repo:health": "node scripts/audit/repo-health.js"
-    ,"eas:workflow:run": "eas workflow:run"
-    ,"lint:docs": "node docs/scripts/doc-lint.js"
+    "repo:health": "node scripts/audit/repo-health.js",
+    "eas:workflow:run": "eas workflow:run",
+    "lint:docs": "node docs/scripts/doc-lint.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
