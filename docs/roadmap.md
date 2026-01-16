@@ -1,5 +1,7 @@
 # Roadmap
 
+Last Updated: 2026-01-16
+
 ## Phase 1: MVP Shell (Current)
 - [x] Project Setup (Expo + TypeScript)
 - [x] Navigation Architecture (Tabs + Stack)

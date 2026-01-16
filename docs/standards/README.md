@@ -23,8 +23,12 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 *Roles, responsibilities, acceptance criteria, how to propose standards changes.*
 
 ### I'm building or changing the UI
-→ Read [**UI & Design Standards**](ui-design.md)
+→ Read [**UI & Design Standards**](design-standards.md)
 *Navigation, layout, visual hierarchy, dark mode, typography.*
+
+### I'm working with app branding or naming
+→ Read [**Branding Standards**](branding.md)
+*App name, display name, bundle identifiers, technical vs. user-facing naming conventions.*
 
 ### I need to write or run tests
 → Read [**Testing Baseline**](testing-baseline.md)
@@ -46,6 +50,7 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 |-----|---------|----------|
 | [Preflight](preflight.md) | Pre-change checklist | All developers |
 | [Afterflight](afterflight.md) | Pre-merge/release checklist | All developers, reviewers, release engineer |
+| [Branding Standards](branding.md) | App naming, display names, bundle IDs | All developers, product, marketing |
 | [Standards Governance Agent](standards-governance-agent.md) | How standards evolve | Tech lead, standards steward |
 | [Standards Drift Check](standards-drift-check.md) | CI automation and PR label enforcement | DevOps, tech lead |
 | [Testing Baseline](testing-baseline.md) | Jest test harness + baseline tests | All engineers, QA |

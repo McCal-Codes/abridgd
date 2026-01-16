@@ -1,5 +1,7 @@
 # Troubleshooting: Worklet Mismatch Error
 
+Last Updated: 2026-01-16
+
 ## The Error
 `[Worklets] Mismatch between JavaScript part and native part of Worklets...`
 

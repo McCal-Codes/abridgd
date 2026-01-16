@@ -1,5 +1,7 @@
 # ADR 0002: RSS Parsing and Content Extraction
 
+Last Updated: 2026-01-16
+
 **Date**: 2026-01-15  
 **Status**: Accepted  
 **Author**: Engineering Lead

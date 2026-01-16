@@ -18,11 +18,7 @@ xcuserdata
 *.moved-aside
 DerivedData
 *.hmap
-# IPA Build Artifacts
-ipas/developer/versions/**/*.ipa
-ipas/release_candidate/versions/**/*.ipa
-ipas/release/versions/**/*.ipa
-*.xcarchive
+*.ipa
 *.xcuserstate
 project.xcworkspace
 .xcode.env.local

@@ -1,0 +1,10 @@
+# Ignore build artifacts
+ios/build/
+ios/Pods/Pods.xcodeproj
+ios/**/*.xcworkspace/xcuserdata/
+
+# Ignore local env files
+.xcode.env.local
+
+# Ignore test/debug artifacts
+*.heapsnapshot

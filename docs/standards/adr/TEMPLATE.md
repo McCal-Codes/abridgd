@@ -1,5 +1,7 @@
 # ADR-XXXX: [Short Title]
 
+Last Updated: 2026-01-16
+
 **Date:** YYYY-MM-DD
 **Status:** Proposed | Accepted | Deprecated | Superseded
 **Deciders:** [Name(s)]

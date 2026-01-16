@@ -1,5 +1,7 @@
 # Deploying to TestFlight (iOS)
 
+Last Updated: 2026-01-16
+
 To send the app to Apple TestFlight, we use **EAS Build** (Expo Application Services). This allows the build to happen in the cloud, so you don't need Xcode installed locally.
 
 ## Prerequisites

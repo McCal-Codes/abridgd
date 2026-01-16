@@ -12,10 +12,10 @@ def ccache_enabled?(podfile_properties)
   podfile_properties['apple.ccacheEnabled'] == 'true'
 end
 
-ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
+ENV['RCT_NEW_ARCH_ENABLED'] ||= '0' if podfile_properties['newArchEnabled'] == 'false'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] ||= podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
-ENV['RCT_USE_RN_DEP'] = podfile_properties['ios.buildReactNativeFromSource'] == 'true' ? '0' : '1'
-ENV['RCT_USE_PREBUILT_RNCORE'] = '0' # Disable prebuilt core to fix missing C++ symbols in New Arch
+ENV['RCT_USE_RN_DEP'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true' && podfile_properties['newArchEnabled'] != 'false'
+ENV['RCT_USE_PREBUILT_RNCORE'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true' && podfile_properties['newArchEnabled'] != 'false'
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
@@ -52,34 +52,12 @@ target 'abridged' do
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
 
-    post_install do |installer|
-      react_native_post_install(
-        installer,
-        config[:reactNativePath],
-        :mac_catalyst_enabled => false,
-        :ccache_enabled => ccache_enabled?(podfile_properties),
-      )
-
-      # Fix for spaces in path and missing codegen headers across all targets
-      installer.pods_project.targets.each do |target|
-        target.build_configurations.each do |config|
-          # Ensure generated ReactCodegen headers are found
-          config.build_settings['HEADER_SEARCH_PATHS'] ||= '$(inherited)'
-          # We add both the relative-to-pods-root and the inherited to be safe
-          unless config.build_settings['HEADER_SEARCH_PATHS'].include?('ReactCodegen')
-            config.build_settings['HEADER_SEARCH_PATHS'] << ' "$(PODS_ROOT)/Headers/Public/ReactCodegen"'
-          end
-        end
-
-        # Patch EXConstants script to handle spaces in path
-        if target.name == 'EXConstants'
-          target.shell_script_build_phases.each do |phase|
-            if phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
-              # Use single quotes for the bash -c argument to safely handle spaces in the path
-              phase.shell_script = "bash -l -c '\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\"'"
-            end
-          end
-        end
-      end
-    end
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      :ccache_enabled => ccache_enabled?(podfile_properties),
+    )
+  end
 end

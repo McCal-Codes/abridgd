@@ -1,5 +1,7 @@
 # Architecture
 
+Last Updated: 2026-01-16
+
 ## Overview
 Abridged is built as a **TypeScript Expo (React Native)** application. It prioritizes native performance, strict typing, and a modular component structure.
 

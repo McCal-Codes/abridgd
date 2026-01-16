@@ -1,5 +1,7 @@
 # RSVP Implementation Notes
 
+Last Updated: 2026-01-16
+
 ## Concept
 RSVP (Rapid Serial Visual Presentation) is a method of displaying information where text is displayed word-by-word at a fixed focal point.
 

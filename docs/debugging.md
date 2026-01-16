@@ -1,5 +1,7 @@
 # Debugging Guide
 
+Last Updated: 2026-01-16
+
 This guide provides instructions on how to debug the Abridged application during development.
 
 ## Expo Dev Menu

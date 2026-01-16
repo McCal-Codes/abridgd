@@ -76,6 +76,9 @@ interface SettingsContextType {
   setTabBadgeStyle: (style: "dot" | "count" | "none") => Promise<void>;
   tabIndicatorStyle: "underline" | "bubble" | "none";
   setTabIndicatorStyle: (style: "underline" | "bubble" | "none") => Promise<void>;
+  // Modal presentation preference used by debug/settings UI: 'auto' lets screens decide
+  modalPresentationStyle: "auto" | "center" | "bottom";
+  setModalPresentationStyle: (style: "auto" | "center" | "bottom") => Promise<void>;
 }
 
 // Provide a safe default context so components can render in tests without a provider
@@ -148,6 +151,8 @@ const defaultSettingsContext: SettingsContextType = {
   setTabBadgeStyle: async (_s: "dot" | "count" | "none") => {},
   tabIndicatorStyle: "bubble",
   setTabIndicatorStyle: async (_s: "underline" | "bubble" | "none") => {},
+  modalPresentationStyle: "auto",
+  setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},
 };
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
@@ -198,6 +203,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [tabIndicatorStyle, setTabIndicatorStyleState] = useState<"underline" | "bubble" | "none">(
     "bubble"
   );
+  const [modalPresentationStyle, setModalPresentationStyleState] = useState<
+    "auto" | "center" | "bottom"
+  >("auto");
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -239,6 +247,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedAllowUnder = await AsyncStorage.getItem("allowContentUnderTabBar");
       const savedBadgeStyle = await AsyncStorage.getItem("tabBadgeStyle");
       const savedIndicatorStyle = await AsyncStorage.getItem("tabIndicatorStyle");
+      const savedModalPresentation = await AsyncStorage.getItem("modalPresentationStyle");
 
       if (onboarding === "true") setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -314,6 +323,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setTabBadgeStyleState(savedBadgeStyle as any);
       if (savedIndicatorStyle && ["underline", "bubble", "none"].includes(savedIndicatorStyle))
         setTabIndicatorStyleState(savedIndicatorStyle as any);
+      if (savedModalPresentation && ["auto", "center", "bottom"].includes(savedModalPresentation))
+        setModalPresentationStyleState(savedModalPresentation as any);
 
       // Load tab layout preference
       const savedTabLayout = await AsyncStorage.getItem("tabLayout");
@@ -630,6 +641,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setModalPresentationStyle = async (style: "auto" | "center" | "bottom") => {
+    try {
+      await AsyncStorage.setItem("modalPresentationStyle", style);
+      setModalPresentationStyleState(style);
+    } catch (e) {
+      console.error("Failed to save modal presentation style", e);
+    }
+  };
+
   const setTabLayout = async (layout: "minimal" | "comprehensive") => {
     try {
       await AsyncStorage.setItem("tabLayout", layout);
@@ -715,6 +735,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         tabBadgeStyle,
         setTabBadgeStyle,
         tabIndicatorStyle,
+        modalPresentationStyle,
+        setModalPresentationStyle,
         setTabIndicatorStyle,
       }}
     >

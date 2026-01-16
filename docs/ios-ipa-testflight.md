@@ -1,5 +1,7 @@
 # Building IPAs and Uploading to TestFlight
 
+Last Updated: 2026-01-16
+
 This guide shows how to build an IPA locally (Xcode) and upload to TestFlight, plus how to use the project's helper script and EAS Build. It also covers upload options, common issues, and tips.
 
 ## Quick options overview

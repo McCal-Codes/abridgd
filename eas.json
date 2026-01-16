@@ -27,7 +27,15 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "buildConfiguration": "Release",
+        "cache": {
+          "key": "abridged-ios-cache-v1",
+          "cacheDefaultPaths": true,
+          "customPaths": ["ios/Pods"]
+        }
+      }
     }
   },
   "submit": {

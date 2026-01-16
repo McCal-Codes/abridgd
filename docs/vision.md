@@ -1,5 +1,7 @@
 # Vision: Abridged
 
+Last Updated: 2026-01-16
+
 ## The Problem
 
 Local news consumption is broken. It's either overwhelming (infinite feeds), distracting (pop-ups/ads), or inaccessible (paywalls). Users want to stay informed about their community without the mental tax of modern web engagement.

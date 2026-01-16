@@ -1,5 +1,7 @@
 # Troubleshooting: specific QR Code Issues on iOS
 
+Last Updated: 2026-01-16
+
 If the default **iOS Camera App** says "No usable data found", it means it cannot verify the `exp://` link format or the QR code in the terminal is distorted.
 
 ## The Fix: Use the Expo Go Scanner
