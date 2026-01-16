@@ -7,7 +7,7 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { useSettings } from '../context/SettingsContext';
-import { BookOpen, Newspaper, Palette, Rss, Layout, Bug, ChevronRight } from 'lucide-react-native';
+import { BookOpen, Newspaper, Palette, Rss, Layout, Bug, Sparkles, ChevronRight } from 'lucide-react-native';
 
 type SettingsNavigationProp = NativeStackNavigationProp<any>;
 
@@ -23,6 +23,12 @@ export const SettingsScreen: React.FC = () => {
     const { resetOnboarding } = useSettings();
 
     const menuItems: SettingsMenuItem[] = [
+        {
+            title: 'What\'s New',
+            description: 'See the latest features and updates',
+            icon: <Sparkles size={24} color={colors.primary} />,
+            screen: 'WhatsNew',
+        },
         {
             title: 'Reading Features',
             description: 'Reader mode, AI summarization, grounding',

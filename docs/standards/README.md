@@ -22,6 +22,10 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 → Read [**Standards Governance Agent**](standards-governance-agent.md)
 *Roles, responsibilities, acceptance criteria, how to propose standards changes.*
 
+### I want to automate EAS CLI tasks or CI
+→ Read [**EAS Workflows**](../eas-workflows.md)
+*Guidance and example workflows to automate builds, submits, and updates via EAS.*
+
 ### I'm building or changing the UI
 → Read [**UI & Design Standards**](design-standards.md)
 *Navigation, layout, visual hierarchy, dark mode, typography.*
