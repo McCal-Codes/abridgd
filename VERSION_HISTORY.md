@@ -4,6 +4,50 @@ This document tracks all updates, features, and fixes for the Abridged app.
 
 ---
 
+## [1.4.0] - Planned
+### Core Completions & Polish
+- Persistent saved articles storage (AsyncStorage integration)
+- Pull-to-refresh on all feed screens (Home, Sections, Saved)
+- Share article functionality with headline, link, and optional summary
+- Search and filter for saved articles (by headline, source, category)
+- Professional empty state designs for all scenarios
+
+### Pre-Launch Essentials
+- Privacy Policy and Terms of Service pages
+- In-app feedback mechanism for beta testers
+- Sentry crash reporting fully configured
+- App Store listing optimization
+
+### UX Enhancements
+- iOS 26 Demo screen with proper navigation header
+- Enhanced onboarding with progressive RSVP speed training (150→300 WPM)
+- Improved focus point explanation with visual aids
+- Interactive practice exercises for RSVP reading
+- Offline content indicator badges
+
+### Profiles & Community Features
+- Active Profile tab in navigation bar
+- Community tab with Pittsburgh-area local resources:
+  - Food banks and mutual aid organizations
+  - Farmers markets and community events
+  - Curated protest/event listings (opt-in)
+  - Submit-a-resource form (moderated)
+- Profile screen showing reading stats and account info
+- Multi-profile support foundation
+
+### Advanced Customization
+- Global animation toggle (enable/disable all animations)
+- Reduce Motion preference (system setting respect + override)
+- Animation speed controls (0.5× to 2× speed)
+- Per-component animation settings (ZoomModal, BlurSheet, LiquidTabBar)
+
+### Additional Features
+- Offline reading support with article caching
+- Advanced article filtering (by category, date, source)
+- App Store Connect submission preparation
+- Comprehensive accessibility audit (VoiceOver, Dynamic Type, color contrast)
+- Performance optimization pass (memory, load times, animation smoothness)
+
 ## [1.2.0] - 2026-01-18
 ### Experimental Features & Settings Enhancement
 - Added experimental iOS 26 navbar option with enhanced glass morphism effects
@@ -30,6 +74,29 @@ This document tracks all updates, features, and fixes for the Abridged app.
 - Created comprehensive iOS 26 documentation (4 docs)
 - Organized documentation with centralized README
 - Updated all project documentation to reflect current features
+
+### Content & Data
+- Real RSS integration from Pittsburgh news sources (WTAE, CBS, WPXI, TribLive, Public Source, Post-Gazette, and more)
+- Full article fetching service for truncated RSS feeds with source-specific parsers
+- HTML content parser for images, captions, and structured content
+- AI summarization service using Perplexity API (optional, with graceful fallback)
+- Sensitive content detection with automatic grounding mode prompts
+
+### Reading Features & Settings
+- RSVP Reader with configurable speeds (200-500 WPM), smart word timing, and auto-save on completion
+- Grounding mode with guided breathing exercises (customizable animations, durations, colors)
+- AI article summarization toggle
+- Auto-save articles when finishing RSVP reading
+- Comprehensive settings system across 6 dedicated screens:
+  - Reading Settings (RSVP, grounding, summarization, speed, font size)
+  - Digest Settings (summary modes, timing, notifications)
+  - Customization Settings (colors, fonts, animations, grounding)
+  - Sources Settings (RSS feed management)
+  - Tab Bar Settings (layout switching, tab reordering)
+  - Debug Settings (data management, developer tools)
+- Tab bar customization with add/remove/reorder capabilities
+- Profile system structure for future multi-user support
+- Comprehensive error handling with user-friendly messages
 
 ## [1.0.0] - 2026-01-15
 - Initial engineering standards document published
