@@ -30,8 +30,14 @@ const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
 export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const insets = useSafeAreaInsets();
   const { scrollY } = React.useContext(ScrollContext);
-  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight, tabBarFloatingHeight, experimentalIOS26NavBar } =
-    useSettings();
+  const {
+    tabBarBlur,
+    tabBarStyle,
+    tabBarDockedHeight,
+    tabBarHiddenHeight,
+    tabBarFloatingHeight,
+    experimentalIOS26NavBar,
+  } = useSettings();
   const isStandard = tabBarStyle === "standard";
 
   // animate translateY and opacity from the shared scrollY value
@@ -54,7 +60,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const blurOpacity = tabBarBlur ? blurOpacityAnimated : 1;
 
   // Enhanced blur intensity for experimental iOS 26 navbar effect
-  const blurIntensity = experimentalIOS26NavBar && tabBarBlur ? 80 : (tabBarBlur ? 60 : 0);
+  const blurIntensity = experimentalIOS26NavBar && tabBarBlur ? 80 : tabBarBlur ? 60 : 0;
 
   // allow the visual height of the tab bar to change as it is docked/hidden
   // (normalHeight/hiddenHeight already computed above)

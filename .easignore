@@ -1,10 +1,44 @@
 # Ignore build artifacts
 ios/build/
-ios/Pods/Pods.xcodeproj
+ios/Pods/
 ios/**/*.xcworkspace/xcuserdata/
+android/build/
+android/app/build/
+android/.gradle/
 
 # Ignore local env files
 .xcode.env.local
+.env
+.env.*
+.DS_Store
+
+# VCS & editor metadata
+.git/
+.github/
+.vscode/
+.idea/
+
+# Package manager noise
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Expo local directories
+.expo/
+.expo-shared/
+.eas/
+
+# Large, non-essential content
+docs/**
+Devices/**
+packages/apks/
+packages/ipas/
+vscode-profile-*.heapsnapshot
 
 # Ignore test/debug artifacts
 *.heapsnapshot
+**/__tests__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+scripts/debug/**
