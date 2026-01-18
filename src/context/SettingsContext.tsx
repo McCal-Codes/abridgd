@@ -81,6 +81,9 @@ interface SettingsContextType {
   // Modal presentation preference used by debug/settings UI: 'auto' lets screens decide
   modalPresentationStyle: "auto" | "center" | "bottom";
   setModalPresentationStyle: (style: "auto" | "center" | "bottom") => Promise<void>;
+  // Experimental features
+  experimentalIOS26NavBar: boolean;
+  setExperimentalIOS26NavBar: (enabled: boolean) => Promise<void>;
 }
 
 // Provide a safe default context so components can render in tests without a provider
@@ -156,8 +159,8 @@ const defaultSettingsContext: SettingsContextType = {
   tabIndicatorStyle: "bubble",
   setTabIndicatorStyle: async (_s: "underline" | "bubble" | "none") => {},
   modalPresentationStyle: "auto",
-  setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},
-};
+  setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},  experimentalIOS26NavBar: false,
+  setExperimentalIOS26NavBar: async (_b: boolean) => {},};
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
 
@@ -211,6 +214,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [modalPresentationStyle, setModalPresentationStyleState] = useState<
     "auto" | "center" | "bottom"
   >("auto");
+  const [experimentalIOS26NavBar, setExperimentalIOS26NavBarState] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -336,6 +340,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setTabIndicatorStyleState(savedIndicatorStyle as any);
       if (savedModalPresentation && ["auto", "center", "bottom"].includes(savedModalPresentation))
         setModalPresentationStyleState(savedModalPresentation as any);
+
+      // Load experimental settings
+      const savedExperimentalIOS26 = await AsyncStorage.getItem("experimentalIOS26NavBar");
+      if (savedExperimentalIOS26 !== null) setExperimentalIOS26NavBarState(savedExperimentalIOS26 === "true");
 
       // Load tab layout preference
       const savedTabLayout = await AsyncStorage.getItem("tabLayout");
@@ -686,6 +694,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setExperimentalIOS26NavBar = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("experimentalIOS26NavBar", enabled.toString());
+      setExperimentalIOS26NavBarState(enabled);
+    } catch (e) {
+      console.error("Failed to save experimental iOS 26 navbar setting", e);
+    }
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -760,6 +777,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         modalPresentationStyle,
         setModalPresentationStyle,
         setTabIndicatorStyle,
+        experimentalIOS26NavBar,
+        setExperimentalIOS26NavBar,
       }}
     >
       {children}

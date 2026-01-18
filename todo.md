@@ -39,6 +39,14 @@
 - [ ] **Error Handling**: Improve error recovery for network issues
 - [ ] **Loading States**: Refine loading state animations/feedback
 - [x] **Haptic Feedback**: Add haptic feedback for key interactions (implemented with expo-haptics)
+- [ ] **Fine-Tune Grounding Mode Classification**: Improve when grounding mode prompts appear
+    - [ ] Create sensitivity classifier utility to auto-detect sensitive keywords/topics in headlines and content
+    - [ ] Add sensitivity level gradations (none, low, medium, high) instead of binary sensitive flag
+    - [ ] Add topic tags (violence, tragedy, health, politics, accidents, etc.) for granular categorization
+    - [ ] Create grounding trigger settings UI so users can customize which levels/topics prompt grounding
+    - [ ] Implement smart detection in RssService to automatically classify articles
+    - [ ] Update ArticleScreen to use new sensitivity levels and topic-based triggers
+    - Consider ML-based detection vs keyword-based patterns
 
 ### Technical Improvements
 - [ ] **Accessibility Audit**: VoiceOver, Dynamic Type, color contrast compliance

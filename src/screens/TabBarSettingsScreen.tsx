@@ -80,6 +80,8 @@ export const TabBarSettingsScreen: React.FC = () => {
     setDockedHeightStep,
     setHiddenHeightStep,
     setFloatingHeightStep,
+    experimentalIOS26NavBar,
+    setExperimentalIOS26NavBar,
   } = useSettings();
   const [selectedTabs, setSelectedTabs] = useState<string[]>(activeTabs);
   const insets = useSafeAreaInsets();
@@ -509,6 +511,14 @@ export const TabBarSettingsScreen: React.FC = () => {
           <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>Background Blur</Text>
             <Switch value={tabBarBlur} onValueChange={(v) => setTabBarBlur(v)} />
+          </View>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>
+              Experimental iOS 26 Navbar
+              <Text style={styles.betaBadge}> BETA</Text>
+            </Text>
+            <Switch value={experimentalIOS26NavBar} onValueChange={(v) => setExperimentalIOS26NavBar(v)} />
           </View>
 
           <View style={styles.settingRow}>
@@ -1066,6 +1076,16 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
     color: colors.text,
+  },
+  betaBadge: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    backgroundColor: "#FFE0E0",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
   },
   optionRow: {
     flexDirection: "row",

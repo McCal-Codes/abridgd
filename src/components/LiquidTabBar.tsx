@@ -30,7 +30,7 @@ const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
 export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const insets = useSafeAreaInsets();
   const { scrollY } = React.useContext(ScrollContext);
-  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight, tabBarFloatingHeight } =
+  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight, tabBarFloatingHeight, experimentalIOS26NavBar } =
     useSettings();
   const isStandard = tabBarStyle === "standard";
 
@@ -53,6 +53,9 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   });
   const blurOpacity = tabBarBlur ? blurOpacityAnimated : 1;
 
+  // Enhanced blur intensity for experimental iOS 26 navbar effect
+  const blurIntensity = experimentalIOS26NavBar && tabBarBlur ? 80 : (tabBarBlur ? 60 : 0);
+
   // allow the visual height of the tab bar to change as it is docked/hidden
   // (normalHeight/hiddenHeight already computed above)
 
@@ -72,13 +75,17 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   return (
     <Animated.View style={containerStyle} pointerEvents="box-none">
       <AnimatedBlur
-        intensity={tabBarBlur ? 60 : 0}
+        intensity={blurIntensity}
         style={[
           styles.blur,
           {
             borderRadius: isStandard ? 0 : 32,
             opacity: typeof blurOpacity === "number" ? blurOpacity : blurOpacity,
-            backgroundColor: isStandard ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.75)",
+            backgroundColor: experimentalIOS26NavBar
+              ? "rgba(255, 255, 255, 0.95)"
+              : isStandard
+                ? "rgba(255, 255, 255, 0.85)"
+                : "rgba(255, 255, 255, 0.75)",
           },
         ]}
         // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
