@@ -1,17 +1,26 @@
-import React from 'react';
-import { Animated, StyleSheet, View, Platform, TouchableOpacity, Text, LayoutChangeEvent } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useSettings } from '../context/SettingsContext';
-import { colors } from '../theme/colors';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScrollContext } from '../context/ScrollContext';
+import React from "react";
+import {
+  Animated,
+  StyleSheet,
+  View,
+  Platform,
+  TouchableOpacity,
+  Text,
+  LayoutChangeEvent,
+} from "react-native";
+import * as Haptics from "expo-haptics";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { useSettings } from "../context/SettingsContext";
+import { colors } from "../theme/colors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollContext } from "../context/ScrollContext";
 
 let BlurView: any = null;
 try {
   // optional dependency; fall back gracefully if not available
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  BlurView = require('expo-blur').BlurView;
+  BlurView = require("expo-blur").BlurView;
 } catch (e) {
   BlurView = null;
 }
@@ -21,15 +30,16 @@ const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
 export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const insets = useSafeAreaInsets();
   const { scrollY } = React.useContext(ScrollContext);
-  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight, tabBarFloatingHeight } = useSettings();
-  const isStandard = tabBarStyle === 'standard';
+  const { tabBarBlur, tabBarStyle, tabBarDockedHeight, tabBarHiddenHeight, tabBarFloatingHeight } =
+    useSettings();
+  const isStandard = tabBarStyle === "standard";
 
   // animate translateY and opacity from the shared scrollY value
   // compute base heights: standard (docked) has enforced minimum; floating capsule may be thinner
   const dockedHeight = Math.max(92, tabBarDockedHeight || 92);
   const floatingHeight = Math.max(48, tabBarFloatingHeight || 64);
   const normalHeight = isStandard ? dockedHeight : floatingHeight;
-  const hiddenHeight = Math.max(dockedHeight, tabBarHiddenHeight || (dockedHeight + 8));
+  const hiddenHeight = Math.max(dockedHeight, tabBarHiddenHeight || dockedHeight + 8);
 
   // Keep the tab bar fully visible at all times (do not allow it to be cut off)
   // Use a static zero translate so scrolling does not move the bar offscreen.
@@ -39,7 +49,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const blurOpacityAnimated = scrollY.interpolate({
     inputRange: [0, 80],
     outputRange: [1, 0.7],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
   const blurOpacity = tabBarBlur ? blurOpacityAnimated : 1;
 
@@ -54,34 +64,34 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
       left: isStandard ? 0 : 16,
       right: isStandard ? 0 : 16,
       // Floating style should sit above the safe area rather than flush to bottom
-      bottom: isStandard ? 0 : (insets.bottom + 12),
+      bottom: isStandard ? 0 : insets.bottom + 12,
       transform: [{ translateY }],
     },
   ];
 
-
   return (
     <Animated.View style={containerStyle} pointerEvents="box-none">
       <AnimatedBlur
-        intensity={tabBarBlur ? 50 : 0}
+        intensity={tabBarBlur ? 60 : 0}
         style={[
           styles.blur,
           {
             borderRadius: isStandard ? 0 : 32,
-            opacity: typeof blurOpacity === 'number' ? blurOpacity : blurOpacity,
-            backgroundColor: 'transparent'
-          }
+            opacity: typeof blurOpacity === "number" ? blurOpacity : blurOpacity,
+            backgroundColor: isStandard ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.75)",
+          },
         ]}
         // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
-        tint={Platform.OS === 'ios' ? 'default' : 'light'}
+        tint={Platform.OS === "ios" ? "light" : "light"}
       >
-        {/* Gradient background (75% opacity) placed under content */}
+        {/* Glass morphism background with subtle gradient */}
         <View style={styles.gradientWrapper} pointerEvents="none">
           <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
             <Defs>
-              <LinearGradient id="tabGrad" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0%" stopColor="rgba(255,255,255,0.75)" />
-                <Stop offset="100%" stopColor="rgba(245,245,247,0.75)" />
+              <LinearGradient id="tabGrad" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
+                <Stop offset="50%" stopColor="rgba(245,245,247,0.6)" />
+                <Stop offset="100%" stopColor="rgba(250,250,252,0.5)" />
               </LinearGradient>
             </Defs>
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#tabGrad)" />
@@ -94,7 +104,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
             {
               height: normalHeight,
               // center content vertically when in standard (docked) mode
-              justifyContent: isStandard ? 'center' : styles.inner.justifyContent,
+              justifyContent: isStandard ? "center" : styles.inner.justifyContent,
               // floating: small bottom padding so capsule visually floats; standard: include safe area but keep centered
               paddingBottom: isStandard ? insets.bottom : 8,
               paddingTop: isStandard ? 0 : styles.inner.paddingTop,
@@ -117,7 +127,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     right: 16,
     // initial placement uses safe area addition in runtime
@@ -125,10 +135,10 @@ const styles = StyleSheet.create({
   },
   blur: {
     borderRadius: 32,
-    overflow: 'hidden',
+    overflow: "hidden",
     // Less transparent so the capsule reads as a solid surface while still using blur
-    backgroundColor: 'transparent',
-    shadowColor: '#000',
+    backgroundColor: "transparent",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -142,18 +152,18 @@ const styles = StyleSheet.create({
     minHeight: 49,
     paddingTop: 4,
     paddingBottom: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   tabButton: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 4,
   },
   label: {
@@ -161,30 +171,30 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: 6,
     right: 22,
-    backgroundColor: '#ff3b30',
+    backgroundColor: "#ff3b30",
     borderRadius: 8,
     paddingHorizontal: 5,
     paddingVertical: 1,
     minWidth: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   badgeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 10,
   },
   indicator: {
-    position: 'absolute',
+    position: "absolute",
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#0a84ff',
+    backgroundColor: "#0a84ff",
     // bring indicator slightly closer to the bottom of the capsule
     bottom: 6,
     left: 16,
-  }
+  },
 });
 
 export default LiquidTabBar;
@@ -199,7 +209,12 @@ type IndicatorProps = {
   settingsOverrides?: any;
 };
 
-const AnimatedIndicator: React.FC<IndicatorProps> = ({ state, descriptors, navigation, settingsOverrides }) => {
+const AnimatedIndicator: React.FC<IndicatorProps> = ({
+  state,
+  descriptors,
+  navigation,
+  settingsOverrides,
+}) => {
   const routes = state.routes;
   const count = routes.length;
   const containerWidth = React.useRef(0);
@@ -221,23 +236,28 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({ state, descriptors, navig
   if (count > 1) {
     translateX = active.interpolate({
       inputRange: routes.map((_: any, i: number) => i),
-      outputRange: routes.map((_: any, i: number) => (tabWidth * i) + (tabWidth / 2) - 20),
-      extrapolate: 'clamp',
+      outputRange: routes.map((_: any, i: number) => tabWidth * i + tabWidth / 2 - 20),
+      extrapolate: "clamp",
     });
   } else {
     translateX = active.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
   }
 
   return (
-    <View onLayout={onLayout} style={{ width: '100%' }}>
+    <View onLayout={onLayout} style={{ width: "100%" }}>
       {/* indicator */}
-      <Animated.View style={[styles.indicator, { left: settingsOverrides?.isStandard ? 0 : 16, transform: [{ translateX }] }]} />
+      <Animated.View
+        style={[
+          styles.indicator,
+          { left: settingsOverrides?.isStandard ? 0 : 16, transform: [{ translateX }] },
+        ]}
+      />
       <View style={styles.row}>
         {routes.map((route: any, idx: number) => {
           const descriptor = descriptors[route.key];
           const focused = state.index === idx;
           const activeTint = descriptor.options.tabBarActiveTintColor || colors.primary;
-          const inactiveTint = descriptor.options.tabBarInactiveTintColor || '#8e8e93';
+          const inactiveTint = descriptor.options.tabBarInactiveTintColor || "#8e8e93";
           const color = focused ? activeTint : inactiveTint;
           const IconRenderer = (descriptor.options.tabBarIcon as any) || null;
           const label = descriptor.options.title ?? route.name;
@@ -245,18 +265,37 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({ state, descriptors, navig
           return (
             <AnimatedTouchable
               key={route.key}
-              onPress={() => navigation.navigate(route.name)}
+              onPress={async () => {
+                try {
+                  await Haptics.selectionAsync();
+                } catch {}
+                navigation.navigate(route.name);
+              }}
               style={styles.tabButton}
               activeOpacity={0.75}
             >
               <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
-                {IconRenderer ? IconRenderer({ color, size: descriptor.options.tabBarIconSize || 25, focused }) : null}
+                {IconRenderer
+                  ? IconRenderer({ color, size: descriptor.options.tabBarIconSize || 25, focused })
+                  : null}
               </Animated.View>
               {descriptor.options.tabBarShowLabel === false ? null : (
-                <Text style={[styles.label, { color, marginTop: settingsOverrides?.isStandard ? 0 : styles.label.marginTop }]}>{label}</Text>
+                <Text
+                  style={[
+                    styles.label,
+                    {
+                      color,
+                      marginTop: settingsOverrides?.isStandard ? 0 : styles.label.marginTop,
+                    },
+                  ]}
+                >
+                  {label}
+                </Text>
               )}
               {descriptor.options.tabBarBadge ? (
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}><Text style={styles.badgeText}>{descriptor.options.tabBarBadge}</Text></View>
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.badgeText}>{descriptor.options.tabBarBadge}</Text>
+                </View>
               ) : null}
             </AnimatedTouchable>
           );

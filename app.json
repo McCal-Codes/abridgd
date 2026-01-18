@@ -4,6 +4,7 @@
     "slug": "abridged",
     "scheme": "abridged",
     "version": "1.0.0",
+    "subtitle": "News abridged to you",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

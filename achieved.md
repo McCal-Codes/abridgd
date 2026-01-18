@@ -23,3 +23,35 @@
     - Centralized source code in `src/`.
     - Organized scripts into active `scripts/` and `_archive/`.
     - Removed redundant directories.
+
+## Phase 2: iOS 26 UI & Polish (Completed 2026-01-18)
+- [x] **iOS 26 UI Component System**:
+    - GlassButton with prominence styles (standard, tinted, filled, destructive).
+    - NavigationHeader with subtitle support.
+    - BottomToolbar with semantic placement.
+    - ZoomModal with match geometry transitions.
+    - BlurSheet with dynamic transparency.
+- [x] **Theme System**:
+    - ThemeContext for centralized theme management.
+    - Automatic light/dark mode switching.
+    - Colorblind-friendly cyan accent colors.
+- [x] **Gesture Controls**:
+    - Swipe right to go back (ArticleScreen).
+    - Swipe left to save/unsave articles.
+    - Haptic feedback on gesture completion.
+- [x] **Enhanced Components**:
+    - LiquidTabBar with iOS 26 glass morphism.
+    - Improved blur effects and gradients.
+- [x] **RSVP Reader**:
+    - Abridged Mode implementation.
+    - Speed reading with configurable WPM.
+    - Dark mode optimized styling.
+- [x] **Comprehensive Documentation**:
+    - iOS 26 component documentation (4 files).
+    - Organized docs directory with README.
+    - Updated CHANGELOG and VERSION_HISTORY.
+    - Agent-ready documentation standards.
+- [x] **Local Storage**:
+    - AsyncStorage for saved articles.
+    - Settings persistence.
+    - User preferences across sessions.

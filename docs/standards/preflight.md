@@ -1,9 +1,9 @@
 # Abridged App — Preflight Check (Before Making Changes)
-Version 1.0  
+Version 1.0
 Last Updated: January 15, 2026
 
 ## Purpose
-Preflight is the required checklist to run **before** making code or UI changes.  
+Preflight is the required checklist to run **before** making code or UI changes.
 It prevents avoidable regressions, standards drift, and "local-only" breakage.
 
 If you skip Preflight, you are accepting increased risk of:
@@ -26,8 +26,8 @@ If you skip Preflight, you are accepting increased risk of:
 - [ ] Read the relevant standards doc(s):
   - [ ] `docs/design-standards.md` (if UI/navigation/layout/typography changes)
   - [ ] `docs/standards/accessibility.md` (if anything interactive changes)
-  - [ ] `docs/engineering-standards.md` (versioning/changelog/release process)
-  - [ ] `docs/architecture.md` (if structure/data/state changes)
+  - [ ] `docs/development/engineering-standards.md` (versioning/changelog/release process)
+  - [ ] `docs/product/architecture.md` (if structure/data/state changes)
 - [ ] If change might conflict with Apple HIG:
   - [ ] Identify the conflict explicitly
   - [ ] Document deviation + user benefit + platform expectations preserved

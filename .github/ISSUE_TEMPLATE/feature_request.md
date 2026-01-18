@@ -69,7 +69,7 @@ Example: "I'm always frustrated when [...]"
 ### For Maintainers
 
 **Triage Checklist:**
-- [ ] Feature aligns with product vision (see `docs/vision.md`)
+- [ ] Feature aligns with product vision (see `docs/product/vision.md`)
 - [ ] Feature fits within architectural patterns (see ADRs)
 - [ ] Scope estimated
 - [ ] Priority assigned

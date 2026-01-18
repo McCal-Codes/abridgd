@@ -1,9 +1,9 @@
 # Abridged App — Afterflight Check (Before Merging / Releasing)
-Version 1.0  
+Version 1.0
 Last Updated: January 15, 2026
 
 ## Purpose
-Afterflight is the required checklist to run **before merging a PR** or **releasing to TestFlight / App Store**.  
+Afterflight is the required checklist to run **before merging a PR** or **releasing to TestFlight / App Store**.
 It prevents regressions from entering the trunk and ensures the app remains in a releasable state.
 
 If you skip Afterflight, you are accepting:
@@ -30,7 +30,7 @@ If you skip Afterflight, you are accepting:
   - [ ] Format: `- [Added/Changed/Fixed] <short user-facing summary>`
   - [ ] At least one entry if the change affects users or process
 - [ ] If change touches architecture / major structure:
-  - [ ] ADR written in `docs/adr/` or `docs/architecture.md` updated
+  - [ ] ADR written in `docs/standards/adr/` or `docs/product/architecture.md` updated
 - [ ] If change touches UI/UX:
   - [ ] Relevant design doc referenced or updated
 - [ ] If change touches standards themselves:
@@ -57,7 +57,7 @@ If you skip Afterflight, you are accepting:
 
 ## 4) Version & Build Metadata Check (Release-Affecting Changes Only)
 If the change is a release:
-- [ ] Version bumped in `package.json` and/or iOS `Info.plist` (SemVer rules from `docs/engineering-standards.md`)
+- [ ] Version bumped in `package.json` and/or iOS `Info.plist` (SemVer rules from `docs/development/engineering-standards.md`)
 - [ ] Build number incremented (monotonic integer, always increases)
 - [ ] Release tag created (format: `vMAJOR.MINOR.PATCH`)
 - [ ] Marketing version matches Git tag

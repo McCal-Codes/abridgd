@@ -64,7 +64,7 @@ If the app name changes in the future, update these files:
 
 4. **Documentation and marketing materials**
    - README.md
-   - docs/vision.md
+   - docs/product/vision.md
    - Any public-facing content
 
 ---

@@ -39,6 +39,10 @@ interface SettingsContextType {
   setReadingSpeed: (speed: number) => Promise<void>;
   fontSize: number; // Base font size multiplier (0.8 - 1.5)
   setFontSize: (size: number) => Promise<void>;
+  autoSaveOnComplete: boolean; // Auto-save articles when read to completion
+  setAutoSaveOnComplete: (enabled: boolean) => Promise<void>;
+  defaultTab: string; // Tab to show on app launch
+  setDefaultTab: (tab: string) => Promise<void>;
   activeTabs: string[]; // Array of active tab IDs
   setActiveTabs: (tabs: string[]) => Promise<void>;
   tabLayout: "minimal" | "comprehensive"; // Tab layout style
@@ -50,8 +54,6 @@ interface SettingsContextType {
   setShowTabLabels: (show: boolean) => Promise<void>;
   tabIconSize: number;
   setTabIconSize: (size: number) => Promise<void>;
-  tabBarHeight: number;
-  setTabBarHeight: (height: number) => Promise<void>;
   tabBarFloatingHeight: number; // height when using floating capsule style
   setTabBarFloatingHeight: (height: number) => Promise<void>;
   // Developer/advanced controls for fine-grained increments
@@ -88,7 +90,7 @@ const defaultSettingsContext: SettingsContextType = {
   hasCompletedOnboarding: false,
   completeOnboarding: async () => {},
   resetOnboarding: async () => {},
-  rsvpHighlightColor: colors.error,
+  rsvpHighlightColor: "#0097A7", // Colorblind-friendly cyan
   setRsvpHighlightColor: async (c: string) => {},
   rsvpAnchorStrategy: "standard",
   setRsvpAnchorStrategy: async (_s: AnchorStrategy) => {},
@@ -117,6 +119,10 @@ const defaultSettingsContext: SettingsContextType = {
   setReadingSpeed: async (_n: number) => {},
   fontSize: 1.0,
   setFontSize: async (_n: number) => {},
+  autoSaveOnComplete: false,
+  setAutoSaveOnComplete: async (_b: boolean) => {},
+  defaultTab: "home",
+  setDefaultTab: async (_t: string) => {},
   activeTabs: ["home", "discover", "saved", "digest"],
   setActiveTabs: async (_t: string[]) => {},
   tabLayout: "minimal",
@@ -127,8 +133,6 @@ const defaultSettingsContext: SettingsContextType = {
   setShowTabLabels: async (_b: boolean) => {},
   tabIconSize: 25,
   setTabIconSize: async (_n: number) => {},
-  tabBarHeight: 49,
-  setTabBarHeight: async (_n: number) => {},
   tabBarFloatingHeight: 64,
   setTabBarFloatingHeight: async (_n: number) => {},
   enableAdvancedHeightControls: false,
@@ -159,7 +163,7 @@ const SettingsContext = createContext<SettingsContextType>(defaultSettingsContex
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [rsvpHighlightColor, setRsvpHighlightColorState] = useState(colors.error);
+  const [rsvpHighlightColor, setRsvpHighlightColorState] = useState("#0097A7"); // Colorblind-friendly cyan
   const [rsvpAnchorStrategy, setRsvpAnchorStrategyState] = useState<AnchorStrategy>("standard");
   const [groundingColor, setGroundingColorState] = useState("#A8C3B3"); // Sage default
   const [isReaderEnabled, setIsReaderEnabledState] = useState(true);
@@ -174,6 +178,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     useState<GroundingAnimationStyle>("waves");
   const [readingSpeed, setReadingSpeedState] = useState(300); // 300 WPM default
   const [fontSize, setFontSizeState] = useState(1.0); // 1.0x default
+  const [autoSaveOnComplete, setAutoSaveOnCompleteState] = useState(false); // Don't auto-save by default
+  const [defaultTab, setDefaultTabState] = useState("home"); // Home tab as default landing
   const [activeTabs, setActiveTabsState] = useState<string[]>([
     "home",
     "discover",
@@ -183,11 +189,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [tabLayout, setTabLayoutState] = useState<"minimal" | "comprehensive">("minimal"); // Default to minimal
   // Tab bar appearance defaults
   const [tabBarStyle, setTabBarStyleState] = useState<"floating" | "standard" | "compact">(
-    "floating"
+    "floating",
   );
   const [showTabLabels, setShowTabLabelsState] = useState(true);
   const [tabIconSize, setTabIconSizeState] = useState(25);
-  const [tabBarHeight, setTabBarHeightState] = useState(49);
   // Minimum docked height enforced at 92 per design
   const [tabBarDockedHeight, setTabBarDockedHeightState] = useState(92);
   // floating capsule height (thinner than docked by default)
@@ -201,7 +206,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [allowContentUnderTabBar, setAllowContentUnderTabBarState] = useState(true);
   const [tabBadgeStyle, setTabBadgeStyleState] = useState<"dot" | "count" | "none">("count");
   const [tabIndicatorStyle, setTabIndicatorStyleState] = useState<"underline" | "bubble" | "none">(
-    "bubble"
+    "bubble",
   );
   const [modalPresentationStyle, setModalPresentationStyleState] = useState<
     "auto" | "center" | "bottom"
@@ -229,13 +234,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedAnimationStyle = await AsyncStorage.getItem("groundingAnimationStyle");
       const savedReadingSpeed = await AsyncStorage.getItem("readingSpeed");
       const savedFontSize = await AsyncStorage.getItem("fontSize");
+      const savedAutoSave = await AsyncStorage.getItem("autoSaveOnComplete");
+      const savedDefaultTab = await AsyncStorage.getItem("defaultTab");
       const savedActiveTabs = await AsyncStorage.getItem("activeTabs");
 
       // Load tab bar appearance
       const savedTabBarStyle = await AsyncStorage.getItem("tabBarStyle");
       const savedShowLabels = await AsyncStorage.getItem("showTabLabels");
       const savedIconSize = await AsyncStorage.getItem("tabIconSize");
-      const savedTabBarHeight = await AsyncStorage.getItem("tabBarHeight");
       const savedTabBarDockedHeight = await AsyncStorage.getItem("tabBarDockedHeight");
       const savedTabBarHiddenHeight = await AsyncStorage.getItem("tabBarHiddenHeight");
       const savedTabBarBlur = await AsyncStorage.getItem("tabBarBlur");
@@ -284,6 +290,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedFontSize) {
         setFontSizeState(parseFloat(savedFontSize));
       }
+      if (savedAutoSave !== null) {
+        setAutoSaveOnCompleteState(savedAutoSave === "true");
+      }
+      if (savedDefaultTab && ["home", "discover", "saved", "digest"].includes(savedDefaultTab)) {
+        setDefaultTabState(savedDefaultTab);
+      }
       if (savedActiveTabs) {
         try {
           const tabs = JSON.parse(savedActiveTabs);
@@ -300,7 +312,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       if (savedShowLabels !== null) setShowTabLabelsState(savedShowLabels === "true");
       if (savedIconSize) setTabIconSizeState(parseInt(savedIconSize, 10));
-      if (savedTabBarHeight) setTabBarHeightState(parseInt(savedTabBarHeight, 10));
       if (savedTabBarFloatingHeight)
         setTabBarFloatingHeightState(parseInt(savedTabBarFloatingHeight, 10));
       if (savedEnableAdvanced !== null)
@@ -483,6 +494,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setAutoSaveOnComplete = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("autoSaveOnComplete", enabled.toString());
+      setAutoSaveOnCompleteState(enabled);
+    } catch (e) {
+      console.error("Failed to save auto-save preference", e);
+    }
+  };
+
+  const setDefaultTab = async (tab: string) => {
+    try {
+      await AsyncStorage.setItem("defaultTab", tab);
+      setDefaultTabState(tab);
+    } catch (e) {
+      console.error("Failed to save default tab", e);
+    }
+  };
+
   const setActiveTabs = async (tabs: string[]) => {
     try {
       await AsyncStorage.setItem("activeTabs", JSON.stringify(tabs));
@@ -516,15 +545,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setTabIconSizeState(size);
     } catch (e) {
       console.error("Failed to save tab icon size", e);
-    }
-  };
-
-  const setTabBarHeight = async (height: number) => {
-    try {
-      await AsyncStorage.setItem("tabBarHeight", height.toString());
-      setTabBarHeightState(height);
-    } catch (e) {
-      console.error("Failed to save tab bar height", e);
     }
   };
 
@@ -587,7 +607,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setTabBarHiddenHeightState((prev) => Math.max(prev, clamped));
       await AsyncStorage.setItem(
         "tabBarHiddenHeight",
-        Math.max(tabBarHiddenHeight, clamped).toString()
+        Math.max(tabBarHiddenHeight, clamped).toString(),
       );
     } catch (e) {
       console.error("Failed to save tab bar docked height", e);
@@ -701,6 +721,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setReadingSpeed,
         fontSize,
         setFontSize,
+        autoSaveOnComplete,
+        setAutoSaveOnComplete,
+        defaultTab,
+        setDefaultTab,
         activeTabs,
         setActiveTabs,
         tabLayout,
@@ -712,8 +736,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setShowTabLabels,
         tabIconSize,
         setTabIconSize,
-        tabBarHeight,
-        setTabBarHeight,
         tabBarFloatingHeight,
         setTabBarFloatingHeight,
         enableAdvancedHeightControls,

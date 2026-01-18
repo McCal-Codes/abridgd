@@ -1,5 +1,5 @@
 # Abridged App — Engineering Standards
-Version 1.0  
+Version 1.0
 Last Updated: January 15, 2026
 
 This is the canonical engineering standards document. For workflow checklists, see [Preflight](preflight.md) and [Afterflight](afterflight.md).
@@ -195,7 +195,7 @@ Must-have files:
 - `README.md` (setup, run, environments) ✅
 - `CHANGELOG.md` ✅
 - `docs/standards/` (this folder) ✅
-- `docs/architecture.md` (feature architecture) ⚠️
+- `docs/product/architecture.md` (feature architecture) ⚠️
 - `docs/adr/` (architectural decisions) ⚠️
 
 For ADRs, see the [adr/](adr/) folder.
@@ -213,7 +213,7 @@ For ADRs, see the [adr/](adr/) folder.
   - large text (Dynamic Type)
   - dark mode
 
-**Current Status**: 
+**Current Status**:
 - ❌ No automated tests yet
 - ✅ Manual testing on iOS devices
 

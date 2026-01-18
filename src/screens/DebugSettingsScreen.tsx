@@ -12,22 +12,26 @@ import {
   NativeModules,
   Switch,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/types";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Trash2, RefreshCw, Database, FileText, Check } from "lucide-react-native";
+import { Trash2, RefreshCw, Database, FileText, Check, Sparkles } from "lucide-react-native";
 
 export const DebugSettingsScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const settings = useSettings();
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(
     150,
     insets.bottom +
       (settings.allowContentUnderTabBar ? settings.tabBarDockedHeight || 92 : 0) +
-      spacing.lg
+      spacing.lg,
   );
   const [verboseLogging, setVerboseLogging] = React.useState(false);
   const [presetApplying, setPresetApplying] = React.useState(false);
@@ -51,7 +55,7 @@ export const DebugSettingsScreen: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -117,7 +121,7 @@ export const DebugSettingsScreen: React.FC = () => {
             throw new Error("Test exception from DebugSettingsScreen");
           },
         },
-      ]
+      ],
     );
   };
 
@@ -204,6 +208,19 @@ export const DebugSettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>
+
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.primary + "15" }]}
+            onPress={() => navigation.navigate("iOS26Demo")}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "20" }]}>
+              <Sparkles size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>iOS 26 UI Demo</Text>
+              <Text style={styles.actionDesc}>Glass buttons, toolbars, and transitions</Text>
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={viewStoredSettings}>
             <View style={styles.actionIconContainer}>
@@ -300,7 +317,7 @@ export const DebugSettingsScreen: React.FC = () => {
                 setVerboseLogging((v) => !v);
                 Alert.alert(
                   "Verbose Logging",
-                  `Verbose logging ${!verboseLogging ? "enabled" : "disabled"}`
+                  `Verbose logging ${!verboseLogging ? "enabled" : "disabled"}`,
                 );
               }}
             >

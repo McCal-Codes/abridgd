@@ -2,21 +2,68 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Expo",
-            "type": "pwa-node",
+            "name": "dev: Expo (iOS Simulator)",
+            "type": "node",
             "request": "launch",
             "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start"],
+            "args": ["start", "--ios"],
             "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 1,
+                "group": "development"
+            }
         },
         {
-            "name": "Attach to Packager",
+            "name": "dev: Expo (Android Emulator)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/expo",
+            "args": ["start", "--android"],
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 2,
+                "group": "development"
+            }
+        },
+        {
+            "name": "dev: Expo (Web)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/expo",
+            "args": ["start", "--web"],
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 3,
+                "group": "development"
+            }
+        },
+        {
+            "name": "dev: Attach to Expo Packager",
             "type": "node",
             "request": "attach",
             "port": 19000,
-            "sourceMaps": true
+            "sourceMaps": true,
+            "presentation": {
+                "order": 4,
+                "group": "development"
+            }
+        },
+        {
+            "name": "debug: Chrome Remote JS",
+            "type": "chrome",
+            "request": "attach",
+            "port": 9222,
+            "urlFilter": "*localhost:8081*",
+            "presentation": {
+                "order": 5,
+                "group": "debugging"
+            }
         }
     ]
 }

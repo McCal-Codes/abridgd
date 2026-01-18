@@ -1,5 +1,5 @@
-import { NavigatorScreenParams } from '@react-navigation/native';
-import { Article } from '../types/Article';
+import { NavigatorScreenParams } from "@react-navigation/native";
+import { Article } from "../types/Article";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -13,6 +13,7 @@ export type RootStackParamList = {
   DebugSettings: undefined;
   Onboarding: undefined;
   Digest: undefined;
+  iOS26Demo: undefined;
 };
 
 export type TabParamList = {

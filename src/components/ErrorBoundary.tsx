@@ -1,6 +1,6 @@
-
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { View, Text, StyleSheet, Button } from "react-native";
+import * as Sentry from "@sentry/react-native";
 
 interface Props {
   children: ReactNode;
@@ -22,7 +22,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    console.error("Uncaught error:", error, errorInfo);
+    try {
+      if (Sentry && typeof Sentry.captureException === "function") {
+        Sentry.captureException(error);
+      }
+    } catch {}
   }
 
   public render() {
@@ -43,20 +48,20 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   error: {
     fontSize: 14,
-    color: 'red',
+    color: "red",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
