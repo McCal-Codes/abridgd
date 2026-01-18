@@ -166,7 +166,8 @@ const defaultSettingsContext: SettingsContextType = {
   tabIndicatorStyle: "bubble",
   setTabIndicatorStyle: async (_s: "underline" | "bubble" | "none") => {},
   modalPresentationStyle: "auto",
-  setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},  experimentalIOS26NavBar: false,
+  setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},
+  experimentalIOS26NavBar: false,
   setExperimentalIOS26NavBar: async (_b: boolean) => {},
   animationsEnabled: true,
   setAnimationsEnabled: async (_b: boolean) => {},
@@ -365,13 +366,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       // Load experimental settings
       const savedExperimentalIOS26 = await AsyncStorage.getItem("experimentalIOS26NavBar");
-      if (savedExperimentalIOS26 !== null) setExperimentalIOS26NavBarState(savedExperimentalIOS26 === "true");
+      if (savedExperimentalIOS26 !== null)
+        setExperimentalIOS26NavBarState(savedExperimentalIOS26 === "true");
 
       // Load global animation settings
       if (savedAnimationsEnabled !== null)
         setAnimationsEnabledState(savedAnimationsEnabled === "true");
-      if (savedReduceMotion !== null)
-        setReduceMotionState(savedReduceMotion === "true");
+      if (savedReduceMotion !== null) setReduceMotionState(savedReduceMotion === "true");
       if (savedAnimationScale) {
         const scale = Math.min(2.0, Math.max(0.5, parseFloat(savedAnimationScale)));
         setAnimationScaleState(scale);

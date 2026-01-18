@@ -363,6 +363,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: spacing.xs,
   },
+  colorRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
   strategyContainer: {
     gap: spacing.sm,
   },

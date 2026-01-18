@@ -14,7 +14,17 @@ import {
 } from "../components/BottomToolbar";
 import { ZoomModal } from "../components/ZoomModal";
 import { BlurSheet } from "../components/BlurSheet";
-import { Info, Trash, Plus, Share, Pencil, Download, X, Check, ChevronLeft } from "lucide-react-native";
+import {
+  Info,
+  Trash,
+  Plus,
+  Share,
+  Pencil,
+  Download,
+  X,
+  Check,
+  ChevronLeft,
+} from "lucide-react-native";
 
 /**
  * Demo screen showcasing iOS 26-inspired UI components:
@@ -38,8 +48,8 @@ export const iOS26DemoScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Custom Navigation Header with Back Button */}
-      <View style={[styles.header, { paddingTop: insets.top }]}> 
-        <View style={styles.headerRow}> 
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <View style={styles.headerRow}>
           <View style={styles.headerBackBtn}>
             <GlassButton
               label="Back"
