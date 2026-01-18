@@ -4,6 +4,16 @@ This document tracks all updates, features, and fixes for the Abridged app.
 
 ---
 
+## [1.2.0] - 2026-01-18
+### Experimental Features & Settings Enhancement
+- Added experimental iOS 26 navbar option with enhanced glass morphism effects
+  - Feature flag allows users to opt-in to test new design improvements
+  - Toggle in Settings → Tab Bar Settings with BETA badge
+  - Increases blur intensity to 80 and background opacity to 0.95 for premium glass effect
+  - Setting persists via AsyncStorage
+- Created comprehensive experimental features documentation
+- Demonstrates feature-gating pattern for gradual adoption of new design paradigms
+
 ## [Unreleased]
 - Documentation organization improvements
 - Repository health and maintenance updates

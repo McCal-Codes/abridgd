@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
@@ -13,7 +14,7 @@ import {
 } from "../components/BottomToolbar";
 import { ZoomModal } from "../components/ZoomModal";
 import { BlurSheet } from "../components/BlurSheet";
-import { Info, Trash, Plus, Share, Pencil, Download, X, Check } from "lucide-react-native";
+import { Info, Trash, Plus, Share, Pencil, Download, X, Check, ChevronLeft } from "lucide-react-native";
 
 /**
  * Demo screen showcasing iOS 26-inspired UI components:
@@ -26,6 +27,7 @@ import { Info, Trash, Plus, Share, Pencil, Download, X, Check } from "lucide-rea
 export const iOS26DemoScreen: React.FC = () => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const [showZoomModal, setShowZoomModal] = useState(false);
   const [showBlurSheet, setShowBlurSheet] = useState(false);
@@ -35,8 +37,18 @@ export const iOS26DemoScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Custom Navigation Header with Subtitle */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      {/* Custom Navigation Header with Back Button */}
+      <View style={[styles.header, { paddingTop: insets.top }]}> 
+        <View style={styles.headerRow}> 
+          <View style={styles.headerBackBtn}>
+            <GlassButton
+              label="Back"
+              icon={<ChevronLeft size={18} color={colors.text} />}
+              onPress={() => navigation.goBack()}
+              prominence="standard"
+            />
+          </View>
+        </View>
         <NavigationHeader
           title="iOS 26 Features"
           subtitle="Glass buttons, toolbars, and transitions"
@@ -225,6 +237,16 @@ const styles = StyleSheet.create({
   header: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(0, 0, 0, 0.1)",
+  },
+  headerRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  headerBackBtn: {
+    width: 96,
   },
   scrollView: {
     flex: 1,

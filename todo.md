@@ -34,6 +34,34 @@
     - Profile screen shows user info + settings access
     - Follows Apple's pattern of having profile/account in tab bar
 
+## 1.4 Update Planning
+
+### Profiles & Community
+- [ ] Profiles tab in tab bar (Account overview, settings access, saved content)
+- [ ] Community tab with local resources:
+    - [ ] Food banks and mutual aid
+    - [ ] Farmers markets and events
+    - [ ] Protest/event listings (curated, opt-in)
+    - [ ] Submit-a-resource form (moderated)
+- [ ] Navigation updates to place Profile tab per Apple HIG
+- [ ] Accessibility pass for new tabs
+
+### iOS 26 Testing Menu
+- [ ] Add back button to iOS 26 demo/testing screen
+- [ ] Document demo entry path (Settings → Debug & Advanced → iOS 26 UI Demo)
+
+### Animation Settings
+- [ ] Global animation enable/disable toggle
+- [ ] Reduce Motion preference (respect system setting, allow override)
+- [ ] Animation speed/scale control (0.5× – 2×)
+- [ ] Apply settings to ZoomModal, BlurSheet, LiquidTabBar transitions
+
+### RSS Parser Enhancements
+- [ ] Implement source-specific full-article parsers for truncated feeds (WTAE, WPXI, CBS)
+- [ ] Improve HTML content parsing for images/galleries
+- [ ] Add per-source normalization (author, timestamps, categories)
+- [ ] Consider adding additional local sources (WESA/NPR, Technical.ly Pittsburgh) after validation
+
 ### User Experience Polish
 - [ ] **Empty States**: Design empty states for saved articles, feeds when no content
 - [ ] **Error Handling**: Improve error recovery for network issues

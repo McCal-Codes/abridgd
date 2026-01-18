@@ -5,6 +5,7 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings, AnchorStrategy, GroundingAnimationStyle } from "../context/SettingsContext";
+import { Switch } from "react-native";
 
 // Colorblind-friendly palette with semantic names and pattern support
 const PRESET_COLORS: { color: string; name: string; accessible: boolean }[] = [
@@ -50,6 +51,13 @@ export const CustomizationSettingsScreen: React.FC = () => {
     setGroundingCycles,
     groundingAnimationStyle,
     setGroundingAnimationStyle,
+    // Global animation controls
+    animationsEnabled,
+    setAnimationsEnabled,
+    reduceMotion,
+    setReduceMotion,
+    animationScale,
+    setAnimationScale,
   } = useSettings();
 
   return (
@@ -234,6 +242,47 @@ export const CustomizationSettingsScreen: React.FC = () => {
             ))}
           </View>
         </View>
+
+        {/* GLOBAL ANIMATION SETTINGS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Global Animation Settings</Text>
+          <Text style={styles.sectionDesc}>Control animations across the app.</Text>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Enable Animations</Text>
+            <Switch value={animationsEnabled} onValueChange={(v) => setAnimationsEnabled(v)} />
+          </View>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Reduce Motion</Text>
+            <Switch value={reduceMotion} onValueChange={(v) => setReduceMotion(v)} />
+          </View>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Animation Speed</Text>
+            <View style={styles.optionRow}>
+              {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((scale) => (
+                <TouchableOpacity
+                  key={`anim-scale-${scale}`}
+                  style={[
+                    styles.smallOption,
+                    animationScale === scale && styles.smallOptionSelected,
+                  ]}
+                  onPress={() => setAnimationScale(scale)}
+                >
+                  <Text
+                    style={[
+                      styles.smallOptionText,
+                      animationScale === scale && styles.smallOptionTextSelected,
+                    ]}
+                  >
+                    {scale}×
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -374,5 +423,42 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontStyle: "italic",
     marginTop: spacing.sm,
+  },
+  // Shared setting row styles
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: spacing.md,
+  },
+  settingLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 16,
+    color: colors.text,
+  },
+  optionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+  },
+  smallOption: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  smallOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + "10",
+  },
+  smallOptionText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  smallOptionTextSelected: {
+    color: colors.primary,
   },
 });

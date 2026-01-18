@@ -4,11 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [1.2.0] - 2026-01-18
 
-### Changed
-- Updated TestFlight notes to reflect current feature set
-- Organized documentation structure with categorized links in README
+### Added - Experimental Features
+- **Experimental iOS 26 Navbar Option**: Feature flag for testing enhanced glass morphism effects on the bottom navigation bar
+  - Opt-in toggle in Settings → Tab Bar Settings
+  - Marked with BETA badge for visibility
+  - Increases blur intensity from 60 → 80
+  - Higher background opacity (0.95 vs 0.85) for enhanced glass effect
+  - Persistent setting via AsyncStorage
+
+### Documentation
+- `EXPERIMENTAL_FEATURES.md`: Guide for testing experimental features, including how to enable and what to expect
 
 ## [1.1.0] - 2026-01-18
 

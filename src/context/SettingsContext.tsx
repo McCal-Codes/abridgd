@@ -84,6 +84,13 @@ interface SettingsContextType {
   // Experimental features
   experimentalIOS26NavBar: boolean;
   setExperimentalIOS26NavBar: (enabled: boolean) => Promise<void>;
+  // Global animation controls
+  animationsEnabled: boolean;
+  setAnimationsEnabled: (enabled: boolean) => Promise<void>;
+  reduceMotion: boolean; // honor system setting, allow override
+  setReduceMotion: (enabled: boolean) => Promise<void>;
+  animationScale: number; // 0.5 - 2.0
+  setAnimationScale: (scale: number) => Promise<void>;
 }
 
 // Provide a safe default context so components can render in tests without a provider
@@ -160,7 +167,14 @@ const defaultSettingsContext: SettingsContextType = {
   setTabIndicatorStyle: async (_s: "underline" | "bubble" | "none") => {},
   modalPresentationStyle: "auto",
   setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},  experimentalIOS26NavBar: false,
-  setExperimentalIOS26NavBar: async (_b: boolean) => {},};
+  setExperimentalIOS26NavBar: async (_b: boolean) => {},
+  animationsEnabled: true,
+  setAnimationsEnabled: async (_b: boolean) => {},
+  reduceMotion: false,
+  setReduceMotion: async (_b: boolean) => {},
+  animationScale: 1.0,
+  setAnimationScale: async (_n: number) => {},
+};
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
 
@@ -216,6 +230,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   >("auto");
   const [experimentalIOS26NavBar, setExperimentalIOS26NavBarState] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  // Global animation controls
+  const [animationsEnabled, setAnimationsEnabledState] = useState(true);
+  const [reduceMotion, setReduceMotionState] = useState(false);
+  const [animationScale, setAnimationScaleState] = useState(1.0);
 
   useEffect(() => {
     loadSettings();
@@ -258,6 +276,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedBadgeStyle = await AsyncStorage.getItem("tabBadgeStyle");
       const savedIndicatorStyle = await AsyncStorage.getItem("tabIndicatorStyle");
       const savedModalPresentation = await AsyncStorage.getItem("modalPresentationStyle");
+      // Global animation controls
+      const savedAnimationsEnabled = await AsyncStorage.getItem("animationsEnabled");
+      const savedReduceMotion = await AsyncStorage.getItem("reduceMotion");
+      const savedAnimationScale = await AsyncStorage.getItem("animationScale");
 
       if (onboarding === "true") setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -344,6 +366,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Load experimental settings
       const savedExperimentalIOS26 = await AsyncStorage.getItem("experimentalIOS26NavBar");
       if (savedExperimentalIOS26 !== null) setExperimentalIOS26NavBarState(savedExperimentalIOS26 === "true");
+
+      // Load global animation settings
+      if (savedAnimationsEnabled !== null)
+        setAnimationsEnabledState(savedAnimationsEnabled === "true");
+      if (savedReduceMotion !== null)
+        setReduceMotionState(savedReduceMotion === "true");
+      if (savedAnimationScale) {
+        const scale = Math.min(2.0, Math.max(0.5, parseFloat(savedAnimationScale)));
+        setAnimationScaleState(scale);
+      }
 
       // Load tab layout preference
       const savedTabLayout = await AsyncStorage.getItem("tabLayout");
@@ -703,6 +735,35 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  // Global animation controls
+  const setAnimationsEnabled = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("animationsEnabled", enabled.toString());
+      setAnimationsEnabledState(enabled);
+    } catch (e) {
+      console.error("Failed to save animations enabled setting", e);
+    }
+  };
+
+  const setReduceMotion = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("reduceMotion", enabled.toString());
+      setReduceMotionState(enabled);
+    } catch (e) {
+      console.error("Failed to save reduce motion setting", e);
+    }
+  };
+
+  const setAnimationScale = async (scale: number) => {
+    try {
+      const clamped = Math.min(2.0, Math.max(0.5, Number(scale)));
+      await AsyncStorage.setItem("animationScale", clamped.toString());
+      setAnimationScaleState(clamped);
+    } catch (e) {
+      console.error("Failed to save animation scale", e);
+    }
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -779,6 +840,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setTabIndicatorStyle,
         experimentalIOS26NavBar,
         setExperimentalIOS26NavBar,
+        // Global animation controls
+        animationsEnabled,
+        setAnimationsEnabled,
+        reduceMotion,
+        setReduceMotion,
+        animationScale,
+        setAnimationScale,
       }}
     >
       {children}
