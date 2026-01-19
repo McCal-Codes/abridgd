@@ -21,7 +21,15 @@ import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Trash2, RefreshCw, Database, FileText, Check, Sparkles } from "lucide-react-native";
+import {
+  Trash2,
+  RefreshCw,
+  Database,
+  FileText,
+  Check,
+  Sparkles,
+  Activity,
+} from "lucide-react-native";
 
 export const DebugSettingsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -200,6 +208,21 @@ export const DebugSettingsScreen: React.FC = () => {
     Alert.alert("Set", `Modal presentation set to ${style}`);
   };
 
+  const applyIOS26Preset = async () => {
+    setPresetApplying(true);
+    try {
+      await settings.setTabBarStyle("floating");
+      await settings.setTabBarBlur(true);
+      await settings.setExperimentalIOS26NavBar(true);
+      await settings.setTabBarDockedHeight(92);
+      Alert.alert("Applied", "iOS 26 preset applied: floating blur + nav bar");
+    } catch (e) {
+      Alert.alert("Error", "Failed to apply iOS 26 preset");
+    } finally {
+      setPresetApplying(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}>
@@ -219,6 +242,27 @@ export const DebugSettingsScreen: React.FC = () => {
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>iOS 26 UI Demo</Text>
               <Text style={styles.actionDesc}>Glass buttons, toolbars, and transitions</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: (colors.accent || colors.primary) + "10" },
+            ]}
+            onPress={() => navigation.navigate("TabBarSettings")}
+          >
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: (colors.accent || colors.primary) + "15" },
+              ]}
+            >
+              <Activity size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Tab Bar Experiments</Text>
+              <Text style={styles.actionDesc}>Jump to tab bar + iOS 26 navbar options</Text>
             </View>
           </TouchableOpacity>
 
@@ -425,6 +469,33 @@ export const DebugSettingsScreen: React.FC = () => {
               <Text style={styles.smallOptionText}>Standard</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>iOS 26 Experiments</Text>
+          <Text style={styles.sectionDesc}>One-tap enablement for the iOS 26 chrome</Text>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Experimental navbar</Text>
+            <Switch
+              value={settings.experimentalIOS26NavBar}
+              onValueChange={(v) => settings.setExperimentalIOS26NavBar(v)}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.primary + "12" }]}
+            onPress={applyIOS26Preset}
+            disabled={presetApplying}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "18" }]}>
+              <Sparkles size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Apply iOS 26 preset</Text>
+              <Text style={styles.actionDesc}>Floating blur bar + experimental navbar</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

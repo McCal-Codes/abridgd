@@ -1,10 +1,14 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "../theme/colors";
+import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
 
 export type AnchorStrategy = "early" | "standard" | "center";
 export type DigestSummaryMode = "fact-based" | "ai-summary" | "headline-only";
 export type GroundingAnimationStyle = "simple" | "waves" | "pulse";
+export type SensitivePromptLevel = "full" | "minimal" | "off";
+export type SensitiveActionPreference = "ground-first" | "decide" | "continue";
+export type SensitiveTone = "gentle" | "direct";
 
 interface SettingsContextType {
   hasCompletedOnboarding: boolean;
@@ -35,6 +39,8 @@ interface SettingsContextType {
   setGroundingCycles: (cycles: number) => Promise<void>;
   groundingAnimationStyle: GroundingAnimationStyle;
   setGroundingAnimationStyle: (style: GroundingAnimationStyle) => Promise<void>;
+  showGroundingPrompts: boolean;
+  setShowGroundingPrompts: (show: boolean) => Promise<void>;
   readingSpeed: number; // Words per minute
   setReadingSpeed: (speed: number) => Promise<void>;
   fontSize: number; // Base font size multiplier (0.8 - 1.5)
@@ -56,6 +62,7 @@ interface SettingsContextType {
   setTabIconSize: (size: number) => Promise<void>;
   tabBarFloatingHeight: number; // height when using floating capsule style
   setTabBarFloatingHeight: (height: number) => Promise<void>;
+  tabBarHeight: number; // derived height based on current style
   // Developer/advanced controls for fine-grained increments
   enableAdvancedHeightControls: boolean;
   setEnableAdvancedHeightControls: (enabled: boolean) => Promise<void>;
@@ -91,6 +98,12 @@ interface SettingsContextType {
   setReduceMotion: (enabled: boolean) => Promise<void>;
   animationScale: number; // 0.5 - 2.0
   setAnimationScale: (scale: number) => Promise<void>;
+  sensitivePromptLevel: SensitivePromptLevel;
+  setSensitivePromptLevel: (level: SensitivePromptLevel) => Promise<void>;
+  sensitiveActionPreference: SensitiveActionPreference;
+  setSensitiveActionPreference: (pref: SensitiveActionPreference) => Promise<void>;
+  sensitiveTone: SensitiveTone;
+  setSensitiveTone: (tone: SensitiveTone) => Promise<void>;
 }
 
 // Provide a safe default context so components can render in tests without a provider
@@ -125,6 +138,8 @@ const defaultSettingsContext: SettingsContextType = {
   setGroundingCycles: async (_n: number) => {},
   groundingAnimationStyle: "waves",
   setGroundingAnimationStyle: async (_s: GroundingAnimationStyle) => {},
+  showGroundingPrompts: false,
+  setShowGroundingPrompts: async (_b: boolean) => {},
   readingSpeed: 300,
   setReadingSpeed: async (_n: number) => {},
   fontSize: 1.0,
@@ -145,6 +160,7 @@ const defaultSettingsContext: SettingsContextType = {
   setTabIconSize: async (_n: number) => {},
   tabBarFloatingHeight: 64,
   setTabBarFloatingHeight: async (_n: number) => {},
+  tabBarHeight: 64,
   enableAdvancedHeightControls: false,
   setEnableAdvancedHeightControls: async (_b: boolean) => {},
   dockedHeightStep: 2,
@@ -175,6 +191,12 @@ const defaultSettingsContext: SettingsContextType = {
   setReduceMotion: async (_b: boolean) => {},
   animationScale: 1.0,
   setAnimationScale: async (_n: number) => {},
+  sensitivePromptLevel: "full",
+  setSensitivePromptLevel: async (_l: SensitivePromptLevel) => {},
+  sensitiveActionPreference: "decide",
+  setSensitiveActionPreference: async (_p: SensitiveActionPreference) => {},
+  sensitiveTone: "gentle",
+  setSensitiveTone: async (_t: SensitiveTone) => {},
 };
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
@@ -194,6 +216,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [groundingCycles, setGroundingCyclesState] = useState(5); // 5 cycles default
   const [groundingAnimationStyle, setGroundingAnimationStyleState] =
     useState<GroundingAnimationStyle>("waves");
+  const [showGroundingPrompts, setShowGroundingPromptsState] = useState(false); // Disabled by default
   const [readingSpeed, setReadingSpeedState] = useState(300); // 300 WPM default
   const [fontSize, setFontSizeState] = useState(1.0); // 1.0x default
   const [autoSaveOnComplete, setAutoSaveOnCompleteState] = useState(false); // Don't auto-save by default
@@ -235,6 +258,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [animationsEnabled, setAnimationsEnabledState] = useState(true);
   const [reduceMotion, setReduceMotionState] = useState(false);
   const [animationScale, setAnimationScaleState] = useState(1.0);
+  const [sensitivePromptLevel, setSensitivePromptLevelState] =
+    useState<SensitivePromptLevel>("full");
+  const [sensitiveActionPreference, setSensitiveActionPreferenceState] =
+    useState<SensitiveActionPreference>("decide");
+  const [sensitiveTone, setSensitiveToneState] = useState<SensitiveTone>("gentle");
+
+  const tabBarHeight = useMemo(() => {
+    if (tabBarStyle === "floating") {
+      return Math.max(48, tabBarFloatingHeight);
+    }
+
+    if (tabBarStyle === "compact") {
+      // Compact keeps the docked frame but trims padding for a tighter feel
+      return Math.max(72, tabBarDockedHeight - 12);
+    }
+
+    // Standard (docked) enforces the full height for usability
+    return Math.max(92, tabBarDockedHeight);
+  }, [tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight]);
 
   useEffect(() => {
     loadSettings();
@@ -255,6 +297,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedBreathDuration = await AsyncStorage.getItem("groundingBreathDuration");
       const savedCycles = await AsyncStorage.getItem("groundingCycles");
       const savedAnimationStyle = await AsyncStorage.getItem("groundingAnimationStyle");
+      const savedShowPrompts = await AsyncStorage.getItem("showGroundingPrompts");
       const savedReadingSpeed = await AsyncStorage.getItem("readingSpeed");
       const savedFontSize = await AsyncStorage.getItem("fontSize");
       const savedAutoSave = await AsyncStorage.getItem("autoSaveOnComplete");
@@ -281,6 +324,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedAnimationsEnabled = await AsyncStorage.getItem("animationsEnabled");
       const savedReduceMotion = await AsyncStorage.getItem("reduceMotion");
       const savedAnimationScale = await AsyncStorage.getItem("animationScale");
+      const savedSensitivePromptLevel = await AsyncStorage.getItem("sensitivePromptLevel");
+      const savedSensitiveActionPreference = await AsyncStorage.getItem(
+        "sensitiveActionPreference",
+      );
+      const savedSensitiveTone = await AsyncStorage.getItem("sensitiveTone");
 
       if (onboarding === "true") setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -310,6 +358,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       if (savedAnimationStyle && ["simple", "waves", "pulse"].includes(savedAnimationStyle)) {
         setGroundingAnimationStyleState(savedAnimationStyle as GroundingAnimationStyle);
+      }
+      if (savedShowPrompts !== null) {
+        setShowGroundingPromptsState(savedShowPrompts === "true");
       }
       if (savedReadingSpeed) {
         setReadingSpeedState(parseInt(savedReadingSpeed, 10));
@@ -378,6 +429,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setAnimationScaleState(scale);
       }
 
+      if (
+        savedSensitivePromptLevel &&
+        ["full", "minimal", "off"].includes(savedSensitivePromptLevel)
+      ) {
+        setSensitivePromptLevelState(savedSensitivePromptLevel as SensitivePromptLevel);
+      }
+      if (
+        savedSensitiveActionPreference &&
+        ["ground-first", "decide", "continue"].includes(savedSensitiveActionPreference)
+      ) {
+        setSensitiveActionPreferenceState(
+          savedSensitiveActionPreference as SensitiveActionPreference,
+        );
+      }
+      if (savedSensitiveTone && ["gentle", "direct"].includes(savedSensitiveTone)) {
+        setSensitiveToneState(savedSensitiveTone as SensitiveTone);
+      }
+
       // Load tab layout preference
       const savedTabLayout = await AsyncStorage.getItem("tabLayout");
       if (savedTabLayout && ["minimal", "comprehensive"].includes(savedTabLayout)) {
@@ -387,6 +456,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error("Failed to load settings", error);
     } finally {
       setIsLoadingSettings(false);
+      // Adapt settings based on learned user behavior
+      setTimeout(() => {
+        adaptSettingsBasedOnBehavior(
+          sensitiveActionPreference,
+          setSensitiveActionPreference,
+          setShowGroundingPrompts,
+        );
+      }, 1000);
     }
   };
 
@@ -514,6 +591,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setGroundingAnimationStyleState(style);
     } catch (e) {
       console.error("Failed to save grounding animation style", e);
+    }
+  };
+
+  const setShowGroundingPrompts = async (show: boolean) => {
+    try {
+      await AsyncStorage.setItem("showGroundingPrompts", show.toString());
+      setShowGroundingPromptsState(show);
+    } catch (e) {
+      console.error("Failed to save grounding prompts setting", e);
     }
   };
 
@@ -765,6 +851,33 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setSensitivePromptLevel = async (level: SensitivePromptLevel) => {
+    try {
+      await AsyncStorage.setItem("sensitivePromptLevel", level);
+      setSensitivePromptLevelState(level);
+    } catch (e) {
+      console.error("Failed to save sensitive prompt level", e);
+    }
+  };
+
+  const setSensitiveActionPreference = async (preference: SensitiveActionPreference) => {
+    try {
+      await AsyncStorage.setItem("sensitiveActionPreference", preference);
+      setSensitiveActionPreferenceState(preference);
+    } catch (e) {
+      console.error("Failed to save sensitive action preference", e);
+    }
+  };
+
+  const setSensitiveTone = async (tone: SensitiveTone) => {
+    try {
+      await AsyncStorage.setItem("sensitiveTone", tone);
+      setSensitiveToneState(tone);
+    } catch (e) {
+      console.error("Failed to save sensitive tone", e);
+    }
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -796,6 +909,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setGroundingCycles,
         groundingAnimationStyle,
         setGroundingAnimationStyle,
+        showGroundingPrompts,
+        setShowGroundingPrompts,
         readingSpeed,
         setReadingSpeed,
         fontSize,
@@ -817,6 +932,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setTabIconSize,
         tabBarFloatingHeight,
         setTabBarFloatingHeight,
+        tabBarHeight,
         enableAdvancedHeightControls,
         setEnableAdvancedHeightControls,
         dockedHeightStep,
@@ -848,6 +964,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setReduceMotion,
         animationScale,
         setAnimationScale,
+        sensitivePromptLevel,
+        setSensitivePromptLevel,
+        sensitiveActionPreference,
+        setSensitiveActionPreference,
+        sensitiveTone,
+        setSensitiveTone,
       }}
     >
       {children}

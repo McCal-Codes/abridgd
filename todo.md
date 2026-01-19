@@ -31,14 +31,16 @@
 ### Phase 2: Refresh & Discovery ♻️
 
 #### Pull-to-Refresh Implementation
-- [ ] **HomeScreen Pull-to-Refresh**
-    - Smooth pull-to-refresh with custom loading animation
-    - Show "Updated 2m ago" timestamp
-    - Haptic feedback on refresh trigger
-    - Optimistic UI updates (show new articles immediately)
-- [ ] **SectionScreen Pull-to-Refresh**
-    - Consistent refresh UX across all sections
-    - Smart caching (don't re-fetch if < 5 minutes old)
+- [x] **HomeScreen Pull-to-Refresh**
+    - ✅ Smooth pull-to-refresh with native RefreshControl
+    - ✅ Timestamp tracking (lastUpdated state)
+    - ✅ Separate refreshing state (no full-screen loading on pull)
+    - ⏳ Show "Updated 2m ago" timestamp (state tracked, UI pending)
+    - ⏳ Haptic feedback on refresh trigger (future enhancement)
+- [x] **SectionScreen Pull-to-Refresh**
+    - ✅ Consistent refresh UX across all sections
+    - ✅ Timestamp tracking per section
+    - ⏳ Smart caching (don't re-fetch if < 5 minutes old)
 - [ ] **SavedScreen Pull-to-Refresh**
     - Refresh metadata for saved articles (view counts, comment counts if applicable)
 
@@ -333,11 +335,11 @@
 ### Phase 4: Empty States & Error Handling 🎨
 
 #### Beautiful Empty States
-- [ ] **SavedScreen Empty State**
-    - Illustrated graphic (minimalist line art)
-    - Helpful message: "Your reading list is empty"
-    - CTA button: "Explore Top Stories"
-    - Tips: "Swipe left on any article to save it"
+- [x] **SavedScreen Empty State** ✅
+    - ✅ Illustrated graphic (bookmark icon with glow + sparkles)
+    - ✅ Helpful message: "Your reading list is empty"
+    - ✅ CTA button: "Explore Top Stories" (tab-aware navigation)
+    - ✅ Tips: "Swipe left on any article card to save it for later"
 - [ ] **Search No Results**
     - Friendly message with search term
     - Suggestions: "Try different keywords" or "Clear filters"
@@ -466,6 +468,7 @@
     - [ ] Create sensitivity classifier utility to auto-detect sensitive keywords/topics in headlines and content
     - [ ] Add sensitivity level gradations (none, low, medium, high) instead of binary sensitive flag
     - [ ] Add topic tags (violence, tragedy, health, politics, accidents, etc.) for granular categorization
+    - [ ] Provide optional political perspective context (Right, Center, Left) for political articles so readers can choose their preferred viewpoint
     - [ ] Create grounding trigger settings UI so users can customize which levels/topics prompt grounding
     - [ ] Implement smart detection in RssService to automatically classify articles
     - [ ] Update ArticleScreen to use new sensitivity levels and topic-based triggers
@@ -722,3 +725,140 @@
     - Feature usage analytics
     - Net Promoter Score (NPS)
     - App Store ratings and reviews
+
+---
+
+## Security Playbook (GitHub Repos: Website + App)
+
+Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vulnerable dependencies/unsafe code before it ships.
+
+### 0) Baseline assumptions
+- `main` is the protected integration branch.
+- All changes land via PR (even if solo).
+- CI runs on PRs and on a schedule.
+- No secrets are ever committed to git (including "temporary" ones).
+
+---
+
+### 1) Repo settings (one-time hardening)
+
+#### 1.1 Protect how code gets into `main`
+- [ ] Enable branch protection for `main`
+  - [ ] Require pull request before merging (no direct pushes)
+  - [ ] Require at least 1 approval
+  - [ ] Require status checks to pass before merging (CI + security scans)
+  - [ ] Require conversation resolution before merging
+  - [ ] (Optional) Require signed commits
+  - [ ] (Optional) Restrict who can push to matching branches
+
+#### 1.2 Enable GitHub-native security features
+- [ ] Enable Dependabot alerts
+- [ ] Enable Dependabot security updates (auto PRs)
+- [ ] Enable code scanning (CodeQL or equivalent)
+  - [ ] Run on PRs
+  - [ ] Run on default branch (scheduled)
+- [ ] Enable secret scanning
+- [ ] Enable secret scanning push protection (if available)
+
+#### 1.3 Harden GitHub Actions (CI/CD attack surface)
+- [ ] Set workflow permissions to least privilege (avoid broad write tokens)
+- [ ] Pin third-party Actions to a commit SHA (not a moving tag)
+- [ ] Separate "checks" workflows from "deploy" workflows
+- [ ] Ensure deploy workflows do NOT run with secrets on untrusted PR code
+- [ ] Limit who can approve/rerun privileged workflows (environments, reviewers)
+
+#### 1.4 Add basic security docs + ownership
+- [ ] Add `SECURITY.md` (how to report vulnerabilities, expected response)
+- [ ] Add `CODEOWNERS` (even if it's just you)
+- [ ] Add/update `.gitignore` to prevent committing local env files, build outputs, keys
+
+---
+
+### 2) Secrets policy (do not negotiate with the repo history)
+
+#### 2.1 Rules
+- [ ] Never store API keys/tokens in the repo (including config files)
+- [ ] Never store secrets in client apps (mobile/web) as "hidden strings" (assume extractable)
+- [ ] Use GitHub Secrets / Environment Secrets or your hosting provider's secret store
+
+#### 2.2 If a secret is committed (incident response)
+- [ ] Assume it is compromised
+- [ ] Revoke/rotate immediately (provider dashboard)
+- [ ] Remove from code paths
+- [ ] Audit access logs if available
+- [ ] If necessary, rewrite history ONLY after rotation (history rewrite is not rotation)
+
+---
+
+### 3) Dependency + supply chain safety (ongoing)
+
+#### 3.1 Continuous dependency maintenance
+- [ ] Review Dependabot PRs weekly (or as they arrive)
+- [ ] Patch high/critical vulnerabilities ASAP
+- [ ] Avoid unmaintained dependencies when alternatives exist
+
+#### 3.2 Locking and provenance
+- [ ] Use lockfiles when supported and commit them
+- [ ] Avoid "latest" ranges for critical deps where possible
+- [ ] For website: treat third-party scripts as supply-chain risk (pin versions, minimize vendors)
+
+---
+
+### 4) Code scanning + quality gates (ongoing)
+
+#### 4.1 Required checks (must pass to merge)
+- [ ] CI build passes (app + site)
+- [ ] Lint/format (as applicable)
+- [ ] Code scanning passes (or findings are triaged with documented rationale)
+
+#### 4.2 Triage rules
+- [ ] Security alerts are triaged within 24–72 hours
+- [ ] High/critical: fix or mitigate before release
+- [ ] False positives: document why and suppress narrowly
+
+---
+
+### 5) Release integrity (app + website)
+
+#### 5.1 Git hygiene
+- [ ] Tag releases (e.g., `vX.Y.Z`)
+- [ ] Keep a simple CHANGELOG entry per release
+- [ ] Prefer release branches or protected tags for production
+
+#### 5.2 Access control
+- [ ] Enable 2FA on GitHub account
+- [ ] Use least privilege collaborators and tokens
+- [ ] Rotate long-lived tokens periodically
+
+---
+
+### 6) Repo-specific notes
+
+#### Website repo (common pitfalls)
+- [ ] No secrets in static site code (analytics keys still matter)
+- [ ] Minimize third-party JS; pin versions; audit periodically
+- [ ] If using Actions for deploy: treat deploy as privileged, gated via environments
+
+#### App repo (common pitfalls)
+- [ ] No hardcoded API keys (clients can be reverse engineered)
+- [ ] Keep dependencies current (SwiftPM/CocoaPods/Carthage)
+- [ ] Ensure build/signing credentials are protected and not exposed to PR builds
+
+---
+
+### 7) Cadence checklist (repeatable)
+
+Weekly:
+- [ ] Review Dependabot alerts/PRs
+- [ ] Check code scanning findings
+- [ ] Check secret scanning alerts
+
+Per PR:
+- [ ] Confirm required checks run and pass
+- [ ] Verify no new third-party Actions were added unpinned
+- [ ] Verify no secrets/config leaks
+
+Monthly:
+- [ ] Review GitHub Actions permissions & environments
+- [ ] Audit access tokens and remove unused ones
+- [ ] Quick dependency "health" audit (maintained? trusted? necessary?)

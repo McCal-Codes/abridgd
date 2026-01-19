@@ -1,0 +1,37 @@
+# Abridged repo config for tooling/bots
+
+[project]
+name = "abridged"
+stack = "expo-react-native-typescript"
+entry = "src/App.tsx"
+node = ">=20"
+
+[paths]
+source = "src"
+standards = "docs/standards"
+preflight = "docs/standards/preflight.md"
+afterflight = "docs/standards/afterflight.md"
+ai_usage = "docs/standards/ai-usage.md"
+agents = "AGENTS.md"
+
+[commands]
+start = "npm start"
+test = "npm test"
+test_watch = "npm run test:watch"
+test_coverage = "npm run test:coverage"
+build_ipa = "npm run build:ipa"
+health = "npm run repo:health"
+lint_docs = "npm run lint:docs"
+ai_leak_check = "npm run audit:ai-leak"
+
+[standards]
+icons = "Lucide React Native only (no emojis in UI)"
+hit_target_pt = 44
+tabs_min = 3
+tabs_max = 5
+semver = true
+
+[ai]
+policy = "Keep Copilot/GPT output local; do not paste repo content to external prompts; review AI drafts before commit."
+logging = "No secrets or article identifiers in logs."
+*** End Patch

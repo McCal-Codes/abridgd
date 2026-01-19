@@ -24,6 +24,8 @@ export const SectionScreen: React.FC = () => {
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
   const insets = useSafeAreaInsets();
   const {
     tabBarHeight,
@@ -41,6 +43,7 @@ export const SectionScreen: React.FC = () => {
         setError(null);
         const data = await fetchArticlesByCategory(category);
         setArticles(data);
+        setLastUpdated(new Date());
       } catch (e: any) {
         setError(e?.message || "Failed to load articles.");
       } finally {
@@ -110,19 +113,19 @@ export const SectionScreen: React.FC = () => {
                   16,
             },
           ]}
-          refreshing={loading}
-          onRefresh={() => {
-            setLoading(true);
+          refreshing={refreshing}
+          onRefresh={async () => {
+            setRefreshing(true);
             setError(null);
-            fetchArticlesByCategory(category)
-              .then((data) => {
-                setArticles(data);
-                setLoading(false);
-              })
-              .catch((e) => {
-                setError(e?.message || "Failed to refresh.");
-                setLoading(false);
-              });
+            try {
+              const data = await fetchArticlesByCategory(category);
+              setArticles(data);
+              setLastUpdated(new Date());
+            } catch (e: any) {
+              setError(e?.message || "Failed to refresh.");
+            } finally {
+              setRefreshing(false);
+            }
           }}
         />
       )}

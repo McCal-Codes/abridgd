@@ -16,12 +16,21 @@ import { spacing } from "../theme/spacing";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+const AnimatedFlatList: typeof FlatList =
+  (Animated as any)?.FlatList ||
+  ((Animated as any)?.createAnimatedComponent
+    ? ((Animated as any).createAnimatedComponent(FlatList) as typeof FlatList)
+    : FlatList) ||
+  FlatList;
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
 
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const { scrollY } = React.useContext(ScrollContext);
   const insets = useSafeAreaInsets();
@@ -46,6 +55,7 @@ export const HomeScreen: React.FC = () => {
         setError(null);
         const data = await fetchArticlesByCategory("Top");
         setArticles(data);
+        setLastUpdated(new Date());
       } catch (e: any) {
         setError(e?.message || "Failed to load articles.");
       } finally {
@@ -90,7 +100,8 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
       ) : (
-        <Animated.FlatList
+        <AnimatedFlatList
+          testID="home-list"
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -112,22 +123,22 @@ export const HomeScreen: React.FC = () => {
                   16,
             },
           ]}
-          refreshing={loading}
+          refreshing={refreshing}
           // wire scroll to the shared scrollY value so tab bar can animate
           onScroll={onScroll}
           scrollEventThrottle={16}
-          onRefresh={() => {
-            setLoading(true);
+          onRefresh={async () => {
+            setRefreshing(true);
             setError(null);
-            fetchArticlesByCategory("Top")
-              .then((data) => {
-                setArticles(data);
-                setLoading(false);
-              })
-              .catch((e) => {
-                setError(e?.message || "Failed to refresh.");
-                setLoading(false);
-              });
+            try {
+              const data = await fetchArticlesByCategory("Top");
+              setArticles(data);
+              setLastUpdated(new Date());
+            } catch (e: any) {
+              setError(e?.message || "Failed to refresh.");
+            } finally {
+              setRefreshing(false);
+            }
           }}
         />
       )}

@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 import { Article, ArticleCategory } from "../types/Article";
 import { RSS_FEEDS } from "../data/feedConfig";
 import { ErrorCode, ErrorHandler } from "../utils/errorCodes";
+import { loadSourcePreferences, isSourceEnabled } from "../utils/sourcePreferences";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -161,7 +162,17 @@ export const fetchArticlesByCategory = async (category: ArticleCategory): Promis
   };
 
   // Fetch all concurrently
-  const results = await Promise.all(feedSources.map((src) => fetchSingleFeed(src)));
+  const prefs = await loadSourcePreferences();
+  const sourcesToFetch = feedSources.filter((src) =>
+    isSourceEnabled(prefs.overrides, category, src.name),
+  );
+
+  if (sourcesToFetch.length === 0) {
+    console.warn(`All sources are disabled for ${category}; returning empty list.`);
+    return [];
+  }
+
+  const results = await Promise.all(sourcesToFetch.map((src) => fetchSingleFeed(src)));
 
   // Flatten and separate into buckets for sorting
   const flatArticles = results.flat();

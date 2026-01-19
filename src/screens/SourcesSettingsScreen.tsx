@@ -1,53 +1,60 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Switch, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { RSS_FEEDS } from "../data/feedConfig";
 import { ArticleCategory } from "../types/Article";
-import { Plus, Trash2 } from "lucide-react-native";
 import { ComingSoon } from "../components/ComingSoon";
+import {
+  loadSourcePreferences,
+  updateSourceEnabled,
+  isSourceEnabled,
+  getSourceKey,
+  SourceOverrideMap,
+} from "../utils/sourcePreferences";
 
 export const SourcesSettingsScreen: React.FC = () => {
-  const [enabledSources, setEnabledSources] = useState<Record<string, boolean>>({});
-  const [showAddCustom, setShowAddCustom] = useState(false);
-  const [customName, setCustomName] = useState("");
-  const [customUrl, setCustomUrl] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<ArticleCategory>("Top");
+  const [overrides, setOverrides] = useState<SourceOverrideMap>({});
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
 
-  const toggleSource = (sourceKey: string) => {
-    setEnabledSources((prev) => ({
-      ...prev,
-      [sourceKey]: !prev[sourceKey],
-    }));
-  };
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const prefs = await loadSourcePreferences();
+      if (mounted) {
+        setOverrides(prefs.overrides);
+        setLoadingPrefs(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const addCustomSource = () => {
-    if (!customName.trim() || !customUrl.trim()) {
-      Alert.alert("Error", "Please enter both name and URL");
-      return;
+  const toggleSource = async (category: ArticleCategory, sourceName: string) => {
+    const currentlyEnabled = isSourceEnabled(overrides, category, sourceName);
+    const key = getSourceKey(category, sourceName);
+
+    setOverrides((prev) => {
+      const next: SourceOverrideMap = { ...prev };
+      if (currentlyEnabled) {
+        next[key] = false;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+
+    try {
+      const prefs = await updateSourceEnabled(category, sourceName, !currentlyEnabled);
+      setOverrides(prefs.overrides);
+    } catch (error) {
+      Alert.alert("Error", "Couldn't update source preference. Please try again.");
+      const prefs = await loadSourcePreferences();
+      setOverrides(prefs.overrides);
     }
-
-    if (!customUrl.includes("http")) {
-      Alert.alert("Error", "Please enter a valid URL starting with http:// or https://");
-      return;
-    }
-
-    // TODO: Save custom source to AsyncStorage
-    Alert.alert("Success", `Added ${customName} to ${selectedCategory}`);
-    setCustomName("");
-    setCustomUrl("");
-    setShowAddCustom(false);
   };
 
   const categories: ArticleCategory[] = ["Top", "Local", "Business", "Sports", "Culture"];
@@ -60,31 +67,38 @@ export const SourcesSettingsScreen: React.FC = () => {
           Choose which RSS feeds to include in your news. Disable sources you don't want to see.
         </Text>
 
-        {categories.map((category) => (
-          <View key={category} style={styles.categorySection}>
-            <Text style={styles.categoryTitle}>{category}</Text>
-            {RSS_FEEDS[category].map((source, index) => {
-              const sourceKey = `${category}-${source.name}`;
-              const isEnabled = enabledSources[sourceKey] !== false; // Default to enabled
-
-              return (
-                <View key={sourceKey} style={styles.sourceRow}>
-                  <View style={styles.sourceInfo}>
-                    <Text style={styles.sourceName}>{source.name}</Text>
-                    <Text style={styles.sourceUrl} numberOfLines={1}>
-                      {source.url}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={isEnabled}
-                    onValueChange={() => toggleSource(sourceKey)}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                  />
-                </View>
-              );
-            })}
+        {loadingPrefs ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.loadingText}>Loading your source preferences…</Text>
           </View>
-        ))}
+        ) : (
+          categories.map((category) => (
+            <View key={category} style={styles.categorySection}>
+              <Text style={styles.categoryTitle}>{category}</Text>
+              {RSS_FEEDS[category].map((source) => {
+                const sourceKey = getSourceKey(category, source.name);
+                const isEnabled = isSourceEnabled(overrides, category, source.name);
+
+                return (
+                  <View key={sourceKey} style={styles.sourceRow}>
+                    <View style={styles.sourceInfo}>
+                      <Text style={styles.sourceName}>{source.name}</Text>
+                      <Text style={styles.sourceUrl} numberOfLines={1}>
+                        {source.url}
+                      </Text>
+                    </View>
+                    <Switch
+                      value={isEnabled}
+                      onValueChange={() => toggleSource(category, source.name)}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          ))
+        )}
 
         {/* ADD CUSTOM SOURCE */}
         <View style={styles.section}>
@@ -263,5 +277,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     lineHeight: 20,
+  },
+  loadingContainer: {
+    paddingVertical: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  loadingText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 });

@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   Text,
   LayoutChangeEvent,
+  LayoutRectangle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSettings } from "../context/SettingsContext";
+import { useSavedArticles } from "../context/SavedArticlesContext";
 import { colors } from "../theme/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollContext } from "../context/ScrollContext";
@@ -37,7 +39,33 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
     tabBarHiddenHeight,
     tabBarFloatingHeight,
     experimentalIOS26NavBar,
+    showTabLabels,
+    tabBadgeStyle,
+    tabIndicatorStyle,
+    tabIconSize,
   } = useSettings();
+  const { savedArticles } = useSavedArticles();
+  const savedArticlesCount = savedArticles.length;
+  const resolveBadge = React.useCallback(
+    (routeName: string) => {
+      if (tabBadgeStyle === "none") {
+        return null;
+      }
+
+      if (routeName === "Saved" && savedArticlesCount > 0) {
+        if (tabBadgeStyle === "dot") {
+          return { type: "dot" as const };
+        }
+        return {
+          type: "count" as const,
+          value: savedArticlesCount > 99 ? "99+" : savedArticlesCount.toString(),
+        };
+      }
+
+      return null;
+    },
+    [savedArticlesCount, tabBadgeStyle],
+  );
   const isStandard = tabBarStyle === "standard";
 
   // animate translateY and opacity from the shared scrollY value
@@ -50,7 +78,6 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   // Keep the tab bar fully visible at all times (do not allow it to be cut off)
   // Use a static zero translate so scrolling does not move the bar offscreen.
   const translateY = React.useRef(new Animated.Value(0)).current;
-
   // Animate blur opacity based on scroll but respect user preference
   const blurOpacityAnimated = scrollY.interpolate({
     inputRange: [0, 80],
@@ -61,8 +88,6 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
 
   // Enhanced blur intensity for experimental iOS 26 navbar effect
   const blurIntensity = experimentalIOS26NavBar && tabBarBlur ? 80 : tabBarBlur ? 60 : 0;
-
-  // allow the visual height of the tab bar to change as it is docked/hidden
   // (normalHeight/hiddenHeight already computed above)
 
   // Place the capsule very close to the bottom; keep a small base offset and add the inset
@@ -130,7 +155,11 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
             state={props.state}
             descriptors={props.descriptors}
             navigation={props.navigation}
-            settingsOverrides={{ isStandard }}
+            isStandard={isStandard}
+            showTabLabels={showTabLabels}
+            tabIconSize={tabIconSize}
+            tabIndicatorStyle={tabIndicatorStyle}
+            resolveBadge={resolveBadge}
           />
         </Animated.View>
       </AnimatedBlur>
@@ -195,18 +224,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  badgeDot: {
+    position: "absolute",
+    top: 8,
+    right: 26,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
   badgeText: {
     color: "#fff",
     fontSize: 10,
   },
-  indicator: {
+  indicatorBase: {
     position: "absolute",
-    height: 4,
-    borderRadius: 2,
+    left: 0,
+    top: 0,
+  },
+  indicatorUnderline: {
     backgroundColor: "#0a84ff",
-    // bring indicator slightly closer to the bottom of the capsule
-    bottom: 6,
-    left: 16,
+  },
+  indicatorBubble: {
+    backgroundColor: "rgba(10,132,255,0.16)",
   },
 });
 
@@ -215,56 +254,145 @@ export default LiquidTabBar;
 // Animated versions
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
+type BadgeConfig = { type: "count"; value: string } | { type: "dot" };
+
 type IndicatorProps = {
   state: any;
   descriptors: any;
   navigation: any;
-  settingsOverrides?: any;
+  isStandard: boolean;
+  showTabLabels: boolean;
+  tabIconSize: number;
+  tabIndicatorStyle: "underline" | "bubble" | "none";
+  resolveBadge: (routeName: string) => BadgeConfig | null;
 };
 
 const AnimatedIndicator: React.FC<IndicatorProps> = ({
   state,
   descriptors,
   navigation,
-  settingsOverrides,
+  isStandard,
+  showTabLabels,
+  tabIconSize,
+  tabIndicatorStyle,
+  resolveBadge,
 }) => {
   const routes = state.routes;
-  const count = routes.length;
-  const containerWidth = React.useRef(0);
-  const active = React.useRef(new Animated.Value(state.index)).current;
+  const indicatorX = React.useRef(new Animated.Value(0)).current;
+  const indicatorY = React.useRef(new Animated.Value(0)).current;
+  const indicatorWidth = React.useRef(new Animated.Value(0)).current;
+  const indicatorHeight = React.useRef(
+    new Animated.Value(tabIndicatorStyle === "bubble" ? 30 : 4),
+  ).current;
+  const [indicatorRadius, setIndicatorRadius] = React.useState(16);
+  const [tabLayouts, setTabLayouts] = React.useState<Record<string, LayoutRectangle>>({});
+
+  const handleTabLayout = React.useCallback((routeKey: string, layout: LayoutRectangle) => {
+    setTabLayouts((prev) => {
+      const existing = prev[routeKey];
+      if (
+        existing &&
+        Math.abs(existing.width - layout.width) < 1 &&
+        Math.abs(existing.height - layout.height) < 1 &&
+        Math.abs(existing.x - layout.x) < 1 &&
+        Math.abs(existing.y - layout.y) < 1
+      ) {
+        return prev;
+      }
+      return { ...prev, [routeKey]: layout };
+    });
+  }, []);
+
+  const animateToRoute = React.useCallback(
+    (index: number) => {
+      if (tabIndicatorStyle === "none") {
+        return;
+      }
+      const route = routes[index];
+      if (!route) return;
+      const layout = tabLayouts[route.key];
+      if (!layout) return;
+
+      const horizontalPadding = tabIndicatorStyle === "bubble" ? 16 : 12;
+      const verticalPadding = tabIndicatorStyle === "bubble" ? 10 : 0;
+      const minWidth = tabIndicatorStyle === "bubble" ? 28 : 24;
+      const minHeight = tabIndicatorStyle === "bubble" ? 24 : 4;
+
+      const targetWidth = Math.max(layout.width - horizontalPadding, minWidth);
+      const targetHeight =
+        tabIndicatorStyle === "bubble"
+          ? Math.max(layout.height - verticalPadding, minHeight)
+          : minHeight;
+      const targetX = layout.x + (layout.width - targetWidth) / 2;
+      const targetY =
+        tabIndicatorStyle === "bubble"
+          ? layout.y + (layout.height - targetHeight) / 2
+          : layout.y + layout.height - targetHeight - 4;
+
+      setIndicatorRadius(tabIndicatorStyle === "bubble" ? targetHeight / 2 : 2);
+
+      Animated.parallel([
+        Animated.spring(indicatorX, {
+          toValue: targetX,
+          stiffness: 260,
+          damping: 25,
+          useNativeDriver: false,
+        }),
+        Animated.spring(indicatorY, {
+          toValue: targetY,
+          stiffness: 260,
+          damping: 25,
+          useNativeDriver: false,
+        }),
+        Animated.timing(indicatorWidth, {
+          toValue: targetWidth,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+        Animated.timing(indicatorHeight, {
+          toValue: targetHeight,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    },
+    [
+      routes,
+      tabIndicatorStyle,
+      tabLayouts,
+      indicatorHeight,
+      indicatorWidth,
+      indicatorX,
+      indicatorY,
+    ],
+  );
 
   React.useEffect(() => {
-    Animated.timing(active, { toValue: state.index, duration: 260, useNativeDriver: true }).start();
-  }, [state.index, active]);
+    animateToRoute(state.index);
+  }, [state.index, tabIndicatorStyle, tabLayouts, animateToRoute]);
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    containerWidth.current = e.nativeEvent.layout.width;
-  };
-
-  const tabWidth = containerWidth.current && count > 0 ? containerWidth.current / count : 0;
-
-  // If there's only one tab, Animated.interpolate requires at least 2 points.
-  // Guard to produce a no-op translate when count < 2.
-  let translateX: any;
-  if (count > 1) {
-    translateX = active.interpolate({
-      inputRange: routes.map((_: any, i: number) => i),
-      outputRange: routes.map((_: any, i: number) => tabWidth * i + tabWidth / 2 - 20),
-      extrapolate: "clamp",
-    });
-  } else {
-    translateX = active.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
-  }
+  const iconSize = tabIconSize || 25;
+  const activeRouteKey = routes[state.index]?.key;
+  const hasLayout = !!(activeRouteKey && tabLayouts[activeRouteKey]);
+  const shouldRenderIndicator = tabIndicatorStyle !== "none" && hasLayout;
 
   return (
-    <View onLayout={onLayout} style={{ width: "100%" }}>
-      {/* indicator */}
-      <Animated.View
-        style={[
-          styles.indicator,
-          { left: settingsOverrides?.isStandard ? 0 : 16, transform: [{ translateX }] },
-        ]}
-      />
+    <View style={{ width: "100%" }}>
+      {shouldRenderIndicator ? (
+        <Animated.View
+          style={[
+            styles.indicatorBase,
+            tabIndicatorStyle === "bubble" ? styles.indicatorBubble : styles.indicatorUnderline,
+            {
+              borderRadius: tabIndicatorStyle === "bubble" ? indicatorRadius : 2,
+              transform: [{ translateX: indicatorX }],
+              top: indicatorY,
+              width: indicatorWidth,
+              height: indicatorHeight,
+            },
+          ]}
+        />
+      ) : null}
       <View style={styles.row}>
         {routes.map((route: any, idx: number) => {
           const descriptor = descriptors[route.key];
@@ -274,6 +402,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
           const color = focused ? activeTint : inactiveTint;
           const IconRenderer = (descriptor.options.tabBarIcon as any) || null;
           const label = descriptor.options.title ?? route.name;
+          const badge = resolveBadge(route.name);
 
           return (
             <AnimatedTouchable
@@ -285,30 +414,35 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                 navigation.navigate(route.name);
               }}
               style={styles.tabButton}
+              onLayout={(event: LayoutChangeEvent) =>
+                handleTabLayout(route.key, event.nativeEvent.layout)
+              }
               activeOpacity={0.75}
             >
               <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
-                {IconRenderer
-                  ? IconRenderer({ color, size: descriptor.options.tabBarIconSize || 25, focused })
-                  : null}
+                {IconRenderer ? IconRenderer({ color, size: iconSize, focused }) : null}
               </Animated.View>
-              {descriptor.options.tabBarShowLabel === false ? null : (
+              {showTabLabels ? (
                 <Text
                   style={[
                     styles.label,
                     {
                       color,
-                      marginTop: settingsOverrides?.isStandard ? 0 : styles.label.marginTop,
+                      marginTop: isStandard ? 0 : styles.label.marginTop,
                     },
                   ]}
                 >
                   {label}
                 </Text>
-              )}
-              {descriptor.options.tabBarBadge ? (
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.badgeText}>{descriptor.options.tabBarBadge}</Text>
-                </View>
+              ) : null}
+              {badge ? (
+                badge.type === "dot" ? (
+                  <View style={[styles.badgeDot, { backgroundColor: colors.primary }]} />
+                ) : (
+                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.badgeText}>{badge.value}</Text>
+                  </View>
+                )
               ) : null}
             </AnimatedTouchable>
           );

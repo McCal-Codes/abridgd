@@ -8,40 +8,62 @@ import {
   Alert,
   Modal,
   Pressable,
+  Platform,
+  ActionSheetIOS,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import { GripVertical, Check } from "lucide-react-native";
+import { GlassButton } from "../components/GlassButton";
+import {
+  GripVertical,
+  Check,
+  Home,
+  Search,
+  Bookmark,
+  Star,
+  Flame,
+  MapPin,
+  Briefcase,
+  Trophy,
+  Palette,
+  Newspaper,
+  Layers,
+  Smartphone,
+  Sparkles,
+  Minimize2,
+  Square,
+} from "lucide-react-native";
 import { Switch } from "react-native";
 import { ArticleCategory } from "../types/Article";
 import { useSettings } from "../context/SettingsContext";
+import type { LucideIcon } from "lucide-react-native";
 
 interface TabOption {
   id: string;
   label: string;
-  icon: string;
+  Icon: LucideIcon;
   category?: ArticleCategory;
 }
 
 const getAvailableTabs = (layout: "minimal" | "comprehensive"): TabOption[] => {
   if (layout === "minimal") {
     return [
-      { id: "home", label: "Home", icon: "🏠" },
-      { id: "discover", label: "Discover", icon: "🔍" },
-      { id: "saved", label: "Saved", icon: "🔖" },
-      { id: "digest", label: "Digest", icon: "⭐" },
+      { id: "home", label: "Home", Icon: Home },
+      { id: "discover", label: "Discover", Icon: Search },
+      { id: "saved", label: "Saved", Icon: Bookmark },
+      { id: "digest", label: "Digest", Icon: Star },
     ];
   } else {
     return [
-      { id: "top", label: "Top", icon: "🔥", category: "Top" },
-      { id: "local", label: "Local", icon: "📍", category: "Local" },
-      { id: "business", label: "Business", icon: "💼", category: "Business" },
-      { id: "sports", label: "Sports", icon: "🏆", category: "Sports" },
-      { id: "culture", label: "Culture", icon: "🎨", category: "Culture" },
-      { id: "digest", label: "Digest", icon: "📰" },
-      { id: "saved", label: "Saved", icon: "🔖" },
+      { id: "top", label: "Top", Icon: Flame, category: "Top" },
+      { id: "local", label: "Local", Icon: MapPin, category: "Local" },
+      { id: "business", label: "Business", Icon: Briefcase, category: "Business" },
+      { id: "sports", label: "Sports", Icon: Trophy, category: "Sports" },
+      { id: "culture", label: "Culture", Icon: Palette, category: "Culture" },
+      { id: "digest", label: "Digest", Icon: Newspaper },
+      { id: "saved", label: "Saved", Icon: Bookmark },
     ];
   }
 };
@@ -87,12 +109,12 @@ export const TabBarSettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(
     150,
-    insets.bottom + (allowContentUnderTabBar ? tabBarDockedHeight || 92 : 0) + spacing.lg
+    insets.bottom + (allowContentUnderTabBar ? tabBarDockedHeight || 92 : 0) + spacing.lg,
   );
 
   const [presetModalVisible, setPresetModalVisible] = useState(false);
   const [presetModalType, setPresetModalType] = useState<"docked" | "hidden" | "floating" | null>(
-    null
+    null,
   );
 
   const dockedTemplates = [
@@ -165,7 +187,10 @@ export const TabBarSettingsScreen: React.FC = () => {
                       { width: tabIconSize, height: tabIconSize, borderRadius: tabIconSize / 2 },
                     ]}
                   >
-                    <Text style={styles.previewIconText}>{t.icon}</Text>
+                    <t.Icon
+                      size={tabIconSize ? tabIconSize * 0.6 : 15}
+                      color={colors.textSecondary}
+                    />
                   </View>
                   {showTabLabels ? <Text style={styles.previewItemLabel}>{t.label}</Text> : null}
                   {tabBadgeStyle === "count" && i === 1 ? (
@@ -340,16 +365,135 @@ export const TabBarSettingsScreen: React.FC = () => {
     setActiveTabs(newTabs); // Persist immediately
   };
 
+  const promptReorder = (index: number) => {
+    const hasUp = index > 0;
+    const hasDown = index < selectedTabs.length - 1;
+    if (!hasUp && !hasDown) return;
+
+    const handleMoveUp = () => moveTab(index, index - 1);
+    const handleMoveDown = () => moveTab(index, index + 1);
+
+    if (Platform.OS === "ios") {
+      const options = [
+        ...(hasUp ? ["Move Up"] : []),
+        ...(hasDown ? ["Move Down"] : []),
+        "Cancel",
+      ];
+      const cancelButtonIndex = options.length - 1;
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: "Reorder Tab",
+          options,
+          cancelButtonIndex,
+          userInterfaceStyle: "light",
+        },
+        (buttonIndex) => {
+          if (hasUp && buttonIndex === 0) return handleMoveUp();
+          if (hasUp && hasDown && buttonIndex === 1) return handleMoveDown();
+          if (!hasUp && hasDown && buttonIndex === 0) return handleMoveDown();
+        },
+      );
+      return;
+    }
+
+    const buttons = [];
+    if (hasUp) {
+      buttons.push({ text: "Move Up", onPress: handleMoveUp });
+    }
+    if (hasDown) {
+      buttons.push({ text: "Move Down", onPress: handleMoveDown });
+    }
+    buttons.push({ text: "Cancel", style: "cancel" as const });
+    Alert.alert("Reorder Tab", "Tap where you want to move this tab.", buttons);
+  };
+
   const getTabInfo = (tabId: string) => AVAILABLE_TABS.find((t) => t.id === tabId);
+
+  const applyFloatingPreset = () => {
+    setTabBarStyle("floating");
+    setTabBarBlur(true);
+    setTabBarFloatingHeight(64);
+    setShowTabLabels(true);
+  };
+
+  const applyStandardPreset = () => {
+    setTabBarStyle("standard");
+    setTabBarBlur(false);
+    setTabBarDockedHeight(100);
+    setShowTabLabels(true);
+  };
+
+  const applyCompactPreset = () => {
+    setTabBarStyle("compact");
+    setTabBarBlur(true);
+    setTabBarFloatingHeight(54);
+    setShowTabLabels(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}>
-        <Text style={styles.header}>Tab Bar Layout</Text>
+        <Text style={styles.header}>Tab Bar Studio</Text>
         <Text style={styles.description}>
-          Customize which tabs appear in your bottom navigation. Select up to 5 tabs and drag to
-          reorder.
+          Shape the bottom navigation to match iOS 26-inspired chrome. Pick presets, tweak spacing,
+          and reorder tabs.
         </Text>
+
+        {/* Preview always on top for instant feedback */}
+        <PreviewBar />
+
+        {/* Quick presets */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Presets</Text>
+          <Text style={styles.sectionDesc}>Start from a style, then fine-tune below</Text>
+          <View style={styles.presetGrid}>
+            <View style={styles.presetCard}>
+              <View style={styles.presetCardHeader}>
+                <Sparkles size={18} color={colors.primary} />
+                <Text style={styles.presetCardTitle}>iOS 26 Floating</Text>
+              </View>
+              <Text style={styles.presetCardDesc}>Blurred capsule, labels on</Text>
+              <GlassButton
+                label="Apply"
+                onPress={applyFloatingPreset}
+                icon={<Sparkles size={16} color={colors.text} />}
+                prominence="tinted"
+                compact
+                style={styles.presetButton}
+              />
+            </View>
+            <View style={styles.presetCard}>
+              <View style={styles.presetCardHeader}>
+                <Square size={18} color={colors.textSecondary} />
+                <Text style={styles.presetCardTitle}>Standard Docked</Text>
+              </View>
+              <Text style={styles.presetCardDesc}>Solid bar, comfortable height</Text>
+              <GlassButton
+                label="Apply"
+                onPress={applyStandardPreset}
+                icon={<Check size={16} color={colors.text} />}
+                prominence="standard"
+                compact
+                style={styles.presetButton}
+              />
+            </View>
+            <View style={styles.presetCard}>
+              <View style={styles.presetCardHeader}>
+                <Minimize2 size={18} color={colors.textSecondary} />
+                <Text style={styles.presetCardTitle}>Compact Minimal</Text>
+              </View>
+              <Text style={styles.presetCardDesc}>Slim, labels off, tinted blur</Text>
+              <GlassButton
+                label="Apply"
+                onPress={applyCompactPreset}
+                icon={<Minimize2 size={16} color={colors.text} />}
+                prominence="filled"
+                compact
+                style={styles.presetButton}
+              />
+            </View>
+          </View>
+        </View>
 
         {/* LAYOUT STYLE SELECTOR */}
         <View style={styles.section}>
@@ -363,13 +507,19 @@ export const TabBarSettingsScreen: React.FC = () => {
               style={[styles.layoutOption, tabLayout === "minimal" && styles.layoutOptionSelected]}
               onPress={() => setTabLayout("minimal")}
             >
+              <View style={styles.layoutIconContainer}>
+                <Layers
+                  size={20}
+                  color={tabLayout === "minimal" ? colors.primary : colors.textSecondary}
+                />
+              </View>
               <Text
                 style={[
                   styles.layoutOptionText,
                   tabLayout === "minimal" && styles.layoutOptionTextSelected,
                 ]}
               >
-                📰 Minimal
+                Minimal
               </Text>
               <Text style={styles.layoutOptionDesc}>Clean, NYT-style with 4 essential tabs</Text>
             </TouchableOpacity>
@@ -381,13 +531,19 @@ export const TabBarSettingsScreen: React.FC = () => {
               ]}
               onPress={() => setTabLayout("comprehensive")}
             >
+              <View style={styles.layoutIconContainer}>
+                <Smartphone
+                  size={20}
+                  color={tabLayout === "comprehensive" ? colors.primary : colors.textSecondary}
+                />
+              </View>
               <Text
                 style={[
                   styles.layoutOptionText,
                   tabLayout === "comprehensive" && styles.layoutOptionTextSelected,
                 ]}
               >
-                📱 Comprehensive
+                Comprehensive
               </Text>
               <Text style={styles.layoutOptionDesc}>Full category coverage with 7 tabs</Text>
             </TouchableOpacity>
@@ -400,9 +556,6 @@ export const TabBarSettingsScreen: React.FC = () => {
           <Text style={styles.sectionDesc}>
             Fine-tune the look and behavior of the bottom tab bar.
           </Text>
-
-          {/* Preview */}
-          <PreviewBar />
 
           <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>Style</Text>
@@ -509,16 +662,19 @@ export const TabBarSettingsScreen: React.FC = () => {
           </View>
 
           <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Background Blur</Text>
-            <Switch value={tabBarBlur} onValueChange={(v) => setTabBarBlur(v)} />
-          </View>
-
-          <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>
               Experimental iOS 26 Navbar
               <Text style={styles.betaBadge}> BETA</Text>
             </Text>
-            <Switch value={experimentalIOS26NavBar} onValueChange={(v) => setExperimentalIOS26NavBar(v)} />
+            <Switch
+              value={experimentalIOS26NavBar}
+              onValueChange={(v) => setExperimentalIOS26NavBar(v)}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Background Blur</Text>
+            <Switch value={tabBarBlur} onValueChange={(v) => setTabBarBlur(v)} />
           </View>
 
           <View style={styles.settingRow}>
@@ -529,7 +685,7 @@ export const TabBarSettingsScreen: React.FC = () => {
                   style={styles.heightBtn}
                   onPress={() =>
                     setTabBarDockedHeight(
-                      Math.max(92, (tabBarDockedHeight || 92) - (dockedHeightStep || 2))
+                      Math.max(92, (tabBarDockedHeight || 92) - (dockedHeightStep || 2)),
                     )
                   }
                 >
@@ -596,8 +752,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                       Math.max(
                         tabBarDockedHeight || 92,
                         (tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8) -
-                          (hiddenHeightStep || 2)
-                      )
+                          (hiddenHeightStep || 2),
+                      ),
                     )
                   }
                 >
@@ -611,7 +767,7 @@ export const TabBarSettingsScreen: React.FC = () => {
                   onPress={() =>
                     setTabBarHiddenHeight(
                       (tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8) +
-                        (hiddenHeightStep || 2)
+                        (hiddenHeightStep || 2),
                     )
                   }
                 >
@@ -666,7 +822,7 @@ export const TabBarSettingsScreen: React.FC = () => {
                   style={styles.heightBtn}
                   onPress={() =>
                     setTabBarFloatingHeight(
-                      Math.max(48, (tabBarFloatingHeight || 64) - (floatingHeightStep || 2))
+                      Math.max(48, (tabBarFloatingHeight || 64) - (floatingHeightStep || 2)),
                     )
                   }
                 >
@@ -677,7 +833,7 @@ export const TabBarSettingsScreen: React.FC = () => {
                   style={styles.heightBtn}
                   onPress={() =>
                     setTabBarFloatingHeight(
-                      (tabBarFloatingHeight || 64) + (floatingHeightStep || 2)
+                      (tabBarFloatingHeight || 64) + (floatingHeightStep || 2),
                     )
                   }
                 >
@@ -837,21 +993,26 @@ export const TabBarSettingsScreen: React.FC = () => {
 
         {/* ACTIVE TABS */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Active Tabs ({selectedTabs.length}/5)</Text>
-          <Text style={styles.sectionDesc}>Tap and hold to reorder • Tap to remove</Text>
+            <Text style={styles.sectionTitle}>Active Tabs ({selectedTabs.length}/5)</Text>
+            <Text style={styles.sectionDesc}>Tap and hold to reorder • Tap to remove</Text>
 
-          <View style={styles.tabList}>
-            {selectedTabs.map((tabId, index) => {
+            <View style={styles.tabList}>
+              {selectedTabs.map((tabId, index) => {
               const tab = getTabInfo(tabId);
               if (!tab) return null;
 
               return (
-                <View key={tabId} style={styles.activeTabRow}>
+                <Pressable
+                  key={tabId}
+                  style={styles.activeTabRow}
+                  onLongPress={() => promptReorder(index)}
+                  delayLongPress={180}
+                >
                   <View style={styles.dragHandle}>
                     <GripVertical size={20} color={colors.textSecondary} />
                   </View>
                   <View style={styles.tabInfo}>
-                    <Text style={styles.tabIcon}>{tab.icon}</Text>
+                    <tab.Icon size={20} color={colors.primary} />
                     <Text style={styles.tabLabel}>{tab.label}</Text>
                   </View>
                   <View style={styles.tabPosition}>
@@ -860,11 +1021,11 @@ export const TabBarSettingsScreen: React.FC = () => {
                   <TouchableOpacity style={styles.removeButton} onPress={() => toggleTab(tabId)}>
                     <Text style={styles.removeButtonText}>Remove</Text>
                   </TouchableOpacity>
-                </View>
+                </Pressable>
               );
             })}
+            </View>
           </View>
-        </View>
 
         {/* AVAILABLE TABS */}
         <View style={styles.section}>
@@ -878,7 +1039,7 @@ export const TabBarSettingsScreen: React.FC = () => {
                 style={styles.availableTab}
                 onPress={() => toggleTab(tab.id)}
               >
-                <Text style={styles.availableTabIcon}>{tab.icon}</Text>
+                <tab.Icon size={24} color={colors.primary} />
                 <Text style={styles.availableTabLabel}>{tab.label}</Text>
               </TouchableOpacity>
             ))}
@@ -887,7 +1048,7 @@ export const TabBarSettingsScreen: React.FC = () => {
 
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
-            💡 Changes apply immediately — the tab bar will update as soon as you toggle or reorder
+            Changes apply immediately — the tab bar will update as soon as you toggle or reorder
             tabs.
           </Text>
         </View>
@@ -899,7 +1060,7 @@ export const TabBarSettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
   content: {
     padding: spacing.lg,
@@ -957,9 +1118,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-  tabIcon: {
-    fontSize: 20,
-  },
   tabLabel: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
@@ -1007,9 +1165,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
   },
-  availableTabIcon: {
-    fontSize: 24,
-  },
   availableTabLabel: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 14,
@@ -1048,6 +1203,9 @@ const styles = StyleSheet.create({
   layoutOptionSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primary + "10", // 10% opacity
+  },
+  layoutIconContainer: {
+    marginBottom: spacing.xs,
   },
   layoutOptionText: {
     fontFamily: typography.fontFamily.sans,
@@ -1179,9 +1337,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  previewIconText: {
-    fontSize: 12,
-  },
   previewItemLabel: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 11,
@@ -1206,6 +1361,45 @@ const styles = StyleSheet.create({
     height: 4,
     width: "30%",
     borderRadius: 2,
+  },
+  presetGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: spacing.sm,
+    columnGap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  presetCard: {
+    flexBasis: "48%",
+    backgroundColor: colors.secondaryBackground,
+    borderRadius: 14,
+    padding: spacing.md,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
+  },
+  presetCardTitle: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  presetCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: 6,
+  },
+  presetCardDesc: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  presetButton: {
+    alignSelf: "stretch",
+    marginTop: spacing.sm,
   },
   previewIndicatorUnderline: {
     backgroundColor: "#0a84ff",

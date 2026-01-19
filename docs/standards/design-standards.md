@@ -1,18 +1,18 @@
-# Abridged App — UI & Design Standards  
-Version 1.2  
+# Abridged App — UI & Design Standards
+Version 1.2
 Last Updated: January 15, 2026
 
 ## Canonical Sources (Authoritative)
 
 All UI decisions must align with Apple's official design system:
 
-- Apple Design Portal  
+- Apple Design Portal
   https://developer.apple.com/design/
 
-- Human Interface Guidelines — Tab Bars  
+- Human Interface Guidelines — Tab Bars
   https://developer.apple.com/design/human-interface-guidelines/tab-bars
 
-- Human Interface Guidelines — Toolbars  
+- Human Interface Guidelines — Toolbars
   https://developer.apple.com/design/human-interface-guidelines/toolbars#Best-practices
 
 If a design choice contradicts these guidelines, it must be explicitly documented as an intentional deviation.
@@ -21,9 +21,9 @@ If a design choice contradicts these guidelines, it must be explicitly documente
 
 ## 1. Core Philosophy (Non-Negotiable)
 
-- Clarity over personality  
-- Familiar over clever  
-- Content over chrome  
+- Clarity over personality
+- Familiar over clever
+- Content over chrome
 
 The interface must feel immediately understandable to experienced iOS users without onboarding or explanation. Brand expression should emerge through restraint, spacing, and hierarchy—not novel UI patterns.
 
@@ -39,8 +39,8 @@ Use a tab bar only when:
 - Each tab maintains its own navigation state
 
 **Rules**
-- Minimum: 3 tabs  
-- Maximum: 5 tabs  
+- Minimum: 3 tabs
+- Maximum: 5 tabs
 - Each tab uses:
   - A single noun label
   - A system icon (SF Symbols)
@@ -198,7 +198,44 @@ Avoid animations that delay comprehension or feel decorative.
 
 ## 7. Controls & Components
 
-### 7.1 Buttons
+### 7.1 Icons & Symbols
+
+**Standard: Use Lucide React Native icons, NOT emojis**
+
+All interactive elements, navigation tabs, and UI indicators must use proper icon symbols from the Lucide React Native library. Emojis must never be used in the user interface.
+
+**Rules**
+- Use Lucide React Native icons for all UI elements
+- Icons should approximate SF Symbols style and meaning
+- Maintain consistent sizing across similar contexts
+- Use semantic icon choices (e.g., `Home` for home, `Bookmark` for saved)
+
+**Prohibited**
+- Emojis in navigation tabs
+- Emojis in buttons or interactive controls
+- Emojis as status indicators
+- Emojis in settings menus
+
+**Rationale**
+- Emojis render inconsistently across platforms and OS versions
+- Icons provide better accessibility support
+- Icons scale properly at all sizes
+- Icons maintain visual consistency with iOS design language
+- Icons support proper color theming (light/dark mode)
+
+**Current Implementation**
+- Tab bar icons: Lucide React Native (`Home`, `Search`, `Bookmark`, `Star`, `Flame`, `MapPin`, `Briefcase`, `Trophy`, `Palette`, `Newspaper`)
+- Settings menu icons: Lucide React Native (`BookOpen`, `Newspaper`, `Palette`, `Rss`, `Layout`, `Bug`)
+- Action icons: Lucide React Native (`Waypoints`, `Zap`, `Bookmark`, `Wind`, `ArrowRightCircle`)
+
+**Exception**: Emojis may be used sparingly in:
+- User-generated content
+- Educational/onboarding content where emotion is intentionally conveyed
+- Loading state fun facts (as decorative text content, not UI elements)
+
+---
+
+### 7.2 Buttons
 
 - Use system button styles
 - Labels should be clear verbs
@@ -211,7 +248,7 @@ Avoid animations that delay comprehension or feel decorative.
 
 ---
 
-### 7.2 Lists
+### 7.3 Lists
 
 - Lists are the default container for structured content
 - Custom layouts must demonstrably improve clarity over lists
@@ -263,6 +300,14 @@ When uncertain, default to the system.
 ---
 
 ## Version History
+
+### v1.3 (January 19, 2026)
+- **Added icon standard**: All UI elements must use Lucide React Native icons, NOT emojis
+- Documented rationale for icon vs emoji usage
+- Updated TabBarSettingsScreen to use Lucide icons instead of emojis
+- Standardized icon usage across all settings screens
+- Clarified exceptions for emoji usage (user-generated content, educational contexts only)
+- Added icon implementation examples
 
 ### v1.2 (January 15, 2026)
 - Reduced comprehensive mode from 7 to 5 tabs (Apple HIG compliance)

@@ -8,6 +8,7 @@ import { SettingsProvider } from "./context/SettingsContext";
 import { SavedArticlesProvider } from "./context/SavedArticlesContext";
 import { ProfileProvider } from "./context/ProfileContext";
 import { ThemeProvider } from "./theme/ThemeContext";
+import { ReadingProgressProvider } from "./context/ReadingProgressContext";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -32,13 +33,15 @@ export default function App() {
             <ErrorBoundary>
               <ProfileProvider>
                 <SavedArticlesProvider>
-                  <SettingsProvider>
-                    <RootNavigator />
-                    <StatusBar
-                      style={isDarkMode ? "light" : "dark"}
-                      backgroundColor={colors.background}
-                    />
-                  </SettingsProvider>
+                  <ReadingProgressProvider>
+                    <SettingsProvider>
+                      <RootNavigator />
+                      <StatusBar
+                        style={isDarkMode ? "light" : "dark"}
+                        backgroundColor={colors.background}
+                      />
+                    </SettingsProvider>
+                  </ReadingProgressProvider>
                 </SavedArticlesProvider>
               </ProfileProvider>
             </ErrorBoundary>

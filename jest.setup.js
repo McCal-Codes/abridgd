@@ -1,11 +1,11 @@
 // Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+jest.mock("@react-native-async-storage/async-storage", () =>
+  require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 
 // Mock SafeAreaContext
-jest.mock('react-native-safe-area-context', () => {
-  const React = require('react');
+jest.mock("react-native-safe-area-context", () => {
+  const React = require("react");
   return {
     SafeAreaProvider: ({ children }) => React.createElement(React.Fragment, null, children),
     useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -13,13 +13,14 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 // Mock lucide-react-native icons
-jest.mock('lucide-react-native', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const createMockIcon = () => React.forwardRef((props, ref) => 
-    React.createElement(View, { ref, ...props, testID: 'lucide-icon' }, null)
-  );
-  
+jest.mock("lucide-react-native", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  const createMockIcon = () =>
+    React.forwardRef((props, ref) =>
+      React.createElement(View, { ref, ...props, testID: "lucide-icon" }, null),
+    );
+
   return {
     // ArticleScreen icons
     Waypoints: createMockIcon(),
@@ -55,22 +56,34 @@ jest.mock('lucide-react-native', () => {
     CheckCircle: createMockIcon(),
     RotateCcw: createMockIcon(),
     Undo2: createMockIcon(),
+    Sparkles: createMockIcon(),
+    ArrowRightCircle: createMockIcon(),
   };
 });
 
 // Mock react-native-worklets
-jest.mock('react-native-worklets', () => ({}));
+jest.mock("react-native-worklets", () => ({}));
 
 // Mock react-native-reanimated (improved mock to avoid worklets issues)
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  
+jest.mock("react-native-reanimated", () => {
+  const React = require("react");
+  const { View, ScrollView, FlatList } = require("react-native");
+
+  const AnimatedView = View;
+  AnimatedView.displayName = "Animated.View";
+
+  const AnimatedScrollView = ScrollView;
+  AnimatedScrollView.displayName = "Animated.ScrollView";
+
+  const AnimatedFlatList = FlatList;
+  AnimatedFlatList.displayName = "Animated.FlatList";
+
   return {
+    __esModule: true,
     default: {
-      View: View,
-      ScrollView: View,
-      FlatList: View,
+      View: AnimatedView,
+      ScrollView: AnimatedScrollView,
+      FlatList: AnimatedFlatList,
       createAnimatedComponent: (component) => component,
       event: jest.fn(() => () => {}),
       call: jest.fn(),
@@ -79,15 +92,44 @@ jest.mock('react-native-reanimated', () => {
     useAnimatedStyle: jest.fn(() => ({})),
     withTiming: jest.fn((value) => value),
     withSpring: jest.fn((value) => value),
+    interpolate: jest.fn(() => 0),
+    runOnJS: jest.fn((fn) => fn),
     Easing: { ease: jest.fn() },
   };
 });
 
+jest.mock("react-native-gesture-handler", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+
+  const createChain = () => {
+    const chain = {
+      onBegin: jest.fn(() => chain),
+      onStart: jest.fn(() => chain),
+      onUpdate: jest.fn(() => chain),
+      onEnd: jest.fn(() => chain),
+      onFinalize: jest.fn(() => chain),
+    };
+    return chain;
+  };
+
+  return {
+    GestureHandlerRootView: ({ children }) => React.createElement(View, {}, children),
+    GestureDetector: ({ children }) => React.createElement(React.Fragment, null, children),
+    Gesture: {
+      Pan: createChain,
+    },
+    PanGestureHandler: ({ children }) => React.createElement(View, {}, children),
+    State: {},
+    TapGestureHandler: ({ children }) => React.createElement(View, {}, children),
+  };
+});
+
 // Mock react-native-svg
-jest.mock('react-native-svg', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  
+jest.mock("react-native-svg", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+
   return {
     __esModule: true,
     default: View,
@@ -102,13 +144,13 @@ jest.mock('react-native-svg', () => {
 });
 
 // Mock expo modules
-jest.mock('expo-font', () => ({
+jest.mock("expo-font", () => ({
   loadAsync: jest.fn(),
   isLoaded: jest.fn(() => true),
 }));
 
-jest.mock('expo-status-bar', () => ({
-  StatusBar: 'StatusBar',
+jest.mock("expo-status-bar", () => ({
+  StatusBar: "StatusBar",
 }));
 
 // Use real console for better error visibility during debugging

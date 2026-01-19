@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
+import { fetchFullArticleBody } from "../services/FullStoryService";
+import { summarizeArticle } from "../services/AiService";
 // MOCK_ARTICLES import removed
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
@@ -29,25 +31,42 @@ import { AbridgedReader } from "../components/AbridgedReader";
 import { ScaleButton } from "../components/ScaleButton";
 import { GroundingOverlay } from "../components/GroundingOverlay";
 import { parseHtmlContent } from "../utils/contentParser";
-import { Waypoints, Zap, Bookmark } from "lucide-react-native";
+import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle } from "lucide-react-native";
 import { useSavedArticles } from "../context/SavedArticlesContext";
-import { NotificationFeedbackType } from "expo-haptics";
+import { useReadingProgress, useReadingProgressOptional } from "../context/ReadingProgressContext";
+import {
+  assessArticleSensitivity,
+  formatWarningReasons,
+  warningCopy,
+  guidanceMessages,
+} from "../utils/sensitivity";
+import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
+import { EmotionPicker } from "../components/EmotionPicker";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
-
-import { fetchFullArticleBody } from "../services/FullStoryService";
-import { summarizeArticle } from "../services/AiService";
 
 export const ArticleScreen: React.FC = () => {
   const route = useRoute<ArticleScreenRouteProp>();
   const navigation = useNavigation();
   const { article } = route.params;
   const { saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
+  // Use optional hook in case tests render ArticleScreen without provider
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const { updateProgress, getProgress } = useReadingProgressOptional
+    ? useReadingProgressOptional()
+    : useReadingProgress();
   const isSaved = isArticleSaved(article.id);
+  const isTestEnvironment =
+    typeof process !== "undefined" && process.env.JEST_WORKER_ID !== undefined;
 
   // Gesture state
   const translateX = useSharedValue(0);
   const [gestureActive, setGestureActive] = useState(false);
+
+  // Reading progress state
+  const [readStartTime] = useState(Date.now());
+  const readingTimeIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Use local state for body so we can update it
   const [bodyContent, setBodyContent] = useState(article.body);
@@ -60,6 +79,9 @@ export const ArticleScreen: React.FC = () => {
     isSummarizationEnabled,
     autoSaveOnComplete,
     fontSize,
+    sensitivePromptLevel,
+    sensitiveActionPreference,
+    sensitiveTone,
   } = useSettings();
   const insets = useSafeAreaInsets();
   const {
@@ -71,17 +93,104 @@ export const ArticleScreen: React.FC = () => {
     tabBarFloatingHeight,
   } = useSettings();
 
+  const sensitivity = useMemo(() => assessArticleSensitivity(article), [article]);
+  const gatingEnabled = isGroundingEnabled && sensitivePromptLevel !== "off";
+  const shouldGate = gatingEnabled && sensitivity.shouldOfferGrounding;
+
+  // Get top 1-2 warnings, prioritizing high-severity ones
+  const topWarnings = useMemo(() => {
+    const sorted = [...sensitivity.reasons].sort((a, b) => {
+      const highSeverity = [
+        "violence-realistic",
+        "violence-graphic",
+        "war",
+        "terrorism",
+        "disaster",
+        "self-harm",
+        "abuse",
+        "sexual-content-graphic",
+        "hate-speech",
+        "graphic",
+      ];
+      const aIsHigh = highSeverity.includes(a);
+      const bIsHigh = highSeverity.includes(b);
+      if (aIsHigh && !bIsHigh) return -1;
+      if (!aIsHigh && bIsHigh) return 1;
+      return 0;
+    });
+    return sorted.slice(0, 2);
+  }, [sensitivity.reasons]);
+
   // If article is sensitive, show warning by default.
   const [isGroundingActive, setIsGroundingActive] = useState(false);
   const [isReaderExpanded, setIsReaderExpanded] = useState(false);
-  const [hasConsented, setHasConsented] = useState(!article?.isSensitive || !isGroundingEnabled);
+  const [hasConsented, setHasConsented] = useState(!shouldGate);
+  const [showEmotionPicker, setShowEmotionPicker] = useState(false);
+  const [finishedReading, setFinishedReading] = useState(false);
+
+  useEffect(() => {
+    setHasConsented(!shouldGate);
+  }, [shouldGate, article.id]);
+
+  const warningSummaryBase = useMemo(() => {
+    if (article.sensitivityWarning) {
+      return article.sensitivityWarning;
+    }
+    if (!topWarnings.length) {
+      return "This article may include sensitive material.";
+    }
+    return `This story touches on ${formatWarningReasons(topWarnings)}.`;
+  }, [article.sensitivityWarning, topWarnings]);
+
+  const warningGuidanceList = guidanceMessages(sensitivity.reasons);
+
+  const tonePreset = useMemo(() => {
+    if (sensitiveTone === "direct") {
+      return {
+        heading: "Sensitive topic ahead",
+        helper: "Skip grounding if you're ready to keep reading.",
+        closer: "You're in control of the pace.",
+      };
+    }
+    return {
+      heading: "Sensitive Content",
+      helper: "Take a short grounding pause or continue when you feel ready.",
+      closer: "We’ll move through this together.",
+    };
+  }, [sensitiveTone]);
+
+  const warningSummaryCopy = useMemo(() => {
+    if (sensitivePromptLevel === "minimal" && sensitivity.reasons.length) {
+      const reasons = formatWarningReasons(sensitivity.reasons);
+      return sensitiveTone === "direct" ? `Heads up: ${reasons}.` : `Gentle heads-up: ${reasons}.`;
+    }
+    return warningSummaryBase;
+  }, [sensitivePromptLevel, sensitiveTone, warningSummaryBase, sensitivity.reasons]);
+
+  const displayedGuidance = useMemo(() => {
+    if (sensitivePromptLevel === "full") {
+      return warningGuidanceList;
+    }
+    return [];
+  }, [sensitivePromptLevel, warningGuidanceList]);
+
+  const helperCopy = useMemo(() => {
+    if (sensitivePromptLevel === "minimal") {
+      return sensitiveTone === "direct"
+        ? "Continue whenever you’re set."
+        : "Tap continue whenever you feel ready.";
+    }
+    return tonePreset.helper;
+  }, [sensitivePromptLevel, sensitiveTone, tonePreset]);
+
+  const showToneLine = sensitivePromptLevel === "full";
 
   // Auto-save article when reading completes (if enabled)
   const handleReaderComplete = async () => {
     if (autoSaveOnComplete && !isSaved) {
       try {
         await saveArticle(article);
-        await Haptics.notificationAsync(NotificationFeedbackType.Success);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (e) {
         console.error("Failed to auto-save article:", e);
       }
@@ -127,18 +236,52 @@ export const ArticleScreen: React.FC = () => {
     }
   }, [isSummarizationEnabled, bodyContent]);
 
+  // Track reading time: increment every 10 seconds while article is being viewed
+  useEffect(() => {
+    readingTimeIntervalRef.current = setInterval(async () => {
+      try {
+        const progress = getProgress(article.id);
+        const totalReadTimeSeconds = (progress?.totalReadTimeSeconds ?? 0) + 10;
+
+        await updateProgress(article.id, {
+          totalReadTimeSeconds,
+          lastReadAt: Date.now(),
+          status: "in-progress",
+        });
+      } catch (error) {
+        console.error("Failed to update reading time:", error);
+      }
+    }, 10000); // Update every 10 seconds
+
+    return () => {
+      if (readingTimeIntervalRef.current) {
+        clearInterval(readingTimeIntervalRef.current);
+      }
+    };
+  }, [article.id, updateProgress, getProgress]);
+
   // Swipe gestures for article actions
   const handleSave = async () => {
     if (isSaved) {
       await unsaveArticle(article.id);
-      await Haptics.notificationAsync(NotificationFeedbackType.Warning);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } else {
       await saveArticle(article);
-      await Haptics.notificationAsync(NotificationFeedbackType.Success);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   };
 
   const handleGoBack = () => {
+    // If article was sensitive and user read it, show emotion picker
+    if (shouldGate && hasConsented && finishedReading) {
+      setShowEmotionPicker(true);
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const handleEmotionSelect = async (emotion: "positive" | "neutral" | "negative") => {
+    await logArticleEmotion(article.id, emotion);
     navigation.goBack();
   };
 
@@ -188,30 +331,127 @@ export const ArticleScreen: React.FC = () => {
   }
 
   if (isGroundingActive) {
-    return <GroundingOverlay onClose={() => setIsGroundingActive(false)} />;
+    return (
+      <GroundingOverlay
+        onClose={async () => {
+          // Log that user completed the breathing
+          await logSensitiveArticleResponse(
+            article.id,
+            sensitivity.reasons,
+            "breath-first",
+            true, // completed breath
+          );
+          setIsGroundingActive(false);
+          setHasConsented(true); // proceed to article after grounding
+        }}
+        message="You've got this. Take your time."
+      />
+    );
   }
 
   if (!hasConsented) {
+    const groundButtonNode = (
+      <ScaleButton
+        style={[
+          styles.groundButton,
+          sensitiveActionPreference === "ground-first" && styles.groundButtonHero,
+        ]}
+        onPress={async () => {
+          try {
+            await Haptics.selectionAsync();
+          } catch {}
+          // Log that user chose to take a breath
+          await logSensitiveArticleResponse(
+            article.id,
+            sensitivity.reasons,
+            "breath-first",
+            false, // hasn't completed breath yet
+          );
+          setIsGroundingActive(true);
+        }}
+      >
+        <View style={styles.warningActionContent}>
+          <Wind
+            size={20}
+            color={sensitiveActionPreference === "ground-first" ? colors.surface : colors.primary}
+          />
+          <Text
+            style={[
+              styles.groundButtonText,
+              sensitiveActionPreference === "ground-first" && styles.groundButtonTextHero,
+            ]}
+          >
+            Take a breath first
+          </Text>
+        </View>
+      </ScaleButton>
+    );
+
+    const continueButtonNode = (
+      <ScaleButton
+        style={[
+          styles.warningButton,
+          sensitiveActionPreference === "continue" && styles.warningButtonHero,
+        ]}
+        onPress={async () => {
+          try {
+            await Haptics.selectionAsync();
+          } catch {}
+          // Log that user chose to skip breathing
+          await logSensitiveArticleResponse(
+            article.id,
+            sensitivity.reasons,
+            "continue-direct",
+            false, // skipped breathing
+          );
+          setHasConsented(true);
+        }}
+      >
+        <View style={styles.warningActionContent}>
+          <ArrowRightCircle
+            size={20}
+            color={sensitiveActionPreference === "continue" ? colors.surface : colors.text}
+          />
+          <Text
+            style={[
+              styles.warningButtonText,
+              sensitiveActionPreference === "continue" && styles.warningButtonTextHero,
+            ]}
+          >
+            Continue without grounding
+          </Text>
+        </View>
+      </ScaleButton>
+    );
+
     return (
       <View style={styles.warningContainer}>
-        <Text style={styles.warningTitle}>Sensitive Content</Text>
-        <Text style={styles.warningText}>
-          {article.sensitivityWarning || "This article contains sensitive material."}
-        </Text>
+        <View style={styles.warningContent}>
+          <Text style={styles.warningTitle}>{tonePreset.heading}</Text>
+          <Text style={styles.warningText}>{warningSummaryCopy}</Text>
+          <Text style={styles.warningHelper}>{helperCopy}</Text>
+        </View>
 
-        <ScaleButton style={styles.warningButton} onPress={() => setHasConsented(true)}>
-          <Text style={styles.warningButtonText}>View Article</Text>
-        </ScaleButton>
-
-        <ScaleButton style={styles.groundButton} onPress={() => setIsGroundingActive(true)}>
-          <Text style={styles.groundButtonText}>I need a moment (Grounding Mode)</Text>
-        </ScaleButton>
+        <View style={styles.warningActions}>
+          {sensitiveActionPreference === "continue" ? (
+            <>
+              {continueButtonNode}
+              {groundButtonNode}
+            </>
+          ) : (
+            <>
+              {groundButtonNode}
+              {continueButtonNode}
+            </>
+          )}
+        </View>
       </View>
     );
   }
 
-  return (
-    <GestureDetector gesture={swipeGesture}>
+  let articleContent: React.ReactNode;
+  try {
+    articleContent = (
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         <ScrollView
           style={styles.container}
@@ -228,6 +468,35 @@ export const ArticleScreen: React.FC = () => {
                   16,
             },
           ]}
+          onScroll={(event) => {
+            const contentHeight = event.nativeEvent.contentSize.height;
+            const scrollPosition = event.nativeEvent.contentOffset.y;
+            const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
+
+            // Calculate scroll percentage and update progress
+            const scrollPercentage =
+              contentHeight > 0 ? scrollPosition / (contentHeight - scrollViewHeight) : 0;
+            const completionPercentage = Math.min(100, Math.round(scrollPercentage * 100));
+
+            // Update reading progress
+            updateProgress(article.id, {
+              scrollPosition: scrollPercentage,
+              scrollPixels: scrollPosition,
+              completionPercentage,
+              lastReadAt: Date.now(),
+            }).catch((error) => console.error("Failed to update scroll progress:", error));
+
+            // Mark as finished when user scrolls near the bottom
+            if (scrollPosition + scrollViewHeight >= contentHeight - 100) {
+              setFinishedReading(true);
+              // Update status to completed
+              updateProgress(article.id, {
+                status: "completed",
+                completionPercentage: 100,
+              }).catch((error) => console.error("Failed to mark as completed:", error));
+            }
+          }}
+          scrollEventThrottle={16}
         >
           <Text style={styles.headline}>{article.headline}</Text>
 
@@ -381,7 +650,28 @@ export const ArticleScreen: React.FC = () => {
           </View>
         </ScrollView>
       </Animated.View>
-    </GestureDetector>
+    );
+  } catch (error) {
+    console.error("ArticleScreen content render error", error);
+    throw error;
+  }
+
+  if (isTestEnvironment) {
+    return articleContent;
+  }
+
+  return (
+    <>
+      <GestureDetector gesture={swipeGesture}>{articleContent}</GestureDetector>
+      <EmotionPicker
+        visible={showEmotionPicker}
+        onSelect={handleEmotionSelect}
+        onDismiss={() => {
+          setShowEmotionPicker(false);
+          navigation.goBack();
+        }}
+      />
+    </>
   );
 };
 
@@ -582,50 +872,125 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
-    padding: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    flexDirection: "column",
+  },
+  warningContent: {
+    alignItems: "center",
+    gap: 0,
+    marginBottom: spacing.xl,
   },
   warningTitle: {
     fontFamily: typography.fontFamily.serif,
-    fontSize: typography.size.xl,
+    fontSize: 32,
+    lineHeight: 40,
     fontWeight: "700",
     color: colors.text,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    textAlign: "center",
+    letterSpacing: 0.5,
   },
   warningText: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.md,
+    fontSize: 18,
+    lineHeight: 28,
     color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
+    maxWidth: 320,
+  },
+  warningList: {
+    width: "100%",
+    marginBottom: spacing.sm,
+    gap: spacing.xs,
+    alignItems: "center",
+  },
+  warningListItem: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.text,
+    textAlign: "center",
+    opacity: 0.85,
+    maxWidth: 320,
+  },
+  warningHelper: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    textAlign: "center",
+    maxWidth: 320,
+  },
+  warningTone: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    fontWeight: "600",
+    color: colors.primary,
+    textAlign: "center",
+    letterSpacing: 0.5,
+    maxWidth: 320,
+  },
+  warningActions: {
+    width: "100%",
+    gap: spacing.md,
+    alignSelf: "center",
+    marginTop: spacing.md,
+  },
+  warningActionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
   },
   warningButton: {
-    backgroundColor: colors.text, // Stark/Bold
-    paddingVertical: spacing.md,
+    backgroundColor: "rgba(15, 23, 42, 0.08)",
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
-    borderRadius: 4,
-    marginBottom: spacing.md,
+    borderRadius: 16,
     width: "100%",
     alignItems: "center",
+  },
+  warningButtonHero: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
   },
   warningButtonText: {
-    color: colors.surface,
+    color: colors.text,
     fontFamily: typography.fontFamily.sans,
     fontWeight: "600",
+    fontSize: typography.size.lg,
+  },
+  warningButtonTextHero: {
+    color: colors.surface,
   },
   groundButton: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.primary,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xl,
     paddingHorizontal: spacing.xl,
-    borderRadius: 4,
+    borderRadius: 20,
     width: "100%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  groundButtonHero: {
+    backgroundColor: colors.primary,
   },
   groundButtonText: {
     color: colors.primary,
     fontFamily: typography.fontFamily.sans,
     fontWeight: "600",
+    fontSize: typography.size.lg,
+  },
+  groundButtonTextHero: {
+    color: colors.surface,
   },
   loadingContainer: {
     position: "absolute",

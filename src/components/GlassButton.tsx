@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, Text, View, Platform } from "react-native";
+import { StyleSheet, TouchableOpacity, Text, View, Platform, StyleProp, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "../theme/ThemeContext";
@@ -14,6 +14,8 @@ interface GlassButtonProps {
   destructive?: boolean;
   disabled?: boolean;
   testID?: string;
+  compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -28,6 +30,8 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   destructive = false,
   disabled = false,
   testID,
+  compact = false,
+  style,
 }) => {
   const { colors, isDark } = useTheme();
 
@@ -90,6 +94,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       style={[
         styles.content,
         { backgroundColor: shouldUseBlur ? "transparent" : getBackgroundColor() },
+        compact && styles.contentCompact,
       ]}
     >
       {icon && <View style={styles.iconContainer}>{icon}</View>}
@@ -105,7 +110,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       disabled={disabled}
       activeOpacity={0.7}
       testID={testID}
-      style={[styles.container, disabled && styles.disabled]}
+      style={[styles.container, compact && styles.containerCompact, style, disabled && styles.disabled]}
     >
       {shouldUseBlur ? (
         <BlurView
@@ -129,6 +134,9 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
+  containerCompact: {
+    minHeight: 40,
+  },
   blur: {
     borderRadius: 12,
     overflow: "hidden",
@@ -141,6 +149,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     minHeight: 44,
     gap: 8,
+  },
+  contentCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 40,
   },
   iconContainer: {
     width: 20,

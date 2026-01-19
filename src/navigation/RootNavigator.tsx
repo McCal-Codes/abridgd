@@ -17,7 +17,7 @@ import { CustomizationSettingsScreen } from "../screens/CustomizationSettingsScr
 import { SourcesSettingsScreen } from "../screens/SourcesSettingsScreen";
 import { TabBarSettingsScreen } from "../screens/TabBarSettingsScreen";
 import { DebugSettingsScreen } from "../screens/DebugSettingsScreen";
-import { iOS26DemoScreen } from "../screens/iOS26DemoScreen";
+import { IOS26DemoScreen } from "../screens/iOS26DemoScreen";
 import { useSettings } from "../context/SettingsContext";
 import { View, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { ScrollProvider } from "../context/ScrollContext";
@@ -97,7 +97,7 @@ const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string, TabCo
 
 // Tab Navigator component
 const TabNavigatorScreen = ({ navigation }: any) => {
-  const { activeTabs, tabLayout } = useSettings();
+  const { activeTabs, tabLayout, defaultTab, showTabLabels, tabIconSize } = useSettings();
   const TAB_CONFIG = getTabConfig(tabLayout);
   const insets = useSafeAreaInsets();
   const bottomInset = insets.bottom ?? 0;
@@ -106,8 +106,22 @@ const TabNavigatorScreen = ({ navigation }: any) => {
   // Compute a small internal padding to visually balance the capsule
   const internalPaddingBottom = bottomInset > 0 ? Math.round(bottomInset / 3) : 8;
 
+  const fallbackTabId = activeTabs[0];
+  const resolvedDefaultId = activeTabs.includes(defaultTab) ? defaultTab : fallbackTabId;
+  const getRouteNameForTab = (tabId?: string) => {
+    if (!tabId) return undefined;
+    const config = TAB_CONFIG[tabId as keyof typeof TAB_CONFIG];
+    return config?.name;
+  };
+  const resolvedDefaultRouteName =
+    getRouteNameForTab(resolvedDefaultId) ?? getRouteNameForTab(fallbackTabId);
+  const activeTabsKey = React.useMemo(() => activeTabs.join("|"), [activeTabs]);
+  const navigatorKey = `${tabLayout}-${activeTabsKey}-${resolvedDefaultId || "root"}`;
+
   return (
     <Tab.Navigator
+      key={navigatorKey}
+      initialRouteName={resolvedDefaultRouteName as keyof TabParamList | undefined}
       tabBar={(props) => <LiquidTabBar {...props} />}
       screenOptions={{
         headerShown: true,
@@ -147,7 +161,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
         },
         tabBarActiveTintColor: colors.tint,
         tabBarInactiveTintColor: colors.secondaryLabel,
-        tabBarShowLabel: true,
+        tabBarShowLabel: showTabLabels,
         tabBarLabelStyle: {
           fontFamily: typography.fontFamily.sans,
           fontSize: 10,
@@ -212,7 +226,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
             initialParams={config.params}
             options={{
               title: config.title || config.name,
-              tabBarIcon: ({ color }) => <config.Icon color={color} size={25} />,
+              tabBarIcon: ({ color }) => <config.Icon color={color} size={tabIconSize || 25} />,
             }}
           />
         );
@@ -308,7 +322,7 @@ export const RootNavigator = () => {
           />
           <Stack.Screen
             name="iOS26Demo"
-            component={iOS26DemoScreen}
+            component={IOS26DemoScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>

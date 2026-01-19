@@ -1,4 +1,25 @@
-export type ArticleCategory = 'Top' | 'Local' | 'Business' | 'Sports' | 'Culture';
+export type ArticleCategory = "Top" | "Local" | "Business" | "Sports" | "Culture";
+
+export type ContentWarning =
+  | "politics"
+  | "violence-realistic"
+  | "violence-graphic"
+  | "violence-fantasy"
+  | "war"
+  | "terrorism"
+  | "abuse"
+  | "crime"
+  | "disaster"
+  | "self-harm"
+  | "health"
+  | "medical"
+  | "sexual-content"
+  | "sexual-content-graphic"
+  | "mature-themes"
+  | "substance-use"
+  | "gambling"
+  | "hate-speech"
+  | "graphic";
 
 export interface Article {
   id: string;
@@ -14,4 +35,7 @@ export interface Article {
   isSensitive?: boolean;
   sensitivityWarning?: string;
   link?: string;
+  tags?: string[];
+  contentWarnings?: ContentWarning[];
+  emotionalIntensity?: "low" | "medium" | "high";
 }

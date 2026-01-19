@@ -1,37 +1,44 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { Article } from '../types/Article';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
-import { spacing } from '../theme/spacing';
+import React from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
+import { Article } from "../types/Article";
+import { colors } from "../theme/colors";
+import { typography } from "../theme/typography";
+import { spacing } from "../theme/spacing";
+import { ArticleProgressIndicator } from "./ArticleProgressIndicator";
 
 interface ArticleCardProps {
   article: Article;
   onPress: (article: Article) => void;
 }
 
-import { ScaleButton } from './ScaleButton';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ScaleButton } from "./ScaleButton";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) => {
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
-        <ScaleButton style={styles.card} onPress={() => onPress(article)}>
+      <ScaleButton style={styles.card} onPress={() => onPress(article)}>
         <View style={styles.cardContent}>
-            <View style={styles.textContainer}>
-                <Text style={styles.headline}>{article.headline}</Text>
-                <Text style={styles.summary} numberOfLines={2}>{article.summary}</Text>
-                <View style={styles.metaContainer}>
-                    <Text style={styles.metaText}>{article.source}</Text>
-                    <Text style={styles.metaText}> • </Text>
-                    <Text style={styles.metaText}>{article.timestamp}</Text>
-                </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.headline}>{article.headline}</Text>
+            <Text style={styles.summary} numberOfLines={2}>
+              {article.summary}
+            </Text>
+            <View style={styles.metaContainer}>
+              <Text style={styles.metaText}>{article.source}</Text>
+              <Text style={styles.metaText}> • </Text>
+              <Text style={styles.metaText}>{article.timestamp}</Text>
             </View>
-            {article.imageUrl && (
-                <Image source={{ uri: article.imageUrl }} style={styles.thumbnail} />
-            )}
+            {/* Progress indicator - only shows if article has been read */}
+            <View style={styles.progressContainer}>
+              <ArticleProgressIndicator articleId={article.id} size="small" />
+            </View>
+          </View>
+          {article.imageUrl && (
+            <Image source={{ uri: article.imageUrl }} style={styles.thumbnail} />
+          )}
         </View>
-        </ScaleButton>
+      </ScaleButton>
     </Animated.View>
   );
 };
@@ -45,25 +52,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardContent: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      gap: spacing.md,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md,
   },
   textContainer: {
-      flex: 1,
+    flex: 1,
   },
   thumbnail: {
-      width: 80,
-      height: 80,
-      borderRadius: 4,
-      backgroundColor: colors.border,
+    width: 80,
+    height: 80,
+    borderRadius: 4,
+    backgroundColor: colors.border,
   },
   headline: {
     // Falls back to system font if serif not loaded, handled at App level
     fontFamily: typography.fontFamily.serif,
     fontSize: typography.size.lg,
-    fontWeight: '700', // string for weight
+    fontWeight: "700", // string for weight
     color: colors.text,
     marginBottom: spacing.xs,
     lineHeight: 28, // Hardcoded for consistent rhythm
@@ -76,15 +83,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   metaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  progressContainer: {
+    marginTop: spacing.xs,
   },
   metaText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: typography.size.xs,
     color: colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
