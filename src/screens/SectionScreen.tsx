@@ -2,9 +2,9 @@ import React from "react";
 import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
-import { ArticleCard } from "../components/ArticleCard";
+import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
-import { fetchArticlesByCategory } from "../services/RssService";
+import { fetchArticlesByCategory, getLastFetchedAt } from "../services/RssService";
 import { colors } from "../theme/colors";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -12,9 +12,23 @@ import { RootStackParamList, TabParamList } from "../navigation/types";
 import { spacing } from "../theme/spacing";
 import { Article, ArticleCategory } from "../types/Article";
 import { typography } from "../theme/typography";
+import * as Haptics from "expo-haptics";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SectionRouteProp = RouteProp<TabParamList, "Discover">;
+
+const formatUpdatedAgo = (lastUpdated: Date | null) => {
+  if (!lastUpdated) return null;
+  const diffMs = Date.now() - lastUpdated.getTime();
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSeconds < 60) return "Updated just now";
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `Updated ${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `Updated ${diffDays}d ago`;
+};
 
 export const SectionScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -43,7 +57,8 @@ export const SectionScreen: React.FC = () => {
         setError(null);
         const data = await fetchArticlesByCategory(category);
         setArticles(data);
-        setLastUpdated(new Date());
+        const fetchedAt = getLastFetchedAt(category);
+        setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
       } catch (e: any) {
         setError(e?.message || "Failed to load articles.");
       } finally {
@@ -64,7 +79,12 @@ export const SectionScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {loading ? (
-        <FunLoadingIndicator message={`Loading ${category} news...`} />
+        <FlatList
+          data={Array.from({ length: 6 })}
+          keyExtractor={(_, idx) => `skeleton-${idx}`}
+          renderItem={() => <ArticleCardSkeleton />}
+          contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
+        />
       ) : error ? (
         <View style={[styles.center, { flex: 1 }]}>
           <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
@@ -77,6 +97,8 @@ export const SectionScreen: React.FC = () => {
                 fetchArticlesByCategory(category)
                   .then((data) => {
                     setArticles(data);
+                    const fetchedAt = getLastFetchedAt(category);
+                    setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
                     setLoading(false);
                   })
                   .catch((e) => {
@@ -92,6 +114,7 @@ export const SectionScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          testID="section-list"
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -113,14 +136,27 @@ export const SectionScreen: React.FC = () => {
                   16,
             },
           ]}
+          ListHeaderComponent={
+            lastUpdated ? (
+              <View style={styles.updatedRow} testID="section-updated">
+                <Text style={styles.updatedLabel}>{formatUpdatedAgo(lastUpdated)}</Text>
+              </View>
+            ) : undefined
+          }
           refreshing={refreshing}
           onRefresh={async () => {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } catch {
+              // noop if haptics unavailable
+            }
             setRefreshing(true);
             setError(null);
             try {
-              const data = await fetchArticlesByCategory(category);
+              const data = await fetchArticlesByCategory(category, { forceRefresh: true });
               setArticles(data);
-              setLastUpdated(new Date());
+              const fetchedAt = getLastFetchedAt(category);
+              setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
             } catch (e: any) {
               setError(e?.message || "Failed to refresh.");
             } finally {
@@ -147,6 +183,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: typography.fontFamily.sans,
+    color: colors.textSecondary,
+  },
+  updatedRow: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+  },
+  updatedLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.xs,
     color: colors.textSecondary,
   },
 });

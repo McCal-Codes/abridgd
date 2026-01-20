@@ -50,6 +50,7 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 |-----|---------|----------|
 | [Preflight](preflight.md) | Pre-change checklist | All developers |
 | [Afterflight](afterflight.md) | Pre-merge/release checklist | All developers, reviewers, release engineer |
+| [Settings IA (Apollo)](settings-ia-apollo.md) | Canonical Settings structure and placement | Designers, frontend engineers, reviewers |
 | [Branding Standards](branding.md) | App naming, display names, bundle IDs | All developers, product, marketing |
 | [Standards Governance Agent](standards-governance-agent.md) | How standards evolve | Tech lead, standards steward |
 | [Standards Drift Check](standards-drift-check.md) | CI automation and PR label enforcement | DevOps, tech lead |
@@ -57,10 +58,17 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 | [UI & Design Standards](ui-design.md) | Design principles, HIG alignment | Product designers, frontend engineers |
 | [Engineering Standards](engineering.md) | Versioning, quality gates, dependencies | All engineers |
 | [Accessibility Audit](a11y-audit.md) | Dark mode, Dynamic Type, VoiceOver test matrix | QA, frontend engineers, designers |
+| [Onboarding & Grounding Design Agent](onboarding-agent-prompt.md) | System prompt for onboarding and grounding content | Designers, UX writers, agents |
+| [Grounding Selector Design Agent](grounding-agent-prompt.md) | System prompt for grounding selector interaction | Designers, UX writers, agents |
 
 ---
 
 ## How we use these docs
+
+### Using the agent prompts efficiently
+- When writing or reviewing onboarding/grounding flows, open the relevant agent prompt (see table above) and reuse it verbatim as a system prompt for AI/human reviewers.
+- Do not add steps or features beyond the prompts; if a new feature is proposed, stress-test it against the prompt first.
+- Keep the prompts up to date when standards change; link back here after edits.
 
 ### Before you code
 1. Read **Preflight** (2 min)

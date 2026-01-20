@@ -16,6 +16,8 @@ interface GlassButtonProps {
   testID?: string;
   compact?: boolean;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 /**
@@ -32,6 +34,8 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   testID,
   compact = false,
   style,
+  accessibilityLabel,
+  accessibilityHint,
 }) => {
   const { colors, isDark } = useTheme();
 
@@ -110,6 +114,9 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       disabled={disabled}
       activeOpacity={0.7}
       testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityHint={accessibilityHint}
       style={[styles.container, compact && styles.containerCompact, style, disabled && styles.disabled]}
     >
       {shouldUseBlur ? (

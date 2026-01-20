@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+- Continue Reading section on HomeScreen that surfaces in-progress articles with progress chips and a Show all toggle.
+- Haptic feedback on HomeScreen pull-to-refresh trigger for a more tactile refresh cue.
+- Per-section updated timestamp + haptic feedback on SectionScreen pull-to-refresh.
+- 5-minute smart cache for RSS category fetches to avoid redundant network calls on quick revisits.
+- SavedScreen pull-to-refresh with updated timestamp + haptic scaffold for future metadata refresh.
+- SavedScreen debounced search with recent queries, filters (source/category/status/date), and sorting (newest/oldest/progress/length/source).
+- SavedScreen “no results” state for search/filters with clear action.
+
+### Changed
+- Saved articles storage schema upgraded to v2 with LZ-string compression (backward compatible) to reduce AsyncStorage footprint for large article bodies.
+- Onboarding grounding slide refined: full-width selector cards with visual previews, compact breath bar within the card, and centered, margin-aware buttons to avoid overflow on small screens.
+
 ## [1.2.0] - 2026-01-18
 
 ### Added - Experimental Features

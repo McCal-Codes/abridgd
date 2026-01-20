@@ -1,15 +1,28 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Article } from "../types/Article";
-import * as zlib from "zlib";
+import { compressToUTF16, decompressFromUTF16 } from "lz-string";
 
 // Schema versioning for future migrations
-const STORAGE_SCHEMA_VERSION = 1;
+const STORAGE_SCHEMA_VERSION = 2;
 const SAVED_ARTICLES_KEY = "@abridged_saved_articles";
 const MIGRATION_FLAG_KEY = "@abridged_migration_complete";
+const COMPRESSION_THRESHOLD = 4000; // characters; compress larger payloads to save space
 
-interface StorageSchema {
-  version: number;
+interface StorageSchemaV1 {
+  version: 1;
   articles: Article[];
+  timestamp: number;
+}
+
+interface StoragePayloadV2 {
+  articles: Article[];
+}
+
+interface StorageSchemaV2 {
+  version: 2;
+  compressed: boolean;
+  compression?: "lz-string-utf16";
+  payload: string; // plain JSON string or compressed string depending on `compressed`
   timestamp: number;
 }
 
@@ -17,11 +30,20 @@ interface StorageSchema {
  * Serialize articles to JSON and optionally compress
  */
 export const serializeArticles = (articles: Article[]): string => {
-  return JSON.stringify({
+  const payload: StoragePayloadV2 = { articles };
+  const payloadString = JSON.stringify(payload);
+  const shouldCompress = payloadString.length >= COMPRESSION_THRESHOLD;
+  const compressedPayload = shouldCompress ? compressToUTF16(payloadString) : payloadString;
+
+  const schema: StorageSchemaV2 = {
     version: STORAGE_SCHEMA_VERSION,
-    articles,
+    compressed: shouldCompress,
+    compression: shouldCompress ? "lz-string-utf16" : undefined,
+    payload: compressedPayload,
     timestamp: Date.now(),
-  } as StorageSchema);
+  };
+
+  return JSON.stringify(schema);
 };
 
 /**
@@ -29,17 +51,32 @@ export const serializeArticles = (articles: Article[]): string => {
  */
 export const deserializeArticles = (data: string): Article[] => {
   try {
-    const schema = JSON.parse(data) as StorageSchema;
+    const schema = JSON.parse(data) as StorageSchemaV1 | StorageSchemaV2;
 
-    // Validate schema version
-    if (schema.version !== STORAGE_SCHEMA_VERSION) {
-      console.warn(
-        `Schema version mismatch: expected ${STORAGE_SCHEMA_VERSION}, got ${schema.version}`,
-      );
-      return [];
+    // Backwards compatibility: handle legacy version 1
+    if (schema.version === 1) {
+      return (schema as StorageSchemaV1).articles || [];
     }
 
-    return schema.articles || [];
+    if (schema.version === 2) {
+      const v2Schema = schema as StorageSchemaV2;
+      const payloadString = v2Schema.compressed
+        ? decompressFromUTF16(v2Schema.payload) ?? ""
+        : v2Schema.payload;
+
+      if (!payloadString) {
+        console.warn("Failed to decompress payload or payload empty");
+        return [];
+      }
+
+      const payload = JSON.parse(payloadString) as StoragePayloadV2;
+      return payload.articles || [];
+    }
+
+    console.warn(
+      `Schema version mismatch: expected 1 or ${STORAGE_SCHEMA_VERSION}, got ${schema.version}`,
+    );
+    return [];
   } catch (error) {
     console.error("Failed to deserialize articles:", error);
     return [];

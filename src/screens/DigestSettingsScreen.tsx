@@ -22,8 +22,6 @@ export const DigestSettingsScreen: React.FC = () => {
     setIsWelcomeBackEnabled,
     digestSummaryMode,
     setDigestSummaryMode,
-    defaultTab,
-    setDefaultTab,
   } = useSettings();
 
   return (
@@ -45,37 +43,6 @@ export const DigestSettingsScreen: React.FC = () => {
               onValueChange={setIsWelcomeBackEnabled}
               trackColor={{ false: colors.border, true: colors.primary }}
             />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Default Tab on Launch</Text>
-          <Text style={styles.sectionDesc}>
-            Choose which tab you see first when opening the app.
-          </Text>
-          <View style={styles.strategyContainer}>
-            {[
-              { label: "Home", value: "home", description: "Top stories from all sources" },
-              { label: "Discover", value: "discover", description: "Browse news by category" },
-              { label: "Saved", value: "saved", description: "Your saved articles" },
-              { label: "Digest", value: "digest", description: "Your personalized digest" },
-            ].map((tab) => (
-              <TouchableOpacity
-                key={tab.value}
-                style={[styles.strategyOption, defaultTab === tab.value && styles.selectedStrategy]}
-                onPress={() => setDefaultTab(tab.value)}
-              >
-                <Text
-                  style={[
-                    styles.strategyLabel,
-                    defaultTab === tab.value && styles.selectedStrategyText,
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-                <Text style={styles.strategyDesc}>{tab.description}</Text>
-              </TouchableOpacity>
-            ))}
           </View>
         </View>
 

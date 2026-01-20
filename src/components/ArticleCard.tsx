@@ -5,6 +5,7 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ArticleProgressIndicator } from "./ArticleProgressIndicator";
+import { Skeleton } from "./Skeleton";
 
 interface ArticleCardProps {
   article: Article;
@@ -40,6 +41,22 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) =>
         </View>
       </ScaleButton>
     </Animated.View>
+  );
+};
+
+export const ArticleCardSkeleton: React.FC = () => {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardContent}>
+        <View style={styles.textContainer}>
+          <Skeleton width="78%" height={22} borderRadius={6} style={{ marginBottom: spacing.xs }} />
+          <Skeleton width="95%" height={16} borderRadius={6} style={{ marginBottom: spacing.xs }} />
+          <Skeleton width="82%" height={14} borderRadius={6} style={{ marginBottom: spacing.sm }} />
+          <Skeleton width={120} height={10} borderRadius={4} />
+        </View>
+        <Skeleton width={80} height={80} borderRadius={4} />
+      </View>
+    </View>
   );
 };
 

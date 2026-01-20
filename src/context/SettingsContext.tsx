@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useContext, useMemo } from "
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "../theme/colors";
 import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
+import { APP_VERSION } from "../config/appInfo";
+import { allowedTabs, defaultTabs } from "../navigation/tabs";
 
 export type AnchorStrategy = "early" | "standard" | "center";
 export type DigestSummaryMode = "fact-based" | "ai-summary" | "headline-only";
@@ -9,6 +11,8 @@ export type GroundingAnimationStyle = "simple" | "waves" | "pulse";
 export type SensitivePromptLevel = "full" | "minimal" | "off";
 export type SensitiveActionPreference = "ground-first" | "decide" | "continue";
 export type SensitiveTone = "gentle" | "direct";
+export type ImageLoadingMode = "full" | "compressed" | "text-only";
+export type HapticIntensity = "off" | "subtle" | "normal" | "strong";
 
 interface SettingsContextType {
   hasCompletedOnboarding: boolean;
@@ -104,6 +108,24 @@ interface SettingsContextType {
   setSensitiveActionPreference: (pref: SensitiveActionPreference) => Promise<void>;
   sensitiveTone: SensitiveTone;
   setSensitiveTone: (tone: SensitiveTone) => Promise<void>;
+  lastSeenVersion: string | null;
+  markVersionSeen: (version?: string) => Promise<void>;
+  shouldShowWhatsNew: boolean;
+  // QoL Settings
+  lineHeight: number;
+  setLineHeight: (height: number) => Promise<void>;
+  imageLoadingMode: ImageLoadingMode;
+  setImageLoadingMode: (mode: ImageLoadingMode) => Promise<void>;
+  dataSaverMode: boolean;
+  setDataSaverMode: (enabled: boolean) => Promise<void>;
+  quietHoursEnabled: boolean;
+  setQuietHoursEnabled: (enabled: boolean) => Promise<void>;
+  quietHoursStart: string;
+  setQuietHoursStart: (time: string) => Promise<void>;
+  quietHoursEnd: string;
+  setQuietHoursEnd: (time: string) => Promise<void>;
+  hapticIntensity: HapticIntensity;
+  setHapticIntensity: (intensity: HapticIntensity) => Promise<void>;
 }
 
 // Provide a safe default context so components can render in tests without a provider
@@ -148,7 +170,7 @@ const defaultSettingsContext: SettingsContextType = {
   setAutoSaveOnComplete: async (_b: boolean) => {},
   defaultTab: "home",
   setDefaultTab: async (_t: string) => {},
-  activeTabs: ["home", "discover", "saved", "digest"],
+  activeTabs: ["home", "discover", "saved", "digest", "profile"],
   setActiveTabs: async (_t: string[]) => {},
   tabLayout: "minimal",
   setTabLayout: async (_l: "minimal" | "comprehensive") => {},
@@ -197,9 +219,43 @@ const defaultSettingsContext: SettingsContextType = {
   setSensitiveActionPreference: async (_p: SensitiveActionPreference) => {},
   sensitiveTone: "gentle",
   setSensitiveTone: async (_t: SensitiveTone) => {},
+  lastSeenVersion: null,
+  markVersionSeen: async (_v?: string) => {},
+  shouldShowWhatsNew: false,
+  lineHeight: 1.5,
+  setLineHeight: async (_n: number) => {},
+  imageLoadingMode: "full",
+  setImageLoadingMode: async (_m: ImageLoadingMode) => {},
+  dataSaverMode: false,
+  setDataSaverMode: async (_b: boolean) => {},
+  quietHoursEnabled: false,
+  setQuietHoursEnabled: async (_b: boolean) => {},
+  quietHoursStart: "22:00",
+  setQuietHoursStart: async (_t: string) => {},
+  quietHoursEnd: "08:00",
+  setQuietHoursEnd: async (_t: string) => {},
+  hapticIntensity: "normal",
+  setHapticIntensity: async (_i: HapticIntensity) => {},
 };
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
+
+export const sanitizeTabs = (tabs: string[], layout: "minimal" | "comprehensive") => {
+  const allowed = allowedTabs[layout];
+  const unique = tabs.filter((t, index) => allowed.includes(t) && tabs.indexOf(t) === index);
+  let normalized = unique.slice(0, 5);
+  if (normalized.length < 3) {
+    normalized = layout === "minimal" ? ["home", "discover", "saved"] : ["top", "local", "digest"];
+  }
+  if (!normalized.includes("profile")) {
+    if (normalized.length < 5) {
+      normalized.push("profile");
+    } else {
+      normalized[normalized.length - 1] = "profile";
+    }
+  }
+  return normalized;
+};
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -221,12 +277,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [fontSize, setFontSizeState] = useState(1.0); // 1.0x default
   const [autoSaveOnComplete, setAutoSaveOnCompleteState] = useState(false); // Don't auto-save by default
   const [defaultTab, setDefaultTabState] = useState("home"); // Home tab as default landing
-  const [activeTabs, setActiveTabsState] = useState<string[]>([
-    "home",
-    "discover",
-    "saved",
-    "digest",
-  ]); // NYT-style minimal tabs
+  const [activeTabs, setActiveTabsState] = useState<string[]>(
+    sanitizeTabs([...defaultTabs.minimal], "minimal"),
+  ); // NYT-style minimal tabs with profile
   const [tabLayout, setTabLayoutState] = useState<"minimal" | "comprehensive">("minimal"); // Default to minimal
   // Tab bar appearance defaults
   const [tabBarStyle, setTabBarStyleState] = useState<"floating" | "standard" | "compact">(
@@ -263,6 +316,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [sensitiveActionPreference, setSensitiveActionPreferenceState] =
     useState<SensitiveActionPreference>("decide");
   const [sensitiveTone, setSensitiveToneState] = useState<SensitiveTone>("gentle");
+  const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(null);
+  // QoL Settings
+  const [lineHeight, setLineHeightState] = useState(1.5);
+  const [imageLoadingMode, setImageLoadingModeState] = useState<ImageLoadingMode>("full");
+  const [dataSaverMode, setDataSaverModeState] = useState(false);
+  const [quietHoursEnabled, setQuietHoursEnabledState] = useState(false);
+  const [quietHoursStart, setQuietHoursStartState] = useState("22:00");
+  const [quietHoursEnd, setQuietHoursEndState] = useState("08:00");
+  const [hapticIntensity, setHapticIntensityState] = useState<HapticIntensity>("normal");
 
   const tabBarHeight = useMemo(() => {
     if (tabBarStyle === "floating") {
@@ -329,6 +391,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         "sensitiveActionPreference",
       );
       const savedSensitiveTone = await AsyncStorage.getItem("sensitiveTone");
+      const savedVersion = await AsyncStorage.getItem("lastSeenVersion");
 
       if (onboarding === "true") setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -371,14 +434,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedAutoSave !== null) {
         setAutoSaveOnCompleteState(savedAutoSave === "true");
       }
-      if (savedDefaultTab && ["home", "discover", "saved", "digest"].includes(savedDefaultTab)) {
-        setDefaultTabState(savedDefaultTab);
+      if (savedDefaultTab) {
+        const allowed = allowedTabs[tabLayout];
+        const resolved = allowed.includes(savedDefaultTab) ? savedDefaultTab : allowed[0];
+        setDefaultTabState(resolved);
       }
       if (savedActiveTabs) {
         try {
           const tabs = JSON.parse(savedActiveTabs);
-          if (Array.isArray(tabs) && tabs.length >= 2 && tabs.length <= 5) {
-            setActiveTabsState(tabs);
+          if (Array.isArray(tabs)) {
+            const normalized = sanitizeTabs(tabs, tabLayout);
+            setActiveTabsState(normalized);
+            await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
           }
         } catch (e) {
           console.error("Failed to parse active tabs", e);
@@ -446,11 +513,55 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedSensitiveTone && ["gentle", "direct"].includes(savedSensitiveTone)) {
         setSensitiveToneState(savedSensitiveTone as SensitiveTone);
       }
+      if (savedVersion) setLastSeenVersion(savedVersion);
 
       // Load tab layout preference
       const savedTabLayout = await AsyncStorage.getItem("tabLayout");
       if (savedTabLayout && ["minimal", "comprehensive"].includes(savedTabLayout)) {
         setTabLayoutState(savedTabLayout as "minimal" | "comprehensive");
+      }
+
+      // Load QoL settings
+      const savedLineHeight = await AsyncStorage.getItem("lineHeight");
+      if (savedLineHeight) {
+        const height = Math.min(2.0, Math.max(1.0, parseFloat(savedLineHeight)));
+        setLineHeightState(height);
+      }
+
+      const savedImageLoadingMode = await AsyncStorage.getItem("imageLoadingMode");
+      if (
+        savedImageLoadingMode &&
+        ["full", "compressed", "text-only"].includes(savedImageLoadingMode)
+      ) {
+        setImageLoadingModeState(savedImageLoadingMode as ImageLoadingMode);
+      }
+
+      const savedDataSaverMode = await AsyncStorage.getItem("dataSaverMode");
+      if (savedDataSaverMode !== null) {
+        setDataSaverModeState(savedDataSaverMode === "true");
+      }
+
+      const savedQuietHoursEnabled = await AsyncStorage.getItem("quietHoursEnabled");
+      if (savedQuietHoursEnabled !== null) {
+        setQuietHoursEnabledState(savedQuietHoursEnabled === "true");
+      }
+
+      const savedQuietHoursStart = await AsyncStorage.getItem("quietHoursStart");
+      if (savedQuietHoursStart) {
+        setQuietHoursStartState(savedQuietHoursStart);
+      }
+
+      const savedQuietHoursEnd = await AsyncStorage.getItem("quietHoursEnd");
+      if (savedQuietHoursEnd) {
+        setQuietHoursEndState(savedQuietHoursEnd);
+      }
+
+      const savedHapticIntensity = await AsyncStorage.getItem("hapticIntensity");
+      if (
+        savedHapticIntensity &&
+        ["off", "subtle", "normal", "strong"].includes(savedHapticIntensity)
+      ) {
+        setHapticIntensityState(savedHapticIntensity as HapticIntensity);
       }
     } catch (error) {
       console.error("Failed to load settings", error);
@@ -632,8 +743,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setDefaultTab = async (tab: string) => {
     try {
-      await AsyncStorage.setItem("defaultTab", tab);
-      setDefaultTabState(tab);
+      const allowed = allowedTabs[tabLayout];
+      const resolved = allowed.includes(tab) ? tab : allowed[0];
+      await AsyncStorage.setItem("defaultTab", resolved);
+      setDefaultTabState(resolved);
     } catch (e) {
       console.error("Failed to save default tab", e);
     }
@@ -641,8 +754,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setActiveTabs = async (tabs: string[]) => {
     try {
-      await AsyncStorage.setItem("activeTabs", JSON.stringify(tabs));
-      setActiveTabsState(tabs);
+      const normalized = sanitizeTabs(tabs, tabLayout);
+      await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
+      setActiveTabsState(normalized);
     } catch (e) {
       console.error("Failed to save active tabs", e);
     }
@@ -802,12 +916,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabLayout", layout);
       setTabLayoutState(layout);
       // Reset active tabs to defaults for the new layout
-      const defaultTabs =
-        layout === "minimal"
-          ? ["home", "discover", "saved", "digest"]
-          : ["top", "local", "business", "digest", "saved"];
-      setActiveTabsState(defaultTabs);
-      await AsyncStorage.setItem("activeTabs", JSON.stringify(defaultTabs));
+      const defaultTabsForLayout =
+        layout === "minimal" ? [...defaultTabs.minimal] : [...defaultTabs.comprehensive];
+      const normalized = sanitizeTabs(defaultTabsForLayout, layout);
+      setActiveTabsState(normalized);
+      await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
     } catch (e) {
       console.error("Failed to save tab layout", e);
     }
@@ -877,6 +990,82 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error("Failed to save sensitive tone", e);
     }
   };
+
+  const setLineHeight = async (height: number) => {
+    try {
+      const clamped = Math.min(2.0, Math.max(1.0, Number(height)));
+      await AsyncStorage.setItem("lineHeight", clamped.toString());
+      setLineHeightState(clamped);
+    } catch (e) {
+      console.error("Failed to save line height", e);
+    }
+  };
+
+  const setImageLoadingMode = async (mode: ImageLoadingMode) => {
+    try {
+      await AsyncStorage.setItem("imageLoadingMode", mode);
+      setImageLoadingModeState(mode);
+    } catch (e) {
+      console.error("Failed to save image loading mode", e);
+    }
+  };
+
+  const setDataSaverMode = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("dataSaverMode", enabled.toString());
+      setDataSaverModeState(enabled);
+    } catch (e) {
+      console.error("Failed to save data saver mode", e);
+    }
+  };
+
+  const setQuietHoursEnabled = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("quietHoursEnabled", enabled.toString());
+      setQuietHoursEnabledState(enabled);
+    } catch (e) {
+      console.error("Failed to save quiet hours enabled", e);
+    }
+  };
+
+  const setQuietHoursStart = async (time: string) => {
+    try {
+      await AsyncStorage.setItem("quietHoursStart", time);
+      setQuietHoursStartState(time);
+    } catch (e) {
+      console.error("Failed to save quiet hours start", e);
+    }
+  };
+
+  const setQuietHoursEnd = async (time: string) => {
+    try {
+      await AsyncStorage.setItem("quietHoursEnd", time);
+      setQuietHoursEndState(time);
+    } catch (e) {
+      console.error("Failed to save quiet hours end", e);
+    }
+  };
+
+  const setHapticIntensity = async (intensity: HapticIntensity) => {
+    try {
+      await AsyncStorage.setItem("hapticIntensity", intensity);
+      setHapticIntensityState(intensity);
+    } catch (e) {
+      console.error("Failed to save haptic intensity", e);
+    }
+  };
+
+  const markVersionSeen = async (version?: string) => {
+    const v = version || APP_VERSION;
+    try {
+      await AsyncStorage.setItem("lastSeenVersion", v);
+      setLastSeenVersion(v);
+    } catch (e) {
+      console.error("Failed to save last seen version", e);
+    }
+  };
+
+  const shouldShowWhatsNew = hasCompletedOnboarding && lastSeenVersion !== APP_VERSION;
 
   return (
     <SettingsContext.Provider
@@ -970,6 +1159,23 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSensitiveActionPreference,
         sensitiveTone,
         setSensitiveTone,
+        lastSeenVersion,
+        markVersionSeen,
+        shouldShowWhatsNew,
+        lineHeight,
+        setLineHeight,
+        imageLoadingMode,
+        setImageLoadingMode,
+        dataSaverMode,
+        setDataSaverMode,
+        quietHoursEnabled,
+        setQuietHoursEnabled,
+        quietHoursStart,
+        setQuietHoursStart,
+        quietHoursEnd,
+        setQuietHoursEnd,
+        hapticIntensity,
+        setHapticIntensity,
       }}
     >
       {children}

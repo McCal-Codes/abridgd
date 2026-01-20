@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, useWindowDimensions, ScrollView } from "react-native";
+import { View, Text, StyleSheet, FlatList, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,12 +13,13 @@ import { RootStackParamList } from "../navigation/types";
 
 import { AbridgedReader } from "../components/AbridgedReader";
 import { BookOpen, PauseCircle, Wind, Sliders, CheckCircle } from "lucide-react-native";
+import { GroundingAnimationStyle } from "../context/SettingsContext";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SLIDES = [
   {
-    id: "1",
+    id: "welcome",
     title: "Finally, a Good News App",
     description:
       "We know the struggle. You downloaded this because you could not find a news app that felt right. You are in luck, you found it.",
@@ -26,7 +27,7 @@ const SLIDES = [
     Icon: BookOpen,
   },
   {
-    id: "2",
+    id: "rsvp-demo",
     title: "Give Your Eyes a Break",
     description:
       "Doomscrolling is exhausting. Our RSVP reader shows you one word at a time, locked in place. It is surprisingly calm, like a massage for your brain.",
@@ -36,35 +37,16 @@ const SLIDES = [
     Icon: PauseCircle,
   },
   {
-    id: "practice",
-    title: "Practice RSVP Reading",
-    description:
-      "Start slow (200–250 WPM), then nudge up as it feels comfortable. Keep your eyes near the pivot letter (highlighted) and let the words come to you.",
-    demo: true,
-    demoText:
-      "Practice makes calm: begin at a gentle pace, notice the highlighted focal point, and increase speed when your eyes feel ready.",
-    Icon: PauseCircle,
-  },
-  {
     id: "grounding",
-    title: "Breathe",
+    title: "Optional grounding",
     description:
-      "News can be heavy. When sensitive topics appear, Grounding Mode offers a gentle breathing reset — and you can customize its feel later in Settings.",
+      "For heavy stories, add a calm breathing cue. Optional, and changeable anytime in Settings → Reading.",
     demo: false,
     grounding: true,
     Icon: Wind,
   },
   {
-    id: "grounding-options",
-    title: "Pick Your Grounding Style",
-    description:
-      "Prefer calm loops, flowing waves, or a minimal pulse? Once you're inside the app, head to Settings → Reading to choose the look that suits you.",
-    demo: false,
-    groundingOptions: true,
-    Icon: Wind,
-  },
-  {
-    id: "3",
+    id: "make-it-yours",
     title: "Make It Yours",
     description:
       "We don't do 'one size fits all.' Change the colors, adjust the speed, or tweak the focus point. This is your quiet corner of the internet.",
@@ -72,7 +54,7 @@ const SLIDES = [
     Icon: Sliders,
   },
   {
-    id: "4",
+    id: "ready",
     title: "Welcome Home",
     description:
       "No accounts, no tracking, no noise. Just the news, on your terms. We're glad you found us.",
@@ -81,71 +63,136 @@ const SLIDES = [
   },
 ];
 
-const GROUNDING_POINTS = [
-  "Steady, rounded motion",
-  "Optional before tough reads",
-  "30-second default loop",
+const GROUNDING_POINTS = ["Optional before tough reads", "≈30s steady loop"];
+
+const BREATH_SEGMENTS = [
+  { label: "In", flex: 4, color: "#3FA2A7" },
+  { label: "Hold", flex: 1, color: "#7FC6C9" },
+  { label: "Out", flex: 6, color: "#A3D8DA" },
 ];
 
-const GROUNDING_PRESENTATIONS = [
-  { id: "simple", label: "Calm Loop", description: "Classic inhale / exhale" },
-  { id: "waves", label: "Wave Drift", description: "Flowing gradients" },
-  { id: "pulse", label: "Focus Pulse", description: "Minimal ring" },
+const GROUNDING_STYLES: { id: GroundingAnimationStyle; label: string; description: string }[] = [
+  { id: "simple", label: "Calm Loop", description: "Soft inhale / exhale — classic." },
+  { id: "waves", label: "Wave Drift", description: "Slow gradients, like tide coming in." },
+  { id: "pulse", label: "Focus Pulse", description: "Minimal ring, steady and quiet." },
 ];
 
-const GroundingPreviewCard: React.FC = () => {
+const GROUNDING_STYLE_COLORS: Record<GroundingAnimationStyle, string> = {
+  simple: "#3FA2A7",
+  waves: "#7FC6C9",
+  pulse: "#A3D8DA",
+};
+
+const GroundingPreviewCard: React.FC<{
+  isCompactHeight: boolean;
+  currentStyle: GroundingAnimationStyle;
+}> = ({ isCompactHeight, currentStyle }) => {
+  const pulseSize = isCompactHeight ? 74 : 94;
+  const cardPadding = isCompactHeight ? spacing.sm : spacing.md;
+  const labelSize = isCompactHeight ? 17 : 20;
+  const metaSize = isCompactHeight ? 13 : 14;
+  const selectedStyle = GROUNDING_STYLES.find((s) => s.id === currentStyle) || GROUNDING_STYLES[0];
+
   return (
-    <View style={styles.groundingCard}>
+    <View style={[styles.groundingCard, { padding: cardPadding }]}>
       <View style={styles.groundingCardHeader}>
-        <Text style={styles.groundingCardLabel}>Grounding Mode</Text>
-        <Text style={styles.groundingCardMeta}>Steady • ≈30s</Text>
+        <Text style={[styles.groundingCardLabel, { fontSize: labelSize }]}>Grounding Mode</Text>
+        <View style={styles.groundingStyleBadge}>
+          <Text style={styles.groundingStyleBadgeText}>{selectedStyle.label}</Text>
+        </View>
       </View>
-      <View style={styles.groundingCardBody}>
-        <View style={styles.groundingPulse}>
-          <Text style={styles.groundingPulseText}>Inhale</Text>
+      <View style={styles.groundingCardBodySimple}>
+        <View
+          style={[
+            styles.groundingPulse,
+            { width: pulseSize, height: pulseSize, borderRadius: pulseSize / 2 },
+          ]}
+        >
+          <Text style={[styles.groundingPulseText, isCompactHeight && { fontSize: 18 }]}>
+            Inhale
+          </Text>
           <Text style={styles.groundingPulseSubtext}>softly</Text>
         </View>
-        <View style={styles.groundingTiming}>
-          <Text style={styles.groundingTimingText}>4s inhale</Text>
-          <Text style={styles.groundingTimingText}>1s stillness</Text>
-          <Text style={styles.groundingTimingText}>6s exhale</Text>
+        <View style={styles.groundingDetails}>
+          <Text style={styles.groundingStyleDescriptionPreview}>{selectedStyle.description}</Text>
+          <View style={styles.breathRow}>
+            {BREATH_SEGMENTS.map((seg) => (
+              <View
+                key={seg.label}
+                style={[styles.breathSegment, { flex: seg.flex, backgroundColor: seg.color }]}
+              >
+                <Text style={styles.breathSegmentLabel}>{seg.label}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={styles.breathTiming}>4s in · 1s still · 6s out</Text>
         </View>
       </View>
-      <View style={styles.groundingPointList}>
-        {GROUNDING_POINTS.map((point) => (
-          <View key={point} style={styles.groundingPointPill}>
-            <Text style={styles.groundingPointText}>{point}</Text>
-          </View>
-        ))}
-      </View>
-      <Text style={styles.groundingFootnote}>Appears before heavy articles. Always optional.</Text>
-      <Text style={styles.groundingSettingsNote}>
-        Fine-tune timing and visuals later in Settings → Reading.
-      </Text>
     </View>
   );
 };
 
-const GroundingOptionsPreview: React.FC = () => {
+const GroundingStyleSelector: React.FC<{
+  value: GroundingAnimationStyle;
+  onChange: (style: GroundingAnimationStyle) => void;
+  isCompactHeight: boolean;
+}> = ({ value, onChange, isCompactHeight }) => {
+  const { width: screenWidth } = useWindowDimensions();
+  const horizontalPadding = isCompactHeight ? spacing.md : spacing.lg;
+  const listPadding = spacing.xs;
+  const cardWidth = Math.max(0, screenWidth - 2 * (horizontalPadding + listPadding));
+  const cardPadding = isCompactHeight ? spacing.sm : spacing.md;
   return (
-    <View style={styles.groundingOptionsContainer}>
-      <Text style={styles.groundingOptionsHeading}>Presentation preview</Text>
-      {GROUNDING_PRESENTATIONS.map((option, index) => (
-        <View
-          key={option.id}
-          style={[
-            styles.groundingOptionsRow,
-            index === GROUNDING_PRESENTATIONS.length - 1 && styles.groundingOptionsRowLast,
-          ]}
-        >
-          <View>
-            <Text style={styles.groundingOptionsLabel}>{option.label}</Text>
-            <Text style={styles.groundingOptionsDescription}>{option.description}</Text>
-          </View>
-        </View>
-      ))}
-      <Text style={styles.groundingOptionsNote}>
-        Change styles anytime via Settings → Reading → Grounding.
+    <View style={styles.groundingSelectorContainer}>
+      <Text style={[styles.groundingSelectorTitle, isCompactHeight && { fontSize: 16 }]}>
+        Pick your grounding feel
+      </Text>
+      <FlatList
+        horizontal
+        data={GROUNDING_STYLES}
+        keyExtractor={(item) => item.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.groundingSelectorList}
+        renderItem={({ item }) => {
+          const selected = item.id === value;
+          const swatchColor = GROUNDING_STYLE_COLORS[item.id];
+          return (
+            <ScaleButton onPress={() => onChange(item.id)} style={{ width: cardWidth }}>
+              <View
+                style={[
+                  styles.groundingStyleCard,
+                  { padding: cardPadding },
+                  selected && styles.groundingStyleCardSelected,
+                ]}
+              >
+                <View style={styles.groundingStyleHeaderRow}>
+                  <View style={[styles.groundingStyleSwatch, { backgroundColor: swatchColor }]} />
+                  <View style={styles.groundingStyleTextColumn}>
+                    <Text style={[styles.groundingStyleLabel, isCompactHeight && { fontSize: 14 }]}>
+                      {item.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.groundingStyleDescription,
+                        isCompactHeight && { fontSize: 11 },
+                      ]}
+                    >
+                      {item.description}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.groundingStyleMiniBar}>
+                  <View
+                    style={[styles.groundingStyleMiniBarFill, { backgroundColor: swatchColor }]}
+                  />
+                </View>
+              </View>
+            </ScaleButton>
+          );
+        }}
+      />
+      <Text style={[styles.groundingSelectorHint, isCompactHeight && { fontSize: 12 }]}>
+        You can change this later in Settings → Reading.
       </Text>
     </View>
   );
@@ -153,13 +200,15 @@ const GroundingOptionsPreview: React.FC = () => {
 export const OnboardingScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<any>();
-  const { completeOnboarding } = useSettings();
+  const { completeOnboarding, groundingAnimationStyle, setGroundingAnimationStyle } = useSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
   const { width, height: screenHeight } = useWindowDimensions();
   const isCompactHeight = screenHeight < 720;
   const isMediumHeight = screenHeight >= 720 && screenHeight < 820;
-  const demoHeight = isCompactHeight ? 240 : isMediumHeight ? 300 : 350;
+  const demoHeight = isCompactHeight ? 170 : isMediumHeight ? 240 : 320;
+  const [selectedGroundingStyle, setSelectedGroundingStyle] =
+    useState<GroundingAnimationStyle>(groundingAnimationStyle);
 
   // Optional deep-link to a specific slide by id
   useEffect(() => {
@@ -174,6 +223,11 @@ export const OnboardingScreen: React.FC = () => {
   }, [route?.params]);
 
   const handleFinish = async (options?: { openReadingSettings?: boolean }) => {
+    // Persist grounding choice if changed during onboarding
+    if (selectedGroundingStyle && selectedGroundingStyle !== groundingAnimationStyle) {
+      await setGroundingAnimationStyle(selectedGroundingStyle);
+    }
+
     await completeOnboarding();
     if (options?.openReadingSettings) {
       navigation.reset({
@@ -192,13 +246,11 @@ export const OnboardingScreen: React.FC = () => {
   const renderItem = ({ item }: { item: (typeof SLIDES)[0] }) => {
     return (
       <View style={[styles.slide, { width }]}>
-        <ScrollView
-          style={styles.slideScroll}
-          contentContainerStyle={[
+        <View
+          style={[
             styles.slideContent,
             (isCompactHeight || isMediumHeight) && styles.slideContentCompact,
           ]}
-          showsVerticalScrollIndicator={false}
         >
           <View style={styles.textContainer}>
             <Text
@@ -231,13 +283,15 @@ export const OnboardingScreen: React.FC = () => {
           {/* Grounding Preview */}
           {item.grounding && (
             <View style={styles.groundingPreviewWrapper}>
-              <GroundingPreviewCard />
-            </View>
-          )}
-
-          {item.groundingOptions && (
-            <View style={styles.groundingPreviewWrapper}>
-              <GroundingOptionsPreview />
+              <GroundingPreviewCard
+                isCompactHeight={isCompactHeight}
+                currentStyle={selectedGroundingStyle}
+              />
+              <GroundingStyleSelector
+                value={selectedGroundingStyle}
+                onChange={(style) => setSelectedGroundingStyle(style)}
+                isCompactHeight={isCompactHeight}
+              />
             </View>
           )}
 
@@ -247,7 +301,7 @@ export const OnboardingScreen: React.FC = () => {
               {item.Icon && <item.Icon size={72} color={colors.text} strokeWidth={1.5} />}
             </View>
           )}
-        </ScrollView>
+        </View>
       </View>
     );
   };
@@ -260,6 +314,11 @@ export const OnboardingScreen: React.FC = () => {
         renderItem={renderItem}
         horizontal
         pagingEnabled
+        snapToInterval={width}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        disableIntervalMomentum
+        bounces={false}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={(e) => {
           const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -268,7 +327,7 @@ export const OnboardingScreen: React.FC = () => {
         keyExtractor={(item) => item.id}
       />
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, isCompactHeight && styles.footerCompact]}>
         <View style={styles.pagination}>
           {SLIDES.map((_, index) => (
             <View key={index} style={[styles.dot, currentIndex === index && styles.dotActive]} />
@@ -288,21 +347,29 @@ export const OnboardingScreen: React.FC = () => {
               onPress={() => handleFinish({ openReadingSettings: true })}
             >
               <View style={styles.secondaryBtnContent}>
-                <Text style={styles.secondaryButtonText}>Fine-tune Grounding Now</Text>
+                <Text style={styles.secondaryButtonText}>Fine-tune Settings Now</Text>
               </View>
             </ScaleButton>
           </View>
         ) : (
-          <ScaleButton
-            style={styles.button}
-            onPress={() => {
-              // Encourage swipe interaction; no-op button keeps layout consistent
-            }}
-          >
-            <View style={{ width: "100%", alignItems: "center" }}>
-              <Text style={styles.swipeText}>Swipe to continue</Text>
-            </View>
-          </ScaleButton>
+          <View style={styles.progressActions}>
+            <ScaleButton
+              style={styles.button}
+              onPress={() => {
+                // Encourage swipe interaction; no-op button keeps layout consistent
+              }}
+            >
+              <View style={{ width: "100%", alignItems: "center" }}>
+                <Text style={styles.swipeText}>Swipe to continue</Text>
+              </View>
+            </ScaleButton>
+
+            <ScaleButton style={[styles.button, styles.skipButton]} onPress={() => handleFinish()}>
+              <View style={styles.skipBtnContent}>
+                <Text style={styles.skipButtonText}>Skip for now</Text>
+              </View>
+            </ScaleButton>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -317,76 +384,79 @@ const styles = StyleSheet.create({
   slide: {
     flex: 1,
   },
-  slideScroll: {
-    flex: 1,
-  },
   slideContent: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xl,
+    flex: 1,
+    width: "100%",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     alignItems: "center",
+    justifyContent: "flex-start",
+    gap: spacing.sm,
   },
   slideContentCompact: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+    alignItems: "center",
   },
   textContainer: {
-    marginBottom: spacing.xl,
     alignItems: "center",
+    gap: spacing.xs,
   },
   title: {
     fontFamily: typography.fontFamily.serif,
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "700",
     color: colors.text,
     textAlign: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
   titleMedium: {
     fontSize: 30,
   },
   titleCompact: {
-    fontSize: 26,
-    marginBottom: spacing.sm,
+    fontSize: 23,
+    marginBottom: spacing.xs,
   },
   description: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 18,
+    fontSize: 15,
     color: colors.textSecondary,
     textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: spacing.lg,
+    lineHeight: 20,
+    paddingHorizontal: spacing.md,
   },
   descriptionMedium: {
     fontSize: 17,
     paddingHorizontal: spacing.md,
   },
   descriptionCompact: {
-    fontSize: 16,
-    lineHeight: 22,
-    paddingHorizontal: spacing.md,
+    fontSize: 14,
+    lineHeight: 18,
+    paddingHorizontal: spacing.sm,
   },
   demoContainer: {
     width: "100%",
-    marginBottom: spacing.lg,
+    flexShrink: 1,
   },
   groundingPreviewWrapper: {
     width: "100%",
-    marginTop: spacing.lg,
+    marginTop: spacing.xs,
+    gap: spacing.xs,
   },
   groundingCard: {
     width: "100%",
-    borderRadius: 28,
+    borderRadius: 18,
     backgroundColor: colors.surface,
-    padding: spacing.xl,
-    gap: spacing.md,
+    gap: spacing.xs,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
+    overflow: "hidden",
   },
   groundingCardHeader: {
     flexDirection: "row",
@@ -395,12 +465,12 @@ const styles = StyleSheet.create({
   },
   groundingCardLabel: {
     fontFamily: typography.fontFamily.serif,
-    fontSize: 20,
+    fontSize: 19,
     color: colors.text,
   },
   groundingCardMeta: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
   },
   groundingCardBody: {
@@ -409,10 +479,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  groundingCardBodySimple: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+  },
   groundingPulse: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: "#E6F4F4",
     alignItems: "center",
     justifyContent: "center",
@@ -421,12 +496,12 @@ const styles = StyleSheet.create({
   },
   groundingPulseText: {
     fontFamily: typography.fontFamily.serif,
-    fontSize: 24,
+    fontSize: 20,
     color: colors.text,
   },
   groundingPulseSubtext: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
+    fontSize: 11,
     textTransform: "uppercase",
     letterSpacing: 1,
     color: colors.textSecondary,
@@ -447,7 +522,7 @@ const styles = StyleSheet.create({
   },
   groundingPointPill: {
     borderRadius: 999,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     backgroundColor: colors.background,
   },
@@ -456,69 +531,161 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
   },
-  groundingFootnote: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-  groundingSettingsNote: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
-    color: colors.primary,
-    textAlign: "center",
-    marginTop: spacing.xs,
-  },
-  groundingOptionsContainer: {
-    width: "100%",
-    borderRadius: 24,
+  groundingStyleBadge: {
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.xl,
-    gap: spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
   },
-  groundingOptionsHeading: {
+  groundingStyleBadgeText: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  groundingOptionsRow: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    paddingBottom: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  groundingOptionsRowLast: {
-    borderBottomWidth: 0,
-    marginBottom: 0,
-    paddingBottom: 0,
-  },
-  groundingOptionsLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: "600",
     color: colors.text,
   },
-  groundingOptionsDescription: {
+  groundingStyleDescriptionPreview: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
+    fontSize: 11,
     color: colors.textSecondary,
-    marginTop: 2,
+    lineHeight: 15,
+    textAlign: "left",
   },
-  groundingOptionsNote: {
+  groundingDetails: {
+    flex: 1,
+    gap: spacing.xs,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    paddingLeft: spacing.md,
+  },
+  breathRow: {
+    flexDirection: "row",
+    width: "72%",
+    maxWidth: "72%",
+    alignSelf: "flex-start",
+    paddingHorizontal: 0,
+    marginVertical: spacing.xs,
+    borderRadius: 999,
+    overflow: "hidden",
+    height: 10,
+  },
+  breathSegment: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  breathSegmentLabel: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
+    fontSize: 8,
+    color: colors.surface,
+    fontWeight: "600",
+  },
+  breathTiming: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  groundingSelectorContainer: {
+    marginTop: spacing.xs,
+    gap: spacing.xs,
+  },
+  groundingSelectorTitle: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: 17,
+    color: colors.text,
+    textAlign: "center",
+  },
+  groundingSelectorList: {
+    gap: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  groundingStyleCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 96,
+    marginBottom: spacing.sm,
+  },
+  groundingStyleCardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + "08",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  groundingSelectorHint: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
     color: colors.textSecondary,
     textAlign: "center",
-    marginTop: spacing.sm,
+  },
+  miniPreviewRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  miniPreviewBtn: {
+    borderRadius: 999,
+  },
+  miniPreviewPill: {
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  miniPreviewPillActive: {
+    backgroundColor: colors.primary + "11",
+    borderColor: colors.primary,
+  },
+  groundingStyleHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    width: "100%",
+  },
+  groundingStyleSwatch: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  groundingStyleTextColumn: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  groundingStyleMiniBar: {
+    width: "100%",
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: colors.border,
+    overflow: "hidden",
+  },
+  groundingStyleMiniBarFill: {
+    width: "70%",
+    height: "100%",
+    borderRadius: 999,
+  },
+  miniPreviewLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 11,
+    color: colors.text,
+  },
+  miniPreviewLabelActive: {
+    color: colors.primary,
+    fontWeight: "600",
   },
   placeholder: {
     height: 200,
@@ -526,12 +693,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footer: {
-    padding: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xxl,
+    alignItems: "center",
+  },
+  footerCompact: {
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xxl,
+    alignItems: "center",
   },
   pagination: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
     gap: spacing.sm,
   },
   dot: {
@@ -546,14 +722,22 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "100%",
+    marginHorizontal: spacing.sm,
   },
   finishActions: {
     width: "100%",
     gap: spacing.md,
+    alignItems: "center",
+  },
+  progressActions: {
+    width: "100%",
+    gap: spacing.sm,
+    alignItems: "center",
   },
   finishBtn: {
     backgroundColor: colors.text,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: 12,
     alignItems: "center",
   },
@@ -569,7 +753,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
     backgroundColor: colors.surface,
   },
@@ -582,5 +767,21 @@ const styles = StyleSheet.create({
   swipeText: {
     color: colors.textSecondary,
     marginBottom: 20,
+  },
+  skipButton: {
+    borderRadius: 12,
+  },
+  skipBtnContent: {
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+  },
+  skipButtonText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    fontFamily: typography.fontFamily.sans,
+    fontWeight: "600",
   },
 });

@@ -7,6 +7,7 @@ const light = {
   background: "#F9F9F7",
   secondaryBackground: "#FFFFFF",
   surface: "#FFFFFF",
+  tintTransparent: "rgba(0,151,167,0.12)",
 
   // Labels (Text)
   label: "#121212",
@@ -36,6 +37,7 @@ const dark = {
   background: "#0C0C0C",
   secondaryBackground: "#121212",
   surface: "#1A1A1A",
+  tintTransparent: "rgba(0,188,212,0.12)",
 
   label: "#F5F5F7",
   secondaryLabel: "#B0B0B0",

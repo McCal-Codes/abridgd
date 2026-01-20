@@ -1,18 +1,29 @@
 import React from "react";
-import { View, FlatList, StyleSheet, StatusBar, Animated } from "react-native";
+import { View, FlatList, StyleSheet, StatusBar, Animated, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ScrollContext } from "../context/ScrollContext";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ArticleCard } from "../components/ArticleCard";
+import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
-import { fetchArticlesByCategory } from "../services/RssService";
+import { fetchArticlesByCategory, getLastFetchedAt } from "../services/RssService";
 import { Article } from "../types/Article";
 import { colors } from "../theme/colors";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { spacing } from "../theme/spacing";
+import { useReadingProgressOptional } from "../context/ReadingProgressContext";
+import { useSavedArticles } from "../context/SavedArticlesContext";
+import { ArticleProgressIndicator } from "../components/ArticleProgressIndicator";
+import { ScaleButton } from "../components/ScaleButton";
+import { typography } from "../theme/typography";
+import { ReadingProgress } from "../types/ReadingProgress";
+import * as Haptics from "expo-haptics";
+
+type ContinueReadingItem = {
+  article: Article;
+  progress: ReadingProgress;
+};
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,6 +34,84 @@ const AnimatedFlatList: typeof FlatList =
     : FlatList) ||
   FlatList;
 
+const formatUpdatedAgo = (lastUpdated: Date | null) => {
+  if (!lastUpdated) return null;
+  const diffMs = Date.now() - lastUpdated.getTime();
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSeconds < 60) return "Updated just now";
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `Updated ${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `Updated ${diffDays}d ago`;
+};
+
+const ContinueReadingSection = ({
+  items,
+  onPress,
+  showAll,
+  onToggleShowAll,
+  lastUpdated,
+}: {
+  items: ContinueReadingItem[];
+  onPress: (article: Article) => void;
+  showAll: boolean;
+  onToggleShowAll: () => void;
+  lastUpdated: Date | null;
+}) => {
+  if (!items.length) return null;
+
+  const visibleItems = showAll ? items : items.slice(0, 3);
+  const canToggle = items.length > 3;
+
+  return (
+    <View style={styles.continueContainer} testID="continue-reading">
+      <View style={styles.continueHeaderRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.continueTitle}>Continue Reading</Text>
+          <Text style={styles.continueSubtitle}>
+            {items.length === 1 ? "1 article in progress" : `${items.length} articles in progress`}
+          </Text>
+        </View>
+        {lastUpdated && <Text style={styles.updatedBadge}>{formatUpdatedAgo(lastUpdated)}</Text>}
+        {canToggle && (
+          <Pressable hitSlop={8} onPress={onToggleShowAll} accessibilityRole="button">
+            <Text style={styles.continueAction}>{showAll ? "Hide" : "Show all"}</Text>
+          </Pressable>
+        )}
+      </View>
+
+      <FlatList
+        data={visibleItems}
+        keyExtractor={(item) => item.article.id}
+        renderItem={({ item }) => (
+          <ScaleButton style={styles.continueCard} onPress={() => onPress(item.article)}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.continueHeadline} numberOfLines={2}>
+                {item.article.headline}
+              </Text>
+              <View style={styles.continueMetaRow}>
+                <Text style={styles.continueMeta}>{item.article.source}</Text>
+                <Text style={styles.continueMetaDot}>•</Text>
+                <Text style={styles.continueMeta}>{item.article.timestamp}</Text>
+              </View>
+              <View style={styles.continueProgressRow}>
+                <ArticleProgressIndicator articleId={item.article.id} size="medium" showLabel />
+                <Text style={styles.continuePercent}>{item.progress.completionPercentage}%</Text>
+              </View>
+            </View>
+          </ScaleButton>
+        )}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={{ width: spacing.md }} />}
+        contentContainerStyle={{ paddingVertical: spacing.sm, paddingHorizontal: spacing.gutter }}
+      />
+    </View>
+  );
+};
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
 
@@ -31,6 +120,9 @@ export const HomeScreen: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [showAllContinue, setShowAllContinue] = React.useState(false);
+  const { inProgressArticles } = useReadingProgressOptional();
+  const { savedArticles } = useSavedArticles();
 
   const { scrollY } = React.useContext(ScrollContext);
   const insets = useSafeAreaInsets();
@@ -55,7 +147,8 @@ export const HomeScreen: React.FC = () => {
         setError(null);
         const data = await fetchArticlesByCategory("Top");
         setArticles(data);
-        setLastUpdated(new Date());
+        const fetchedAt = getLastFetchedAt("Top");
+        setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
       } catch (e: any) {
         setError(e?.message || "Failed to load articles.");
       } finally {
@@ -65,11 +158,45 @@ export const HomeScreen: React.FC = () => {
     load();
   }, []);
 
+  const continueReadingItems = React.useMemo(() => {
+    if (!inProgressArticles.length) return [];
+
+    return inProgressArticles
+      .map((progress) => {
+        const article =
+          savedArticles.find((a) => a.id === progress.articleId) ||
+          articles.find((a) => a.id === progress.articleId);
+        if (!article) return null;
+        return { article, progress };
+      })
+      .filter(Boolean) as { article: Article; progress: any }[];
+  }, [inProgressArticles, savedArticles, articles]);
+
+  const handleToggleShowAll = React.useCallback(async () => {
+    try {
+      await Haptics.selectionAsync();
+    } catch {
+      // best-effort haptic
+    }
+    setShowAllContinue((prev) => !prev);
+  }, []);
+
+  React.useEffect(() => {
+    if (continueReadingItems.length <= 3 && showAllContinue) {
+      setShowAllContinue(false);
+    }
+  }, [continueReadingItems.length, showAllContinue]);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       {loading ? (
-        <FunLoadingIndicator message="Fetching top stories..." />
+        <FlatList
+          data={Array.from({ length: 6 })}
+          keyExtractor={(_, idx) => `skeleton-${idx}`}
+          renderItem={() => <ArticleCardSkeleton />}
+          contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
+        />
       ) : error ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
@@ -86,6 +213,8 @@ export const HomeScreen: React.FC = () => {
                 fetchArticlesByCategory("Top")
                   .then((data) => {
                     setArticles(data);
+                    const fetchedAt = getLastFetchedAt("Top");
+                    setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
                     setLoading(false);
                   })
                   .catch((e) => {
@@ -110,6 +239,22 @@ export const HomeScreen: React.FC = () => {
               onPress={(article) => navigation.navigate("Article", { article: article })}
             />
           )}
+          ListHeaderComponent={() => (
+            <>
+              {lastUpdated && (
+                <View style={styles.updatedRow} testID="home-updated">
+                  <Text style={styles.updatedLabel}>{formatUpdatedAgo(lastUpdated)}</Text>
+                </View>
+              )}
+              <ContinueReadingSection
+                items={continueReadingItems}
+                onPress={(article) => navigation.navigate("Article", { article })}
+                showAll={showAllContinue}
+                onToggleShowAll={handleToggleShowAll}
+                lastUpdated={lastUpdated}
+              />
+            </>
+          )}
           contentContainerStyle={[
             styles.listContent,
             {
@@ -128,12 +273,18 @@ export const HomeScreen: React.FC = () => {
           onScroll={onScroll}
           scrollEventThrottle={16}
           onRefresh={async () => {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } catch {
+              // noop if haptics unavailable
+            }
             setRefreshing(true);
             setError(null);
             try {
-              const data = await fetchArticlesByCategory("Top");
+              const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
               setArticles(data);
-              setLastUpdated(new Date());
+              const fetchedAt = getLastFetchedAt("Top");
+              setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
             } catch (e: any) {
               setError(e?.message || "Failed to refresh.");
             } finally {
@@ -158,5 +309,90 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  continueContainer: {
+    paddingTop: spacing.gutter,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  continueHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.gutter,
+  },
+  continueTitle: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.lg,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  continueSubtitle: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+  },
+  updatedBadge: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.xs,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
+  },
+  updatedRow: {
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.sm,
+  },
+  updatedLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.xs,
+    color: colors.textSecondary,
+  },
+  continueAction: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.tint,
+    fontWeight: "600",
+  },
+  continueCard: {
+    width: 260,
+    padding: spacing.md,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    gap: spacing.sm,
+  },
+  continueHeadline: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.md,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  continueMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.xs,
+  },
+  continueMeta: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.xs,
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  continueMetaDot: {
+    marginHorizontal: 6,
+    color: colors.textSecondary,
+  },
+  continueProgressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  continuePercent: {
+    fontFamily: typography.fontFamily.mono,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
   },
 });

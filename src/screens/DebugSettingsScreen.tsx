@@ -21,15 +21,7 @@ import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  Trash2,
-  RefreshCw,
-  Database,
-  FileText,
-  Check,
-  Sparkles,
-  Activity,
-} from "lucide-react-native";
+import { Trash2, RefreshCw, Database, FileText, Check, Star, Activity } from "lucide-react-native";
 
 export const DebugSettingsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -227,44 +219,13 @@ export const DebugSettingsScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}>
         <Text style={styles.header}>Debug & Advanced</Text>
-        <Text style={styles.description}>Developer tools and diagnostic options</Text>
+        <Text style={styles.description}>
+          Power tools for inspection, experiments, and safe recovery. Nothing here is required for
+          normal use.
+        </Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Management</Text>
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary + "15" }]}
-            onPress={() => navigation.navigate("iOS26Demo")}
-          >
-            <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "20" }]}>
-              <Sparkles size={20} color={colors.primary} />
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>iOS 26 UI Demo</Text>
-              <Text style={styles.actionDesc}>Glass buttons, toolbars, and transitions</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              { backgroundColor: (colors.accent || colors.primary) + "10" },
-            ]}
-            onPress={() => navigation.navigate("TabBarSettings")}
-          >
-            <View
-              style={[
-                styles.actionIconContainer,
-                { backgroundColor: (colors.accent || colors.primary) + "15" },
-              ]}
-            >
-              <Activity size={20} color={colors.primary} />
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Tab Bar Experiments</Text>
-              <Text style={styles.actionDesc}>Jump to tab bar + iOS 26 navbar options</Text>
-            </View>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Data & Recovery</Text>
 
           <TouchableOpacity style={styles.actionButton} onPress={viewStoredSettings}>
             <View style={styles.actionIconContainer}>
@@ -273,6 +234,26 @@ export const DebugSettingsScreen: React.FC = () => {
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>View Stored Settings</Text>
               <Text style={styles.actionDesc}>See all saved preferences</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={shareStoredSettings}>
+            <View style={styles.actionIconContainer}>
+              <Database size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Share Settings Snapshot</Text>
+              <Text style={styles.actionDesc}>Export values for debugging</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={logSettingsToConsole}>
+            <View style={styles.actionIconContainer}>
+              <Activity size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Log Settings to Console</Text>
+              <Text style={styles.actionDesc}>Dump state to native logs</Text>
             </View>
           </TouchableOpacity>
 
@@ -301,80 +282,64 @@ export const DebugSettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Version</Text>
-            <Text style={styles.infoValue}>1.0.2</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Build</Text>
-            <Text style={styles.infoValue}>2026.01.13</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Environment</Text>
-            <Text style={styles.infoValue}>Development</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Platform</Text>
-            <Text style={styles.infoValue}>
-              {deviceInfo.platform} {deviceInfo.version}
-            </Text>
-          </View>
-        </View>
+          <Text style={styles.sectionTitle}>Experiments</Text>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Current Settings</Text>
-          <View style={styles.settingsGrid}>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Reader Enabled</Text>
-              <Text style={styles.settingValue}>{settings.isReaderEnabled ? "✓" : "✗"}</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.primary + "15" }]}
+            onPress={() => navigation.navigate("iOS26Demo")}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "20" }]}>
+              <Star size={20} color={colors.primary} />
             </View>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Grounding Enabled</Text>
-              <Text style={styles.settingValue}>{settings.isGroundingEnabled ? "✓" : "✗"}</Text>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>iOS 26 UI Demo</Text>
+              <Text style={styles.actionDesc}>Glass buttons, toolbars, transitions</Text>
             </View>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>AI Summary</Text>
-              <Text style={styles.settingValue}>{settings.isSummarizationEnabled ? "✓" : "✗"}</Text>
-            </View>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Digest Mode</Text>
-              <Text style={styles.settingValue}>{settings.digestSummaryMode}</Text>
-            </View>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Breath Duration</Text>
-              <Text style={styles.settingValue}>{settings.groundingBreathDuration}s</Text>
-            </View>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Breath Cycles</Text>
-              <Text style={styles.settingValue}>{settings.groundingCycles}</Text>
-            </View>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Advanced height controls</Text>
-              <Text style={styles.settingValue}>
-                {settings.enableAdvancedHeightControls ? "On" : "Off"}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => {
-                setVerboseLogging((v) => !v);
-                Alert.alert(
-                  "Verbose Logging",
-                  `Verbose logging ${!verboseLogging ? "enabled" : "disabled"}`,
-                );
-              }}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: (colors.accent || colors.primary) + "10" },
+            ]}
+            onPress={() => navigation.navigate("TabBarSettings")}
+          >
+            <View
+              style={[
+                styles.actionIconContainer,
+                { backgroundColor: (colors.accent || colors.primary) + "15" },
+              ]}
             >
-              <Text style={styles.settingLabel}>Verbose Logging</Text>
-              <Text
-                style={[
-                  styles.settingValue,
-                  { color: verboseLogging ? colors.primary : colors.textSecondary },
-                ]}
-              >
-                {verboseLogging ? "On" : "Off"}
-              </Text>
+              <Activity size={20} color={colors.primary} />
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Tab Bar Experiments</Text>
+              <Text style={styles.actionDesc}>Jump to Tab Bar Studio + advanced heights</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
+            <TouchableOpacity
+              style={[styles.smallOption, presetApplying && styles.smallOptionDisabled]}
+              onPress={applyIOS26Preset}
+              disabled={presetApplying}
+            >
+              <Text style={styles.smallOptionText}>Apply iOS 26 Preset</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.smallOption, { flex: 1 }]}
+              onPress={() => applyTabBarPreset("default")}
+            >
+              <Text style={styles.smallOptionText}>Reset Tab Heights</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Experimental navbar</Text>
+            <Switch
+              value={settings.experimentalIOS26NavBar}
+              onValueChange={(v) => settings.setExperimentalIOS26NavBar(v)}
+            />
           </View>
         </View>
 
@@ -387,10 +352,19 @@ export const DebugSettingsScreen: React.FC = () => {
               onValueChange={(v) => settings.setEnableAdvancedHeightControls(v)}
             />
           </View>
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Modal Presentation</Text>
-          <Text style={styles.sectionDesc}>Choose how debug/popover menus present</Text>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Verbose Logging</Text>
+            <Switch
+              value={verboseLogging}
+              onValueChange={(v) => {
+                setVerboseLogging(v);
+                Alert.alert("Verbose Logging", `Verbose logging ${v ? "enabled" : "disabled"}`);
+              }}
+            />
+          </View>
+          <Text style={[styles.sectionDesc, { marginTop: spacing.sm }]}>
+            Modal presentation style
+          </Text>
           <View style={{ marginTop: spacing.sm }}>
             <TouchableOpacity
               style={[
@@ -433,69 +407,41 @@ export const DebugSettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tab Bar Presets</Text>
-          <Text style={styles.sectionDesc}>Quick presets for testing different bar heights</Text>
-          <View style={{ flexDirection: "row", gap: spacing.sm }}>
-            <TouchableOpacity
-              style={styles.smallOption}
-              onPress={() => applyTabBarPreset("compact")}
-            >
-              <Text style={styles.smallOptionText}>Compact</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.smallOption}
-              onPress={() => applyTabBarPreset("default")}
-            >
-              <Text style={styles.smallOptionText}>Default</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.smallOption} onPress={() => applyTabBarPreset("tall")}>
-              <Text style={styles.smallOptionText}>Tall</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.sectionTitle, { marginTop: spacing.md }]}>Force Tab Bar Style</Text>
-          <View style={{ flexDirection: "row", gap: spacing.sm }}>
-            <TouchableOpacity
-              style={styles.smallOption}
-              onPress={() => forceTabBarStyle("floating")}
-            >
-              <Text style={styles.smallOptionText}>Floating</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.smallOption}
-              onPress={() => forceTabBarStyle("standard")}
-            >
-              <Text style={styles.smallOptionText}>Standard</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>iOS 26 Experiments</Text>
-          <Text style={styles.sectionDesc}>One-tap enablement for the iOS 26 chrome</Text>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Experimental navbar</Text>
-            <Switch
-              value={settings.experimentalIOS26NavBar}
-              onValueChange={(v) => settings.setExperimentalIOS26NavBar(v)}
-            />
+          <Text style={styles.sectionTitle}>App State Snapshot</Text>
+          <View style={styles.settingsGrid}>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Reader Enabled</Text>
+              <Text style={styles.settingValue}>{settings.isReaderEnabled ? "✓" : "✗"}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Grounding Enabled</Text>
+              <Text style={styles.settingValue}>{settings.isGroundingEnabled ? "✓" : "✗"}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>AI Summary</Text>
+              <Text style={styles.settingValue}>{settings.isSummarizationEnabled ? "✓" : "✗"}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Digest Mode</Text>
+              <Text style={styles.settingValue}>{settings.digestSummaryMode}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Breath Duration</Text>
+              <Text style={styles.settingValue}>{settings.groundingBreathDuration}s</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Breath Cycles</Text>
+              <Text style={styles.settingValue}>{settings.groundingCycles}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Advanced height controls</Text>
+              <Text style={styles.settingValue}>
+                {settings.enableAdvancedHeightControls ? "On" : "Off"}
+              </Text>
+            </View>
           </View>
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary + "12" }]}
-            onPress={applyIOS26Preset}
-            disabled={presetApplying}
-          >
-            <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "18" }]}>
-              <Sparkles size={20} color={colors.primary} />
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Apply iOS 26 preset</Text>
-              <Text style={styles.actionDesc}>Floating blur bar + experimental navbar</Text>
-            </View>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

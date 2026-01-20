@@ -79,6 +79,8 @@ export const ArticleScreen: React.FC = () => {
     isSummarizationEnabled,
     autoSaveOnComplete,
     fontSize,
+    lineHeight,
+    imageLoadingMode,
     sensitivePromptLevel,
     sensitiveActionPreference,
     sensitiveTone,
@@ -585,24 +587,44 @@ export const ArticleScreen: React.FC = () => {
               }
 
               return (
-                <Text key={index} style={[styles.paragraph, { fontSize: 18 * fontSize }]}>
+                <Text
+                  key={index}
+                  style={[
+                    styles.paragraph,
+                    { fontSize: 18 * fontSize, lineHeight: 18 * fontSize * lineHeight },
+                  ]}
+                >
                   {node.text}
                 </Text>
               );
             } else if (node.type === "image" && node.src) {
+              // Respect image loading preference
+              if (imageLoadingMode === "text-only") {
+                return null; // Skip images entirely in text-only mode
+              }
+
               return (
                 <View key={index} style={styles.imageContainer}>
                   <Image
                     source={{ uri: node.src.startsWith("http") ? node.src : `https:${node.src}` }}
-                    style={styles.image}
-                    resizeMode="cover"
+                    style={[
+                      styles.image,
+                      imageLoadingMode === "compressed" && styles.imageCompressed,
+                    ]}
+                    resizeMode={imageLoadingMode === "compressed" ? "center" : "cover"}
                   />
                   {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
                 </View>
               );
             } else if (node.type === "header" && node.text) {
               return (
-                <Text key={index} style={[styles.subhead, { fontSize: 22 * fontSize }]}>
+                <Text
+                  key={index}
+                  style={[
+                    styles.subhead,
+                    { fontSize: 22 * fontSize, lineHeight: 22 * fontSize * lineHeight },
+                  ]}
+                >
                   {node.text}
                 </Text>
               );
@@ -752,6 +774,10 @@ const styles = StyleSheet.create({
     height: 300, // Taller default
     borderRadius: 12,
     backgroundColor: colors.border,
+  },
+  imageCompressed: {
+    height: 200, // Reduce height for compressed mode to save data
+    opacity: 0.85, // Subtle visual feedback that image is compressed
   },
   caption: {
     marginTop: spacing.sm,

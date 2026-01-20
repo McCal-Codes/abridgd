@@ -6,12 +6,16 @@ export type RootStackParamList = {
   Article: { article: Article };
   Settings: undefined;
   ReadingSettings: undefined;
+  DataPerformanceSettings: undefined;
   DigestSettings: undefined;
-  CustomizationSettings: undefined;
+  GroundingFocusSettings: undefined;
+  AccessibilitySettings: undefined;
+  NavigationSettings: undefined;
+  AppInfo: undefined;
   SourcesSettings: undefined;
   TabBarSettings: undefined;
   DebugSettings: undefined;
-  Onboarding: undefined;
+  Onboarding: { mode?: "firstRun" | "whatsNew"; startSlideId?: string } | undefined;
   Digest: undefined;
   iOS26Demo: undefined;
 };
@@ -21,6 +25,7 @@ export type TabParamList = {
   Discover: { category: string };
   Saved: undefined;
   Digest: undefined;
+  Profile: undefined;
   Top?: { category: string };
   Local?: { category: string };
   Business?: { category: string };

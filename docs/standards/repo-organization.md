@@ -140,11 +140,17 @@ src/screens/
     SettingsScreen.tsx
     ReadingSettingsScreen.tsx
     SourcesSettingsScreen.tsx
-    CustomizationSettingsScreen.tsx
+    GroundingFocusSettingsScreen.tsx
+    AccessibilitySettingsScreen.tsx
+    NavigationSettingsScreen.tsx
+    AppInfoScreen.tsx
     DebugSettingsScreen.tsx
+    TabBarSettingsScreen.tsx
 ```
 
 **Status:** Not yet organized. Will happen naturally as screens are refactored.
+
+**Settings IA alignment:** All settings work must follow `docs/standards/settings-ia-apollo.md`. Customization has been decomposed into Reading Experience, Grounding & Focus, and Accessibility. TabBarSettingsScreen is the Navigation → Tab Bar Studio entry. SourcesSettingsScreen sits under Reading Experience until a dedicated sources flow lives outside Settings.
 
 ### `data/` → `config/`
 

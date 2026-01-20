@@ -1,6 +1,6 @@
 // App-level constants used across the app
 export const APP_NAME = "Abridgd";
-export const APP_VERSION = "1.0.0";
+export const APP_VERSION = "1.4.0";
 export const APP_BUILD = "1";
 
 // Update this to your real contact email before shipping

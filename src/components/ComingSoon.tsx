@@ -10,7 +10,7 @@ import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import { Sparkles, Clock, Rocket } from "lucide-react-native";
+import { Star as Sparkles, Clock, Rocket } from "lucide-react-native";
 
 interface ComingSoonProps {
   title?: string;

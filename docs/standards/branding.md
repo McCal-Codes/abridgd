@@ -99,6 +99,42 @@ Any changes to app branding must:
 
 ---
 
+## Editorial Microcopy — Priority Contrast Blurbs
+
+Use this pattern when highlighting a funding/priorities mismatch in a single short blurb.
+
+### Structure
+1. **Hook with allocation** — amount + recipient.
+2. **Everyday contrast** — relatable benchmark (e.g., average bonus, rent, bill).
+3. **Essential needs gap** — 1–2 basics not funded (healthcare, housing, relief).
+4. **Accountability line** — one pointed closer on priorities; no ad hominem.
+
+### Style
+- Tone: crisp, factual, calmly skeptical.
+- Length: 60–100 words.
+- Verbs: “set aside,” “approved,” “allocated” (avoid “lavished,” “showered”).
+- Avoid slang, insults, and unverified claims.
+
+### Template
+- Hook: “On video: *Body* approves/admits they’ve set aside **$X** for **program/bonuses** (up to **$Y** each).”
+- Contrast: “Meanwhile, the average **[everyday metric]** is **$Z**—if you’re lucky enough to get one.”
+- Needs gap: “They can’t fund **[need 1]**, **[need 2]**, or **[need 3]**…”
+- Accountability: “…but they can bankroll **[agency/action]**. That’s the priority.”
+
+### Usage Checklist
+- ✅ Facts and amounts verified and current
+- ✅ One clear everyday benchmark
+- ✅ One–two unmet needs named
+- ✅ Single accountability line; no exaggeration
+
+### Example (from recent copy)
+On video: Congress admits they’ve set aside **$800 million** for ICE bonuses—up to **$44,000** each.
+Meanwhile, the average American bonus is **$2,500**, if you’re lucky enough to get one.
+They say they can’t fund healthcare, housing, or disaster relief…
+…but they can bankroll cash incentives for an agency detaining people first and checking facts later. That’s the priority.
+
+---
+
 ## Version History
 
 | Version | Date | Changes |

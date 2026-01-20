@@ -4,68 +4,56 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import {
-  useSettings,
-  SensitivePromptLevel,
-  SensitiveActionPreference,
-  SensitiveTone,
-} from "../context/SettingsContext";
+import { useSettings, AnchorStrategy } from "../context/SettingsContext";
+import { Sliders } from "lucide-react-native";
 import { AbridgedReader } from "../components/AbridgedReader";
+import { useNavigation } from "@react-navigation/native";
 
 export const ReadingSettingsScreen: React.FC = () => {
+  const navigation = useNavigation();
   const {
     isReaderEnabled,
     setIsReaderEnabled,
-    isGroundingEnabled,
-    setIsGroundingEnabled,
     isSummarizationEnabled,
     setIsSummarizationEnabled,
     readingSpeed,
     setReadingSpeed,
     fontSize,
     setFontSize,
+    lineHeight,
+    setLineHeight,
     autoSaveOnComplete,
     setAutoSaveOnComplete,
-    sensitivePromptLevel,
-    setSensitivePromptLevel,
-    sensitiveActionPreference,
-    setSensitiveActionPreference,
-    sensitiveTone,
-    setSensitiveTone,
-    showGroundingPrompts,
-    setShowGroundingPrompts,
+    rsvpHighlightColor,
+    setRsvpHighlightColor,
+    rsvpAnchorStrategy,
+    setRsvpAnchorStrategy,
   } = useSettings();
 
-  const promptOptions: Array<{
-    label: string;
-    value: SensitivePromptLevel;
-    description: string;
-  }> = [
-    { label: "Full", value: "full", description: "Guidance + breathing" },
-    { label: "Minimal", value: "minimal", description: "Short reminder" },
-    { label: "Off", value: "off", description: "Skip prompts" },
+  const PRESET_COLORS: { color: string; name: string; accessible: boolean }[] = [
+    { color: "#D32F2F", name: "Red", accessible: true },
+    { color: "#1976D2", name: "Blue", accessible: true },
+    { color: "#388E3C", name: "Green", accessible: true },
+    { color: "#FF6F00", name: "Orange", accessible: true },
+    { color: "#7B1FA2", name: "Purple", accessible: true },
+    { color: "#121212", name: "Black", accessible: true },
+    { color: "#0097A7", name: "Cyan", accessible: true },
+    { color: "#C2185B", name: "Magenta", accessible: true },
   ];
 
-  const actionOptions: Array<{
-    label: string;
-    value: SensitiveActionPreference;
-    description: string;
-  }> = [
-    { label: "Ground First", value: "ground-first", description: "Breath is primary" },
-    { label: "Decide Each Time", value: "decide", description: "Show both equally" },
-    { label: "Continue", value: "continue", description: "Skip to article" },
-  ];
-
-  const toneOptions: Array<{ label: string; value: SensitiveTone; description: string }> = [
-    { label: "Gentle", value: "gentle", description: "Warm encouragement" },
-    { label: "Direct", value: "direct", description: "Straightforward" },
+  const STRATEGIES: { label: string; value: AnchorStrategy; description: string }[] = [
+    { label: "Early", value: "early", description: "Pivot ~25% into the word." },
+    { label: "Standard", value: "standard", description: "Pivot ~35% (default, fastest)." },
+    { label: "Center", value: "center", description: "Pivot at 50% for balance." },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.header}>Reading Features</Text>
-        <Text style={styles.description}>Customize how you read and interact with articles.</Text>
+        <Text style={styles.header}>Reading Experience</Text>
+        <Text style={styles.description}>
+          Everything about how you read — RSVP, speed, focus, and sources.
+        </Text>
 
         <View style={styles.section}>
           <View style={styles.toggleRow}>
@@ -98,30 +86,6 @@ export const ReadingSettingsScreen: React.FC = () => {
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Grounding Mode</Text>
-              <Text style={styles.toggleDesc}>Breathing exercises for sensitive content.</Text>
-            </View>
-            <Switch
-              value={isGroundingEnabled}
-              onValueChange={setIsGroundingEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Grounding Prompts</Text>
-              <Text style={styles.toggleDesc}>Show helpful thoughts during breathing.</Text>
-            </View>
-            <Switch
-              value={showGroundingPrompts}
-              onValueChange={setShowGroundingPrompts}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
               <Text style={styles.toggleLabel}>Auto-Save on Completion</Text>
               <Text style={styles.toggleDesc}>
                 Automatically save articles when read to the end in RSVP mode.
@@ -136,75 +100,51 @@ export const ReadingSettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sensitive Content Personalization</Text>
-          <Text style={styles.sectionDesc}>Decide how grounding prompts should feel.</Text>
-
-          <Text style={styles.subsectionLabel}>Prompt Level</Text>
-          <View style={styles.chipRow}>
-            {promptOptions.map((option) => (
+          <Text style={styles.sectionTitle}>Reader Focus Color</Text>
+          <Text style={styles.sectionDesc}>
+            Color for the RSVP pivot letter. Colorblind-friendly options.
+          </Text>
+          <View style={styles.colorGrid}>
+            {PRESET_COLORS.map((c) => (
               <TouchableOpacity
-                key={option.value}
-                style={[styles.chip, sensitivePromptLevel === option.value && styles.chipSelected]}
-                onPress={() => setSensitivePromptLevel(option.value)}
+                key={c.color}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: c.color },
+                  rsvpHighlightColor === c.color && styles.selectedColor,
+                ]}
+                onPress={() => setRsvpHighlightColor(c.color)}
+                accessible
+                accessibilityLabel={`${c.name} color`}
+                accessibilityRole="button"
               >
-                <Text
-                  style={[
-                    styles.chipLabel,
-                    sensitivePromptLevel === option.value && styles.chipLabelSelected,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-                <Text style={styles.chipDescription}>{option.description}</Text>
+                {rsvpHighlightColor === c.color && <View style={styles.colorCheckmark} />}
               </TouchableOpacity>
             ))}
           </View>
+          <Text style={styles.colorLabelText}>
+            Selected: {PRESET_COLORS.find((c) => c.color === rsvpHighlightColor)?.name || "Custom"}
+          </Text>
+        </View>
 
-          <Text style={styles.subsectionLabel}>Default Action</Text>
-          <View style={styles.chipRow}>
-            {actionOptions.map((option) => (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Reader Focus Position</Text>
+          <View style={styles.strategyContainer}>
+            {STRATEGIES.map((s) => (
               <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.chip,
-                  sensitiveActionPreference === option.value && styles.chipSelected,
-                ]}
-                onPress={() => setSensitiveActionPreference(option.value)}
+                key={s.value}
+                style={[styles.chip, rsvpAnchorStrategy === s.value && styles.chipSelected]}
+                onPress={() => setRsvpAnchorStrategy(s.value)}
               >
                 <Text
                   style={[
                     styles.chipLabel,
-                    sensitiveActionPreference === option.value && styles.chipLabelSelected,
+                    rsvpAnchorStrategy === s.value && styles.chipLabelSelected,
                   ]}
                 >
-                  {option.label}
+                  {s.label}
                 </Text>
-                <Text style={styles.chipDescription}>{option.description}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.subsectionLabel}>Tone</Text>
-          <View style={styles.chipRow}>
-            {toneOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.chip,
-                  sensitiveTone === option.value && styles.chipSelected,
-                  { flex: 1 },
-                ]}
-                onPress={() => setSensitiveTone(option.value)}
-              >
-                <Text
-                  style={[
-                    styles.chipLabel,
-                    sensitiveTone === option.value && styles.chipLabelSelected,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-                <Text style={styles.chipDescription}>{option.description}</Text>
+                <Text style={styles.chipDescription}>{s.description}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -256,21 +196,56 @@ export const ReadingSettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Line Spacing</Text>
+          <Text style={styles.sectionDesc}>
+            Increase space between lines for comfortable reading
+          </Text>
+          <View style={styles.lineHeightRow}>
+            {[1.0, 1.25, 1.5, 1.75, 2.0].map((height) => (
+              <TouchableOpacity
+                key={height}
+                style={[
+                  styles.lineHeightOption,
+                  lineHeight === height && styles.selectedLineHeight,
+                ]}
+                onPress={() => setLineHeight(height)}
+              >
+                <Text
+                  style={[
+                    styles.lineHeightText,
+                    lineHeight === height && styles.selectedLineHeightText,
+                  ]}
+                >
+                  {height}×
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Preview */}
+          <View style={[styles.lineHeightPreview, { lineHeight }]}>
+            <Text style={styles.previewText}>
+              This is how your articles will look with the selected line spacing. More space makes
+              reading easier on the eyes.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Previews</Text>
 
           <Text style={styles.subsectionLabel}>Abridged Reader Preview</Text>
           <AbridgedReader content="I hope you are having a wonderful day, and by the way, I truly believe that almost anything tastes better when it is served as chicken on a stick." />
+        </View>
 
-          <Text style={styles.subsectionLabel}>Grounding Mode Preview</Text>
-          <View style={styles.groundingPreview}>
-            {isGroundingEnabled ? (
-              <Text style={styles.previewHint}>Grounding preview coming soon.</Text>
-            ) : (
-              <Text style={styles.previewHint}>
-                Enable Grounding Mode to see the breathing animation here during sensitive content.
-              </Text>
-            )}
-          </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sources</Text>
+          <Text style={styles.sectionDesc}>Manage feeds used by the reader.</Text>
+          <TouchableOpacity
+            style={styles.linkCard}
+            onPress={() => (navigation as any).navigate("SourcesSettings")}
+          >
+            <Text style={styles.linkCardText}>Open News Sources</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -436,21 +411,95 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
-  groundingPreview: {
-    height: 120,
+  colorGrid: {
+    flexDirection: "row",
+    gap: spacing.md,
+    flexWrap: "wrap",
+    marginBottom: spacing.sm,
+  },
+  colorOption: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedColor: {
+    borderColor: colors.text,
+    borderWidth: 4,
+    transform: [{ scale: 1.05 }],
+  },
+  colorCheckmark: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderWidth: 2,
+    borderColor: "rgba(0, 0, 0, 0.3)",
+  },
+  colorLabelText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+    marginTop: spacing.xs,
+  },
+  strategyContainer: {
+    gap: spacing.sm,
+  },
+  linkCard: {
+    padding: spacing.md,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  linkCardText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.primary,
+  },
+  lineHeightRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  lineHeightOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedLineHeight: {
+    borderColor: colors.primary,
+    backgroundColor: "#F0F4F8",
+  },
+  lineHeightText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  selectedLineHeightText: {
+    color: colors.primary,
+  },
+  lineHeightPreview: {
+    padding: spacing.lg,
     borderRadius: 12,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.lg,
   },
-  previewHint: {
+  previewText: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    color: colors.text,
   },
 });

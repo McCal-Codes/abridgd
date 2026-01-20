@@ -39,8 +39,9 @@ describe("Storage Utilities", () => {
       const serialized = serializeArticles(articles);
       const parsed = JSON.parse(serialized);
 
-      expect(parsed.version).toBe(1);
-      expect(parsed.articles).toEqual(articles);
+      expect(parsed.version).toBe(2);
+      expect(parsed.compressed).toBe(false);
+      expect(parsed.payload).toBeDefined();
       expect(parsed.timestamp).toBeDefined();
       expect(typeof parsed.timestamp).toBe("number");
     });
@@ -49,8 +50,9 @@ describe("Storage Utilities", () => {
       const serialized = serializeArticles([]);
       const parsed = JSON.parse(serialized);
 
-      expect(parsed.version).toBe(1);
-      expect(parsed.articles).toEqual([]);
+      expect(parsed.version).toBe(2);
+      expect(parsed.compressed).toBe(false);
+      expect(JSON.parse(parsed.payload).articles).toEqual([]);
     });
 
     it("should handle multiple articles", () => {
@@ -58,7 +60,24 @@ describe("Storage Utilities", () => {
       const serialized = serializeArticles(articles);
       const parsed = JSON.parse(serialized);
 
-      expect(parsed.articles).toHaveLength(2);
+      expect(JSON.parse(parsed.payload).articles).toHaveLength(2);
+    });
+
+    it("should compress large payloads", () => {
+      const longBody = "x".repeat(5000);
+      const articles = [{ ...mockArticle, id: "long", body: longBody }];
+      const serialized = serializeArticles(articles);
+      const parsed = JSON.parse(serialized);
+
+      expect(parsed.compressed).toBe(true);
+      // payload should not equal raw JSON when compressed
+      expect(parsed.payload).not.toContain(longBody);
+      // decompression yields original articles
+      const decompressedPayload = JSON.parse(
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("lz-string").decompressFromUTF16(parsed.payload),
+      );
+      expect(decompressedPayload.articles[0].body).toBe(longBody);
     });
   });
 
@@ -77,7 +96,7 @@ describe("Storage Utilities", () => {
     });
 
     it("should return empty array for mismatched schema version", () => {
-      const schema = { version: 999, articles: [mockArticle], timestamp: Date.now() };
+      const schema = { version: 999, payload: "{}", timestamp: Date.now() };
       const serialized = JSON.stringify(schema);
       const deserialized = deserializeArticles(serialized);
 
@@ -91,6 +110,18 @@ describe("Storage Utilities", () => {
 
       expect(deserialized).toEqual([]);
     });
+
+    it("should handle legacy version 1 payloads", () => {
+      const schema = {
+        version: 1,
+        articles: [mockArticle],
+        timestamp: Date.now(),
+      };
+      const serialized = JSON.stringify(schema);
+      const deserialized = deserializeArticles(serialized);
+
+      expect(deserialized).toEqual([mockArticle]);
+    });
   });
 
   describe("saveArticlesToStorage", () => {
@@ -102,7 +133,7 @@ describe("Storage Utilities", () => {
 
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         "@abridged_saved_articles",
-        expect.stringContaining('"version":1'),
+        expect.stringContaining('"version":2'),
       );
     });
 

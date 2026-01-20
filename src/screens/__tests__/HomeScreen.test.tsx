@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render } from "@testing-library/react-native";
+import { act, render, fireEvent, waitFor } from "@testing-library/react-native";
 import { Animated } from "react-native";
 import { HomeScreen } from "../HomeScreen";
 import { ScrollContext } from "../../context/ScrollContext";
@@ -7,6 +7,21 @@ import { fetchArticlesByCategory } from "../../services/RssService";
 
 jest.mock("../../services/RssService", () => ({
   fetchArticlesByCategory: jest.fn(),
+  getLastFetchedAt: jest.fn(() => Date.now()),
+}));
+
+jest.mock("../../context/SavedArticlesContext", () => ({
+  useSavedArticles: () => mockSavedArticlesContext,
+}));
+
+jest.mock("../../context/ReadingProgressContext", () => ({
+  useReadingProgressOptional: () => mockReadingProgressContext,
+}));
+
+jest.mock("expo-haptics", () => ({
+  selectionAsync: jest.fn(),
+  impactAsync: jest.fn(),
+  ImpactFeedbackStyle: { Medium: "medium" },
 }));
 
 jest.mock("../../components/ArticleCard", () => {
@@ -19,6 +34,8 @@ jest.mock("../../components/ArticleCard", () => {
         { onPress, accessibilityRole: "button" },
         React.createElement(Text, {}, article.headline),
       ),
+    ArticleCardSkeleton: () =>
+      React.createElement(Text, { testID: "article-card-skeleton" }, "Skeleton"),
   };
 });
 
@@ -47,6 +64,32 @@ const resetSettings = (overrides: Partial<typeof baseSettings> = {}) => {
 
 resetSettings();
 
+let mockSavedArticlesContext: any = {
+  savedArticles: [],
+  saveArticle: jest.fn(),
+  unsaveArticle: jest.fn(),
+  isArticleSaved: jest.fn(),
+  isLoading: false,
+  error: null,
+};
+
+let mockReadingProgressContext: any = {
+  progressData: {},
+  isLoading: false,
+  error: null,
+  updateProgress: jest.fn(),
+  getProgress: jest.fn(),
+  clearProgress: jest.fn(),
+  inProgressArticles: [],
+  readingStats: {
+    totalArticlesRead: 0,
+    totalReadTimeSeconds: 0,
+    averageCompletionPercentage: 0,
+    articlesInProgress: 0,
+  },
+  refreshStats: jest.fn(),
+};
+
 jest.mock("../../context/SettingsContext", () => ({
   useSettings: () => mockSettings,
 }));
@@ -74,11 +117,35 @@ describe("HomeScreen", () => {
     jest.clearAllMocks();
     resetSettings();
     (fetchArticlesByCategory as jest.Mock).mockResolvedValue([]);
+    mockSavedArticlesContext = {
+      savedArticles: [],
+      saveArticle: jest.fn(),
+      unsaveArticle: jest.fn(),
+      isArticleSaved: jest.fn(),
+      isLoading: false,
+      error: null,
+    };
+    mockReadingProgressContext = {
+      progressData: {},
+      isLoading: false,
+      error: null,
+      updateProgress: jest.fn(),
+      getProgress: jest.fn(),
+      clearProgress: jest.fn(),
+      inProgressArticles: [],
+      readingStats: {
+        totalArticlesRead: 0,
+        totalReadTimeSeconds: 0,
+        averageCompletionPercentage: 0,
+        articlesInProgress: 0,
+      },
+      refreshStats: jest.fn(),
+    };
   });
 
-  it("renders loading indicator initially", () => {
-    const { getByText } = renderScreen();
-    expect(getByText(/Fetching top stories/i)).toBeTruthy();
+  it("renders loading skeletons initially", () => {
+    const { getAllByTestId } = renderScreen();
+    expect(getAllByTestId("article-card-skeleton").length).toBeGreaterThan(0);
   });
 
   it("displays fetched headlines", async () => {
@@ -153,5 +220,41 @@ describe("HomeScreen", () => {
 
     expect(await findByText("Second")).toBeTruthy();
     expect(fetchArticlesByCategory).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows continue reading items and toggles Show all", async () => {
+    const inProgress = Array.from({ length: 4 }).map((_, index) => ({
+      id: `${index + 1}`,
+      headline: `Story ${index + 1}`,
+      summary: "",
+      body: "",
+      source: "Test Source",
+      timestamp: "Today",
+      publishedAt: Date.now(),
+      category: "Top",
+      readTimeMinutes: 1,
+    }));
+
+    mockSavedArticlesContext.savedArticles = inProgress;
+    mockReadingProgressContext.inProgressArticles = inProgress.map((article) => ({
+      articleId: article.id,
+      scrollPosition: 0.5,
+      completionPercentage: 50,
+      startedAt: Date.now() - 1000,
+      lastReadAt: Date.now(),
+      totalReadTimeSeconds: 60,
+      status: "in-progress",
+    }));
+
+    const { findByTestId, findByText, getByText } = renderScreen();
+
+    expect(await findByTestId("continue-reading")).toBeTruthy();
+
+    const showAllButton = await findByText(/Show all/i);
+    act(() => {
+      fireEvent.press(showAllButton);
+    });
+
+    await waitFor(() => expect(getByText(/Hide/i)).toBeTruthy());
   });
 });

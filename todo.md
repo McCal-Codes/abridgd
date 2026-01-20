@@ -6,20 +6,26 @@
 
 ---
 
+### Onboarding & Grounding Polish
+- [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
+- [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.
+- [x] Centered, margin-aware pagination and action buttons with breathable padding.
+- [ ] Capture updated screenshots for docs and App Store metadata.
+
 ### Phase 1: Core Data & Persistence 🗄️
 
 #### Saved Articles System (Enhanced)
 - [ ] **Persistent Storage with AsyncStorage**
     - Migrate SavedArticlesContext to use AsyncStorage
     - Add versioned schema for future migrations
-    - Implement data compression for large article bodies
+    - ✅ Implement data compression for large article bodies
     - Add save/load error handling with retry logic
     - Migration from in-memory state on first launch
 - [ ] **Reading Progress Tracking**
     - Track scroll position in articles (resume where you left off)
     - Track RSVP reading progress (which word you stopped at)
     - Show progress indicators on ArticleCards (20%, 50%, 100% read)
-    - "Continue Reading" section on HomeScreen for in-progress articles
+    - ✅ "Continue Reading" section on HomeScreen for in-progress articles
 - [ ] **Smart Collections & Tags**
     - Auto-tag articles by category and topic
     - "Read Later" vs "Archived" states
@@ -35,30 +41,31 @@
     - ✅ Smooth pull-to-refresh with native RefreshControl
     - ✅ Timestamp tracking (lastUpdated state)
     - ✅ Separate refreshing state (no full-screen loading on pull)
-    - ⏳ Show "Updated 2m ago" timestamp (state tracked, UI pending)
-    - ⏳ Haptic feedback on refresh trigger (future enhancement)
+    - ✅ Show "Updated 2m ago" timestamp (UI)
+    - ✅ Haptic feedback on refresh trigger
 - [x] **SectionScreen Pull-to-Refresh**
     - ✅ Consistent refresh UX across all sections
     - ✅ Timestamp tracking per section
-    - ⏳ Smart caching (don't re-fetch if < 5 minutes old)
-- [ ] **SavedScreen Pull-to-Refresh**
-    - Refresh metadata for saved articles (view counts, comment counts if applicable)
+    - ✅ Show "Updated 2m ago" timestamp
+    - ✅ Smart caching (don't re-fetch if < 5 minutes old)
+- [x] **SavedScreen Pull-to-Refresh**
+    - Placeholder refresh with updated timestamp + haptic; ready to plug in metadata (view counts, comments) when available
 
 #### Search & Filter (Power User Features)
-- [ ] **Saved Articles Search**
+- ✅ **Saved Articles Search**
     - Search bar in SavedScreen header (animated slide-down)
     - Real-time search with debouncing (300ms)
     - Search by headline, source, category, content preview
     - Highlight matching text in results
     - Recent searches history (last 5)
-- [ ] **Advanced Filtering**
+- ✅ **Advanced Filtering**
     - Filter by source (multi-select chips)
     - Filter by category (multi-select)
     - Filter by reading status (unread, in-progress, completed)
     - Filter by date added (today, this week, this month, older)
     - "Apply Filters" bottom sheet with live preview count
     - Save filter presets ("Unread Local News", "Today's Sports", etc.)
-- [ ] **Sort Options**
+- [x] **Sort Options**
     - Sort by date added (newest/oldest)
     - Sort by reading progress
     - Sort by article length (quick reads first)
@@ -82,6 +89,7 @@
     - Move Settings access to Profile screen
     - Profile icon in tab bar (User icon from lucide)
     - Badge notification for new features/tips
+    - *Started Jan 20, 2026: Profile tab added, settings moved to quick actions on Profile.*
 
 #### Community Tab (Pittsburgh-Focused)
 - [ ] **Resource Categories**
@@ -340,7 +348,7 @@
     - ✅ Helpful message: "Your reading list is empty"
     - ✅ CTA button: "Explore Top Stories" (tab-aware navigation)
     - ✅ Tips: "Swipe left on any article card to save it for later"
-- [ ] **Search No Results**
+- ✅ **Search No Results**
     - Friendly message with search term
     - Suggestions: "Try different keywords" or "Clear filters"
     - Quick action: "View all saved articles"

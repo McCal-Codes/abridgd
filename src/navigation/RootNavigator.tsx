@@ -8,18 +8,23 @@ import { DigestScreen } from "../screens/DigestScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { SectionScreen } from "../screens/SectionScreen";
 import { SavedScreen } from "../screens/SavedScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
 
 import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { ReadingSettingsScreen } from "../screens/ReadingSettingsScreen";
+import { DataPerformanceSettingsScreen } from "../screens/DataPerformanceSettingsScreen";
 import { DigestSettingsScreen } from "../screens/DigestSettingsScreen";
-import { CustomizationSettingsScreen } from "../screens/CustomizationSettingsScreen";
+import { GroundingFocusSettingsScreen } from "../screens/GroundingFocusSettingsScreen";
+import { AccessibilitySettingsScreen } from "../screens/AccessibilitySettingsScreen";
+import { NavigationSettingsScreen } from "../screens/NavigationSettingsScreen";
+import { AppInfoScreen } from "../screens/AppInfoScreen";
 import { SourcesSettingsScreen } from "../screens/SourcesSettingsScreen";
 import { TabBarSettingsScreen } from "../screens/TabBarSettingsScreen";
 import { DebugSettingsScreen } from "../screens/DebugSettingsScreen";
 import { IOS26DemoScreen } from "../screens/iOS26DemoScreen";
-import { useSettings } from "../context/SettingsContext";
-import { View, ActivityIndicator, TouchableOpacity, Text } from "react-native";
+import { useSettings, sanitizeTabs } from "../context/SettingsContext";
+import { View, ActivityIndicator } from "react-native";
 import { ScrollProvider } from "../context/ScrollContext";
 import LiquidTabBar from "../components/LiquidTabBar";
 import { colors } from "../theme/colors";
@@ -32,10 +37,10 @@ import {
   Palette,
   Newspaper,
   Bookmark,
-  Settings,
   Home,
   Search,
   Star,
+  User,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 
@@ -51,7 +56,7 @@ type TabConfig = {
   params?: Record<string, any>;
 };
 
-const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string, TabConfig> =>
+export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string, TabConfig> =>
   ({
     minimal: {
       home: { name: "Home", component: HomeScreen, Icon: Home },
@@ -63,6 +68,7 @@ const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string, TabCo
       },
       saved: { name: "Saved", component: SavedScreen, Icon: Bookmark },
       digest: { name: "Digest", component: DigestScreen, Icon: Star },
+      profile: { name: "Profile", component: ProfileScreen, Icon: User },
     },
     comprehensive: {
       top: { name: "Top", component: HomeScreen, Icon: Flame },
@@ -72,26 +78,9 @@ const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string, TabCo
         params: { category: "Local" },
         Icon: MapPin,
       },
-      business: {
-        name: "Business",
-        component: SectionScreen,
-        params: { category: "Business" },
-        Icon: Briefcase,
-      },
-      sports: {
-        name: "Sports",
-        component: SectionScreen,
-        params: { category: "Sports" },
-        Icon: Trophy,
-      },
-      culture: {
-        name: "Culture",
-        component: SectionScreen,
-        params: { category: "Culture" },
-        Icon: Palette,
-      },
       digest: { name: "Digest", component: DigestScreen, Icon: Newspaper },
       saved: { name: "Saved", component: SavedScreen, Icon: Bookmark },
+      profile: { name: "Profile", component: ProfileScreen, Icon: User },
     },
   })[layout];
 
@@ -106,8 +95,13 @@ const TabNavigatorScreen = ({ navigation }: any) => {
   // Compute a small internal padding to visually balance the capsule
   const internalPaddingBottom = bottomInset > 0 ? Math.round(bottomInset / 3) : 8;
 
-  const fallbackTabId = activeTabs[0];
-  const resolvedDefaultId = activeTabs.includes(defaultTab) ? defaultTab : fallbackTabId;
+  const safeActiveTabs = React.useMemo(
+    () => sanitizeTabs(activeTabs, tabLayout),
+    [activeTabs, tabLayout],
+  );
+
+  const fallbackTabId = safeActiveTabs[0];
+  const resolvedDefaultId = safeActiveTabs.includes(defaultTab) ? defaultTab : fallbackTabId;
   const getRouteNameForTab = (tabId?: string) => {
     if (!tabId) return undefined;
     const config = TAB_CONFIG[tabId as keyof typeof TAB_CONFIG];
@@ -115,7 +109,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
   };
   const resolvedDefaultRouteName =
     getRouteNameForTab(resolvedDefaultId) ?? getRouteNameForTab(fallbackTabId);
-  const activeTabsKey = React.useMemo(() => activeTabs.join("|"), [activeTabs]);
+  const activeTabsKey = React.useMemo(() => safeActiveTabs.join("|"), [safeActiveTabs]);
   const navigatorKey = `${tabLayout}-${activeTabsKey}-${resolvedDefaultId || "root"}`;
 
   return (
@@ -178,43 +172,9 @@ const TabNavigatorScreen = ({ navigation }: any) => {
           paddingHorizontal: 6,
         },
         tabBarAllowFontScaling: true,
-        headerRight: () => (
-          <View style={{ flexDirection: "row", marginRight: 8, alignItems: "center" }}>
-            <TouchableOpacity
-              onPress={() => {
-                try {
-                  const state = navigation.getState && navigation.getState();
-                  const topRoute = state && state.routes && state.routes[state.index];
-                  if (topRoute && topRoute.name === "Settings") {
-                    navigation.goBack();
-                  } else {
-                    navigation.navigate("Settings");
-                  }
-                } catch (e) {
-                  navigation.navigate("Settings");
-                }
-              }}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Open settings"
-              accessibilityRole="button"
-              style={{ padding: 6, borderRadius: 8 }}
-            >
-              <Text
-                style={{
-                  color: colors.tint,
-                  fontFamily: typography.fontFamily.sans,
-                  fontWeight: "600",
-                }}
-              >
-                Settings
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ),
       }}
     >
-      {activeTabs.map((tabId: string) => {
+      {safeActiveTabs.map((tabId: string) => {
         const config = TAB_CONFIG[tabId as keyof typeof TAB_CONFIG];
         if (!config) return null;
 
@@ -236,7 +196,8 @@ const TabNavigatorScreen = ({ navigation }: any) => {
 };
 
 export const RootNavigator = () => {
-  const { hasCompletedOnboarding, isLoadingSettings, isWelcomeBackEnabled } = useSettings();
+  const { hasCompletedOnboarding, isLoadingSettings, isWelcomeBackEnabled, shouldShowWhatsNew } =
+    useSettings();
   const [hasSeenWelcomeBack, setHasSeenWelcomeBack] = React.useState(false);
 
   if (isLoadingSettings) {
@@ -254,7 +215,8 @@ export const RootNavigator = () => {
     );
   }
 
-  const initialRouteName = hasCompletedOnboarding ? "Main" : "Onboarding";
+  const initialRouteName = hasCompletedOnboarding && !shouldShowWhatsNew ? "Main" : "Onboarding";
+  const onboardingParams = shouldShowWhatsNew ? { startSlideId: "whats-new" } : undefined;
 
   return (
     // Allow content to extend to the bottom so our floating tab capsule can overlay the safe area
@@ -265,6 +227,7 @@ export const RootNavigator = () => {
             name="Onboarding"
             component={OnboardingScreen}
             options={{ headerShown: false }}
+            initialParams={onboardingParams}
           />
           <Stack.Screen
             name="Main"
@@ -293,17 +256,49 @@ export const RootNavigator = () => {
           <Stack.Screen
             name="ReadingSettings"
             component={ReadingSettingsScreen}
-            options={{ headerShown: true, title: "Reading Features", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "Reading Experience",
+              headerTintColor: colors.text,
+            }}
+          />
+          <Stack.Screen
+            name="DataPerformanceSettings"
+            component={DataPerformanceSettingsScreen}
+            options={{
+              headerShown: true,
+              title: "Data & Performance",
+              headerTintColor: colors.text,
+            }}
           />
           <Stack.Screen
             name="DigestSettings"
             component={DigestSettingsScreen}
-            options={{ headerShown: true, title: "Digest Settings", headerTintColor: colors.text }}
+            options={{ headerShown: true, title: "Digest & Launch", headerTintColor: colors.text }}
           />
           <Stack.Screen
-            name="CustomizationSettings"
-            component={CustomizationSettingsScreen}
-            options={{ headerShown: true, title: "Customization", headerTintColor: colors.text }}
+            name="GroundingFocusSettings"
+            component={GroundingFocusSettingsScreen}
+            options={{
+              headerShown: true,
+              title: "Grounding & Focus",
+              headerTintColor: colors.text,
+            }}
+          />
+          <Stack.Screen
+            name="AccessibilitySettings"
+            component={AccessibilitySettingsScreen}
+            options={{ headerShown: true, title: "Accessibility", headerTintColor: colors.text }}
+          />
+          <Stack.Screen
+            name="NavigationSettings"
+            component={NavigationSettingsScreen}
+            options={{ headerShown: true, title: "Navigation", headerTintColor: colors.text }}
+          />
+          <Stack.Screen
+            name="AppInfo"
+            component={AppInfoScreen}
+            options={{ headerShown: true, title: "App Info", headerTintColor: colors.text }}
           />
           <Stack.Screen
             name="SourcesSettings"
@@ -313,7 +308,7 @@ export const RootNavigator = () => {
           <Stack.Screen
             name="TabBarSettings"
             component={TabBarSettingsScreen}
-            options={{ headerShown: true, title: "Tab Bar Layout", headerTintColor: colors.text }}
+            options={{ headerShown: true, title: "Tab Bar Studio", headerTintColor: colors.text }}
           />
           <Stack.Screen
             name="DebugSettings"

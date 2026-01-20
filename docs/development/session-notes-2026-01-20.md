@@ -1,0 +1,44 @@
+# Development Session Notes — January 20, 2026
+
+## Preflight (scope-first)
+- [x] What am I changing? Add a "Continue Reading" section on HomeScreen that surfaces in-progress articles using stored reading progress and shows progress indicators.
+- [x] Why am I changing it? Users need an easy way to resume partially read articles; this delivers the backlog item from todo.md and makes reading progress actionable.
+- [x] What is the acceptance criteria? HomeScreen shows a Continue Reading block when any article is in-progress; cards open the article; progress indicator reflects stored completion; section hides when none; respects spacing/safe areas and uses theme tokens.
+- [x] What is the blast radius? HomeScreen layout/render path, reading progress consumption, saved articles data, HomeScreen tests; navigation to Article screen.
+
+## Preflight — Apollo Settings Canonicalization
+- [x] What am I changing? Document and enforce the finalized, intent-based Settings information architecture (Apollo principles) without adding new features.
+- [x] Why am I changing it? To remove the “Customization” junk drawer and give every existing setting a clear, stable home for future work and consistency with HIG/Apollo patterns.
+- [x] What is the acceptance criteria? A canonical spec living in the docs that lists the seven top-level sections, their questions, included items, and demotions/gating rules; links from relevant developer docs; no functional code changes required now.
+- [x] What is the blast radius? Documentation consumers, design handoffs, future settings/navigation work; zero runtime code impact today.
+
+## Work Completed
+- Added horizontal **Continue Reading** shelf to `HomeScreen` (renders when in-progress articles exist, uses saved/fetched article data, respects theme spacing).
+- Added **Show all / Hide** toggle with haptic selection feedback; auto-collapses when fewer than four items.
+- Added haptic feedback on pull-to-refresh trigger for HomeScreen.
+- Updated `HomeScreen` tests to cover continue-reading rendering and toggle behavior; mocked contexts/haptics; test suite passing.
+- Added per-section updated timestamp label + refresh haptic to `SectionScreen`; new tests cover timestamp render and refresh path.
+- Implemented 5-minute smart caching for RSS category fetches (shared), so Home/Section don’t refetch on quick revisits.
+- Added pull-to-refresh to `SavedScreen` with updated timestamp + haptic scaffold for future metadata refresh; tests updated.
+- Built SavedScreen search + filtering + sorting:
+  - Debounced search with recent chips and highlight in headline/snippet.
+  - Filters: source, category, reading status, date range.
+  - Sort options: newest/oldest, progress, length, source.
+- Added “no results” state for SavedScreen search/filters with clear action; ensured empty library still shows the dedicated empty state.
+- Compressed saved-article storage (schema v2 with LZ-string) with legacy compatibility; updated storage tests and changelog/backlog to reflect completion.
+
+## Tests
+- `npm test -- HomeScreen.test.tsx --runInBand`
+- `npm test -- SectionScreen.test.tsx --runInBand`
+- `npm test -- SavedScreen.test.tsx --runInBand`
+- `npm test -- src/utils/__tests__/storage.test.ts --runInBand`
+
+---
+
+## Phase 6 Kickoff — Profiles (Jan 20, 2026)
+- Added Profile tab entry point (navigation tab configs + defaults) and removed header Settings shortcut in tab stack to follow HIG (settings now lives under Profile).
+- Redesigned Profile screen scaffold with avatar placeholder, stats pills (week/month/all-time), streak + saved counts, and quick actions (Settings live; Feedback/Share stubbed).
+- Prepared sign-in and data controls sections with ComingSoon banners for sync/export future work.
+- Added navigation unit test to ensure Profile tab exists across layouts.
+- Added tab persistence guard so saved activeTabs always include Profile; updated onboarding with a “What’s New: Profile Tab” slide.
+- Wired Profile quick actions: Feedback opens mail composer, Share uses native share sheet. Added Settings → “What’s New: Profile tab” entry that deep-links to the onboarding slide for returning users.

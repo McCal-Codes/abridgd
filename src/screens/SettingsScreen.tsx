@@ -1,25 +1,22 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import { useSettings } from "../context/SettingsContext";
-import { GlassButton } from "../components/GlassButton";
 import {
-  CONTACT_EMAIL,
-  BUG_EMAIL_SUBJECT,
-  BUG_EMAIL_BODY_TEMPLATE,
-  APP_NAME,
-  APP_VERSION,
-  APP_BUILD,
-  PRIVACY_URL,
-  TERMS_URL,
-} from "../config/appInfo";
-import { Mail } from "lucide-react-native";
-import { BookOpen, Newspaper, Palette, Rss, Layout, Bug, ChevronRight } from "lucide-react-native";
+  BookOpen,
+  Newspaper,
+  HeartPulse,
+  Compass,
+  Eye,
+  Info,
+  Bug,
+  ChevronRight,
+  Zap,
+} from "lucide-react-native";
 
 type SettingsNavigationProp = NativeStackNavigationProp<any>;
 
@@ -32,38 +29,49 @@ interface SettingsMenuItem {
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsNavigationProp>();
-  const { resetOnboarding } = useSettings();
 
   const menuItems: SettingsMenuItem[] = [
     {
-      title: "Reading Features",
-      description: "Reader mode, AI summarization, grounding",
+      title: "Reading Experience",
+      description: "RSVP, font, speed, focus, sources",
       icon: <BookOpen size={24} color={colors.primary} />,
       screen: "ReadingSettings",
     },
     {
-      title: "Digest Settings",
-      description: "Welcome back, summary style",
+      title: "Data & Performance",
+      description: "Image quality, battery, data saver",
+      icon: <Zap size={24} color={colors.primary} />,
+      screen: "DataPerformanceSettings",
+    },
+    {
+      title: "Digest & Launch",
+      description: "Welcome back, default tab, summary style",
       icon: <Newspaper size={24} color={colors.primary} />,
       screen: "DigestSettings",
     },
     {
-      title: "Customization",
-      description: "Colors, animations, visual preferences",
-      icon: <Palette size={24} color={colors.primary} />,
-      screen: "CustomizationSettings",
+      title: "Grounding & Focus",
+      description: "Breathing, colors, animation style",
+      icon: <HeartPulse size={24} color={colors.primary} />,
+      screen: "GroundingFocusSettings",
     },
     {
-      title: "News Sources",
-      description: "Manage RSS feeds and sources",
-      icon: <Rss size={24} color={colors.primary} />,
-      screen: "SourcesSettings",
+      title: "Navigation",
+      description: "How you move; entry to Tab Bar Studio",
+      icon: <Compass size={24} color={colors.primary} />,
+      screen: "NavigationSettings",
     },
     {
-      title: "Tab Bar Layout",
-      description: "Customize bottom navigation tabs",
-      icon: <Layout size={24} color={colors.primary} />,
-      screen: "TabBarSettings",
+      title: "Accessibility",
+      description: "Reduce motion, animation pacing",
+      icon: <Eye size={24} color={colors.primary} />,
+      screen: "AccessibilitySettings",
+    },
+    {
+      title: "App Info",
+      description: "Version, policies, feedback, tutorials",
+      icon: <Info size={24} color={colors.primary} />,
+      screen: "AppInfo",
     },
     {
       title: "Debug & Advanced",
@@ -94,106 +102,6 @@ export const SettingsScreen: React.FC = () => {
               <ChevronRight size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           ))}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Info</Text>
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={async () => {
-              await resetOnboarding();
-              // Immediately revisit onboarding tutorial
-              try {
-                (navigation as any).navigate("Onboarding", { startSlideId: "practice" });
-              } catch {}
-            }}
-          >
-            <Text style={styles.actionText}>Redo Onboarding Welcome</Text>
-            <ChevronRight size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={() => (navigation as any).navigate("Onboarding", { startSlideId: "practice" })}
-          >
-            <Text style={styles.actionText}>Revisit RSVP Tutorial</Text>
-            <ChevronRight size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={async () => {
-              try {
-                const subject = BUG_EMAIL_SUBJECT;
-                const body = BUG_EMAIL_BODY_TEMPLATE;
-                const mailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-                  subject,
-                )}&body=${encodeURIComponent(body)}`;
-                const supported = await Linking.canOpenURL(mailto);
-                if (supported) {
-                  await Linking.openURL(mailto);
-                } else {
-                  // Fallback to feedback form URL if configured
-                  const formUrl = process.env.EXPO_PUBLIC_FEEDBACK_FORM_URL;
-                  if (formUrl) {
-                    await Linking.openURL(formUrl);
-                  } else {
-                    Alert.alert("No mail app", "No mail client is available on this device.");
-                  }
-                }
-              } catch (e) {
-                // fallback alert
-                Alert.alert("Error", "Unable to open mail composer.");
-              }
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: "#EEF6FF", marginRight: spacing.md },
-                ]}
-              >
-                <Mail size={18} color={colors.primary} />
-              </View>
-              <Text style={styles.actionText}>Send Feedback / Report a Bug</Text>
-            </View>
-            <ChevronRight size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <View style={[styles.actionRow, { borderBottomWidth: 0 }]}>
-            <Text style={styles.versionText}>
-              Version {APP_VERSION} (build {APP_BUILD})
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={async () => {
-              try {
-                await Linking.openURL(PRIVACY_URL);
-              } catch {
-                Alert.alert("Error", "Unable to open Privacy Policy.");
-              }
-            }}
-          >
-            <Text style={styles.actionText}>Privacy Policy</Text>
-            <ChevronRight size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionRow, { borderBottomWidth: 0 }]}
-            onPress={async () => {
-              try {
-                await Linking.openURL(TERMS_URL);
-              } catch {
-                Alert.alert("Error", "Unable to open Terms of Service.");
-              }
-            }}
-          >
-            <Text style={styles.actionText}>Terms of Service</Text>
-            <ChevronRight size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -266,31 +174,5 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  actionText: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: typography.fontFamily.sans,
-  },
-  versionText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: typography.fontFamily.sans,
-    marginTop: spacing.sm,
   },
 });

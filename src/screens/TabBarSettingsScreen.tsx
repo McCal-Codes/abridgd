@@ -16,6 +16,7 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { GlassButton } from "../components/GlassButton";
+import { allowedTabs } from "../navigation/tabs";
 import {
   GripVertical,
   Check,
@@ -25,13 +26,11 @@ import {
   Star,
   Flame,
   MapPin,
-  Briefcase,
-  Trophy,
-  Palette,
   Newspaper,
+  User,
   Layers,
   Smartphone,
-  Sparkles,
+  Star as Sparkles,
   Minimize2,
   Square,
 } from "lucide-react-native";
@@ -48,24 +47,16 @@ interface TabOption {
 }
 
 const getAvailableTabs = (layout: "minimal" | "comprehensive"): TabOption[] => {
-  if (layout === "minimal") {
-    return [
-      { id: "home", label: "Home", Icon: Home },
-      { id: "discover", label: "Discover", Icon: Search },
-      { id: "saved", label: "Saved", Icon: Bookmark },
-      { id: "digest", label: "Digest", Icon: Star },
-    ];
-  } else {
-    return [
-      { id: "top", label: "Top", Icon: Flame, category: "Top" },
-      { id: "local", label: "Local", Icon: MapPin, category: "Local" },
-      { id: "business", label: "Business", Icon: Briefcase, category: "Business" },
-      { id: "sports", label: "Sports", Icon: Trophy, category: "Sports" },
-      { id: "culture", label: "Culture", Icon: Palette, category: "Culture" },
-      { id: "digest", label: "Digest", Icon: Newspaper },
-      { id: "saved", label: "Saved", Icon: Bookmark },
-    ];
-  }
+  const mapping: Record<string, TabOption> = {
+    home: { id: "home", label: "Home", Icon: Home },
+    discover: { id: "discover", label: "Discover", Icon: Search },
+    saved: { id: "saved", label: "Saved", Icon: Bookmark },
+    digest: { id: "digest", label: "Digest", Icon: Star },
+    profile: { id: "profile", label: "Profile", Icon: User },
+    top: { id: "top", label: "Top", Icon: Flame, category: "Top" },
+    local: { id: "local", label: "Local", Icon: MapPin, category: "Local" },
+  };
+  return allowedTabs[layout].map((id) => mapping[id]);
 };
 
 export const TabBarSettingsScreen: React.FC = () => {
@@ -74,6 +65,8 @@ export const TabBarSettingsScreen: React.FC = () => {
     setActiveTabs,
     tabLayout,
     setTabLayout,
+    defaultTab,
+    setDefaultTab,
     tabBarStyle,
     setTabBarStyle,
     showTabLabels,
@@ -337,10 +330,17 @@ export const TabBarSettingsScreen: React.FC = () => {
     setSelectedTabs(activeTabs);
   }, [activeTabs, tabLayout]);
 
+  // Ensure default tab always remains within active selection
+  useEffect(() => {
+    if (!selectedTabs.includes(defaultTab) && selectedTabs.length > 0) {
+      setDefaultTab(selectedTabs[0]);
+    }
+  }, [selectedTabs, defaultTab, setDefaultTab]);
+
   const toggleTab = (tabId: string) => {
     if (selectedTabs.includes(tabId)) {
-      if (selectedTabs.length <= 2) {
-        Alert.alert("Minimum Required", "You must have at least 2 tabs enabled");
+      if (selectedTabs.length <= 3) {
+        Alert.alert("Minimum Required", "Keep at least 3 tabs enabled for navigation");
         return;
       }
       const newTabs = selectedTabs.filter((id) => id !== tabId);
@@ -547,6 +547,27 @@ export const TabBarSettingsScreen: React.FC = () => {
               </Text>
               <Text style={styles.layoutOptionDesc}>Full category coverage with 7 tabs</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* DEFAULT TAB */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Default Tab on Launch</Text>
+          <Text style={styles.sectionDesc}>
+            Pick where the app opens. Only active tabs can be selected.
+          </Text>
+          <View style={styles.rowWrap}>
+            {AVAILABLE_TABS.filter((t) => selectedTabs.includes(t.id)).map((tab) => (
+              <TouchableOpacity
+                key={`default-${tab.id}`}
+                style={[styles.pill, defaultTab === tab.id && styles.pillSelected]}
+                onPress={() => setDefaultTab(tab.id)}
+              >
+                <Text style={[styles.pillText, defaultTab === tab.id && styles.pillTextSelected]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -1223,6 +1244,32 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 16,
+  },
+  rowWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  pill: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pillSelected: {
+    borderColor: colors.primary,
+    backgroundColor: "#F2F7FB",
+  },
+  pillText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  pillTextSelected: {
+    color: colors.primary,
   },
   settingRow: {
     flexDirection: "row",

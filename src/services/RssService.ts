@@ -9,6 +9,19 @@ const parser = new XMLParser({
   attributeNamePrefix: "@_",
 });
 
+type CategoryCache = {
+  articles: Article[];
+  fetchedAt: number;
+};
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const categoryCache = new Map<ArticleCategory, CategoryCache>();
+
+export const getLastFetchedAt = (category: ArticleCategory): number | null => {
+  const cached = categoryCache.get(category);
+  return cached ? cached.fetchedAt : null;
+};
+
 const calculateReadTime = (text: string): number => {
   const wordsPerMinute = 200;
   const words = text.split(/\s+/).length;
@@ -117,7 +130,16 @@ const mapRssItemToArticle = (item: any, category: ArticleCategory, sourceName: s
   };
 };
 
-export const fetchArticlesByCategory = async (category: ArticleCategory): Promise<Article[]> => {
+export const fetchArticlesByCategory = async (
+  category: ArticleCategory,
+  options: { forceRefresh?: boolean } = {},
+): Promise<Article[]> => {
+  const now = Date.now();
+  const cached = categoryCache.get(category);
+  if (!options.forceRefresh && cached && now - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.articles;
+  }
+
   const feeds = RSS_FEEDS[category];
 
   // feeds is now an array of objects
@@ -205,6 +227,7 @@ export const fetchArticlesByCategory = async (category: ArticleCategory): Promis
     return timeDiff;
   });
 
+  categoryCache.set(category, { articles: allArticles, fetchedAt: now });
   return allArticles;
 };
 

@@ -8,6 +8,7 @@ Use this one-pager to jump to the right guardrails before and after changes.
 - **Testing baseline:** `docs/standards/testing-baseline.md` — what’s covered by default, commands (`npm test`, `npx jest --runInBand`), mocks.  
 - **Design standards:** `docs/standards/design-standards.md` — Lucide-only icons, 44pt hits, tab rules, semantic colors, HIG alignment.  
 - **AI usage:** `docs/standards/ai-usage.md` — local-only AI prompts, treat outputs as drafts, run `npm run audit:ai-leak`.  
+- **Data/storage changes:** `CHANGELOG.md` → note schema bumps (e.g., saved articles schema v2 w/ compression) and ensure migrations/backward compatibility are documented.  
 - **Repository organization:** `docs/standards/repo-organization.md` — where new files live; use `src/shared/` or `src/features/<domain>/`.
 
 Suggested flow: Preflight → code/tests → `npm run audit:ai-leak` (if AI used or new secrets touched) → Afterflight → PR.
