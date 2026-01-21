@@ -6,6 +6,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+_No changes yet._
+
+## [1.3.5] - TBD
+
+_No recorded changes yet. Add fixes here if a patch is cut after 1.3.0._
+
+## [1.3.0] - 2026-01-21
+
 ### Added
 - Continue Reading section on HomeScreen that surfaces in-progress articles with progress chips and a Show all toggle.
 - Haptic feedback on HomeScreen pull-to-refresh trigger for a more tactile refresh cue.
@@ -18,6 +26,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Changed
 - Saved articles storage schema upgraded to v2 with LZ-string compression (backward compatible) to reduce AsyncStorage footprint for large article bodies.
 - Onboarding grounding slide refined: full-width selector cards with visual previews, compact breath bar within the card, and centered, margin-aware buttons to avoid overflow on small screens.
+
+### Fixed
+- Profile stats now increment for saved articles and completed reads so the Profile screen shows live activity and achievements.
+- Added rss2json fallback for RSS fetching to reduce empty feeds when proxies are blocked or sources reject CORS requests.
 
 ## [1.2.0] - 2026-01-18
 

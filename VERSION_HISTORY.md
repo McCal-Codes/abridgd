@@ -48,6 +48,26 @@ This document tracks all updates, features, and fixes for the Abridged app.
 - Comprehensive accessibility audit (VoiceOver, Dynamic Type, color contrast)
 - Performance optimization pass (memory, load times, animation smoothness)
 
+## [1.3.0] - 2026-01-21
+### Home & Sections
+- Continue Reading section on Home with in-progress chips and “Show all” toggle.
+- Haptic feedback on Home pull-to-refresh; SectionScreen shows updated timestamp + haptic on refresh.
+- 5-minute smart cache for RSS category fetches to avoid redundant calls on quick revisits.
+
+### Saved & Search
+- Pull-to-refresh on Saved with updated timestamp + haptic scaffold.
+- Debounced Saved search with recent queries, filters (source/category/status/date), and sorting (newest/oldest/progress/length/source).
+- “No results” state for Saved search/filters with clear action.
+
+### Data & Storage
+- Saved articles storage schema v2 with LZ-string compression (backward compatible) to reduce AsyncStorage footprint for large article bodies.
+
+### UX
+- Onboarding grounding slide refined with full-width selector cards, compact breath bar, and centered buttons for small screens.
+
+### Fixed
+- Profile stats now increment for saved articles and completed reads so Profile shows live activity and achievements.
+
 ## [1.2.0] - 2026-01-18
 ### Experimental Features & Settings Enhancement
 - Added experimental iOS 26 navbar option with enhanced glass morphism effects
