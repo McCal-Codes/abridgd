@@ -1,7 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { Platform } from "react-native";
 import { Article, ArticleCategory } from "../types/Article";
-import { RSS_FEEDS } from "../data/feedConfig";
+import { FeedSource, RSS_FEEDS } from "../data/feedConfig";
 import { ErrorCode, ErrorHandler } from "../utils/errorCodes";
 import { loadSourcePreferences, isSourceEnabled } from "../utils/sourcePreferences";
 
@@ -20,13 +20,20 @@ const FETCH_TIMEOUT_MS = 7000;
 const categoryCache = new Map<ArticleCategory, CategoryCache>();
 const FETCH_HEADERS: RequestInit["headers"] = {
   // Some publishers (e.g., WTAE) block default fetch UA; send a browser-ish string.
-  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+  "User-Agent":
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
   Accept: "application/rss+xml, application/xml, text/xml, */*",
 };
 
 export const getLastFetchedAt = (category: ArticleCategory): number | null => {
   const cached = categoryCache.get(category);
   return cached ? cached.fetchedAt : null;
+};
+
+export const getCachedArticles = (category: ArticleCategory): Article[] | null => {
+  const cached = categoryCache.get(category);
+  if (!cached || !cached.articles?.length) return null;
+  return cached.articles;
 };
 
 const fetchWithTimeout = async (url: string): Promise<Response> => {
@@ -112,7 +119,7 @@ const extractMediaFromHtml = (html: string) => {
     const imgMatches = [...html.matchAll(/<img[^>]+src="([^"]+)"/gi)];
     imgMatches.forEach((m) => images.add(m[1]));
 
-    const videoMatches = [...html.matchAll(/<video[^>]*>.*?<source[^>]+src="([^"]+)"/gsi)];
+    const videoMatches = [...html.matchAll(/<video[^>]*>.*?<source[^>]+src="([^"]+)"/gis)];
     videoMatches.forEach((m) => videos.add(m[1]));
 
     const srcVideoMatches = [...html.matchAll(/<source[^>]+src="([^"]+)"[^>]*type="video\//gi)];
@@ -133,7 +140,7 @@ const sanitizeText = (text: any): string => {
     return text["#text"] || "";
   }
   let clean = text
-    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<br\s*\/?/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\/div>/gi, "\n\n")
     .replace(/<\/li>/gi, "\n")
@@ -146,13 +153,14 @@ const sanitizeText = (text: any): string => {
     .replace(/&#8220;/g, '"')
     .replace(/&#8221;/g, '"')
     .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&gt;/g, ">")
-    .replace(/&lt;/g, "<");
+    .replace(/&quot;/g, '"');
 
-  // Normalize excessive newlines to a max of 2
-  return clean.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+  clean = clean
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return clean;
 };
 
 const extractParagraphsFromHtml = (html: string): string => {
@@ -303,7 +311,12 @@ export const fetchArticlesByCategory = async (
 ): Promise<Article[]> => {
   const now = Date.now();
   const cached = categoryCache.get(category);
-  if (!options.forceRefresh && cached && now - cached.fetchedAt < CACHE_TTL_MS) {
+  if (
+    !options.forceRefresh &&
+    cached &&
+    cached.articles.length > 0 &&
+    now - cached.fetchedAt < CACHE_TTL_MS
+  ) {
     return cached.articles;
   }
 
@@ -319,7 +332,7 @@ export const fetchArticlesByCategory = async (
 
   // Helper to fetch one feed
   // Now accepts the whole FeedSource object
-  const fetchSingleFeed = async (source: { name: string; url: string }) => {
+  const fetchSingleFeed = async (source: FeedSource) => {
     try {
       console.log(`Fetching ${source.name} (${source.url})... - RssService.ts:134`);
       const sourceName = source.name;
@@ -394,14 +407,33 @@ export const fetchArticlesByCategory = async (
 
   // Fetch all concurrently
   const prefs = await loadSourcePreferences();
-  const sourcesToFetch = feedSources.filter((src) =>
-    isSourceEnabled(prefs.overrides, category, src.name),
+  let sourcesToFetch = feedSources.filter((src) =>
+    isSourceEnabled(prefs.overrides, category, src.name, src.defaultEnabled ?? true),
   );
 
   if (sourcesToFetch.length === 0) {
-    console.warn(`All sources are disabled for ${category}; returning empty list.`);
-    return [];
+    const defaultEnabledSources = feedSources.filter((src) => src.defaultEnabled ?? true);
+    console.warn(
+      `All sources are disabled for ${category}. Overrides: ${JSON.stringify(
+        prefs.overrides?.[category] ?? {},
+      )}. Falling back to default-enabled sources: ${
+        defaultEnabledSources.map((s) => s.name).join(", ") || "none"
+      }`,
+    );
+
+    if (defaultEnabledSources.length === 0) {
+      console.warn(`No default-enabled sources available for ${category}; returning empty list.`);
+      return [];
+    }
+
+    sourcesToFetch = defaultEnabledSources;
   }
+
+  console.log(
+    `Fetching ${sourcesToFetch.length} sources for ${category}: ${sourcesToFetch
+      .map((s) => s.name)
+      .join(", ")}`,
+  );
 
   const results = await Promise.all(sourcesToFetch.map((src) => fetchSingleFeed(src)));
 
@@ -436,7 +468,10 @@ export const fetchArticlesByCategory = async (
     return timeDiff;
   });
 
-  categoryCache.set(category, { articles: allArticles, fetchedAt: now });
+  // Avoid caching an empty result so the next call can retry other fallbacks
+  if (allArticles.length > 0) {
+    categoryCache.set(category, { articles: allArticles, fetchedAt: now });
+  }
   return allArticles;
 };
 

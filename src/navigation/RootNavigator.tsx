@@ -63,6 +63,7 @@ export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string
       home: { name: "Home", component: HomeScreen, Icon: Home },
       discover: {
         name: "Discover",
+        component: SectionScreen,
         params: { category: "Local" },
         Icon: Search,
       },

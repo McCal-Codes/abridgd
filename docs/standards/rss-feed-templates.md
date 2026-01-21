@@ -1,5 +1,5 @@
 # RSS Feed Templates & Pittsburgh Source Catalog
-Version 1.0  
+Version 1.0
 Last Updated: January 21, 2026
 
 ## Purpose
@@ -13,6 +13,47 @@ Define bundles by area/category so updates stay predictable:
 - **notes**: CORS quirks, rate limits, paywall/summary-only behavior
 
 ## Pittsburgh template examples
+
+### Current app feed template (as of January 21, 2026)
+These are the feeds currently shipped in-app and their default toggle states (default **off** means opt-in via Settings).
+
+#### Top
+- WTAE
+- CBS Pittsburgh
+- WPXI
+- WESA
+- Pittsburgh Independent
+- Pittsburgh City Cast (**default off**, podcast/audio)
+
+#### Local
+- PublicSource
+- TribLive
+- Post-Gazette (Local)
+- New Pittsburgh Courier
+- Kidsburgh
+- Pittsburgh Mom Collective (**default off**, noisy/parenting-heavy)
+- The Incline
+
+#### Business
+- Pittsburgh Business Times
+- TribLive Business
+- Post-Gazette Business
+- NEXTpittsburgh
+- TechVibe Radio (**default off**, audio-first)
+- InnovatePGH (**default off**, pending verification)
+
+#### Sports
+- Steelers.com
+- DK Pittsburgh Sports
+- TribLive Sports
+- Penguins (NHL.com)
+- Pirates (MLB.com) — proxy may be needed on web
+- Pitt Panthers (athletics)
+
+#### Culture
+- Pittsburgh City Paper
+- Pittsburgh Magazine A&E
+- WESA Arts
 
 ### Top (Breaking/General)
 - Primary: WTAE, CBS Pittsburgh, WPXI
@@ -90,3 +131,12 @@ Define bundles by area/category so updates stay predictable:
 ## Ownership
 - Steward: Engineering lead (per `README.md`)
 - For proposed changes, open a PR referencing this doc and the target release (e.g., TODO-00x in `updates/todo.md`).
+
+## Priority Fixes & Stability — Do These First
+
+- [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
+- [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
+- [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)
+- [ ] Offline indicator + queued actions (save/unsave) until reconnected
+- [ ] Accessibility audit (VoiceOver, Dynamic Type, contrast)
+- [ ] Global animation + haptics controls (respect Reduce Motion, provide overrides)

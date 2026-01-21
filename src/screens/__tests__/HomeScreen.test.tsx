@@ -3,11 +3,12 @@ import { act, render, fireEvent, waitFor } from "@testing-library/react-native";
 import { Animated } from "react-native";
 import { HomeScreen } from "../HomeScreen";
 import { ScrollContext } from "../../context/ScrollContext";
-import { fetchArticlesByCategory } from "../../services/RssService";
+import { fetchArticlesByCategory, getCachedArticles } from "../../services/RssService";
 
 jest.mock("../../services/RssService", () => ({
   fetchArticlesByCategory: jest.fn(),
   getLastFetchedAt: jest.fn(() => Date.now()),
+  getCachedArticles: jest.fn(() => null),
 }));
 
 jest.mock("../../context/SavedArticlesContext", () => ({
@@ -118,6 +119,7 @@ describe("HomeScreen", () => {
     jest.clearAllMocks();
     resetSettings();
     (fetchArticlesByCategory as jest.Mock).mockResolvedValue([]);
+    (getCachedArticles as jest.Mock).mockReturnValue(null);
     mockSavedArticlesContext = {
       savedArticles: [],
       saveArticle: jest.fn(),

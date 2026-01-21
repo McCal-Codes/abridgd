@@ -3,9 +3,13 @@ import { View, FlatList, StyleSheet, StatusBar, Animated, Text, Pressable } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ScrollContext } from "../context/ScrollContext";
-import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
+import { ArticleCard } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
-import { fetchArticlesByCategory, getLastFetchedAt } from "../services/RssService";
+import {
+  fetchArticlesByCategory,
+  getLastFetchedAt,
+  getCachedArticles,
+} from "../services/RssService";
 import { Article } from "../types/Article";
 import { colors } from "../theme/colors";
 import { useNavigation } from "@react-navigation/native";
@@ -147,7 +151,7 @@ export const HomeScreen: React.FC = () => {
     const load = async () => {
       try {
         setError(null);
-        const data = await fetchArticlesByCategory("Top");
+        const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
         setArticles(data);
         const fetchedAt = getLastFetchedAt("Top");
         setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
@@ -155,8 +159,18 @@ export const HomeScreen: React.FC = () => {
         setError(e?.message || "Failed to load articles.");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
+    const cached = getCachedArticles("Top");
+    if (cached && cached.length) {
+      setArticles(cached);
+      const fetchedAt = getLastFetchedAt("Top");
+      setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
+      setLoading(false);
+      setRefreshing(true);
+    }
+
     load();
   }, []);
 
@@ -191,46 +205,67 @@ export const HomeScreen: React.FC = () => {
 
   const showSkeleton = loading && articles.length === 0;
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
+  const showEmptyState = !loading && !error && articles.length === 0;
+
+  const renderHeroHeader = () => (
+    <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+      <HeroHeader
+        title="Top Stories"
+        subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+        Icon={HomeIcon}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       {showSkeleton ? (
-        <FlatList
-          data={Array.from({ length: 6 })}
-          keyExtractor={(_, idx) => `skeleton-${idx}`}
-          renderItem={() => <ArticleCardSkeleton />}
-          contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
-        />
+        <View style={styles.flexContent}>
+          {renderHeroHeader()}
+          <View style={styles.centerContent}>
+            <FunLoadingIndicator message="Fetching top stories…" />
+          </View>
+        </View>
       ) : showErrorState ? (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
-            <Animated.Text style={{ color: colors.systemRed, marginBottom: 8 }}>
-              Network error
-            </Animated.Text>
-            <Animated.Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
-              {error}
-            </Animated.Text>
-            <Animated.Text
-              onPress={() => {
-                setLoading(true);
-                setError(null);
-                fetchArticlesByCategory("Top")
-                  .then((data) => {
-                    setArticles(data);
-                    const fetchedAt = getLastFetchedAt("Top");
-                    setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-                    setLoading(false);
-                  })
-                  .catch((e) => {
-                    setError(e?.message || "Failed to load articles.");
-                    setLoading(false);
-                  });
-              }}
-              style={{ color: colors.tint }}
-            >
-              Retry
-            </Animated.Text>
+        <View style={styles.flexContent}>
+          {renderHeroHeader()}
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
+              <Animated.Text style={{ color: colors.systemRed, marginBottom: 8 }}>
+                Network error
+              </Animated.Text>
+              <Animated.Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
+                {error}
+              </Animated.Text>
+              <Animated.Text
+                onPress={() => {
+                  setLoading(true);
+                  setError(null);
+                  fetchArticlesByCategory("Top")
+                    .then((data) => {
+                      setArticles(data);
+                      const fetchedAt = getLastFetchedAt("Top");
+                      setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
+                      setLoading(false);
+                    })
+                    .catch((e) => {
+                      setError(e?.message || "Failed to load articles.");
+                      setLoading(false);
+                    });
+                }}
+                style={{ color: colors.tint }}
+              >
+                Retry
+              </Animated.Text>
+            </View>
+          </View>
+        </View>
+      ) : showEmptyState ? (
+        <View style={styles.flexContent}>
+          {renderHeroHeader()}
+          <View style={styles.centerContent}>
+            <FunLoadingIndicator message="Syncing your feed…" />
           </View>
         </View>
       ) : (
@@ -246,13 +281,7 @@ export const HomeScreen: React.FC = () => {
           )}
           ListHeaderComponent={() => (
             <>
-              <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
-                <HeroHeader
-                  title="Top Stories"
-                  subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
-                  Icon={HomeIcon}
-                />
-              </View>
+              {renderHeroHeader()}
               {isContinueReadingEnabled && (
                 <ContinueReadingSection
                   items={continueReadingItems}
@@ -311,6 +340,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  flexContent: {
+    flex: 1,
+  },
   listContent: {
     paddingBottom: spacing.lg,
   },
@@ -318,6 +350,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.gutter,
   },
   continueContainer: {
     paddingTop: spacing.gutter,

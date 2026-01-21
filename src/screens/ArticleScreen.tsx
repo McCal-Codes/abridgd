@@ -187,6 +187,44 @@ export const ArticleScreen: React.FC = () => {
 
   const showToneLine = sensitivePromptLevel === "full";
 
+  const VideoModule = useMemo(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require("expo-av");
+    } catch (err) {
+      console.warn("expo-av not available; video playback disabled", err);
+      return null;
+    }
+  }, []);
+
+  const VideoComponent = VideoModule?.Video ?? null;
+
+  const normalizeUri = (uri?: string) => {
+    if (!uri) return uri;
+    if (uri.startsWith("http:")) return uri.replace("http:", "https:");
+    if (!uri.startsWith("http")) return `https:${uri}`;
+    return uri;
+  };
+
+  const parsedContent = useMemo(() => {
+    const nodes = parseHtmlContent(bodyContent);
+    const existingSources = new Set(
+      nodes
+        .filter((n) => (n.type === "image" || n.type === "video") && n.src)
+        .map((n) => n.src as string),
+    );
+
+    const extraVideos = (article.mediaVideos || [])
+      .filter((src) => src && !existingSources.has(src))
+      .map((src) => ({ type: "video" as const, src }));
+
+    const extraImages = (article.mediaImages || [])
+      .filter((src) => src && !existingSources.has(src))
+      .map((src) => ({ type: "image" as const, src }));
+
+    return [...nodes, ...extraVideos, ...extraImages];
+  }, [article.mediaImages, article.mediaVideos, bodyContent]);
+
   // Auto-save article when reading completes (if enabled)
   const handleReaderComplete = async () => {
     if (autoSaveOnComplete && !isSaved) {
@@ -569,7 +607,7 @@ export const ArticleScreen: React.FC = () => {
             </View>
           )}
 
-          {parseHtmlContent(bodyContent).map((node, index) => {
+          {parsedContent.map((node, index) => {
             if (node.type === "text" && node.text) {
               // Check for credit pattern (Credits often start with "Photo:" or are short italicized lines at end)
               // This is a naive heuristic but works for many feeds
@@ -606,7 +644,7 @@ export const ArticleScreen: React.FC = () => {
               return (
                 <View key={index} style={styles.imageContainer}>
                   <Image
-                    source={{ uri: node.src.startsWith("http") ? node.src : `https:${node.src}` }}
+                    source={{ uri: normalizeUri(node.src)! }}
                     style={[
                       styles.image,
                       imageLoadingMode === "compressed" && styles.imageCompressed,
@@ -614,6 +652,32 @@ export const ArticleScreen: React.FC = () => {
                     resizeMode={imageLoadingMode === "compressed" ? "center" : "cover"}
                   />
                   {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
+                </View>
+              );
+            } else if (node.type === "video" && node.src) {
+              if (imageLoadingMode === "text-only") return null;
+
+              const uri = normalizeUri(node.src)!;
+              const canInline = !!VideoComponent;
+              return (
+                <View key={index} style={styles.videoContainer}>
+                  {canInline ? (
+                    <VideoComponent
+                      source={{ uri }}
+                      style={styles.video}
+                      useNativeControls
+                      resizeMode={"contain"}
+                      isLooping={false}
+                    />
+                  ) : (
+                    <Text style={styles.caption}>
+                      Inline video not available in this build. Open in browser instead.
+                    </Text>
+                  )}
+                  {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
+                  <ScaleButton style={styles.videoOpenButton} onPress={() => Linking.openURL(uri)}>
+                    <Text style={styles.videoOpenText}>Open video in browser</Text>
+                  </ScaleButton>
                 </View>
               );
             } else if (node.type === "header" && node.text) {
@@ -788,6 +852,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm, // Space inside container
+  },
+  videoContainer: {
+    marginVertical: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  video: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    backgroundColor: "#000",
+  },
+  videoOpenButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  videoOpenText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.primary,
   },
   credit: {
     fontFamily: typography.fontFamily.sans,

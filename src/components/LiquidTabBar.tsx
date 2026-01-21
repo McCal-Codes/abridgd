@@ -14,7 +14,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSettings } from "../context/SettingsContext";
 import { useSavedArticles } from "../context/SavedArticlesContext";
-import { colors } from "../theme/colors";
+import { colors, isDarkMode } from "../theme/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollContext } from "../context/ScrollContext";
 
@@ -284,24 +284,32 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   const indicatorHeight = React.useRef(
     new Animated.Value(tabIndicatorStyle === "bubble" ? 30 : 4),
   ).current;
+  const indicatorOpacity = React.useRef(new Animated.Value(0)).current;
   const [indicatorRadius, setIndicatorRadius] = React.useState(16);
   const [tabLayouts, setTabLayouts] = React.useState<Record<string, LayoutRectangle>>({});
 
-  const handleTabLayout = React.useCallback((routeKey: string, layout: LayoutRectangle) => {
-    setTabLayouts((prev) => {
-      const existing = prev[routeKey];
-      if (
-        existing &&
-        Math.abs(existing.width - layout.width) < 1 &&
-        Math.abs(existing.height - layout.height) < 1 &&
-        Math.abs(existing.x - layout.x) < 1 &&
-        Math.abs(existing.y - layout.y) < 1
-      ) {
-        return prev;
+  const handleTabLayout = React.useCallback(
+    (routeKey: string, layout: LayoutRectangle) => {
+      setTabLayouts((prev) => {
+        const existing = prev[routeKey];
+        if (
+          existing &&
+          Math.abs(existing.width - layout.width) < 1 &&
+          Math.abs(existing.height - layout.height) < 1 &&
+          Math.abs(existing.x - layout.x) < 1 &&
+          Math.abs(existing.y - layout.y) < 1
+        ) {
+          return prev;
+        }
+        return { ...prev, [routeKey]: layout };
+      });
+      const activeRouteKey = routes[state.index]?.key;
+      if (activeRouteKey === routeKey) {
+        requestAnimationFrame(() => animateToRoute(state.index));
       }
-      return { ...prev, [routeKey]: layout };
-    });
-  }, []);
+    },
+    [animateToRoute, routes, state.index],
+  );
 
   const animateToRoute = React.useCallback(
     (index: number) => {
@@ -331,27 +339,40 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
 
       setIndicatorRadius(tabIndicatorStyle === "bubble" ? targetHeight / 2 : 2);
 
+      indicatorOpacity.setValue(0);
+
       Animated.parallel([
         Animated.spring(indicatorX, {
           toValue: targetX,
           stiffness: 260,
-          damping: 25,
+          damping: 26,
+          mass: 0.8,
           useNativeDriver: false,
         }),
         Animated.spring(indicatorY, {
           toValue: targetY,
           stiffness: 260,
-          damping: 25,
+          damping: 26,
+          mass: 0.8,
           useNativeDriver: false,
         }),
-        Animated.timing(indicatorWidth, {
+        Animated.spring(indicatorWidth, {
           toValue: targetWidth,
-          duration: 200,
+          stiffness: 240,
+          damping: 24,
+          mass: 0.7,
           useNativeDriver: false,
         }),
-        Animated.timing(indicatorHeight, {
+        Animated.spring(indicatorHeight, {
           toValue: targetHeight,
-          duration: 200,
+          stiffness: 240,
+          damping: 24,
+          mass: 0.7,
+          useNativeDriver: false,
+        }),
+        Animated.timing(indicatorOpacity, {
+          toValue: 1,
+          duration: 120,
           useNativeDriver: false,
         }),
       ]).start();
@@ -364,6 +385,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
       indicatorWidth,
       indicatorX,
       indicatorY,
+      indicatorOpacity,
     ],
   );
 
@@ -375,6 +397,8 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   const activeRouteKey = routes[state.index]?.key;
   const hasLayout = !!(activeRouteKey && tabLayouts[activeRouteKey]);
   const shouldRenderIndicator = tabIndicatorStyle !== "none" && hasLayout;
+  const indicatorColor = colors.tint;
+  const bubbleColor = isDarkMode ? "rgba(0,188,212,0.2)" : "rgba(0,151,167,0.12)";
 
   return (
     <View style={{ width: "100%" }}>
@@ -389,6 +413,8 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
               top: indicatorY,
               width: indicatorWidth,
               height: indicatorHeight,
+              opacity: indicatorOpacity,
+              backgroundColor: tabIndicatorStyle === "bubble" ? bubbleColor : indicatorColor,
             },
           ]}
         />

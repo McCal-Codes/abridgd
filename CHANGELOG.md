@@ -6,7 +6,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-_No changes yet._
+### Added
+- GlassStackHeader and HeroHeader components to expand the iOS 26-inspired UI kit, plus an AchievementsScreen scaffold for future engagement features.
+- Expanded Pittsburgh RSS coverage (WESA, Kidsburgh, Penguins, Pirates, Pitt Panthers, and more) with opt-in defaults for audio/experimental feeds and Settings badges for default-off sources.
+
+### Changed
+- Navigation, profile, digest, saved, and settings flows refreshed alongside storage/context updates; RSS service and saved-article handling tuned for more resilient data fetch and caching.
+
+### Fixed
+- Sign in with Apple flow and FullStory instrumentation hardened; Jest setup and shared components updated for more reliable tests and UI interactions.
+- Pinned Reanimated/Worklets versions to the Expo SDK 54 native bundle to stop JS/native mismatch crashes in Expo Go.
+
+### Documentation
+- New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.
 
 ## [1.3.5] - TBD
 
@@ -30,6 +42,9 @@ _No recorded changes yet. Add fixes here if a patch is cut after 1.3.0._
 ### Fixed
 - Profile stats now increment for saved articles and completed reads so the Profile screen shows live activity and achievements.
 - Added rss2json fallback for RSS fetching to reduce empty feeds when proxies are blocked or sources reject CORS requests.
+- Updated WPXI feed URL to the live outbound RSS endpoint so WPXI articles appear again.
+- Skip caching empty category results and bypass empty caches within the TTL so feeds retry instead of getting stuck blank.
+- HomeScreen now hydrates instantly from any existing Top cache while force-refreshing in the background for fresh headlines.
 
 ## [1.2.0] - 2026-01-18
 

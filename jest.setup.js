@@ -177,4 +177,25 @@ jest.mock("expo-status-bar", () => ({
   StatusBar: "StatusBar",
 }));
 
+// Mock expo-av Video
+jest.mock("expo-av", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  const MockVideo = React.forwardRef((props, ref) => React.createElement(View, { ref, ...props }));
+  return {
+    Video: MockVideo,
+    Audio: {
+      setAudioModeAsync: jest.fn(),
+      Sound: function MockSound() {
+        return {
+          loadAsync: jest.fn(),
+          playAsync: jest.fn(),
+          unloadAsync: jest.fn(),
+          setPositionAsync: jest.fn(),
+        };
+      },
+    },
+  };
+});
+
 // Use real console for better error visibility during debugging

@@ -209,7 +209,7 @@ const defaultSettingsContext: SettingsContextType = {
   setAllowContentUnderTabBar: async (_b: boolean) => {},
   tabBadgeStyle: "count",
   setTabBadgeStyle: async (_s: "dot" | "count" | "none") => {},
-  tabIndicatorStyle: "bubble",
+  tabIndicatorStyle: "underline",
   setTabIndicatorStyle: async (_s: "underline" | "bubble" | "none") => {},
   modalPresentationStyle: "auto",
   setModalPresentationStyle: async (_s: "auto" | "center" | "bottom") => {},
