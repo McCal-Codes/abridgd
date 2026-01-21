@@ -24,6 +24,8 @@ export const ReadingSettingsScreen: React.FC = () => {
     setLineHeight,
     autoSaveOnComplete,
     setAutoSaveOnComplete,
+    isContinueReadingEnabled,
+    setIsContinueReadingEnabled,
     rsvpHighlightColor,
     setRsvpHighlightColor,
     rsvpAnchorStrategy,
@@ -80,6 +82,20 @@ export const ReadingSettingsScreen: React.FC = () => {
             <Switch
               value={isSummarizationEnabled}
               onValueChange={setIsSummarizationEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleTextContainer}>
+              <Text style={styles.toggleLabel}>Continue Reading on Home</Text>
+              <Text style={styles.toggleDesc}>
+                Show in-progress articles at the top of Home. Off by default.
+              </Text>
+            </View>
+            <Switch
+              value={isContinueReadingEnabled}
+              onValueChange={setIsContinueReadingEnabled}
               trackColor={{ false: colors.border, true: colors.primary }}
             />
           </View>

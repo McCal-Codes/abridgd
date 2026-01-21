@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  View,
-  FlatList,
-  StyleSheet,
-  Text,
-  TextInput,
-  Pressable,
-  Animated,
-} from "react-native";
+import { View, FlatList, StyleSheet, Text, TextInput, Pressable, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ArticleCard } from "../components/ArticleCard";
@@ -25,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "../theme/ThemeContext";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { ArticleCategory } from "../types/Article";
+import { HeroHeader } from "../components/HeroHeader";
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>,
@@ -45,9 +38,15 @@ export const SavedScreen: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = React.useState<Set<ArticleCategory>>(
     new Set(),
   );
-  const [selectedStatus, setSelectedStatus] = React.useState<"unread" | "in-progress" | "completed" | null>(null);
-  const [selectedDateRange, setSelectedDateRange] = React.useState<"today" | "week" | "month" | "older" | null>(null);
-  const [sortBy, setSortBy] = React.useState<"newest" | "oldest" | "progress" | "length" | "source">("newest");
+  const [selectedStatus, setSelectedStatus] = React.useState<
+    "unread" | "in-progress" | "completed" | null
+  >(null);
+  const [selectedDateRange, setSelectedDateRange] = React.useState<
+    "today" | "week" | "month" | "older" | null
+  >(null);
+  const [sortBy, setSortBy] = React.useState<
+    "newest" | "oldest" | "progress" | "length" | "source"
+  >("newest");
   const { top: insetTop } = useSafeAreaInsets();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -110,13 +109,7 @@ export const SavedScreen: React.FC = () => {
   const filteredArticles = React.useMemo(() => {
     const query = debouncedQuery.toLowerCase();
     const matchesQuery = (a: any) => {
-      const haystack = [
-        a.headline,
-        a.source,
-        a.category,
-        a.summary,
-        a.body,
-      ]
+      const haystack = [a.headline, a.source, a.category, a.summary, a.body]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -153,13 +146,27 @@ export const SavedScreen: React.FC = () => {
     };
 
     return savedArticles.filter(
-      (a) => matchesQuery(a) && matchesSource(a) && matchesCategory(a) && matchesStatus(a) && matchesDate(a),
+      (a) =>
+        matchesQuery(a) &&
+        matchesSource(a) &&
+        matchesCategory(a) &&
+        matchesStatus(a) &&
+        matchesDate(a),
     );
-  }, [debouncedQuery, savedArticles, selectedSources, selectedCategories, selectedStatus, selectedDateRange, getProgress]);
+  }, [
+    debouncedQuery,
+    savedArticles,
+    selectedSources,
+    selectedCategories,
+    selectedStatus,
+    selectedDateRange,
+    getProgress,
+  ]);
 
   const sortedArticles = React.useMemo(() => {
     const list = [...filteredArticles];
-    const progressFor = (id: string) => getProgress ? getProgress(id)?.completionPercentage ?? 0 : 0;
+    const progressFor = (id: string) =>
+      getProgress ? (getProgress(id)?.completionPercentage ?? 0) : 0;
     list.sort((a, b) => {
       switch (sortBy) {
         case "oldest":
@@ -245,7 +252,13 @@ export const SavedScreen: React.FC = () => {
       selectedCategories.size > 0 ||
       selectedStatus !== null ||
       selectedDateRange !== null,
-    [debouncedQuery.length, selectedCategories.size, selectedDateRange, selectedSources.size, selectedStatus],
+    [
+      debouncedQuery.length,
+      selectedCategories.size,
+      selectedDateRange,
+      selectedSources.size,
+      selectedStatus,
+    ],
   );
 
   const clearSearchAndFilters = React.useCallback(async () => {
@@ -301,11 +314,12 @@ export const SavedScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.topBar, { paddingTop: spacing.md + insetTop }]}>
-        <View>
-          <Text style={styles.title}>Saved</Text>
-          {lastUpdated && <Text style={styles.updatedLabel}>{formatUpdatedAgo(lastUpdated)}</Text>}
-        </View>
+      <View style={[styles.headerContainer, { paddingTop: insetTop + spacing.sm }]}>
+        <HeroHeader
+          title="Saved"
+          subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+          Icon={Bookmark}
+        />
         <View style={styles.topActions}>
           <Pressable
             hitSlop={8}
@@ -314,7 +328,11 @@ export const SavedScreen: React.FC = () => {
             style={styles.iconButton}
             onPress={toggleSearch}
           >
-            {showSearch ? <X size={18} color={colors.text} /> : <Search size={18} color={colors.text} />}
+            {showSearch ? (
+              <X size={18} color={colors.text} />
+            ) : (
+              <Search size={18} color={colors.text} />
+            )}
           </Pressable>
           <Pressable
             hitSlop={8}
@@ -451,9 +469,7 @@ export const SavedScreen: React.FC = () => {
                   onPress={() => setSelectedStatus(active ? null : (status as any))}
                   style={[styles.chip, active && styles.chipActive]}
                 >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {status}
-                  </Text>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{status}</Text>
                 </Pressable>
               );
             })}
@@ -473,9 +489,7 @@ export const SavedScreen: React.FC = () => {
               return (
                 <Pressable
                   key={d.key}
-                  onPress={() =>
-                    setSelectedDateRange(active ? null : (d.key as any))
-                  }
+                  onPress={() => setSelectedDateRange(active ? null : (d.key as any))}
                   style={[styles.chip, active && styles.chipActive]}
                 >
                   <Text style={[styles.chipText, active && styles.chipTextActive]}>{d.label}</Text>
@@ -639,30 +653,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  topBar: {
-    paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: typography.size.xl,
-    color: colors.text,
-    fontWeight: "700",
-  },
-  searchToggle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: colors.tint,
-    fontWeight: "600",
+  headerContainer: {
+    paddingTop: spacing.md,
+    backgroundColor: colors.background,
+    paddingBottom: spacing.xs,
   },
   topActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    alignSelf: "flex-end",
+    paddingHorizontal: spacing.gutter,
+    marginTop: -spacing.lg,
   },
   iconButton: {
     width: 40,

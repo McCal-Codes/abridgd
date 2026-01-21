@@ -13,6 +13,8 @@ import { spacing } from "../theme/spacing";
 import { Article, ArticleCategory } from "../types/Article";
 import { typography } from "../theme/typography";
 import * as Haptics from "expo-haptics";
+import { HeroHeader } from "../components/HeroHeader";
+import { MapPin, Newspaper } from "lucide-react-native";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SectionRouteProp = RouteProp<TabParamList, "Discover">;
@@ -76,16 +78,21 @@ export const SectionScreen: React.FC = () => {
     );
   }
 
+  const headerIcon = category === "Local" ? MapPin : Newspaper;
+
+  const showSkeleton = loading && articles.length === 0;
+  const showErrorState = !showSkeleton && !!error && articles.length === 0;
+
   return (
     <View style={styles.container}>
-      {loading ? (
+      {showSkeleton ? (
         <FlatList
           data={Array.from({ length: 6 })}
           keyExtractor={(_, idx) => `skeleton-${idx}`}
           renderItem={() => <ArticleCardSkeleton />}
           contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
         />
-      ) : error ? (
+      ) : showErrorState ? (
         <View style={[styles.center, { flex: 1 }]}>
           <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
             <Text style={{ color: colors.systemRed, marginBottom: 8 }}>Network error</Text>
@@ -137,11 +144,14 @@ export const SectionScreen: React.FC = () => {
             },
           ]}
           ListHeaderComponent={
-            lastUpdated ? (
-              <View style={styles.updatedRow} testID="section-updated">
-                <Text style={styles.updatedLabel}>{formatUpdatedAgo(lastUpdated)}</Text>
-              </View>
-            ) : undefined
+            <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+              <HeroHeader
+                title={category}
+                subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+                subtitleTestID="section-updated"
+                Icon={headerIcon}
+              />
+            </View>
           }
           refreshing={refreshing}
           onRefresh={async () => {
@@ -174,6 +184,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  headerContainer: {
+    backgroundColor: colors.background,
+    paddingBottom: spacing.xs,
+  },
   center: {
     justifyContent: "center",
     alignItems: "center",
@@ -183,15 +197,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: typography.fontFamily.sans,
-    color: colors.textSecondary,
-  },
-  updatedRow: {
-    paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.sm,
-  },
-  updatedLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.xs,
     color: colors.textSecondary,
   },
 });
