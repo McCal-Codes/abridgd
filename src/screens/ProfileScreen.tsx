@@ -342,8 +342,8 @@ const ProfileScreen: React.FC = () => {
               accessibilityLabel="Karma progress"
               accessibilityValue={{
                 min: 0,
-                max: 1,
-                now: Math.max(0, Math.min(1, karmaProgress)),
+                max: 100,
+                now: Math.round(Math.max(0, Math.min(1, karmaProgress)) * 100),
                 text: `${Math.round(karmaProgress * 100)}% toward next tier`,
               }}
             >
