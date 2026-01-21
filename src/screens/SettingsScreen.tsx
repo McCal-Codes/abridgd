@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../theme/colors";
@@ -29,6 +29,7 @@ interface SettingsMenuItem {
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const menuItems: SettingsMenuItem[] = [
     {
@@ -83,7 +84,12 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: spacing.xl + Math.max(insets.bottom, spacing.lg) },
+        ]}
+      >
         <Text style={styles.header}>Settings</Text>
         <Text style={styles.description}>Customize your news reading experience</Text>
 
@@ -93,6 +99,11 @@ export const SettingsScreen: React.FC = () => {
               key={item.screen}
               style={[styles.menuItem, index === menuItems.length - 1 && styles.lastMenuItem]}
               onPress={() => navigation.navigate(item.screen)}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title}. ${item.description}`}
+              accessibilityHint={`Opens ${item.title}`}
+              activeOpacity={0.78}
             >
               <View style={styles.iconContainer}>{item.icon}</View>
               <View style={styles.menuTextContainer}>
@@ -152,7 +163,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.secondaryBackground,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,

@@ -2,6 +2,17 @@
 import { parse } from 'node-html-parser';
 
 const PROXY_URL = 'https://corsproxy.io/?';
+const FETCH_TIMEOUT_MS = 7000;
+
+const fetchWithTimeout = async (url: string, init: RequestInit = {}): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+};
 
 const SELECTORS: Record<string, string[]> = {
     'wtae.com': ['.article-content', '.article-body-content'],
@@ -43,11 +54,25 @@ export const fetchFullArticleBody = async (url: string): Promise<string | null> 
         
         console.log(`Fetching full content for: ${url}`);
         const proxyUrl = PROXY_URL + encodeURIComponent(url);
-        const response = await fetch(proxyUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+
+        // Try direct first to allow native to bypass proxy blocks, then proxy as fallback.
+        const targets = [url, proxyUrl];
+        let response: Response | null = null;
+        for (const target of targets) {
+            try {
+                response = await fetchWithTimeout(target, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
+                    }
+                });
+                if (response.ok) break;
+                console.warn(`Non-OK response ${response.status} for full story ${target}`);
+            } catch (err) {
+                console.warn(`Full story fetch failed for ${target}`, err);
             }
-        });
+        }
+
+        if (!response || !response.ok) throw new Error(`Status ${response?.status ?? 'unknown'}`);
         
         if (!response.ok) throw new Error(`Status ${response.status}`);
         
