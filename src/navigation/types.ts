@@ -15,6 +15,7 @@ export type RootStackParamList = {
   SourcesSettings: undefined;
   TabBarSettings: undefined;
   DebugSettings: undefined;
+  Achievements: undefined;
   Onboarding: { mode?: "firstRun" | "whatsNew"; startSlideId?: string } | undefined;
   Digest: undefined;
   iOS26Demo: undefined;

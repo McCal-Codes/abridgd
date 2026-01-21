@@ -50,689 +50,423 @@
     - ✅ Smart caching (don't re-fetch if < 5 minutes old)
 - [x] **SavedScreen Pull-to-Refresh**
     - Placeholder refresh with updated timestamp + haptic; ready to plug in metadata (view counts, comments) when available
+# Backlog (Adjusted)
 
-#### Search & Filter (Power User Features)
-- ✅ **Saved Articles Search**
-    - Search bar in SavedScreen header (animated slide-down)
-    - Real-time search with debouncing (300ms)
-    - Search by headline, source, category, content preview
-    - Highlight matching text in results
-    - Recent searches history (last 5)
-- ✅ **Advanced Filtering**
-    - Filter by source (multi-select chips)
-    - Filter by category (multi-select)
-    - Filter by reading status (unread, in-progress, completed)
-    - Filter by date added (today, this week, this month, older)
-    - "Apply Filters" bottom sheet with live preview count
-    - Save filter presets ("Unread Local News", "Today's Sports", etc.)
-- [x] **Sort Options**
-    - Sort by date added (newest/oldest)
-    - Sort by reading progress
-    - Sort by article length (quick reads first)
-    - Sort by source
----
+## Version 1.4 — The Refinement Release (In Progress)
 
-### Phase 6: Profiles & Community 👥
-
-#### Profile Tab (Active & Engaging)
-- [ ] **Profile Screen Redesign**
-    - User avatar/icon (with theme-aware colors)
-    - Reading statistics dashboard:
-        - Articles read this week/month/all-time
-        - Current reading streak (with fire emoji 🔥)
-        - Total reading time logged
-        - Favorite categories (top 3 with percentages)
-    - Quick actions: Settings, Send Feedback, Share App
-    - "Sign in with Apple" CTA (for future sync features)
-- [ ] **Profile Tab Integration**
-    - Add Profile tab to bottom navigation (per Apple HIG)
-    - Move Settings access to Profile screen
-    - Profile icon in tab bar (User icon from lucide)
-    - Badge notification for new features/tips
-    - *Started Jan 20, 2026: Profile tab added, settings moved to quick actions on Profile.*
-
-#### Community Tab (Pittsburgh-Focused)
-- [ ] **Resource Categories**
-    - Food Security: Food banks, pantries, free meals
-    - Fresh Food: Farmers markets, community gardens, CSAs
-    - Community Events: Festivals, meetups, workshops
-    - Mutual Aid: Local support networks, volunteer opportunities
-    - Civic Engagement: Town halls, protests, advocacy (opt-in)
-- [ ] **Resource Cards**
-    - Beautiful cards with location, hours, description
-    - "Get Directions" button (opens Maps)
-    - "Save to Favorites" functionality
-    - "Share Resource" option
-    - Distance from user (if location permission granted)
-- [ ] **Submit Resource Form**
-    - Simple form: Name, category, address, description, hours
-    - Photo upload (optional)
-    - "Submit for Review" (moderated before publishing)
-    - Thank you message after submission
-- [ ] **Filters & Search**
-    - Filter by category
-    - Filter by distance (needs location)
-    - Search by name or keyword
-    - "Open Now" filter for time-sensitive resources
-- [ ] **Community Guidelines**
-    - Clear explanation of what belongs in Community
-    - Link to submit guidelines and moderation policy
-    - Report inappropriate content option
+**Vision:** Polish the reading experience and navigation surfaces so the app feels calm, intentional, and Apple-native. Add trust + explicit intent features that complete the mental model without expanding surface area.
 
 ---
 
-### Phase 7: Animation & Accessibility ✨
+### Priority Fixes & Stability — Do These First
 
-#### Animation Settings (Global Control)
-- [ ] **Animation Preferences Screen**
-    - New section in Customization Settings
-    - Global toggle: "Enable Animations" (master switch)
-    - Respect system "Reduce Motion" preference
-    - Allow override: "Use app setting instead of system"
-    - Animation speed slider: 0.5× to 2× (default 1×)
-    - Preview animations in settings (test button)
-- [ ] **Per-Component Controls**
-    - ZoomModal animation toggle
-    - BlurSheet animation toggle
-    - LiquidTabBar transitions toggle
-    - Page transition effects toggle
-    - Skeleton screen shimmer toggle
-- [ ] **Apply Animation Settings**
-    - Update all animated components to respect global settings
-    - Provide instant/snap alternatives when animations disabled
-    - Maintain haptics even when animations disabled (if enabled)
-
-#### Comprehensive Accessibility Audit
-- [ ] **VoiceOver Support**
-    - Test entire app with VoiceOver enabled
-    - Add meaningful labels to all interactive elements
-    - Proper heading hierarchy in all screens
-    - Announce state changes (article saved, refreshed, etc.)
-    - Custom actions for swipe gestures (accessibility alternative)
-- [ ] **Dynamic Type Support**
-    - Test all screens at largest and smallest text sizes
-    - Ensure no text truncation or layout breaks
-    - Proper scaling of UI elements relative to text
-    - Use UIFontMetrics equivalent for custom fonts
-- [ ] **Color Contrast**
-    - Ensure all text meets WCAG AA standards (4.5:1 minimum)
-    - Test in light and dark mode
-    - Verify colorblind-friendly palette (already using cyan)
-    - Add high contrast mode option (if needed)
-- [ ] **Keyboard Navigation** (if applicable)
-    - Support for external keyboard on iPad
-    - Logical tab order
-    - Keyboard shortcuts for common actions
-- [ ] **Haptic Feedback Options**
-    - Global haptics toggle in settings
-    - Intensity control (light, medium, strong)
-    - Different feedback types for different actions
+- [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
+- [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
+- [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)
+- [ ] Offline indicator + queued actions (save/unsave) until reconnected
+- [ ] Accessibility audit (VoiceOver, Dynamic Type, contrast)
+- [ ] Global animation + haptics controls (respect Reduce Motion, provide overrides)
 
 ---
 
-### Phase 8: Performance & Polish 🚀
-
-#### Performance Optimization
-- [ ] **Memory Management**
-    - Profile memory usage across all screens
-    - Optimize image loading (proper sizing, caching)
-    - Release unused resources when navigating away
-    - Fix any memory leaks (especially in RSVP reader)
-- [ ] **Load Time Optimization**
-    - Lazy load images below fold
-    - Prefetch next articles while scrolling
-    - Cache parsed RSS data (with TTL)
-    - Optimize bundle size (remove unused dependencies)
-    - Code splitting for rarely-used screens
-- [ ] **Animation Performance**
-    - Ensure 60fps on all transitions
-    - Use native driver for all animations (where possible)
-    - Reduce overdraw in complex views
-    - Profile animations with React DevTools
-- [ ] **Network Optimization**
-    - Request batching for multiple feeds
-    - Retry logic with exponential backoff
-    - Cancel in-flight requests when navigating away
-    - Compression for API responses
-
-#### Offline Support & Caching
-- [ ] **Article Caching System**
-    - Cache full article content when saved
-    - Cache images for saved articles
-    - Automatic cache cleanup (LRU, max 100 articles or 500MB)
-    - "Download for Offline" manual option
-- [ ] **Offline Indicator**
-  # Phase 10: Final Polish & Delight 💎
-
-#### Micro-Interactions (Details Matter)
-- [ ] **Haptic Feedback Refinement**
-    - Different haptic types for different actions (success, warning, error)
-    - Haptic on pull-to-refresh trigger point
-    - Subtle haptic on tab switch
-    - Satisfying haptic on article save
-    - Gentle haptic on completing RSVP article
-- [ ] **Sound Effects (Optional, Toggleable)**
-    - Subtle sound on article save (soft "pop")
-    - Completion sound for finishing RSVP article
-    - Global toggle: "Enable Sound Effects" (off by default)
-- [ ] **Animations & Transitions**
-    - Smooth page curl on article navigation
-    - Bounce effect on pull-to-refresh release
-    - Satisfying scale effect on button press
-    - Fluid tab bar item transitions
-    - Staggered list item animations (cascade effect)
-- [ ] **Loading Personality**
-    - Fun loading messages that rotate:
-        - "Brewing your news..."
-        - "Gathering stories..."
-        - "Almost there..."
-        - "Fetching the good stuff..."
-    - Different messages for different contexts
-    - Occasional easter egg messages
-
-#### Smart Features (Anticipate User Needs)
-- [ ] **Smart Suggestions**
-    - "Based on your reading, you might like..." section
-    - Suggest enabling features after certain usage patterns:
-        - After 10 articles: "Try RSVP mode for faster reading!"
-        - After saving 5 articles: "Enable auto-save on completion?"
-    - "Trending in Pittsburgh" section (most-read local articles)
-- [ ] **Reading Insights**
-    - Weekly reading recap notification (optional)
-    - "You read 12 articles this week! 🎉"
-    - Most-read category highlight
-    - Reading time comparison to last week
-- [ ] **Adaptive UI**
-    - Remember preferred tab bar style (docked vs floating)
-    - Remember preferred reading speed per article type
-    - Adjust suggested RSVP speed based on completion rate
-    - Auto-enable grounding mode if user always accepts it
-
-#### Quality of Life Improvements
-- [ ] **iOS 26 Demo Navigation**
-    - Add NavigationHeader to iOS26DemoScreen
-    - Back button to return to Debug settings
-    - Document path: Settings → Debug → iOS 26 UI Demo
-- [ ] **Settings Search** (Future)
-    - Search bar in main Settings screen
-    - Find any setting instantly
-    - Jump directly to setting screen
-- [ ] **Quick Actions** (Home Screen - iOS)
-    - 3D Touch shortcuts from home screen:
-        - "Read Top Story"
-        - "Open Saved Articles"
-        - "Add to Reading List" (with share extension)
+### Onboarding & Grounding Polish
+- [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
+- [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.
+- [x] Centered, margin-aware pagination and action buttons with breathable padding.
+- [ ] Capture updated screenshots for docs and App Store metadata.
 
 ---
 
-##  - Show "Offline" badge in status area when no connection
-    - Show which articles are available offline (cloud icon with checkmark)
-    - Allow reading cached articles without connection
-    - Queue actions (save, unsave) when offline, sync when online
-- [ ] **Smart Sync**
-    - Auto-sync saved articles when on WiFi
-    - Background refresh for saved articles (iOS BackgroundTasks)
-    - Conflict resolution (if same article edited on multiple devices in future)
+## Phase 1: Core Data & Persistence 🗄️ (Keep)
+
+### Saved Articles System (Enhanced)
+- [ ] Persistent Storage with AsyncStorage
+  - [ ] Migrate SavedArticlesContext to AsyncStorage
+  - [ ] Add versioned schema for future migrations
+  - [x] Implement data compression for large article bodies (schema v2)
+  - [ ] Save/load error handling with retry logic
+  - [ ] Migration from in-memory state on first launch
+
+### Reading Progress Tracking
+- [ ] Track scroll position in articles (resume where you left off)
+- [ ] Track RSVP progress (word index + timestamp)
+- [ ] Progress indicators on ArticleCards (unread/in-progress/completed)
+- [x] Continue Reading section on HomeScreen for in-progress articles
+
+### Smart Collections & States (Rename for clarity)
+- [ ] Reading state model: Read Later / Archived / Favorite
+- [ ] Last read timestamp
+- [ ] (Optional) Reading duration tracking (local-only)
 
 ---
 
-### Phase 9: Pre-Launch Essentials 📱
+## Phase 2: Empty, Error, Loading States 🎨
 
-#### Legal & Compliance
-- [ ] **Privacy Policy**
-    - Comprehensive privacy policy document
-    - Cover: data collection, storage, third-party services (Sentry, Perplexity)
-    - Link in Settings → About
-    - Link in onboarding final screen
-    - Also available at website URL
-- [ ] **Terms of Service**
-    - Clear terms of service document
-    - Cover: acceptable use, user content, disclaimers
-    - Link in Settings → About
-    - Must accept on first launch (checkbox)
+### Network Error State
+- [ ] Offline-friendly error UI (“Can’t connect” + last successful update)
+- [ ] Retry with loading state
+- [ ] Show cached items with a subtle “From cache” label
 
-#### Feedback & Support
-- [ ] **In-App Feedback System**
-    - "Send Feedback" in Settings → About
-    - Pre-filled email with device info, app version, iOS version
-    - Categories: Bug Report, Feature Request, General Feedback
-    - Optional screenshot attachment
-    - Thank you message after sending
-- [ ] **FAQ Section**
-    - Common questions in Settings → Help
-    - How to use RSVP reader
-    - How to customize settings
-    - What's grounding mode?
-    - How to add sources
-    - Troubleshooting tips
+### Feed Load Error
+- [ ] “Couldn’t load new stories” + timestamp of last success
+- [ ] Pull to retry
 
-#### Crash Reporting & Monitoring
-- [ ] **Sentry Configuration**
-    - Proper DSN and environment setup
-    - Release versioning and source maps
-    - User context (anonymous ID, not PII)
-    - Custom error boundaries with fallback UI
-    - Performance monitoring enabled
-- [ ] **Error Recovery**
-    - Graceful error handling everywhere
-    - User-friendly error messages (no stack traces)
-    - Retry options for failed operations
-    - Log errors to Sentry for investigation
-
-#### App Store Preparation
-- [ ] **App Store Connect Setup**
-    - Prepare app description (compelling, clear)
-    - Keywords optimization for ASO
-    - Age rating determination
-    - Content rights verification
-- [ ] **Screenshots & Preview Video**
-    - Beautiful screenshots for all device sizes
-    - Showcase key features (RSVP, glass UI, settings)
-    - Optional preview video (15-30 seconds)
-- [ ] **TestFlight Beta**
-    - Internal testing with team (if applicable)
-    - External beta testing with 20-50 testers
-    - Collect feedback and iterate
-    - Beta tester thank you message
-    - Total reading time logged
-    - Favorite sources/categories
-    - Share your reading stats as a card
+### Loading / Skeletons
+- [ ] Skeleton cells for feeds (avoid blank screen)
+- [ ] Progressive image loading (reserve space to prevent layout jumps)
+- [ ] Optional contextual loading messages (keep minimal and calm)
 
 ---
 
-### Phase 4: Empty States & Error Handling 🎨
+## Phase 3: Accessibility & Controls ♿
 
-#### Beautiful Empty States
-- [x] **SavedScreen Empty State** ✅
-    - ✅ Illustrated graphic (bookmark icon with glow + sparkles)
-    - ✅ Helpful message: "Your reading list is empty"
-    - ✅ CTA button: "Explore Top Stories" (tab-aware navigation)
-    - ✅ Tips: "Swipe left on any article card to save it for later"
-- ✅ **Search No Results**
-    - Friendly message with search term
-    - Suggestions: "Try different keywords" or "Clear filters"
-    - Quick action: "View all saved articles"
-- [ ] **Network Error State**
-    - Airplane mode illustration
-    - Clear explanation: "Can't connect to the internet"
-    - Offline articles available (if any cached)
-    - Retry button with loading state
-- [ ] **Feed Load Error**
-    - Gentle error message (not scary)
-    - "Couldn't load new stories" with timestamp of last successful load
-    - Show cached/old articles with "from cache" badge
-    - Pull to retry
+### Global Animation + Haptics Controls
+- [ ] Global toggle: Enable Animations
+- [ ] Respect Reduce Motion (system), allow override
+- [ ] Animation speed/scale (0.5×–2×)
+- [ ] Global haptics toggle + intensity levels
 
-#### Loading States & Skeleton Screens
-- [ ] **Smart Loading UI**
-    - Skeleton screens for ArticleCards (don't show blank screen)
-    - Shimmer effect on loading placeholders
-    - Staggered skeleton reveal (feels faster)
-    - Progressive image loading with blur-up effect
-- [ ] **Contextual Loading Messages**
-    - "Fetching local news..." (HomeScreen)
-    - "Loading your saved articles..." (SavedScreen)
-    - "Getting full story..." (ArticleScreen when fetching full text)
-    - "Generating summary..." (when AI is processing)
+### Accessibility Audit
+- [ ] VoiceOver labels everywhere + announce state changes
+- [ ] Dynamic Type stress test (largest/smallest)
+- [ ] Contrast checks (light/dark + colorblind friendliness)
 
 ---
 
-### Phase 5: Onboarding & First-Time Experience 🎓
+## Phase 4: Offline & Caching 🚀 (Keep, but make it coherent)
 
-#### Enhanced Onboarding (Progressive & Delightful)
-- [ ] **RSVP Speed Training (4-Step Journey)**
-    - Step 1: Welcome & concept intro (existing)
-    - Step 2: Slow practice (150 WPM) - "Find your rhythm"
-    - Step 3: Medium practice (250 WPM) - "Feeling comfortable?"
-    - Step 4: Fast practice (350 WPM) - "You're a natural!"
-    - Interactive speed adjuster during practice
-    - Success celebration with haptics when completing each level
-- [ ] **Focus Point Explanation**
-    - Visual diagram showing eye position
-    - Animated demonstration of pivot letter concept
-    - "Why this works" science explanation (brief)
-    - A/B test different anchor strategies during onboarding
-- [ ] **Grounding Mode Introduction**
-    - Gentle explanation of why we offer this
-    - Quick breathing exercise demo (15 seconds)
-    - Opt-in choice: "Enable Grounding Mode?" (default: yes)
-- [ ] **Personalization Questions**
-    - "What news matters most to you?" (select categories)
-    - "Reading speed preference?" (show estimated articles/hour)
-    - "Tab bar style?" (preview minimal vs comprehensive)
-- [ ] **Onboarding Completion Reward**
-    - "Welcome home" message with confetti animation
-    - First article suggestion based on interests
-    - Optional: Enable notifications for daily digest
-
-#### Tips & Hints System
-- [ ] **Contextual Tooltips**
-    - First time viewing article: "👈 Swipe left to save for later"
-    - First saved article: "✨ Find your saved articles in the Saved tab"
-    - After 5 articles: "🚀 Try Abridged Mode for faster reading"
-    - Show once, never annoying
-- [ ] **Settings Discoverability**
-    - "New" badge on recently added settings
-    - Feature callouts: "Try the experimental iOS 26 navbar!"
-    - Guided tour option in Settings (optional restart of onboarding)
+### Offline Reading Support
+- [ ] Cache full article content when saved
+- [ ] Cache images for saved articles
+- [ ] Cache cleanup (LRU, size limit)
+- [ ] Offline indicator (“Offline” badge in status area)
+- [ ] Queue actions (save/unsave) when offline, apply on reconnect
 
 ---
 
-### Profiles & Community (Included in 1.4)
-- [ ] Profiles tab in tab bar (Account overview, settings access, saved content)
-- [ ] Community tab with local resources:
-    - [ ] Food banks and mutual aid
-    - [ ] Farmers markets and events
-    - [ ] Protest/event listings (curated, opt-in)
-    - [ ] Submit-a-resource form (moderated)
-- [ ] Navigation updates to place Profile tab per Apple HIG
-- [ ] Accessibility pass for new tabs
+## Phase 5: Refresh & Discovery ♻️ (Keep)
 
-### Advanced Customization (Included in 1.4)
-- [ ] Global animation enable/disable toggle
-- [ ] Reduce Motion preference (respect system setting, allow override)
-- [ ] Animation speed/scale control (0.5× – 2×)
-- [ ] Apply settings to ZoomModal, BlurSheet, LiquidTabBar transitions
+### Pull-to-Refresh Implementation
+- [x] HomeScreen pull-to-refresh + timestamp + haptics
+- [x] SectionScreen pull-to-refresh + per-section timestamp + cache TTL
+- [x] SavedScreen pull-to-refresh scaffold + timestamp + haptics
 
-### Additional Features for 1.4
-- [ ] Offline reading support with article caching
-- [ ] Advanced article filtering (by category, date, source)
-- [ ] App Store Connect submission preparation
-- [ ] Comprehensive accessibility audit (VoiceOver, Dynamic Type, contrast)
-- [ ] Performance optimization pass (memory, load times, animations)
+### Search & Filter (Power User Features)
+- [x] SavedScreen debounced search + recent queries
+- [x] Filters (source/category/status/date)
+- [x] Sorting (newest/oldest/progress/length/source)
+- [x] “No results” state with clear action
 
 ---
 
-## Version 1.5+ - Future Features (Backlog)
+## Phase 6: Trust & Intent (NEW, iOS 26-native) 🧭
 
-## Completed High Priority ✅
-- [x] **RSS Ingestion**: Connect to real data sources.
+### Trust Panel — “Why am I seeing this?”
+**Goal:** Make feed logic legible and non-manipulative.
 
-## Future Backlog
+- [ ] ArticleScreen overflow action: “Why am I seeing this?”
+- [ ] Present as BlurSheet (medium/large detents)
+- [ ] Panel includes:
+  - [ ] Source + canonical link domain
+  - [ ] Feed context (Top / Local / Digest)
+  - [ ] Relevance reason (Local tag, Followed source/topic, Digest bucket)
+  - [ ] Sensitive content flags + grounding rationale (if applicable)
+  - [ ] Last updated timestamp (screen-level vs item-level correct placement)
+- [ ] Copy tone: calm, factual, non-judgmental
+- [ ] Accessibility: VoiceOver reads as one combined summary
 
-### Core Features (Future)
+### Follow System (explicit choice, no algorithm creep)
+- [ ] Follow Source (from ArticleScreen + Sources screen)
+- [ ] Follow Topic (from ArticleScreen tags or inferred topic list)
+- [ ] Follow Location scope (v1: Pittsburgh; later: neighborhoods/radius)
+- [ ] Profile → Manage:
+  - [ ] Sources you follow
+  - [ ] Topics you follow
+  - [ ] Location scope
+- [ ] Feed integration:
+  - [ ] Follows influence ordering/sections, but do NOT hide non-followed content by default
+  - [ ] Provide a clear “Following” section inside Top/Digest (not a new tab)
 
-### Offline & Caching (Future)
-- [ ] **Offline Reading Support**: Cache articles for offline access
-- [ ] **Article Filtering**: Filter by category, date, or source
+---
 
-### RSS Parser Enhancements (Future)
-- [x] Implement source-specific full-article parsers for truncated feeds (WTAE, WPXI, CBS) - Completed in 1.1.0
-- [x] Improve HTML content parsing for images/galleries - Completed in 1.1.0
-- [ ] Add per-source normalization (author, timestamps, categories)
-- [ ] Consider adding additional local sources (WESA/NPR, Technical.ly Pittsburgh) after validation
-- [ ] Animation Settings (moved to 1.4+):
-    - [ ] Global animation enable/disable toggle
-    - [ ] Reduce Motion preference (respect system setting, allow override)
-    - [ ] Animation speed/scale control (0.5× – 2×)
-    - [ ] Apply settings to ZoomModal, BlurSheet, LiquidTabBar transitions
+  ## Phase 7: Reader Identity (NEW) 🎛️
 
-### User Experience Polish
-- [ ] **Empty States**: Design empty states for saved articles, feeds when no content
-- [ ] **Error Handling**: Improve error recovery for network issues
-- [ ] **Loading States**: Refine loading state animations/feedback
-- [x] **Haptic Feedback**: Add haptic feedback for key interactions (implemented with expo-haptics)
-- [ ] **Fine-Tune Grounding Mode Classification**: Improve when grounding mode prompts appear
-    - [ ] Create sensitivity classifier utility to auto-detect sensitive keywords/topics in headlines and content
-    - [ ] Add sensitivity level gradations (none, low, medium, high) instead of binary sensitive flag
-    - [ ] Add topic tags (violence, tragedy, health, politics, accidents, etc.) for granular categorization
-    - [ ] Provide optional political perspective context (Right, Center, Left) for political articles so readers can choose their preferred viewpoint
-    - [ ] Create grounding trigger settings UI so users can customize which levels/topics prompt grounding
-    - [ ] Implement smart detection in RssService to automatically classify articles
-    - [ ] Update ArticleScreen to use new sensitivity levels and topic-based triggers
-    - Consider ML-based detection vs keyword-based patterns
+### Reader Studio (RSVP as an instrument, not a toggle)
+**Goal:** Reduce settings sprawl and make “how you read” feel intentional.
 
-### Technical Improvements
-- [ ] **Accessibility Audit**: VoiceOver, Dynamic Type, color contrast compliance
-- [ ] **Test Coverage**: Expand unit/integration tests
-- [ ] **Performance Optimization**: Memory usage, load times, animation performance
+- [ ] Create Reader Studio surface (Profile → Reader Studio)
+- [ ] Contents:
+  - [ ] RSVP speed presets (saved presets + quick selection)
+  - [ ] Focus anchor strategy selector
+  - [ ] Grounding style selector (swipeable cards, visual previews)
+  - [ ] Contrast + motion preferences (links to settings where needed)
+- [ ] Uses iOS 26 components:
+  - [ ] NavigationHeader title + subtitle (no duplicate inline context)
+  - [ ] BlurSheet for deeper configuration
+- [ ] Ensure classic RSVP “writing” / pacing is preserved (do not over-sanitize)
 
-## Low Priority
-- [ ] **Awards**: Implement awards system/display.
-- [ ] **Account System**:
-    - [ ] Profile/Account creation with username
-    - [ ] Export settings as copyable string (JSON-based for portability)
-    - [ ] Import settings from copied string
-    - [ ] Eventually upgrade to full authentication/backend login
-    - Allows users to sync preferences across devices without full backend
+---
 
-### Future/Nice-to-Have
-- [ ] **Push Notifications**: Breaking news alerts
-- [ ] **Home Screen Widget**: Quick glance at top stories
+## Phase 8: Profiles (Reduce scope, align to product) 👤
 
-### Version 1.2.0 (2026-01-18)
-- [x] Experimental iOS 26 navbar option with feature flag
+### Profile Screen (Practical, calm)
+- [ ] Profile screen redesign focused on navigation + utility (not gamification-first)
+  - [ ] Quick actions: Settings, Send Feedback, Share App
+  - [ ] Entry points: Reader Studio, Sources/Topics, Reading History (when added)
+- [ ] Avoid streak/fire-emoji gamification in 1.4 (can revisit later)
 
-### Version 1.1.0 (2026-01-18)
-- [x] Real RSS integration from Pittsburgh sources
-- [x] Full article fetching service with source-specific parsers
-- [x] HTML content parser for images and structured content
-- [x] AI summarization service (Perplexity API)
-- [x] iOS 26 UI component system (GlassButton, NavigationHeader, BottomToolbar, ZoomModal, BlurSheet)
-- [x] RSVP Reader (Abridged Mode) with configurable speeds
-- [x] Auto-save on reading completion
-- [x] Grounding mode with breathing exercises
-- [x] Swipe gestures (back navigation, save/unsave)
-- [x] Dark mode with automatic theme switching
-- [x] Comprehensive settings system (6 screens)
-- [x] Tab bar customization (add/remove/reorder)
-- [x] Haptic feedback throughout app
-- [x] Profile system structure
-- [x] Error handling system
-- [x] Basic onboarding flow with app introduction
-- [x] RSVP reader demo in onboarding
-- [x] Settings screens structure (Reading, Digest, Customization, Sources, Tab Bar, Debug
-- [x] Basic onboarding flow with app introduction (completed)
-- [x] RSVP reader demo in onboarding (completed)
-- [x] Grounding/breathing exercise feature (completed)
-- [x] Tab bar customization with minimal/comprehensive layouts (completed)
-- [x] Settings screens structure (Reading, Digest, Customization, Sources, Tab Bar, Debug) (completed)
+> NOTE: “Profile tab integration” is already done per changelog. Keep only what remains.
+
+---
+
+## Phase 9: Pre-Launch Essentials 📱 (Keep)
+
+### Legal & Compliance
+- [ ] Privacy policy (Sentry, Perplexity, storage)
+- [ ] Terms of service + first-launch acceptance
+
+### Feedback & Support
+- [ ] In-app feedback mail with device/app info
+- [ ] Help/FAQ section
+
+### App Store Preparation
+- [ ] App Store Connect setup
+- [ ] Screenshots & preview video (show RSVP + glass UI + trust panel)
+
+---
+
+## Version 1.5+ — Future Features (Roadmap-aligned)
+
+### Reading History (local-first)
+- [ ] Recently read list + resume points
+- [ ] Clear history control
+- [ ] Surface in Profile and/or Continue Reading
+
+### Editorial Quote / Excerpt Sharing
+- [ ] Share selected paragraph or RSVP-highlighted text as image card
+- [ ] Include attribution + source
+- [ ] Keep it editorial, not viral
+
+### Smart Suggestions (Only after Follow + Trust Panel)
+- [ ] “Based on what you follow…” suggestions (explicit, transparent)
+- [ ] No opaque “For You” ranking without explanation
+
+---
+
+## Remove / Defer (to avoid feature drift)
+
+- [ ] Community Tab (local resources) — move to 1.6+ unless it’s core to launch
+- [ ] Streaks/fire emoji dashboards — defer (can bias behavior toward engagement)
+- [ ] “Trending in Pittsburgh” — defer until you have clear, non-creepy metric definition
+
+---
 
 ## Website/Marketing (Other Repo)
 
 ### Landing Page & Web Presence
-- [ ] **Marketing Landing Page**
-    - Email capture form for TestFlight beta access with Mailchimp/ConvertKit integration
-    - Hero section with app screenshot and compelling headline
-    - Feature highlights with icons and descriptions
-    - Video demo or animated GIF of RSVP reader in action
-    - Social proof section (beta tester testimonials once available)
-    - FAQ section addressing common questions
-    - Footer with links to Privacy Policy, Terms, Contact
-    - Responsive design for mobile/tablet/desktop
-- [ ] **About Page**
-    - Story behind Abridged (why it exists)
-    - Mission and values
-    - Team introduction (if applicable)
-    - Pittsburgh connection and local focus
-- [ ] **Features Page**
-    - Detailed breakdown of key features:
-        - RSVP Reader with interactive demo
-        - Grounding Mode explanation
-        - iOS 26 UI showcase
-        - Customization options
-        - Pittsburgh local news focus
-    - Screenshots and screen recordings
-    - Comparison to other news apps (subtle, not aggressive)
-- [ ] **Blog/News Section** (Optional)
-    - Launch announcement posts
-    - Feature deep-dives
-    - Pittsburgh news aggregation (meta-content)
-    - Development updates and behind-the-scenes
-    - SEO-optimized content for discovery
+- [ ] Marketing Landing Page
+  - [ ] Email capture form for TestFlight beta access with Mailchimp/ConvertKit integration
+  - [ ] Hero section with app screenshot and compelling headline
+  - [ ] Feature highlights with icons and descriptions
+  - [ ] Video demo or animated GIF of RSVP reader in action
+  - [ ] Social proof section (beta tester testimonials once available)
+  - [ ] FAQ section addressing common questions
+  - [ ] Footer with links to Privacy Policy, Terms, Contact
+  - [ ] Responsive design for mobile/tablet/desktop
+- [ ] About Page
+  - [ ] Story behind Abridged (why it exists)
+  - [ ] Mission and values
+  - [ ] Team introduction (if applicable)
+  - [ ] Pittsburgh connection and local focus
+- [ ] Features Page
+  - [ ] Detailed breakdown of key features:
+    - [ ] RSVP Reader with interactive demo
+    - [ ] Grounding Mode explanation
+    - [ ] iOS 26 UI showcase
+    - [ ] Customization options
+    - [ ] Pittsburgh local news focus
+  - [ ] Screenshots and screen recordings
+  - [ ] Comparison to other news apps (subtle, not aggressive)
+- [ ] Blog/News Section (Optional)
+  - [ ] Launch announcement posts
+  - [ ] Feature deep-dives
+  - [ ] Pittsburgh news aggregation (meta-content)
+  - [ ] Development updates and behind-the-scenes
+  - [ ] SEO-optimized content for discovery
 
 ### SEO & Discovery
-- [ ] **Search Engine Optimization**
-    - Keyword research (news app, Pittsburgh news, RSVP reading, speed reading, etc.)
-    - Meta titles and descriptions for all pages
-    - Open Graph tags for social sharing
-    - Twitter Card tags
-    - Schema.org markup for app
-    - XML sitemap
-    - robots.txt configuration
-- [ ] **Google Analytics & Tracking**
-    - GA4 setup with conversion tracking
-    - Track email signups, TestFlight clicks, page views
-    - Funnel analysis (landing → signup → download)
-    - Plausible Analytics alternative (privacy-focused)
-- [ ] **Domain & Hosting**
-    - Purchase domain (abridgd.app or similar)
-    - Set up hosting (Vercel, Netlify, or Cloudflare Pages)
-    - SSL certificate (automatic with most hosts)
-    - CDN configuration for fast global loading
-    - Configure DNS records
+- [ ] Search Engine Optimization
+  - [ ] Keyword research (news app, Pittsburgh news, RSVP reading, speed reading, etc.)
+  - [ ] Meta titles and descriptions for all pages
+  - [ ] Open Graph tags for social sharing
+  - [ ] Twitter Card tags
+  - [ ] Schema.org markup for app
+  - [ ] XML sitemap
+  - [ ] robots.txt configuration
+- [ ] Google Analytics & Tracking
+  - [ ] GA4 setup with conversion tracking
+  - [ ] Track email signups, TestFlight clicks, page views
+  - [ ] Funnel analysis (landing → signup → download)
+  - [ ] Plausible Analytics alternative (privacy-focused)
+- [ ] Domain & Hosting
+  - [ ] Purchase domain (abridgd.app or similar)
+  - [ ] Set up hosting (Vercel, Netlify, or Cloudflare Pages)
+  - [ ] SSL certificate (automatic with most hosts)
+  - [ ] CDN configuration for fast global loading
+  - [ ] Configure DNS records
 
 ### Social Media & Community
-- [ ] **Social Media Presence**
-    - Twitter/X account (@abridgdapp or similar)
-    - Instagram account for visual content
-    - Optional: TikTok for short demos
-    - LinkedIn page (for press and professional outreach)
-    - Consistent branding across all platforms
-- [ ] **Launch Content Calendar**
-    - Pre-launch teasers (2-3 weeks before)
-    - Feature highlights (one per week)
-    - Behind-the-scenes development content
-    - Beta tester spotlights
-    - Launch day announcements
-    - Post-launch updates and milestones
-- [ ] **Community Building**
-    - Discord or Slack community for beta testers
-    - Reddit presence (r/pittsburgh, r/apps, relevant subreddits)
-    - ProductHunt launch preparation
-    - Hacker News post (Show HN: format)
-    - Pittsburgh-specific forums and communities
+- [ ] Social Media Presence
+  - [ ] Twitter/X account (@abridgdapp or similar)
+  - [ ] Instagram account for visual content
+  - [ ] Optional: TikTok for short demos
+  - [ ] LinkedIn page (for press and professional outreach)
+  - [ ] Consistent branding across all platforms
+- [ ] Launch Content Calendar
+  - [ ] Pre-launch teasers (2-3 weeks before)
+  - [ ] Feature highlights (one per week)
+  - [ ] Behind-the-scenes development content
+  - [ ] Beta tester spotlights
+  - [ ] Launch day announcements
+  - [ ] Post-launch updates and milestones
+- [ ] Community Building
+  - [ ] Discord or Slack community for beta testers
+  - [ ] Reddit presence (r/pittsburgh, r/apps, relevant subreddits)
+  - [ ] ProductHunt launch preparation
+  - [ ] Hacker News post (Show HN: format)
+  - [ ] Pittsburgh-specific forums and communities
 
 ### Press & Media Kit
-- [ ] **Press Kit**
-    - High-resolution app icon (multiple sizes)
-    - Screenshots for press (light and dark mode)
-    - App Store preview video for embedding
-    - Company/product description (short, medium, long versions)
-    - Founder/developer bio and photo
-    - Press contact information
-    - Product fact sheet
-- [ ] **Press Release**
-    - Launch announcement press release
-    - Target: Pittsburgh tech blogs, local news outlets
-    - Tech press (TechCrunch, The Verge, etc. - reach high)
-    - Submit to PR distribution services
-- [ ] **Media Outreach**
-    - List of target publications and journalists
-    - Personalized pitch emails
-    - Review copies/TestFlight access for journalists
-    - Follow-up schedule
-    - Track coverage and mentions
+- [ ] Press Kit
+  - [ ] High-resolution app icon (multiple sizes)
+  - [ ] Screenshots for press (light and dark mode)
+  - [ ] App Store preview video for embedding
+  - [ ] Company/product description (short, medium, long versions)
+  - [ ] Founder/developer bio and photo
+  - [ ] Press contact information
+  - [ ] Product fact sheet
+- [ ] Press Release
+  - [ ] Launch announcement press release
+  - [ ] Target: Pittsburgh tech blogs, local news outlets
+  - [ ] Tech press (TechCrunch, The Verge, etc. - reach high)
+  - [ ] Submit to PR distribution services
+- [ ] Media Outreach
+  - [ ] List of target publications and journalists
+  - [ ] Personalized pitch emails
+  - [ ] Review copies/TestFlight access for journalists
+  - [ ] Follow-up schedule
+  - [ ] Track coverage and mentions
 
 ### Beta Program Management
-- [ ] **Beta Testing Hub**
-    - Dedicated beta signup page
-    - TestFlight instructions and troubleshooting
-    - Beta tester onboarding email sequence
-    - Feedback collection system (Typeform, Google Forms, or custom)
-    - Beta tester recognition/rewards
-    - Private Discord/Slack channel for testers
-- [ ] **Beta Tester Resources**
-    - Testing guide and priorities
-    - Known issues list (updated regularly)
-    - Feature roadmap visibility
-    - How to submit bug reports
-    - Feature request process
+- [ ] Beta Testing Hub
+  - [ ] Dedicated beta signup page
+  - [ ] TestFlight instructions and troubleshooting
+  - [ ] Beta tester onboarding email sequence
+  - [ ] Feedback collection system (Typeform, Google Forms, or custom)
+  - [ ] Beta tester recognition/rewards
+  - [ ] Private Discord/Slack channel for testers
+- [ ] Beta Tester Resources
+  - [ ] Testing guide and priorities
+  - [ ] Known issues list (updated regularly)
+  - [ ] Feature roadmap visibility
+  - [ ] How to submit bug reports
+  - [ ] Feature request process
 
 ### App Store Optimization (ASO)
-- [ ] **App Store Assets** (if not in app repo)
-    - App name optimization
-    - Subtitle (30 characters)
-    - Keyword optimization (100 characters)
-    - Screenshots with captions (all device sizes)
-    - Preview video (15-30 seconds)
-    - Promotional text (170 characters)
-- [ ] **App Description**
-    - Compelling opening paragraph
-    - Feature bullet points
-    - Pittsburgh focus highlighted
-    - Call-to-action
-    - Regular updates based on new features
-- [ ] **Localization** (Future)
-    - Spanish translation (large Pittsburgh demographic)
-    - Additional languages based on demand
+- [ ] App Store Assets (if not in app repo)
+  - [ ] App name optimization
+  - [ ] Subtitle (30 characters)
+  - [ ] Keyword optimization (100 characters)
+  - [ ] Screenshots with captions (all device sizes)
+  - [ ] Preview video (15-30 seconds)
+  - [ ] Promotional text (170 characters)
+- [ ] App Description
+  - [ ] Compelling opening paragraph
+  - [ ] Feature bullet points
+  - [ ] Pittsburgh focus highlighted
+  - [ ] Call-to-action
+  - [ ] Regular updates based on new features
+- [ ] Localization (Future)
+  - [ ] Spanish translation (large Pittsburgh demographic)
+  - [ ] Additional languages based on demand
 
 ### Analytics & Growth
-- [ ] **Conversion Optimization**
-    - A/B test landing page headlines
-    - Test different CTAs (button text, colors, placement)
-    - Optimize email signup form (fields, copy, positioning)
-    - Heat mapping (Hotjar or similar)
-    - Session recordings to identify friction points
-- [ ] **Email Marketing**
-    - Welcome email sequence for signups
-    - Launch announcement email
-    - Feature update emails
-    - Monthly newsletter (optional)
-    - Re-engagement campaigns for inactive testers
-    - Segmentation by user behavior
-- [ ] **Referral Program** (Future)
-    - Refer-a-friend incentives
-    - Social sharing buttons and pre-written tweets
-    - Track referral sources
-    - Reward top referrers
+- [ ] Conversion Optimization
+  - [ ] A/B test landing page headlines
+  - [ ] Test different CTAs (button text, colors, placement)
+  - [ ] Optimize email signup form (fields, copy, positioning)
+  - [ ] Heat mapping (Hotjar or similar)
+  - [ ] Session recordings to identify friction points
+- [ ] Email Marketing
+  - [ ] Welcome email sequence for signups
+  - [ ] Launch announcement email
+  - [ ] Feature update emails
+  - [ ] Monthly newsletter (optional)
+  - [ ] Re-engagement campaigns for inactive testers
+  - [ ] Segmentation by user behavior
+- [ ] Referral Program (Future)
+  - [ ] Refer-a-friend incentives
+  - [ ] Social sharing buttons and pre-written tweets
+  - [ ] Track referral sources
+  - [ ] Reward top referrers
 
 ### Legal & Compliance (Web)
-- [ ] **Legal Pages on Website**
-    - Privacy Policy (same as in-app)
-    - Terms of Service (same as in-app)
-    - Cookie policy (if using cookies)
-    - DMCA policy (if applicable)
-    - Accessibility statement
-- [ ] **Cookie Consent**
-    - GDPR-compliant cookie banner
-    - Cookie preferences management
-    - Clear explanation of tracking
+- [ ] Legal Pages on Website
+  - [ ] Privacy Policy (same as in-app)
+  - [ ] Terms of Service (same as in-app)
+  - [ ] Cookie policy (if using cookies)
+  - [ ] DMCA policy (if applicable)
+  - [ ] Accessibility statement
+- [ ] Cookie Consent
+  - [ ] GDPR-compliant cookie banner
+  - [ ] Cookie preferences management
+  - [ ] Clear explanation of tracking
 
 ### Technical Infrastructure
-- [ ] **Website Performance**
-    - Lighthouse score optimization (aim for 90+)
-    - Image optimization (WebP format, lazy loading)
-    - Minimize JavaScript bundle size
-    - Fast loading on slow connections (< 3s)
-- [ ] **Monitoring & Uptime**
-    - Uptime monitoring (UptimeRobot, Pingdom)
-    - Error tracking (Sentry for web)
-    - Performance monitoring
-    - Broken link checker
-- [ ] **Email Infrastructure**
-    - Email service provider setup (SendGrid, Mailgun, or Postmark)
-    - Transactional email templates
-    - Email deliverability monitoring
-    - Unsubscribe management
+- [ ] Website Performance
+  - [ ] Lighthouse score optimization (aim for 90+)
+  - [ ] Image optimization (WebP format, lazy loading)
+  - [ ] Minimize JavaScript bundle size
+  - [ ] Fast loading on slow connections (< 3s)
+- [ ] Monitoring & Uptime
+  - [ ] Uptime monitoring (UptimeRobot, Pingdom)
+  - [ ] Error tracking (Sentry for web)
+  - [ ] Performance monitoring
+  - [ ] Broken link checker
+- [ ] Email Infrastructure
+  - [ ] Email service provider setup (SendGrid, Mailgun, or Postmark)
+  - [ ] Transactional email templates
+  - [ ] Email deliverability monitoring
+  - [ ] Unsubscribe management
 
 ### Post-Launch Marketing
-- [ ] **Content Marketing**
-    - "How to use RSVP reading" guide
-    - "Best Pittsburgh news sources" article
-    - "Digital wellness and news consumption" thought pieces
-    - Guest posts on relevant blogs
-- [ ] **Partnerships**
-    - Reach out to Pittsburgh influencers and bloggers
-    - Partner with local organizations
-    - Cross-promotion with complementary apps
-- [ ] **App Store Features**
-    - Submit for App Store featuring
-    - "Apps We Love" pitch
-    - Time-based featuring opportunities (e.g., News & Events)
-    - Collection inclusion pitches
+- [ ] Content Marketing
+  - [ ] “How to use RSVP reading” guide
+  - [ ] “Best Pittsburgh news sources” article
+  - [ ] “Digital wellness and news consumption” thought pieces
+  - [ ] Guest posts on relevant blogs
+  - [ ] Pittsburgh news aggregation (meta-content)
+- [ ] Partnerships
+  - [ ] Reach out to Pittsburgh influencers and bloggers
+  - [ ] Partner with local organizations
+  - [ ] Cross-promotion with complementary apps
+- [ ] App Store Features
+  - [ ] Submit for App Store featuring
+  - [ ] “Apps We Love” pitch
+  - [ ] Time-based featuring opportunities (e.g., News & Events)
+  - [ ] Collection inclusion pitches
 
 ### Metrics & KPIs
-- [ ] **Track Success Metrics**
-    - Website traffic (unique visitors, pageviews)
-    - Email signup conversion rate
-    - TestFlight download rate
-    - App Store impressions and conversions
-    - User retention rates
-    - Active users (DAU, MAU)
-    - Feature usage analytics
-    - Net Promoter Score (NPS)
-    - App Store ratings and reviews
+- [ ] Track Success Metrics
+  - [ ] Website traffic (unique visitors, pageviews)
+  - [ ] Email signup conversion rate
+  - [ ] TestFlight download rate
+  - [ ] App Store impressions and conversions
+  - [ ] User retention rates
+  - [ ] Active users (DAU, MAU)
+  - [ ] Feature usage analytics
+  - [ ] Net Promoter Score (NPS)
+  - [ ] App Store ratings and reviews
 
 ---
 
@@ -744,7 +478,7 @@ Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vuln
 - `main` is the protected integration branch.
 - All changes land via PR (even if solo).
 - CI runs on PRs and on a schedule.
-- No secrets are ever committed to git (including "temporary" ones).
+- No secrets are ever committed to git (including “temporary” ones).
 
 ---
 
@@ -771,7 +505,7 @@ Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vuln
 #### 1.3 Harden GitHub Actions (CI/CD attack surface)
 - [ ] Set workflow permissions to least privilege (avoid broad write tokens)
 - [ ] Pin third-party Actions to a commit SHA (not a moving tag)
-- [ ] Separate "checks" workflows from "deploy" workflows
+- [ ] Separate “checks” workflows from “deploy” workflows
 - [ ] Ensure deploy workflows do NOT run with secrets on untrusted PR code
 - [ ] Limit who can approve/rerun privileged workflows (environments, reviewers)
 
@@ -786,7 +520,7 @@ Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vuln
 
 #### 2.1 Rules
 - [ ] Never store API keys/tokens in the repo (including config files)
-- [ ] Never store secrets in client apps (mobile/web) as "hidden strings" (assume extractable)
+- [ ] Never store secrets in client apps (mobile/web) as “hidden strings” (assume extractable)
 - [ ] Use GitHub Secrets / Environment Secrets or your hosting provider's secret store
 
 #### 2.2 If a secret is committed (incident response)
@@ -807,7 +541,7 @@ Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vuln
 
 #### 3.2 Locking and provenance
 - [ ] Use lockfiles when supported and commit them
-- [ ] Avoid "latest" ranges for critical deps where possible
+- [ ] Avoid “latest” ranges for critical deps where possible
 - [ ] For website: treat third-party scripts as supply-chain risk (pin versions, minimize vendors)
 
 ---
@@ -869,4 +603,5 @@ Per PR:
 Monthly:
 - [ ] Review GitHub Actions permissions & environments
 - [ ] Audit access tokens and remove unused ones
-- [ ] Quick dependency "health" audit (maintained? trusted? necessary?)
+- [ ] Quick dependency “health” audit (maintained? trusted? necessary?)
+    - Beta tester spotlights

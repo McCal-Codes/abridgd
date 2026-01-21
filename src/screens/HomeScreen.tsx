@@ -19,6 +19,8 @@ import { ScaleButton } from "../components/ScaleButton";
 import { typography } from "../theme/typography";
 import { ReadingProgress } from "../types/ReadingProgress";
 import * as Haptics from "expo-haptics";
+import { HeroHeader } from "../components/HeroHeader";
+import { Home as HomeIcon } from "lucide-react-native";
 
 type ContinueReadingItem = {
   article: Article;
@@ -64,7 +66,6 @@ const ContinueReadingSection = ({
 
   const visibleItems = showAll ? items : items.slice(0, 3);
   const canToggle = items.length > 3;
-
   return (
     <View style={styles.continueContainer} testID="continue-reading">
       <View style={styles.continueHeaderRow}>
@@ -133,6 +134,7 @@ export const HomeScreen: React.FC = () => {
     tabBarStyle,
     tabBarDockedHeight,
     tabBarFloatingHeight,
+    isContinueReadingEnabled,
   } = useSettings();
 
   // Define onScroll callback unconditionally to preserve hook order between renders
@@ -187,17 +189,20 @@ export const HomeScreen: React.FC = () => {
     }
   }, [continueReadingItems.length, showAllContinue]);
 
+  const showSkeleton = loading && articles.length === 0;
+  const showErrorState = !showSkeleton && !!error && articles.length === 0;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      {loading ? (
+      {showSkeleton ? (
         <FlatList
           data={Array.from({ length: 6 })}
           keyExtractor={(_, idx) => `skeleton-${idx}`}
           renderItem={() => <ArticleCardSkeleton />}
           contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
         />
-      ) : error ? (
+      ) : showErrorState ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
             <Animated.Text style={{ color: colors.systemRed, marginBottom: 8 }}>
@@ -241,18 +246,22 @@ export const HomeScreen: React.FC = () => {
           )}
           ListHeaderComponent={() => (
             <>
-              {lastUpdated && (
-                <View style={styles.updatedRow} testID="home-updated">
-                  <Text style={styles.updatedLabel}>{formatUpdatedAgo(lastUpdated)}</Text>
-                </View>
+              <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+                <HeroHeader
+                  title="Top Stories"
+                  subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+                  Icon={HomeIcon}
+                />
+              </View>
+              {isContinueReadingEnabled && (
+                <ContinueReadingSection
+                  items={continueReadingItems}
+                  onPress={(article) => navigation.navigate("Article", { article })}
+                  showAll={showAllContinue}
+                  onToggleShowAll={handleToggleShowAll}
+                  lastUpdated={lastUpdated}
+                />
               )}
-              <ContinueReadingSection
-                items={continueReadingItems}
-                onPress={(article) => navigation.navigate("Article", { article })}
-                showAll={showAllContinue}
-                onToggleShowAll={handleToggleShowAll}
-                lastUpdated={lastUpdated}
-              />
             </>
           )}
           contentContainerStyle={[
@@ -338,15 +347,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginRight: spacing.sm,
   },
-  updatedRow: {
-    paddingHorizontal: spacing.gutter,
-    paddingTop: spacing.sm,
-  },
-  updatedLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.xs,
-    color: colors.textSecondary,
-  },
   continueAction: {
     fontFamily: typography.fontFamily.sans,
     fontSize: typography.size.sm,
@@ -394,5 +394,9 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.mono,
     fontSize: typography.size.sm,
     color: colors.textSecondary,
+  },
+  headerContainer: {
+    backgroundColor: colors.background,
+    paddingBottom: spacing.xs,
   },
 });

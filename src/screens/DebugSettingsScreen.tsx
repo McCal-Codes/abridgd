@@ -353,6 +353,22 @@ export const DebugSettingsScreen: React.FC = () => {
             />
           </View>
           <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Force subscription gating</Text>
+            <Switch
+              value={settings.subscriptionFeaturesLocked}
+              onValueChange={(v) =>
+                settings.setSubscriptionFeaturesLocked(v).then(() => {
+                  Alert.alert(
+                    "Subscription gating",
+                    v
+                      ? "Advanced settings are now marked as subscription-locked."
+                      : "Advanced settings are unlocked (debug mode).",
+                  );
+                })
+              }
+            />
+          </View>
+          <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>Verbose Logging</Text>
             <Switch
               value={verboseLogging}

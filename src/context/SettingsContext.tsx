@@ -32,6 +32,10 @@ interface SettingsContextType {
   setIsSummarizationEnabled: (enabled: boolean) => Promise<void>;
   isWelcomeBackEnabled: boolean;
   setIsWelcomeBackEnabled: (enabled: boolean) => Promise<void>;
+  isContinueReadingEnabled: boolean;
+  setIsContinueReadingEnabled: (enabled: boolean) => Promise<void>;
+  subscriptionFeaturesLocked: boolean;
+  setSubscriptionFeaturesLocked: (enabled: boolean) => Promise<void>;
   isLoadingSettings: boolean;
   lastAppVisit: number | null;
   updateLastAppVisit: () => Promise<void>;
@@ -149,6 +153,10 @@ const defaultSettingsContext: SettingsContextType = {
   setIsSummarizationEnabled: async (_b: boolean) => {},
   isWelcomeBackEnabled: true,
   setIsWelcomeBackEnabled: async (_b: boolean) => {},
+  isContinueReadingEnabled: false,
+  setIsContinueReadingEnabled: async (_b: boolean) => {},
+  subscriptionFeaturesLocked: false,
+  setSubscriptionFeaturesLocked: async (_b: boolean) => {},
   isLoadingSettings: false,
   lastAppVisit: null,
   updateLastAppVisit: async () => {},
@@ -266,6 +274,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isGroundingEnabled, setIsGroundingEnabledState] = useState(true);
   const [isSummarizationEnabled, setIsSummarizationEnabledState] = useState(false);
   const [isWelcomeBackEnabled, setIsWelcomeBackEnabledState] = useState(true);
+  const [isContinueReadingEnabled, setIsContinueReadingEnabledState] = useState(false);
+  const [subscriptionFeaturesLocked, setSubscriptionFeaturesLockedState] = useState(false);
   const [lastAppVisit, setLastAppVisit] = useState<number | null>(null);
   const [digestSummaryMode, setDigestSummaryModeState] = useState<DigestSummaryMode>("fact-based");
   const [groundingBreathDuration, setGroundingBreathDurationState] = useState(4); // 4 seconds default
@@ -354,6 +364,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const groundingEnabled = await AsyncStorage.getItem("isGroundingEnabled");
       const summarizationEnabled = await AsyncStorage.getItem("isSummarizationEnabled");
       const welcomeBackEnabled = await AsyncStorage.getItem("isWelcomeBackEnabled");
+      const continueReadingEnabled = await AsyncStorage.getItem("isContinueReadingEnabled");
       const lastVisit = await AsyncStorage.getItem("lastAppVisit");
       const savedDigestMode = await AsyncStorage.getItem("digestSummaryMode");
       const savedBreathDuration = await AsyncStorage.getItem("groundingBreathDuration");
@@ -365,6 +376,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedAutoSave = await AsyncStorage.getItem("autoSaveOnComplete");
       const savedDefaultTab = await AsyncStorage.getItem("defaultTab");
       const savedActiveTabs = await AsyncStorage.getItem("activeTabs");
+      const savedSubscriptionFeaturesLocked = await AsyncStorage.getItem(
+        "subscriptionFeaturesLocked",
+      );
 
       // Load tab bar appearance
       const savedTabBarStyle = await AsyncStorage.getItem("tabBarStyle");
@@ -401,6 +415,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (summarizationEnabled !== null)
         setIsSummarizationEnabledState(summarizationEnabled === "true");
       if (welcomeBackEnabled !== null) setIsWelcomeBackEnabledState(welcomeBackEnabled === "true");
+      if (continueReadingEnabled !== null)
+        setIsContinueReadingEnabledState(continueReadingEnabled === "true");
       if (anchorStrategy && ["early", "standard", "center"].includes(anchorStrategy)) {
         setRsvpAnchorStrategyState(anchorStrategy as AnchorStrategy);
       }
@@ -424,6 +440,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       if (savedShowPrompts !== null) {
         setShowGroundingPromptsState(savedShowPrompts === "true");
+      }
+      if (savedSubscriptionFeaturesLocked !== null) {
+        setSubscriptionFeaturesLockedState(savedSubscriptionFeaturesLocked === "true");
       }
       if (savedReadingSpeed) {
         setReadingSpeedState(parseInt(savedReadingSpeed, 10));
@@ -656,6 +675,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsWelcomeBackEnabledState(enabled);
     } catch (e) {
       console.error("Failed to save welcome back enabled state", e);
+    }
+  };
+
+  const setIsContinueReadingEnabled = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("isContinueReadingEnabled", enabled.toString());
+      setIsContinueReadingEnabledState(enabled);
+    } catch (e) {
+      console.error("Failed to save continue reading enabled state", e);
+    }
+  };
+
+  const setSubscriptionFeaturesLocked = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("subscriptionFeaturesLocked", enabled.toString());
+      setSubscriptionFeaturesLockedState(enabled);
+    } catch (e) {
+      console.error("Failed to save subscription features locked state", e);
     }
   };
 
@@ -1087,6 +1124,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsSummarizationEnabled,
         isWelcomeBackEnabled,
         setIsWelcomeBackEnabled,
+        isContinueReadingEnabled,
+        setIsContinueReadingEnabled,
+        subscriptionFeaturesLocked,
+        setSubscriptionFeaturesLocked,
         isLoadingSettings,
         lastAppVisit,
         updateLastAppVisit,
