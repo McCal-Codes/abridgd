@@ -56,6 +56,7 @@ const baseSettings = {
   tabBarStyle: "standard" as const,
   tabBarDockedHeight: 92,
   tabBarFloatingHeight: 64,
+  isContinueReadingEnabled: false,
 };
 
 const resetSettings = (overrides: Partial<typeof baseSettings> = {}) => {
@@ -223,6 +224,7 @@ describe("HomeScreen", () => {
   });
 
   it("shows continue reading items and toggles Show all", async () => {
+    resetSettings({ isContinueReadingEnabled: true });
     const inProgress = Array.from({ length: 4 }).map((_, index) => ({
       id: `${index + 1}`,
       headline: `Story ${index + 1}`,

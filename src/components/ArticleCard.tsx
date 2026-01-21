@@ -63,10 +63,16 @@ export const ArticleCardSkeleton: React.FC = () => {
 const styles = StyleSheet.create({
   card: {
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.gutter,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.gutter,
+    marginBottom: spacing.md,
+    borderRadius: 14,
     backgroundColor: colors.surface,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardContent: {
     flexDirection: "row",
@@ -80,7 +86,7 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 80,
     height: 80,
-    borderRadius: 4,
+    borderRadius: 10,
     backgroundColor: colors.border,
   },
   headline: {

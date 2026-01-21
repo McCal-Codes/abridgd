@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { Sparkles, ArrowRight, Zap, Palette, BookOpen } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -72,7 +73,10 @@ export function WhatsNewScreen({ navigation }: WhatsNewScreenProps) {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: 24, paddingBottom: insets.bottom + 24 },
+          {
+            paddingTop: insets.top + spacing.lg,
+            paddingBottom: insets.bottom + spacing.lg,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -169,14 +173,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
   },
   header: {
     marginBottom: 32,
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   headerContent: {
-    alignItems: "center",
+    alignItems: "flex-start",
+    gap: spacing.xs,
   },
   title: {
     fontFamily: typography.fontFamily.serif,
