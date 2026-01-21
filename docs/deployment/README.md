@@ -19,6 +19,13 @@ Expo Application Services (EAS) configuration:
 - Workflow automation
 - Build profiles (development, preview, production)
 
+### [EAS Hosting (Web Deploy)](eas-hosting.md)
+Deploy Expo Router web builds to EAS Hosting:
+- Output modes (`single`, `static`, `server`)
+- Exporting web builds
+- `eas deploy` usage
+- Preview vs production URLs and troubleshooting
+
 ### [iOS IPA Build Guide](ios-ipa-testflight.md)
 Building iOS IPAs for TestFlight:
 - Xcode configuration

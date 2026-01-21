@@ -1,6 +1,6 @@
 # Abridged App — Standards Home
 Version 1.0
-Last Updated: January 15, 2026
+Last Updated: January 21, 2026
 
 Welcome to the authoritative source for all standards, workflows, and decision records for the Abridged app.
 
@@ -38,6 +38,10 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 → Read [**UI & Design Standards**](design-standards.md)
 *Navigation, layout, visual hierarchy, dark mode, typography.*
 
+### I'm updating onboarding or What's New
+→ Read [**Onboarding + What’s New Standard (iOS 26)**](onboarding-whats-new.md)
+*Caleb voice-preserving, micro-adjustments only; iOS 26 fit; no dead buttons; trust/reversibility; Reduced Motion safe.*
+
 ### I'm working with app branding or naming
 → Read [**Branding Standards**](branding.md)
 *App name, display name, bundle identifiers, technical vs. user-facing naming conventions.*
@@ -70,8 +74,10 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 | [UI & Design Standards](ui-design.md) | Design principles, HIG alignment | Product designers, frontend engineers |
 | [Engineering Standards](engineering.md) | Versioning, quality gates, dependencies | All engineers |
 | [Accessibility Audit](a11y-audit.md) | Dark mode, Dynamic Type, VoiceOver test matrix | QA, frontend engineers, designers |
+| [Onboarding + What’s New Standard (iOS 26)](onboarding-whats-new.md) | Onboarding/What’s New rules, Caleb voice, iOS 26 fit | Designers, UX writers, engineers, agents |
 | [Onboarding & Grounding Design Agent](onboarding-agent-prompt.md) | System prompt for onboarding and grounding content | Designers, UX writers, agents |
 | [Grounding Selector Design Agent](grounding-agent-prompt.md) | System prompt for grounding selector interaction | Designers, UX writers, agents |
+| [RSS Feed Templates & Pittsburgh Catalog](rss-feed-templates.md) | Feed selection rules, templates, and vetted Pittsburgh sources | Engineers, content stewards |
 
 ---
 

@@ -61,6 +61,7 @@ Thank you for your interest in contributing to Abridged! This document provides 
    - Screenshots/videos for UI changes
    - Link to related issues
 5. **Address review feedback** promptly
+6. **Keep PRs small and version-scoped**: One version bucket per PR (don’t mix future release work). Only bump app/package versions when cutting the release PR, not on feature branches.
 
 ## Code Standards
 

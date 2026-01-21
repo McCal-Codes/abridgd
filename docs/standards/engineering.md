@@ -269,3 +269,4 @@ A feature is "done" when:
 - [Standards Governance Agent](standards-governance-agent.md) — how standards evolve
 - [UI & Design Standards](ui-design.md) — design principles
 - [Architecture Decisions](adr/) — load-bearing decisions
+- [RSS Feed Templates & Pittsburgh Catalog](rss-feed-templates.md) — feed selection rules and vetted sources
