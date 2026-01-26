@@ -146,11 +146,11 @@ describe("HomeScreen", () => {
     };
   });
 
-  it("renders loading skeletons initially", () => {
-    // Keep the fetch pending so the initial loading skeleton is rendered deterministically
+  it("renders loading indicator initially", () => {
+    // Keep the fetch pending so the initial loading state is deterministic
     (fetchArticlesByCategory as jest.Mock).mockImplementation(() => new Promise(() => {}));
-    const { getAllByTestId } = renderScreen();
-    expect(getAllByTestId("article-card-skeleton").length).toBeGreaterThan(0);
+    const { getByText } = renderScreen();
+    expect(getByText("Fetching top stories…")).toBeTruthy();
   });
 
   it("displays fetched headlines", async () => {
