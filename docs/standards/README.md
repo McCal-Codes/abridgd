@@ -129,6 +129,8 @@ Significant changes are recorded in:
 
 - [ ] Skim Preflight and Afterflight (5 min)
 - [ ] Add to your PR template: "Run Afterflight before merging"
+- [Dependency Evaluation Checklist](dependency-evaluation.md) - Must be completed for new/updated deps
+
 - [ ] Review the ADRs in `adr/` for decisions affecting your work
 - [ ] Bookmark this page; send to new team members
 

@@ -107,6 +107,13 @@ Last Updated: January 16, 2026
 
 ---
 
+- [ ] **TODO-028** | **v1.3.0** | Add production-ready API client PoC + AuthService
+  - **Status**: 🔜 In Progress
+  - **Description**: Expand `src/shared/api` with retries/backoff, auth header injection + refresh flow, error mapping, unit tests, and an example screen `ApiDemoScreen`. Add docs (`docs/development/api-client.md`) and update developer docs for usage.
+  - **Effort**: 2 hours
+  - **Definition of Done**: Unit tests passing, docs added, example screen present, PR template updated to require dependency checklist for any new deps
+
+
 ### 📱 UI & Design Improvements (Backlog)
 
 - [ ] **TODO-014** | **Backlog** | Refactor screen styling consistency

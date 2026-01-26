@@ -29,6 +29,31 @@ Code quality standards and best practices:
 - Documentation standards
 - Code review process
 
+### [awesome-ios → RN/Expo Mapping](awesome-ios-mapping.md)
+Quick reference translating `awesome-ios` themes into Expo/React Native equivalents:
+- Analytics, routing, state management
+- Caching/persistence choices
+- UI/animation, forms/validation, localization, onboarding
+- Testing, logging/observability
+
+### [Preferred Libraries](preferred-libraries.md)
+Our recommended library choices and rationale (Analytics, Navigation, State, Networking, Storage, Forms, Animations)
+
+### [Dependency Evaluation Checklist](../standards/dependency-evaluation.md)
+Policy and checklist to follow before adding or upgrading third-party dependencies
+
+### [Observability Baseline](observability.md)
+Crash reporting and monitoring recommendations (Sentry, Flipper, CI smoke tests)
+
+### Proofs of Concept
+- `src/shared/api/httpClient.ts` — A lightweight `fetch` wrapper demonstrating timeouts, JSON parsing, and typed error handling. Includes unit tests at `src/shared/__tests__/httpClient.test.ts`.
+- `src/shared/hooks/useApi.ts` — Small `useApi` hook PoC for simple fetch-driven queries; consider replacing with TanStack Query when adding that dependency.
+- `src/shared/api/apiClient.ts` — Higher-level API client with retries/backoff, optional auth injection via `authService`, 401 refresh handling, and `ApiError` mapping. Unit tests in `src/shared/__tests__/apiClient.test.ts`.
+- `src/screens/ApiDemoScreen.tsx` — Small example screen showing how to call `apiRequest` and view results/errors.
+
+
+
+
 ### [Standards Governance](standards-governance-agent.md)
 Process for maintaining and evolving standards:
 - Standards review cycle
