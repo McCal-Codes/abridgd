@@ -50,7 +50,10 @@ Crash reporting and monitoring recommendations (Sentry, Flipper, CI smoke tests)
 - `src/shared/hooks/useApi.ts` — Small `useApi` hook PoC for simple fetch-driven queries; consider replacing with TanStack Query when adding that dependency.
 - `src/shared/api/apiClient.ts` — Higher-level API client with retries/backoff, optional auth injection via `authService`, 401 refresh handling, and `ApiError` mapping. Unit tests in `src/shared/__tests__/apiClient.test.ts`.
 - `src/screens/ApiDemoScreen.tsx` — Small example screen showing how to call `apiRequest` and view results/errors.
-
+### Related deep-dive docs
+- [Branching & PRs](../process/branching-and-prs.md)
+- [Dependency Evaluation — Details](../standards/dependency-evaluation-details.md)
+- [API Client — Advanced](api-client-advanced.md)
 
 
 

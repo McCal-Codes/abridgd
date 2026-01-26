@@ -44,11 +44,11 @@ describe("httpClient", () => {
     // Mock fetch that rejects on abort signal so the timeout path is exercised.
     global.fetch = jest.fn().mockImplementation((_url: string, init: any) => {
       return new Promise((_resolve, reject) => {
-        if (init && init.signal && typeof init.signal.addEventListener === 'function') {
-          init.signal.addEventListener('abort', () => {
+        if (init && init.signal && typeof init.signal.addEventListener === "function") {
+          init.signal.addEventListener("abort", () => {
             // mimic native fetch AbortError
-            const err: any = new Error('Aborted');
-            err.name = 'AbortError';
+            const err: any = new Error("Aborted");
+            err.name = "AbortError";
             reject(err);
           });
         }

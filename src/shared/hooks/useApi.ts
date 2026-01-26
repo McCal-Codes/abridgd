@@ -11,7 +11,7 @@ export type UseApiResult<T> = {
 export function useApi<T = unknown>(
   baseUrl: string,
   path: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): UseApiResult<T> {
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<Error | undefined>(undefined);

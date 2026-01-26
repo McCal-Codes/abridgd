@@ -31,9 +31,23 @@ describe("apiClient", () => {
     authService.setToken({ accessToken: "old", refreshToken: "refresh-me" });
 
     // first response: 401
-    const first = jest.fn().mockResolvedValue({ ok: false, status: 401, text: async () => JSON.stringify({ msg: 'unauth' }), headers: { get: () => 'application/json' } } as any);
+    const first = jest
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: async () => JSON.stringify({ msg: "unauth" }),
+        headers: { get: () => "application/json" },
+      } as any);
     // second response: success
-    const second = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ ok: true }), headers: { get: () => 'application/json' } } as any);
+    const second = jest
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ ok: true }),
+        headers: { get: () => "application/json" },
+      } as any);
 
     let called = 0;
     global.fetch = jest.fn().mockImplementation(() => {
@@ -49,7 +63,9 @@ describe("apiClient", () => {
   it("retries on network failures with backoff and eventually throws ApiError", async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error("network down"));
 
-    await expect(apiRequest("https://api.example.com", "/fail", {}, { retries: 2, baseDelayMs: 1 })).rejects.toBeInstanceOf(ApiError);
+    await expect(
+      apiRequest("https://api.example.com", "/fail", {}, { retries: 2, baseDelayMs: 1 }),
+    ).rejects.toBeInstanceOf(ApiError);
     expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 });

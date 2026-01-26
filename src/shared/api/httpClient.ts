@@ -33,7 +33,7 @@ export class HttpError extends Error {
 export async function request<T = unknown>(
   baseUrl: string,
   path: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const { method = "GET", headers = {}, params, body, timeoutMs = 15000 } = options;
   const url = buildUrl(baseUrl, path, params);
@@ -52,7 +52,10 @@ export async function request<T = unknown>(
 
   if (body !== undefined) {
     // allow FormData etc. to be passed through if not plain object
-    fetchOptions.body = typeof body === "object" && !(body instanceof FormData) ? JSON.stringify(body) : (body as any);
+    fetchOptions.body =
+      typeof body === "object" && !(body instanceof FormData)
+        ? JSON.stringify(body)
+        : (body as any);
   }
 
   try {

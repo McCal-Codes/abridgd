@@ -17,7 +17,12 @@ export default function ApiDemoScreen() {
     setLoading(true);
     setError(undefined);
     try {
-      const res = await apiRequest("https://jsonplaceholder.typicode.com", "/posts/1", {}, { includeAuth: true });
+      const res = await apiRequest(
+        "https://jsonplaceholder.typicode.com",
+        "/posts/1",
+        {},
+        { includeAuth: true },
+      );
       setResult(res);
     } catch (err: any) {
       setError(err.message || String(err));
