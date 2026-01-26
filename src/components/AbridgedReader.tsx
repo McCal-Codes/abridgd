@@ -12,15 +12,21 @@ import { useSettings } from "../context/SettingsContext";
 interface AbridgedReaderProps {
   content?: string;
   onComplete?: () => void; // Callback when reading finishes
+  variant?: "default" | "compact";
 }
 
-export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", onComplete }) => {
+export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
+  content = "",
+  onComplete,
+  variant = "default",
+}) => {
   const { rsvpHighlightColor, rsvpAnchorStrategy } = useSettings();
   const [words, setWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [wpm, setWpm] = useState(300);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isCompact = variant === "compact";
 
   useEffect(() => {
     if (!content) {
@@ -122,7 +128,7 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
   const rightPart = currentWord.slice(pivotIndex + 1);
 
   // Dynamic font sizing for long words to prevent overflow
-  const baseFontSize = 36;
+  const baseFontSize = isCompact ? 32 : 36;
   let fontSize = baseFontSize;
   if (len > 15) {
     fontSize = 28;
@@ -135,9 +141,9 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isCompact && styles.containerCompact]}>
       {/* Reader Word Display */}
-      <View style={styles.wordDisplay}>
+      <View style={[styles.wordDisplay, isCompact && styles.wordDisplayCompact]}>
         <View style={styles.guideLines}>
           <View style={styles.topGuide} />
           <View style={styles.bottomGuide} />
@@ -168,12 +174,12 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
       <View style={styles.progressContainer}>
         <View style={[styles.progressBar, { width: `${(currentIndex / words.length) * 100}%` }]} />
       </View>
-      <Text style={styles.progressText}>
+      <Text style={[styles.progressText, isCompact && styles.progressTextCompact]}>
         {currentIndex} / {words.length} words
       </Text>
 
       {/* Controls */}
-      <View style={styles.controls}>
+      <View style={[styles.controls, isCompact && styles.controlsCompact]}>
         <TouchableOpacity
           style={styles.controlBtn}
           onPress={() => setCurrentIndex(Math.max(0, currentIndex - 10))}
@@ -185,7 +191,11 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.playButton, isPlaying ? styles.pauseBtn : styles.playBtn]}
+          style={[
+            styles.playButton,
+            isPlaying ? styles.pauseBtn : styles.playBtn,
+            isCompact && styles.playButtonCompact,
+          ]}
           onPress={() => setIsPlaying(!isPlaying)}
         >
           <Text style={styles.playButtonText}>{isPlaying ? "PAUSE" : "READ"}</Text>
@@ -200,7 +210,7 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
       <View style={styles.speedControl}>
         <Text style={styles.speedLabel}>SPEED: {wpm} WPM</Text>
         <Slider
-          style={{ width: 200, height: 40 }}
+          style={{ width: isCompact ? 180 : 200, height: 40 }}
           minimumValue={100}
           maximumValue={800}
           step={25}
@@ -221,25 +231,33 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.lg,
+    padding: spacing.md,
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 12,
-    marginTop: spacing.xl,
+    marginTop: spacing.sm,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  containerCompact: {
+    padding: spacing.sm,
+    marginTop: spacing.xs,
+  },
   wordDisplay: {
-    height: 140,
+    height: 130,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
     marginBottom: spacing.md,
     position: "relative",
     overflow: "hidden",
+  },
+  wordDisplayCompact: {
+    height: 100,
+    marginBottom: spacing.xs,
   },
   guideLines: {
     position: "absolute",
@@ -310,11 +328,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
+  progressTextCompact: {
+    marginBottom: spacing.md,
+  },
   controls: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.lg,
     marginBottom: spacing.lg,
+  },
+  controlsCompact: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   controlBtn: {
     padding: spacing.sm,
@@ -335,6 +360,11 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     minWidth: 120,
     alignItems: "center",
+  },
+  playButtonCompact: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    minWidth: 110,
   },
   playBtn: { backgroundColor: colors.primary },
   pauseBtn: { backgroundColor: colors.text },

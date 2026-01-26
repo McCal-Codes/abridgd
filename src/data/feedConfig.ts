@@ -10,7 +10,11 @@ export type FeedSource = {
 export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
   Top: [
     { name: "WTAE", url: "https://www.wtae.com/topstories-rss" },
-    { name: "CBS Pittsburgh", url: "https://pittsburgh.cbslocal.com/feed/" },
+    {
+      name: "CBS Pittsburgh",
+      url: "https://www.cbsnews.com/latest/rss/pittsburgh",
+      defaultEnabled: false, // legacy feed now redirects/empty; keep disabled until CBS restores items
+    },
     { name: "WPXI", url: "https://www.wpxi.com/arc/outboundfeeds/rss/?outputType=xml" },
     {
       name: "WESA",
@@ -39,10 +43,18 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
       url: "https://pittsburgh.momcollective.com/feed/",
       defaultEnabled: false,
     },
-    { name: "The Incline", url: "https://theincline.com/feed/" },
+    {
+      name: "The Incline",
+      url: "https://theincline.com/feed/",
+      defaultEnabled: false, // domain expired/parking page as of Jan 26, 2026
+    },
   ],
   Business: [
-    { name: "Pgh Business Times", url: "http://feeds.bizjournals.com/bizj/pittsburgh" },
+    {
+      name: "Pgh Business Times",
+      url: "https://feeds.bizjournals.com/bizj/pittsburgh",
+      defaultEnabled: false, // returning 403; keep optional for users with access
+    },
     { name: "TribLive Business", url: "https://triblive.com/business/feed/" },
     { name: "Post-Gazette Biz", url: "https://www.post-gazette.com/rss/business" },
     { name: "NEXTpittsburgh", url: "https://www.nextpittsburgh.com/feed/" },
@@ -61,9 +73,21 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
     { name: "Steelers.com", url: "https://www.steelers.com/rss/news" },
     { name: "DK Pgh Sports", url: "https://dkpittsburghsports.com/feed" },
     { name: "TribLive Sports", url: "https://triblive.com/sports/feed/" },
-    { name: "Penguins", url: "https://www.nhl.com/penguins/rss/news" },
-    { name: "Pirates", url: "https://www.mlb.com/pirates/feeds/news/rss" },
-    { name: "Pitt Panthers", url: "https://pittsburghpanthers.com/rss.aspx?path=general" },
+    {
+      name: "Penguins",
+      url: "https://www.nhl.com/penguins/rss/news",
+      defaultEnabled: false, // NHL feed returning 403/error pages as of Jan 26, 2026
+    },
+    {
+      name: "Pirates",
+      url: "https://www.mlb.com/feeds/news/rss.xml?teamId=134",
+      defaultEnabled: false, // MLB endpoint change; enable manually if acceptable (team-filtered)
+    },
+    {
+      name: "Pitt Panthers",
+      url: "https://pittsburghpanthers.com/rss.aspx?path=general",
+      defaultEnabled: false, // intermittently 500/blocked; keep optional
+    },
   ],
   Culture: [
     { name: "City Paper", url: "https://www.pghcitypaper.com/pittsburgh/Rss.xml" },
@@ -71,6 +95,10 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
       name: "Pittsburgh Mag",
       url: "https://www.pittsburghmagazine.com/category/arts-entertainment/feed/",
     },
-    { name: "WESA Arts", url: "https://www.wesa.fm/arts-culture/rss" },
+    {
+      name: "WESA Arts",
+      url: "https://www.wesa.fm/arts-culture/rss",
+      defaultEnabled: false, // 404 as of Jan 26, 2026
+    },
   ],
 };

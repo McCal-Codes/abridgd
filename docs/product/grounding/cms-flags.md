@@ -1,4 +1,5 @@
 # Grounding Content Flags & Fallback Logic
+Last Updated: 2026-01-26
 
 **Purpose**
 Expose lightweight editorial metadata that tells the app when to offer grounding, with transparent heuristics when metadata is missing.

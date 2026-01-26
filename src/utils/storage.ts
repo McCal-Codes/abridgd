@@ -8,6 +8,9 @@ const SAVED_ARTICLES_KEY = "@abridged_saved_articles";
 const MIGRATION_FLAG_KEY = "@abridged_migration_complete";
 const COMPRESSION_THRESHOLD = 4000; // characters; compress larger payloads to save space
 
+const getMigrationFlagKey = (storageKey?: string) =>
+  storageKey ? `${MIGRATION_FLAG_KEY}:${storageKey}` : MIGRATION_FLAG_KEY;
+
 interface StorageSchemaV1 {
   version: 1;
   articles: Article[];
@@ -143,9 +146,9 @@ export const loadArticlesFromStorage = async (
 /**
  * Check if migration from in-memory to AsyncStorage has been completed
  */
-export const isMigrationComplete = async (): Promise<boolean> => {
+export const isMigrationComplete = async (storageKey?: string): Promise<boolean> => {
   try {
-    const flag = await AsyncStorage.getItem(MIGRATION_FLAG_KEY);
+    const flag = await AsyncStorage.getItem(getMigrationFlagKey(storageKey));
     return flag === "true";
   } catch (error) {
     console.error("Failed to check migration flag:", error);
@@ -156,9 +159,9 @@ export const isMigrationComplete = async (): Promise<boolean> => {
 /**
  * Mark migration as complete
  */
-export const markMigrationComplete = async (): Promise<void> => {
+export const markMigrationComplete = async (storageKey?: string): Promise<void> => {
   try {
-    await AsyncStorage.setItem(MIGRATION_FLAG_KEY, "true");
+    await AsyncStorage.setItem(getMigrationFlagKey(storageKey), "true");
   } catch (error) {
     console.error("Failed to mark migration complete:", error);
   }

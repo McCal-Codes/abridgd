@@ -1,5 +1,7 @@
 # Backlog
 
+> Adding tasks? Use this format: `- [ ] TODO-XXX | Scope | Brief description (1 line)` and keep statuses synchronized. Prefer adding new items here (source of truth) and mark related entries in `updates/todo.md` as historical only. When completed, move a summary to `updates/completed.md`.
+
 ## Version 1.4 - The Refinement Release (In Progress)
 
 **Vision:** Transform 1.4 into a polished, delightful experience that feels thoughtfully crafted in every interaction. Not just feature-complete, but genuinely special.
@@ -60,6 +62,7 @@
 
 ### Priority Fixes & Stability — Do These First
 
+- [x] Screens: Home loading skeletons restored and WTAE feed reliability hardened.
 - [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
 - [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
 - [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)

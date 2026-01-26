@@ -1,4 +1,5 @@
 # SwiftUI Motion Guidance for Grounding Styles
+Last Updated: 2026-01-26
 
 **Objective**
 Deliver four calming breathing patterns in SwiftUI without ever resembling progress/loading indicators. All primitives should be fluid, rounded, and interruptible.

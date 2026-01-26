@@ -3,13 +3,14 @@ import { View, FlatList, StyleSheet, StatusBar, Animated, Text, Pressable } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ScrollContext } from "../context/ScrollContext";
-import { ArticleCard } from "../components/ArticleCard";
+import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
 import {
   fetchArticlesByCategory,
   getLastFetchedAt,
   getCachedArticles,
 } from "../services/RssService";
+import { useProfilesOptional } from "../context/ProfileContext";
 import { Article } from "../types/Article";
 import { colors } from "../theme/colors";
 import { useNavigation } from "@react-navigation/native";
@@ -128,6 +129,7 @@ export const HomeScreen: React.FC = () => {
   const [showAllContinue, setShowAllContinue] = React.useState(false);
   const { inProgressArticles } = useReadingProgressOptional();
   const { savedArticles } = useSavedArticles();
+  const profileContext = useProfilesOptional?.();
 
   const { scrollY } = React.useContext(ScrollContext);
   const insets = useSafeAreaInsets();
@@ -153,6 +155,7 @@ export const HomeScreen: React.FC = () => {
         setError(null);
         const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
         setArticles(data);
+        profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
         const fetchedAt = getLastFetchedAt("Top");
         setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
       } catch (e: any) {
@@ -165,6 +168,7 @@ export const HomeScreen: React.FC = () => {
     const cached = getCachedArticles("Top");
     if (cached && cached.length) {
       setArticles(cached);
+      profileContext?.recordLastFetchedArticles?.(cached.map((a) => a.id));
       const fetchedAt = getLastFetchedAt("Top");
       setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
       setLoading(false);
@@ -232,6 +236,11 @@ export const HomeScreen: React.FC = () => {
               lastUpdated={lastUpdated}
             />
           )}
+          <View style={styles.skeletonList}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <ArticleCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </View>
           <View style={styles.centerContent}>
             <FunLoadingIndicator message="Fetching top stories…" />
           </View>
@@ -263,6 +272,7 @@ export const HomeScreen: React.FC = () => {
                   fetchArticlesByCategory("Top")
                     .then((data) => {
                       setArticles(data);
+                      profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
                       const fetchedAt = getLastFetchedAt("Top");
                       setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
                       setLoading(false);
@@ -306,6 +316,11 @@ export const HomeScreen: React.FC = () => {
               onPress={(article) => navigation.navigate("Article", { article: article })}
             />
           )}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={6}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews
           ListHeaderComponent={() => (
             <>
               {renderHeroHeader()}
@@ -348,6 +363,7 @@ export const HomeScreen: React.FC = () => {
             try {
               const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
               setArticles(data);
+              profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
               const fetchedAt = getLastFetchedAt("Top");
               setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
             } catch (e: any) {
@@ -372,6 +388,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: spacing.lg,
+  },
+  skeletonList: {
+    paddingTop: spacing.sm,
   },
   center: {
     flex: 1,

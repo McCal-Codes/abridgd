@@ -233,6 +233,17 @@ describe("Storage Utilities", () => {
 
       expect(result).toBe(false);
     });
+
+    it("should scope migration flag per storage key when provided", async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue("true");
+
+      const result = await isMigrationComplete("@abridged_saved_articles_profileA");
+
+      expect(result).toBe(true);
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith(
+        "@abridged_migration_complete:@abridged_saved_articles_profileA",
+      );
+    });
   });
 
   describe("markMigrationComplete", () => {
@@ -242,6 +253,17 @@ describe("Storage Utilities", () => {
       await markMigrationComplete();
 
       expect(AsyncStorage.setItem).toHaveBeenCalledWith("@abridged_migration_complete", "true");
+    });
+
+    it("should scope migration flag per storage key when provided", async () => {
+      (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+
+      await markMigrationComplete("@abridged_saved_articles_profileA");
+
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        "@abridged_migration_complete:@abridged_saved_articles_profileA",
+        "true",
+      );
     });
 
     it("should handle errors gracefully", async () => {

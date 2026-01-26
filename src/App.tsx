@@ -26,11 +26,11 @@ if (SENTRY_DSN) {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <NavigationContainer>
-            <ErrorBoundary>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <NavigationContainer>
               <ProfileProvider>
                 <SavedArticlesProvider>
                   <ReadingProgressProvider>
@@ -44,10 +44,10 @@ export default function App() {
                   </ReadingProgressProvider>
                 </SavedArticlesProvider>
               </ProfileProvider>
-            </ErrorBoundary>
-          </NavigationContainer>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+            </NavigationContainer>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

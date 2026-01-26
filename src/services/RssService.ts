@@ -2,8 +2,8 @@ import { XMLParser } from "fast-xml-parser";
 import { Platform } from "react-native";
 import { Article, ArticleCategory } from "../types/Article";
 import { FeedSource, RSS_FEEDS } from "../data/feedConfig";
-import { ErrorCode, ErrorHandler } from "../utils/errorCodes";
 import { loadSourcePreferences, isSourceEnabled } from "../utils/sourcePreferences";
+import { FeedHealth, FeedHealthStatus } from "../types/FeedHealth";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -46,6 +46,14 @@ const fetchWithTimeout = async (url: string): Promise<Response> => {
     clearTimeout(timeoutId);
   }
 };
+
+const KNOWN_RETIRED_FEEDS: { pattern: RegExp; message: string }[] = [
+  {
+    pattern: /pittsburgh\.cbslocal\.com\/feed/i,
+    message:
+      "CBS Local Pittsburgh feed is returning 500s/retired. Try the CBS News Pittsburgh feed instead: https://www.cbsnews.com/latest/rss/pittsburgh",
+  },
+];
 
 const RSS2JSON_ENDPOINT = "https://api.rss2json.com/v1/api.json?rss_url=";
 
@@ -103,6 +111,121 @@ const fetchViaRss2Json = async (url: string) => {
     console.warn(`rss2json fallback failed for ${url}`, error);
     return null;
   }
+};
+
+const normalizeUrl = (url: string) => url.trim();
+
+const detectRetiredFeed = (url: string): FeedHealth | null => {
+  const match = KNOWN_RETIRED_FEEDS.find((entry) => entry.pattern.test(url));
+  if (!match) return null;
+
+  return {
+    status: "retired",
+    message: match.message,
+    checkedAt: Date.now(),
+    url,
+  } satisfies FeedHealth;
+};
+
+export type FeedValidationResult = FeedHealth & { itemsFound?: number };
+
+export const validateFeedSource = async (candidate: {
+  name?: string;
+  url: string;
+}): Promise<FeedValidationResult> => {
+  const checkedAt = Date.now();
+  const url = normalizeUrl(candidate.url);
+
+  const retired = detectRetiredFeed(url);
+  if (retired) {
+    return retired;
+  }
+
+  const isWeb = Platform.OS === "web";
+  const proxyAllOrigins = "https://api.allorigins.win/raw?url=";
+  const proxyCorsProxy = "https://corsproxy.io/?";
+  const proxyThingProxy = "https://thingproxy.freeboard.io/fetch/";
+
+  const targets: string[] = [];
+  const encodedUrl = encodeURIComponent(url);
+
+  if (!isWeb) {
+    targets.push(url);
+  }
+
+  targets.push(proxyAllOrigins + encodedUrl);
+  targets.push(proxyCorsProxy + encodedUrl);
+  targets.push(proxyThingProxy + url);
+
+  let lastError: string | undefined;
+  let lastStatus: number | undefined;
+
+  for (const target of targets) {
+    try {
+      const response = await fetchWithTimeout(target);
+      lastStatus = response.status;
+
+      if (!response.ok) {
+        lastError = `HTTP ${response.status}`;
+        continue;
+      }
+
+      const text = await response.text();
+      const result = parser.parse(text);
+
+      const channel = result?.rss ? result.rss.channel : result?.feed;
+      const items = channel?.item || channel?.entry || [];
+      const itemsArray = Array.isArray(items) ? items : items ? [items] : [];
+
+      if (itemsArray.length > 0) {
+        return {
+          status: "ok",
+          message: `Feed looks good (${itemsArray.length} items).`,
+          httpStatus: response.status,
+          itemsFound: itemsArray.length,
+          via: target === url ? "direct" : "proxy",
+          checkedAt,
+          url,
+        };
+      }
+
+      lastError = "Feed returned no items";
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        return {
+          status: "timeout",
+          message: "Feed request timed out (7s).",
+          checkedAt,
+          url,
+          details: error?.message,
+        };
+      }
+      lastError = error?.message || "Unknown error";
+    }
+  }
+
+  // Final fallback: rss2json to detect if feed is reachable but blocked by proxies
+  const rssJsonItems = await fetchViaRss2Json(url);
+  if (rssJsonItems?.length) {
+    return {
+      status: "ok",
+      message: `Validated via rss2json (${rssJsonItems.length} items).`,
+      via: "rss2json",
+      itemsFound: rssJsonItems.length,
+      checkedAt,
+      url,
+    };
+  }
+
+  const status: FeedHealthStatus = lastError === "Feed returned no items" ? "empty" : "unreachable";
+
+  return {
+    status,
+    message: lastError || "Unable to validate feed.",
+    httpStatus: lastStatus,
+    checkedAt,
+    url,
+  };
 };
 
 const calculateReadTime = (text: string): number => {
@@ -323,7 +446,14 @@ export const fetchArticlesByCategory = async (
   const feeds = RSS_FEEDS[category];
 
   // feeds is now an array of objects
-  const feedSources = Array.isArray(feeds) ? feeds : [feeds];
+  const baseSources = Array.isArray(feeds) ? feeds : [feeds];
+
+  const prefs = await loadSourcePreferences();
+  const customSources: FeedSource[] = (prefs.customFeeds || [])
+    .filter((feed) => feed.category === category)
+    .map((feed) => ({ name: feed.name, url: feed.url, defaultEnabled: true }));
+
+  const feedSources: FeedSource[] = [...baseSources, ...customSources];
 
   if (!feedSources || feedSources.length === 0) {
     console.warn(`No feed found for category: ${category} - RssService.ts:126`);
@@ -336,17 +466,17 @@ export const fetchArticlesByCategory = async (
     try {
       console.log(`Fetching ${source.name} (${source.url})... - RssService.ts:134`);
       const sourceName = source.name;
-      const isWeb = Platform.OS === "web";
-      const proxyUrl = "https://corsproxy.io/?";
-      const proxyAlt = "https://api.allorigins.win/raw?url=";
+      const proxyAllOrigins = "https://api.allorigins.win/raw?url=";
+      const proxyCorsProxy = "https://corsproxy.io/?";
+      const proxyThingProxy = "https://thingproxy.freeboard.io/fetch/"; // lightweight fallback
 
-      // Try direct first (native), then primary proxy, then alternate proxy.
-      const targets: string[] = [];
-      if (!isWeb) {
-        targets.push(source.url);
-      }
-      targets.push(proxyUrl + encodeURIComponent(source.url));
-      targets.push(proxyAlt + encodeURIComponent(source.url));
+      // Try direct first (even on web; CORS failures will fall through), then the most reliable proxy (AllOrigins), then others.
+      const targets: string[] = [source.url];
+      const encodedUrl = encodeURIComponent(source.url);
+
+      targets.push(proxyAllOrigins + encodedUrl);
+      targets.push(proxyCorsProxy + encodedUrl);
+      targets.push(proxyThingProxy + source.url);
 
       let response: Response | null = null;
       for (const url of targets) {
@@ -376,11 +506,33 @@ export const fetchArticlesByCategory = async (
       const text = await response.text();
       const result = parser.parse(text);
 
-      const channel = result.rss ? result.rss.channel : result.feed;
-      if (!channel) return [];
+      let channel = result.rss ? result.rss.channel : result.feed;
+      let items = channel?.item || channel?.entry || [];
+      let itemsArray = Array.isArray(items) ? items : items ? [items] : [];
 
-      const items = channel.item || channel.entry || [];
-      const itemsArray = Array.isArray(items) ? items : [items];
+      // Some sources (e.g., WTAE via certain proxies) return HTML with status 200.
+      // If we parsed zero items, fall back to rss2json to avoid silently dropping the source.
+      if (!channel || itemsArray.length === 0) {
+        const rssJsonItems = await fetchViaRss2Json(source.url);
+        if (rssJsonItems?.length) {
+          console.warn(
+            `Primary parse empty for ${sourceName}; recovered ${rssJsonItems.length} via rss2json - RssService.ts:155`,
+          );
+          return rssJsonItems.map((item: any) => mapRssItemToArticle(item, category, sourceName));
+        }
+        return [];
+      }
+
+      // If WTAE parses to an unusually small set (proxy trims), retry via rss2json to restore items.
+      if (sourceName === "WTAE" && itemsArray.length < 3) {
+        const rssJsonItems = await fetchViaRss2Json(source.url);
+        if (rssJsonItems?.length) {
+          console.warn(
+            `Recovered ${rssJsonItems.length} WTAE items via rss2json after sparse parse (${itemsArray.length}).`,
+          );
+          return rssJsonItems.map((item: any) => mapRssItemToArticle(item, category, sourceName));
+        }
+      }
 
       // Use the configured name, ignore the XML title which can be messy
       console.log(`Fetched ${itemsArray.length} items from ${sourceName} - RssService.ts:154`);
@@ -406,7 +558,6 @@ export const fetchArticlesByCategory = async (
   };
 
   // Fetch all concurrently
-  const prefs = await loadSourcePreferences();
   let sourcesToFetch = feedSources.filter((src) =>
     isSourceEnabled(prefs.overrides, category, src.name, src.defaultEnabled ?? true),
   );

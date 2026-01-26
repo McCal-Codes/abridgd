@@ -1,4 +1,5 @@
 # Onboarding + What’s New Standard (iOS 26)
+Last Updated: 2026-01-26
 
 **Caleb voice-preserving rules.** Default rubric for reviewing/revising onboarding (first run + major re-entry) and What’s New (post-update highlights). Goal: improve clarity, pacing, and iOS 26 fit **without rewriting Caleb’s voice**. Micro-adjustments only.
 

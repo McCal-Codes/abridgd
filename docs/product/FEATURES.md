@@ -1,4 +1,5 @@
 # Features Summary — Abridged v1.0.0
+Last Updated: 2026-01-26
 
 **Build:** 1.0.0
 **Release Date:** January 2026

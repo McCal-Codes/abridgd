@@ -130,6 +130,10 @@ interface SettingsContextType {
   setQuietHoursEnd: (time: string) => Promise<void>;
   hapticIntensity: HapticIntensity;
   setHapticIntensity: (intensity: HapticIntensity) => Promise<void>;
+  devProfileSyncCardEnabled: boolean;
+  setDevProfileSyncCardEnabled: (enabled: boolean) => Promise<void>;
+  devDataControlsEnabled: boolean;
+  setDevDataControlsEnabled: (enabled: boolean) => Promise<void>;
 }
 
 // Provide a safe default context so components can render in tests without a provider
@@ -244,6 +248,10 @@ const defaultSettingsContext: SettingsContextType = {
   setQuietHoursEnd: async (_t: string) => {},
   hapticIntensity: "normal",
   setHapticIntensity: async (_i: HapticIntensity) => {},
+  devProfileSyncCardEnabled: false,
+  setDevProfileSyncCardEnabled: async (_b: boolean) => {},
+  devDataControlsEnabled: false,
+  setDevDataControlsEnabled: async (_b: boolean) => {},
 };
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
@@ -335,6 +343,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [quietHoursStart, setQuietHoursStartState] = useState("22:00");
   const [quietHoursEnd, setQuietHoursEndState] = useState("08:00");
   const [hapticIntensity, setHapticIntensityState] = useState<HapticIntensity>("normal");
+  const [devProfileSyncCardEnabled, setDevProfileSyncCardEnabledState] = useState(false);
+  const [devDataControlsEnabled, setDevDataControlsEnabledState] = useState(false);
 
   const tabBarHeight = useMemo(() => {
     if (tabBarStyle === "floating") {
@@ -374,6 +384,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedReadingSpeed = await AsyncStorage.getItem("readingSpeed");
       const savedFontSize = await AsyncStorage.getItem("fontSize");
       const savedAutoSave = await AsyncStorage.getItem("autoSaveOnComplete");
+      const savedTabLayout = await AsyncStorage.getItem("tabLayout");
       const savedDefaultTab = await AsyncStorage.getItem("defaultTab");
       const savedActiveTabs = await AsyncStorage.getItem("activeTabs");
       const savedSubscriptionFeaturesLocked = await AsyncStorage.getItem(
@@ -406,6 +417,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
       const savedSensitiveTone = await AsyncStorage.getItem("sensitiveTone");
       const savedVersion = await AsyncStorage.getItem("lastSeenVersion");
+      const savedDevProfileSync = await AsyncStorage.getItem("devProfileSyncCardEnabled");
+      const savedDevDataControls = await AsyncStorage.getItem("devDataControlsEnabled");
 
       if (onboarding === "true") setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -453,8 +466,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedAutoSave !== null) {
         setAutoSaveOnCompleteState(savedAutoSave === "true");
       }
+      let resolvedTabLayout: "minimal" | "comprehensive" = tabLayout;
+      if (savedTabLayout && ["minimal", "comprehensive"].includes(savedTabLayout)) {
+        resolvedTabLayout = savedTabLayout as "minimal" | "comprehensive";
+        setTabLayoutState(resolvedTabLayout);
+      }
       if (savedDefaultTab) {
-        const allowed = allowedTabs[tabLayout];
+        const allowed = allowedTabs[resolvedTabLayout];
         const resolved = allowed.includes(savedDefaultTab) ? savedDefaultTab : allowed[0];
         setDefaultTabState(resolved);
       }
@@ -462,7 +480,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         try {
           const tabs = JSON.parse(savedActiveTabs);
           if (Array.isArray(tabs)) {
-            const normalized = sanitizeTabs(tabs, tabLayout);
+            const normalized = sanitizeTabs(tabs, resolvedTabLayout);
             setActiveTabsState(normalized);
             await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
           }
@@ -533,12 +551,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSensitiveToneState(savedSensitiveTone as SensitiveTone);
       }
       if (savedVersion) setLastSeenVersion(savedVersion);
-
-      // Load tab layout preference
-      const savedTabLayout = await AsyncStorage.getItem("tabLayout");
-      if (savedTabLayout && ["minimal", "comprehensive"].includes(savedTabLayout)) {
-        setTabLayoutState(savedTabLayout as "minimal" | "comprehensive");
-      }
+      if (savedDevProfileSync !== null)
+        setDevProfileSyncCardEnabledState(savedDevProfileSync === "true");
+      if (savedDevDataControls !== null)
+        setDevDataControlsEnabledState(savedDevDataControls === "true");
 
       // Load QoL settings
       const savedLineHeight = await AsyncStorage.getItem("lineHeight");
@@ -1092,6 +1108,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const setDevProfileSyncCardEnabled = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("devProfileSyncCardEnabled", enabled.toString());
+      setDevProfileSyncCardEnabledState(enabled);
+    } catch (e) {
+      console.error("Failed to save dev profile sync flag", e);
+    }
+  };
+
+  const setDevDataControlsEnabled = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem("devDataControlsEnabled", enabled.toString());
+      setDevDataControlsEnabledState(enabled);
+    } catch (e) {
+      console.error("Failed to save dev data controls flag", e);
+    }
+  };
+
   const markVersionSeen = async (version?: string) => {
     const v = version || APP_VERSION;
     try {
@@ -1217,6 +1251,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setQuietHoursEnd,
         hapticIntensity,
         setHapticIntensity,
+        devProfileSyncCardEnabled,
+        setDevProfileSyncCardEnabled,
+        devDataControlsEnabled,
+        setDevDataControlsEnabled,
       }}
     >
       {children}

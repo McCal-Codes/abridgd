@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, FlatList, useWindowDimensions, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -204,11 +204,13 @@ export const OnboardingScreen: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
   const { width, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isCompactHeight = screenHeight < 720;
   const isMediumHeight = screenHeight >= 720 && screenHeight < 820;
-  const demoHeight = isCompactHeight ? 170 : isMediumHeight ? 240 : 320;
+  const demoHeight = isCompactHeight ? 160 : isMediumHeight ? 230 : 300;
   const [selectedGroundingStyle, setSelectedGroundingStyle] =
     useState<GroundingAnimationStyle>(groundingAnimationStyle);
+  const footerBottomPadding = Math.max(spacing.lg, insets.bottom + spacing.md);
 
   // Optional deep-link to a specific slide by id
   useEffect(() => {
@@ -246,9 +248,12 @@ export const OnboardingScreen: React.FC = () => {
   const renderItem = ({ item }: { item: (typeof SLIDES)[0] }) => {
     return (
       <View style={[styles.slide, { width }]}>
-        <View
-          style={[
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={[
             styles.slideContent,
+            styles.slideScrollContent,
             (isCompactHeight || isMediumHeight) && styles.slideContentCompact,
           ]}
         >
@@ -276,7 +281,10 @@ export const OnboardingScreen: React.FC = () => {
           {/* Live Demos */}
           {item.demo && item.demoText && (
             <View style={[styles.demoContainer, { minHeight: demoHeight }]}>
-              <AbridgedReader content={item.demoText} />
+              <AbridgedReader
+                content={item.demoText}
+                variant={isCompactHeight || isMediumHeight ? "compact" : "default"}
+              />
             </View>
           )}
 
@@ -301,7 +309,7 @@ export const OnboardingScreen: React.FC = () => {
               {item.Icon && <item.Icon size={72} color={colors.text} strokeWidth={1.5} />}
             </View>
           )}
-        </View>
+        </ScrollView>
       </View>
     );
   };
@@ -327,7 +335,13 @@ export const OnboardingScreen: React.FC = () => {
         keyExtractor={(item) => item.id}
       />
 
-      <View style={[styles.footer, isCompactHeight && styles.footerCompact]}>
+      <View
+        style={[
+          styles.footer,
+          isCompactHeight && styles.footerCompact,
+          { paddingBottom: footerBottomPadding },
+        ]}
+      >
         <View style={styles.pagination}>
           {SLIDES.map((_, index) => (
             <View key={index} style={[styles.dot, currentIndex === index && styles.dotActive]} />
@@ -356,7 +370,9 @@ export const OnboardingScreen: React.FC = () => {
             <ScaleButton
               style={styles.button}
               onPress={() => {
-                // Encourage swipe interaction; no-op button keeps layout consistent
+                const nextIndex = Math.min(currentIndex + 1, SLIDES.length - 1);
+                setCurrentIndex(nextIndex);
+                listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
               }}
             >
               <View style={{ width: "100%", alignItems: "center" }}>
@@ -387,32 +403,40 @@ const styles = StyleSheet.create({
   slideContent: {
     flex: 1,
     width: "100%",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     alignItems: "center",
     justifyContent: "flex-start",
     gap: spacing.sm,
   },
+  slideScrollContent: {
+    flexGrow: 1,
+    justifyContent: "flex-start",
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
   slideContentCompact: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     gap: spacing.xs,
     alignItems: "center",
   },
   textContainer: {
     alignItems: "center",
     gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   title: {
     fontFamily: typography.fontFamily.serif,
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "700",
     color: colors.text,
     textAlign: "center",
     marginBottom: spacing.xs,
   },
   titleMedium: {
-    fontSize: 30,
+    fontSize: 28,
   },
   titleCompact: {
     fontSize: 23,
@@ -424,20 +448,21 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 20,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   descriptionMedium: {
-    fontSize: 17,
-    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    paddingHorizontal: spacing.sm,
   },
   descriptionCompact: {
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 18,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   demoContainer: {
     width: "100%",
     flexShrink: 1,
+    marginTop: spacing.sm,
   },
   groundingPreviewWrapper: {
     width: "100%",
@@ -693,21 +718,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footer: {
-    paddingTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.xxl,
+    paddingTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl,
     alignItems: "center",
   },
   footerCompact: {
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xl,
     alignItems: "center",
   },
   pagination: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     gap: spacing.sm,
   },
   dot: {
@@ -733,6 +758,7 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: spacing.sm,
     alignItems: "center",
+    marginTop: spacing.xs,
   },
   finishBtn: {
     backgroundColor: colors.text,

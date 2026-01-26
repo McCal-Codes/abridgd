@@ -1,4 +1,5 @@
 # RSS Content Use Audit
+Last Updated: 2026-01-26
 **App:** Abridgd
 **Purpose:** Document legal, ethical, and platform-compliant use of RSS feeds
 

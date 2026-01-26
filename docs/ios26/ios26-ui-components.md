@@ -1,4 +1,5 @@
 # iOS 26 SwiftUI Toolbar & Sheet Enhancements — React Native Implementation
+Last Updated: 2026-01-26
 
 ## Core Additions in iOS 26
 

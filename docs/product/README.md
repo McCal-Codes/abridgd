@@ -1,4 +1,5 @@
 # Product Documentation
+Last Updated: 2026-01-26
 
 Product vision, architecture, features, and roadmap for Abridged.
 

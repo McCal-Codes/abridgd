@@ -48,7 +48,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
         setError(null);
 
         // Check if migration has been completed
-        const migrationDone = await isMigrationComplete();
+        const migrationDone = await isMigrationComplete(storageKey);
 
         // Load articles from storage (namespaced per profile)
         const articles = await loadArticlesFromStorage(3, 100, storageKey);
@@ -58,7 +58,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
 
         // Mark migration as complete for future app launches
         if (!migrationDone) {
-          await markMigrationComplete();
+          await markMigrationComplete(storageKey);
         }
       } catch (err) {
         if (cancelled) return;

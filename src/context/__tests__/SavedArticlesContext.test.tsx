@@ -20,6 +20,8 @@ const mockArticle: Article = {
   readTimeMinutes: 5,
 };
 
+const defaultStorageKey = "@abridged_saved_articles_default";
+
 const TestComponent = () => {
   const { savedArticles, isLoading, error, saveArticle, unsaveArticle, isArticleSaved } =
     useSavedArticles();
@@ -83,7 +85,7 @@ describe("SavedArticlesContext", () => {
       expect(screen.getByTestId("count")).toHaveTextContent("1");
     });
 
-    expect(storageUtils.loadArticlesFromStorage).toHaveBeenCalled();
+    expect(storageUtils.loadArticlesFromStorage).toHaveBeenCalledWith(3, 100, defaultStorageKey);
   });
 
   it("should mark migration complete on first init", async () => {
@@ -96,7 +98,7 @@ describe("SavedArticlesContext", () => {
     );
 
     await waitFor(() => {
-      expect(storageUtils.markMigrationComplete).toHaveBeenCalled();
+      expect(storageUtils.markMigrationComplete).toHaveBeenCalledWith(defaultStorageKey);
     });
   });
 

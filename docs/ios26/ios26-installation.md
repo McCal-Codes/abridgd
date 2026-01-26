@@ -1,4 +1,5 @@
 # iOS 26 Components - Installation Guide
+Last Updated: 2026-01-26
 
 ## Required Dependencies
 

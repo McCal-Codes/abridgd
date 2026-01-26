@@ -1,4 +1,5 @@
 # Abridged Documentation
+Last Updated: 2026-01-26
 
 Complete documentation for the Abridged news reader application.
 
@@ -37,6 +38,7 @@ docs/
 - **[Debugging Guide](development/debugging.md)** — Debugging tips, tools, and common issues
 - **[Engineering Standards](development/engineering-standards.md)** — Code quality and best practices
 - **[Standards Governance](development/standards-governance-agent.md)** — Standards maintenance process
+- **[Session Notes](development/session-notes/README.md)** — Dated development logs and decisions
 
 ### ✨ iOS 26 UI Components
 
@@ -58,8 +60,10 @@ Modern glass morphism UI system inspired by iOS 26 SwiftUI enhancements.
 
 - **[Deployment Guide](deployment/deployment.md)** — Production deployment process
 - **[EAS Workflows](deployment/eas-workflows.md)** — Expo Application Services configuration
-- **[iOS IPA Build Guide](deployment/ios-ipa-testflight.md)** — Building IPAs for TestFlight
-- **[TestFlight Testing Guide](deployment/TESTFLIGHT_TESTING_GUIDE.md)** — Beta testing process
+- **[iOS IPA Build Guide](deployment/testflight/ios-ipa-testflight.md)** — Building IPAs for TestFlight
+- **[TestFlight Testing Guide](deployment/testflight/TESTFLIGHT_TESTING_GUIDE.md)** — Beta testing process
+- **[TestFlight Release Notes](deployment/testflight/APP_STORE_CONNECT_TESTFLIGHT_NOTES.md)** — Current beta build notes
+- **[1.2.0 Testing Focus](deployment/testflight/TESTFLIGHT_1_2_0_TESTING.md)** — Experimental navbar test plan
 - **[TestFlight Notes](deployment/APP_STORE_CONNECT_TESTFLIGHT_NOTES.md)** — Beta tester release notes
 
 ### 🔬 Research & References

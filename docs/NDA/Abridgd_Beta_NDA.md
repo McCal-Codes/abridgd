@@ -1,4 +1,5 @@
 # Confidentiality & Non‑Disclosure Agreement (Beta Testers)
+Last Updated: 2026-01-26
 
 **Disclosing Party:** McCal Media LLC (d/b/a Abridgd)
 **Contact:** contact@mcc-cal.com

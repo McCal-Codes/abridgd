@@ -1,4 +1,5 @@
 # Deployment Documentation
+Last Updated: 2026-01-26
 
 Guides for building, deploying, and distributing Abridged.
 
@@ -26,29 +27,11 @@ Deploy Expo Router web builds to EAS Hosting:
 - `eas deploy` usage
 - Preview vs production URLs and troubleshooting
 
-### [iOS IPA Build Guide](ios-ipa-testflight.md)
-Building iOS IPAs for TestFlight:
-- Xcode configuration
-- Certificate and provisioning profiles
-- Building with `build-ipa.sh` script
-- Archive and export process
-- Common build issues
-
-### [TestFlight Testing Guide](TESTFLIGHT_TESTING_GUIDE.md)
-Beta testing process for testers:
-- Installing TestFlight
-- Joining beta test
-- Providing feedback
-- Reporting bugs
-- What to test
-
-### [TestFlight Release Notes](APP_STORE_CONNECT_TESTFLIGHT_NOTES.md)
-Release notes for beta testers:
-- Current version features
-- What's new in this build
-- Known limitations
-- Testing focus areas
-- How to report issues
+### TestFlight & IPA Builds (`testflight/`)
+- [iOS IPA Build Guide](testflight/ios-ipa-testflight.md) — Xcode setup, signing, helper script, and EAS build/submit.
+- [TestFlight Testing Guide](testflight/TESTFLIGHT_TESTING_GUIDE.md) — Beta onboarding, feedback, and coverage checklist.
+- [TestFlight Release Notes](testflight/APP_STORE_CONNECT_TESTFLIGHT_NOTES.md) — Current beta build notes and focus areas.
+- [1.2.0 Testing Guide](testflight/TESTFLIGHT_1_2_0_TESTING.md) — Experimental navbar testing plan.
 
 ---
 

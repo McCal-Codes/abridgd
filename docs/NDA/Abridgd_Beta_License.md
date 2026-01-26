@@ -1,4 +1,5 @@
 # Abridgd — Beta Test License Agreement
+Last Updated: 2026-01-26
 
 This Beta Test License Agreement ("Agreement") governs your use of pre-release versions of the mobile application "Abridgd" provided by McCal Media LLC ("Company" or "We"). By installing, accessing, or using Abridgd via TestFlight or any other pre-release distribution method, you ("Tester" or "You") agree to be bound by this Agreement.
 

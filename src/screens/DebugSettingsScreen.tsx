@@ -36,6 +36,17 @@ export const DebugSettingsScreen: React.FC = () => {
   const [verboseLogging, setVerboseLogging] = React.useState(false);
   const [presetApplying, setPresetApplying] = React.useState(false);
   const [advEnabled, setAdvEnabled] = React.useState(settings.enableAdvancedHeightControls);
+  const [devProfileSyncCardEnabled, setDevProfileSyncCardEnabled] = React.useState(
+    settings.devProfileSyncCardEnabled,
+  );
+  const [devDataControlsEnabled, setDevDataControlsEnabled] = React.useState(
+    settings.devDataControlsEnabled,
+  );
+
+  React.useEffect(() => {
+    setDevProfileSyncCardEnabled(settings.devProfileSyncCardEnabled);
+    setDevDataControlsEnabled(settings.devDataControlsEnabled);
+  }, [settings.devProfileSyncCardEnabled, settings.devDataControlsEnabled]);
 
   const clearAllData = async () => {
     Alert.alert(
@@ -223,6 +234,36 @@ export const DebugSettingsScreen: React.FC = () => {
           Power tools for inspection, experiments, and safe recovery. Nothing here is required for
           normal use.
         </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Profile dev toggles</Text>
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actionTitle}>Show Apple account card</Text>
+              <Text style={styles.actionDesc}>Enable sync card on Profile for QA</Text>
+            </View>
+            <Switch
+              value={devProfileSyncCardEnabled}
+              onValueChange={async (value) => {
+                setDevProfileSyncCardEnabled(value);
+                await settings.setDevProfileSyncCardEnabled(value);
+              }}
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actionTitle}>Enable data controls</Text>
+              <Text style={styles.actionDesc}>Show data controls/testing actions on Profile</Text>
+            </View>
+            <Switch
+              value={devDataControlsEnabled}
+              onValueChange={async (value) => {
+                setDevDataControlsEnabled(value);
+                await settings.setDevDataControlsEnabled(value);
+              }}
+            />
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data & Recovery</Text>
@@ -512,7 +553,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    toggleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: spacing.sm,
+    },
   },
   dangerButton: {
     borderColor: "#FFCDD2",

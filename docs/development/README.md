@@ -1,4 +1,5 @@
 # Development Documentation
+Last Updated: 2026-01-26
 
 Guides, standards, and best practices for developing Abridged.
 
@@ -35,6 +36,9 @@ Process for maintaining and evolving standards:
 - Proposing standard changes
 - Governance responsibilities
 - Drift detection and correction
+
+### [Session Notes](session-notes/README.md)
+Dated development session logs with outcomes, learnings, and follow-ups.
 
 ---
 

@@ -1,9 +1,11 @@
-# Active To-Do List
+# Archived Roadmap (see `todo.md` for live backlog)
 
-Last Updated: January 16, 2026
+Last Updated: January 16, 2026 — **This file is now historical.**
+
+**Source of truth:** Use the root [`todo.md`](../todo.md) for current priorities and sprint items. This file remains for reference to legacy TODO IDs and earlier release scoping.
 
 **Quick Reference:**
-- See [completed.md](./completed.md) for all finished tasks
+- See [completed.md](./completed.md) for finished historical tasks
 - Reference standards: [docs/standards/](../docs/standards/)
 - Agent instructions: [.agentinstructions.md](../.agentinstructions.md)
 

@@ -46,7 +46,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) =>
 
 export const ArticleCardSkeleton: React.FC = () => {
   return (
-    <View style={styles.card}>
+    <View style={styles.card} testID="article-card-skeleton">
       <View style={styles.cardContent}>
         <View style={styles.textContainer}>
           <Skeleton width="78%" height={22} borderRadius={6} style={{ marginBottom: spacing.xs }} />

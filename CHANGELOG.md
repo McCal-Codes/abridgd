@@ -6,6 +6,20 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Changed
+- Daily digest now pulls live feed data (no mock articles) and falls back gracefully if the last visit was more than 2 hours ago, while recording the last fetched article IDs per profile for better recency tracking.
+- Profile screen polish: clearer stat pills, personalization status chip, last-read and karma tier details, and corrected quick action icons.
+- Profile screen fine-tuning: added Dynamic Type-friendly stat values and a karma unlock progress bar for personalization gating.
+
+### Fixed
+- Onboarding “Give Your Eyes a Break” slide no longer clips the RSVP reader demo on compact screens, preserving the card’s rounded corners.
+- Screens: Home now shows article-card skeletons during the initial load and WTAE feed retries via rss2json if proxies trim items, so the feed consistently appears.
+- Feed lists tuned for performance: added batching/windowing hints to FlatLists (Home, Sections, Saved) to quiet VirtualizedList warnings and keep scrolling smooth on long feeds.
+- Profiles now reroll their codename when no matching profile icon exists, avoiding missing avatar images.
+- Disabled or opted-out broken feeds (The Incline, WESA Arts, Penguins, Pirates, Pitt Panthers, Pittsburgh Business Times) and swapped the Pittsburgh template to Post-Gazette Biz; Pirates now use the MLB team feed URL.
+
+## [1.4.0] - 2026-01-26
+
 ### Added
 - GlassStackHeader and HeroHeader components to expand the iOS 26-inspired UI kit, plus an AchievementsScreen scaffold for future engagement features.
 - Expanded Pittsburgh RSS coverage (WESA, Kidsburgh, Penguins, Pirates, Pitt Panthers, and more) with opt-in defaults for audio/experimental feeds and Settings badges for default-off sources.
@@ -19,6 +33,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Documentation
 - New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.
+- Reorganized TestFlight deployment/testing docs into a dedicated subfolder and grouped development session notes under a single index.
 
 ## [1.3.5] - TBD
 

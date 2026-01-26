@@ -1,4 +1,6 @@
-# Achieved Milestones
+# Achieved Milestones (historical)
+
+> For the canonical list of completed items by version, see `updates/completed.md`. This file remains as an early milestone log.
 
 ## Phase 1: Foundation (Completed 2026-01-12)
 - [x] **Project Scaffolding**: Initialized Expo TypeScript project.

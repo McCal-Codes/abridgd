@@ -23,6 +23,7 @@ interface ProfileContextType {
   signOut: () => Profile;
   trackArticleRead: () => void;
   trackSavedAction: () => void;
+  recordLastFetchedArticles: (articleIds: string[]) => void;
   exportProfileKey: () => string | null;
   importProfileKey: (key: string) => boolean;
   updateSavedArticles: (articles: Article[]) => void;
@@ -72,6 +73,27 @@ const ANIMALS = [
   "Fawn",
   "Kestrel",
 ];
+const sanitizeAnimalKey = (value?: string) => value?.toLowerCase().replace(/[^a-z]/g, "") ?? null;
+const extractAnimalKey = (codename?: string) => {
+  if (!codename) return null;
+  const parts = codename.trim().split(" ");
+  const last = parts[parts.length - 1];
+  return sanitizeAnimalKey(last);
+};
+
+const ANIMAL_KEYS_WITH_ICONS = new Set(
+  ANIMALS.map((animal) => sanitizeAnimalKey(animal)).filter(Boolean) as string[],
+);
+
+const ANIMALS_WITH_ICONS = ANIMALS.filter((animal) =>
+  ANIMAL_KEYS_WITH_ICONS.has(sanitizeAnimalKey(animal) || ""),
+);
+
+const codenameHasIcon = (codename?: string) => {
+  const key = extractAnimalKey(codename);
+  if (!key) return false;
+  return ANIMAL_KEYS_WITH_ICONS.has(key);
+};
 
 const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
@@ -105,19 +127,20 @@ const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 const generateCodename = (used: Set<string> = new Set()) => {
-  const maxAttempts = VERBS_OR_ADJECTIVES.length * ANIMALS.length;
+  const animalPool = ANIMALS_WITH_ICONS.length > 0 ? ANIMALS_WITH_ICONS : ANIMALS;
+  const maxAttempts = VERBS_OR_ADJECTIVES.length * animalPool.length;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const verb = VERBS_OR_ADJECTIVES[Math.floor(Math.random() * VERBS_OR_ADJECTIVES.length)];
-    const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+    const animal = animalPool[Math.floor(Math.random() * animalPool.length)];
     const codename = `${verb} ${animal}`;
-    if (!used.has(codename)) {
+    if (!used.has(codename) && codenameHasIcon(codename)) {
       return codename;
     }
   }
 
   // Fallback: all combinations used; append a short suffix
   const verb = VERBS_OR_ADJECTIVES[0];
-  const animal = ANIMALS[0];
+  const animal = animalPool[0];
   return `${verb} ${animal} ${Math.floor(Math.random() * 1000)}`;
 };
 
@@ -157,12 +180,24 @@ const applyAchievements = (profile: Profile): Profile => {
 };
 
 const withProfileDefaults = (profile: Profile, usedCodenames: Set<string> = new Set()): Profile => {
-  const stats = profile.stats || { articlesRead: 0, savedActions: 0, lastReadAt: null };
+  const stats = profile.stats || {
+    articlesRead: 0,
+    savedActions: 0,
+    lastReadAt: null,
+    lastSavedAt: null,
+    lastFetchedArticleIds: [],
+    lastFetchedAt: null,
+  };
   const achievements = profile.achievements || { earnedIds: [], earnedAt: {}, version: 1 };
-  const chosenCodename =
-    profile.codename && !usedCodenames.has(profile.codename)
+  let chosenCodename =
+    profile.codename && !usedCodenames.has(profile.codename) && codenameHasIcon(profile.codename)
       ? profile.codename
-      : generateCodename(usedCodenames);
+      : undefined;
+
+  if (!chosenCodename) {
+    chosenCodename = generateCodename(usedCodenames);
+  }
+
   usedCodenames.add(chosenCodename);
 
   const normalized: Profile = {
@@ -212,13 +247,22 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         if (storedProfiles) {
           const parsed: Profile[] = JSON.parse(storedProfiles);
           const used = new Set<string>();
+          let mutated = false;
           const normalized = parsed.map((p) => {
             const next = withProfileDefaults(p, used);
+            if (next.codename !== p.codename) mutated = true;
             if (next.codename) used.add(next.codename);
             return next;
           });
           setProfiles(normalized);
           setActiveProfile(normalized[0] || null);
+          if (mutated) {
+            try {
+              await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+            } catch (persistError) {
+              console.error("Failed to persist normalized profiles", persistError);
+            }
+          }
           return;
         }
       } catch (e) {
@@ -230,7 +274,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         name: "Reader",
         codename: fallbackCodename,
         savedArticles: [],
-        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null, lastSavedAt: null },
       });
       setProfiles([defaultProfile]);
       setActiveProfile(defaultProfile);
@@ -254,7 +298,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         id: uuidv4(),
         name,
         codename: generateCodename(used),
-        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null, lastSavedAt: null },
         savedArticles: [],
       },
       used,
@@ -311,7 +355,15 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
   const trackSavedAction = () => {
     const current = activeProfile?.stats?.savedActions || 0;
-    updateActiveProfileStats({ savedActions: current + 1 });
+    updateActiveProfileStats({ savedActions: current + 1, lastSavedAt: Date.now() });
+  };
+
+  const recordLastFetchedArticles = (articleIds: string[]) => {
+    if (!articleIds || articleIds.length === 0) return;
+    updateActiveProfileStats({
+      lastFetchedArticleIds: articleIds.slice(0, 50),
+      lastFetchedAt: Date.now(),
+    });
   };
 
   const updateSavedArticles = (articles: Article[]) => {
@@ -409,7 +461,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       const sanitized = withProfileDefaults(
         {
           ...parsed,
-          stats: parsed.stats || { articlesRead: 0, savedActions: 0, lastReadAt: null },
+          stats: parsed.stats || {
+            articlesRead: 0,
+            savedActions: 0,
+            lastReadAt: null,
+            lastSavedAt: null,
+          },
           savedArticles: parsed.savedArticles || [],
         },
         used,
@@ -446,6 +503,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         signOut,
         trackArticleRead,
         trackSavedAction,
+        recordLastFetchedArticles,
         exportProfileKey,
         importProfileKey,
         updateSavedArticles,

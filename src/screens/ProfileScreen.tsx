@@ -18,20 +18,25 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Image,
   View,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import {
   BookOpen,
   Flame,
   Mail,
+  Settings,
   Shield,
+  Share2,
   Sparkles,
   Target,
   UploadCloud,
   Download,
   User,
+  Info,
 } from "lucide-react-native";
 import { GlassButton } from "../components/GlassButton";
 import { SignInWithApple } from "../components/SignInWithApple";
@@ -58,6 +63,139 @@ const KARMA_TIERS = [
   { label: "Glowing", min: 300 },
 ];
 
+const PERSONALIZATION_UNLOCK_KARMA = 150;
+
+const ANIMAL_ICON_MAP = {
+  aquarium: require("../../assets/icons/Profile Icons/Animal Icons/icons8-aquarium-100.png"),
+  bear: require("../../assets/icons/Profile Icons/Animal Icons/icons8-bear-100.png"),
+  bee: require("../../assets/icons/Profile Icons/Animal Icons/icons8-bee-100.png"),
+  bird: require("../../assets/icons/Profile Icons/Animal Icons/icons8-bird-100.png"),
+  blackcat: require("../../assets/icons/Profile Icons/Animal Icons/icons8-black-cat-100.png"),
+  jaguar: require("../../assets/icons/Profile Icons/Animal Icons/icons8-black-jaguar-100.png"),
+  bug: require("../../assets/icons/Profile Icons/Animal Icons/icons8-bug-100.png"),
+  bull: require("../../assets/icons/Profile Icons/Animal Icons/icons8-bull-100.png"),
+  butterfly: require("../../assets/icons/Profile Icons/Animal Icons/icons8-butterfly-100.png"),
+  cat: require("../../assets/icons/Profile Icons/Animal Icons/icons8-cat-100.png"),
+  chicken: require("../../assets/icons/Profile Icons/Animal Icons/icons8-chicken-100.png"),
+  clownfish: require("../../assets/icons/Profile Icons/Animal Icons/icons8-clown-fish-100.png"),
+  corgi: require("../../assets/icons/Profile Icons/Animal Icons/icons8-corgi-100.png"),
+  cow: require("../../assets/icons/Profile Icons/Animal Icons/icons8-cow-100.png"),
+  crab: require("../../assets/icons/Profile Icons/Animal Icons/icons8-crab-100.png"),
+  dog: require("../../assets/icons/Profile Icons/Animal Icons/icons8-dog-100.png"),
+  dogbone: require("../../assets/icons/Profile Icons/Animal Icons/icons8-dog-bone-100.png"),
+  doghouse: require("../../assets/icons/Profile Icons/Animal Icons/icons8-dog-house-100.png"),
+  dolphin: require("../../assets/icons/Profile Icons/Animal Icons/icons8-dolphin-100.png"),
+  dove: require("../../assets/icons/Profile Icons/Animal Icons/icons8-dove-100.png"),
+  duck: require("../../assets/icons/Profile Icons/Animal Icons/icons8-duck-100.png"),
+  elephant: require("../../assets/icons/Profile Icons/Animal Icons/icons8-elephant-100.png"),
+  falcon: require("../../assets/icons/Profile Icons/Animal Icons/icons8-falcon-100.png"),
+  fish: require("../../assets/icons/Profile Icons/Animal Icons/icons8-fish-100.png"),
+  flamingo: require("../../assets/icons/Profile Icons/Animal Icons/icons8-flamingo-100.png"),
+  fox: require("../../assets/icons/Profile Icons/Animal Icons/icons8-fox-100.png"),
+  frog: require("../../assets/icons/Profile Icons/Animal Icons/icons8-frog-100.png"),
+  germanshepherd: require("../../assets/icons/Profile Icons/Animal Icons/icons8-german-shepherd-100.png"),
+  gorilla: require("../../assets/icons/Profile Icons/Animal Icons/icons8-gorilla-100.png"),
+  horse: require("../../assets/icons/Profile Icons/Animal Icons/icons8-horse-100.png"),
+  kangaroo: require("../../assets/icons/Profile Icons/Animal Icons/icons8-kangaroo-100.png"),
+  ladybug: require("../../assets/icons/Profile Icons/Animal Icons/icons8-ladybug-100.png"),
+  lion: require("../../assets/icons/Profile Icons/Animal Icons/icons8-lion-100.png"),
+  mouse: require("../../assets/icons/Profile Icons/Animal Icons/icons8-mouse-animal-100.png"),
+  octopus: require("../../assets/icons/Profile Icons/Animal Icons/icons8-octopus-100.png"),
+  owl: require("../../assets/icons/Profile Icons/Animal Icons/icons8-owl-100.png"),
+  panda: require("../../assets/icons/Profile Icons/Animal Icons/icons8-panda-100.png"),
+  parrot: require("../../assets/icons/Profile Icons/Animal Icons/icons8-parrot-100.png"),
+  pelican: require("../../assets/icons/Profile Icons/Animal Icons/icons8-pelican-100.png"),
+  penguin: require("../../assets/icons/Profile Icons/Animal Icons/icons8-penguin-100.png"),
+  pig: require("../../assets/icons/Profile Icons/Animal Icons/icons8-pig-100.png"),
+  prawn: require("../../assets/icons/Profile Icons/Animal Icons/icons8-prawn-100.png"),
+  rabbit: require("../../assets/icons/Profile Icons/Animal Icons/icons8-rabbit-100.png"),
+  runningrabbit: require("../../assets/icons/Profile Icons/Animal Icons/icons8-running-rabbit-100.png"),
+  shark: require("../../assets/icons/Profile Icons/Animal Icons/icons8-shark-100.png"),
+  sheep: require("../../assets/icons/Profile Icons/Animal Icons/icons8-sheep-100.png"),
+  snail: require("../../assets/icons/Profile Icons/Animal Icons/icons8-snail-100.png"),
+  spider: require("../../assets/icons/Profile Icons/Animal Icons/icons8-spider-100.png"),
+  starfish: require("../../assets/icons/Profile Icons/Animal Icons/icons8-starfish-100.png"),
+  turtle: require("../../assets/icons/Profile Icons/Animal Icons/icons8-turtle-100.png"),
+  unicorn: require("../../assets/icons/Profile Icons/Animal Icons/icons8-unicorn-100.png"),
+  whale: require("../../assets/icons/Profile Icons/Animal Icons/icons8-whale-100.png"),
+  wolf: require("../../assets/icons/Profile Icons/Animal Icons/icons8-wolf-100.png"),
+} as const;
+
+const sanitizeAnimalKey = (value?: string) => value?.toLowerCase().replace(/[^a-z]/g, "") ?? null;
+
+const extractAnimalKey = (codename?: string) => {
+  if (!codename) return null;
+  const parts = codename.trim().split(" ");
+  const last = parts[parts.length - 1];
+  return sanitizeAnimalKey(last);
+};
+
+const getAnimalIconSource = (codename?: string) => {
+  const key = extractAnimalKey(codename);
+  if (!key) return null;
+  const directMatch = (ANIMAL_ICON_MAP as Record<string, unknown>)[key];
+  if (directMatch) return directMatch;
+  return null;
+};
+
+const getCurrentKarmaTier = (score: number) => {
+  let currentTier = KARMA_TIERS[0];
+  KARMA_TIERS.forEach((tier) => {
+    if (score >= tier.min) {
+      currentTier = tier;
+    }
+  });
+  return currentTier;
+};
+
+const formatRelativeDate = (timestamp?: number | null) => {
+  if (!timestamp) return "No reads yet";
+  const target = new Date(timestamp);
+  if (Number.isNaN(target.getTime())) return "No reads yet";
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startOfTarget = new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    target.getDate(),
+  ).getTime();
+  const diffDays = Math.floor((startOfToday - startOfTarget) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) {
+    const weeks = Math.round(diffDays / 7);
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+
+  return target.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
+const triggerHaptic = async (
+  type: "success" | "warning",
+  hapticIntensity: ReturnType<typeof useSettings>["hapticIntensity"],
+  reduceMotion: boolean,
+) => {
+  if (reduceMotion || hapticIntensity === "off") return;
+  try {
+    if (type === "warning") {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } else {
+      const style =
+        hapticIntensity === "strong"
+          ? Haptics.ImpactFeedbackStyle.Heavy
+          : hapticIntensity === "subtle"
+            ? Haptics.ImpactFeedbackStyle.Light
+            : Haptics.ImpactFeedbackStyle.Medium;
+      await Haptics.impactAsync(style);
+    }
+  } catch {
+    // noop if haptics unavailable
+  }
+};
+
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -70,7 +208,13 @@ const ProfileScreen: React.FC = () => {
     importProfileKey,
     updateSettingsTag,
   } = useProfiles();
-  const { subscriptionFeaturesLocked, reduceMotion } = useSettings();
+  const {
+    subscriptionFeaturesLocked,
+    reduceMotion,
+    hapticIntensity,
+    devProfileSyncCardEnabled,
+    devDataControlsEnabled,
+  } = useSettings();
 
   const [settingsTagInput, setSettingsTagInput] = useState(activeProfile?.settingsTag || "");
   const [importCode, setImportCode] = useState("");
@@ -78,9 +222,14 @@ const ProfileScreen: React.FC = () => {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [sheetFeature, setSheetFeature] = useState<string | null>(null);
   const [sheetLocked, setSheetLocked] = useState(true);
+  const [sheetAccessStatus, setSheetAccessStatus] = useState<
+    "locked" | "karma-unlocked" | "preview"
+  >("locked");
   const profileReady = Boolean(activeProfile);
 
   const sheetAnim = useRef(new Animated.Value(0)).current; // 0 hidden, 1 shown
+  const featureProgressAnim = useRef(new Animated.Value(0)).current;
+  const skeletonPulse = useRef(new Animated.Value(0.5)).current;
 
   const achievementStatuses = useMemo(
     () => getAchievementStatuses(activeProfile || undefined),
@@ -98,12 +247,55 @@ const ProfileScreen: React.FC = () => {
   const karma = articlesRead * 10 + savedActions * 5 + savedCount * 2;
   const nextTier = KARMA_TIERS.find((tier) => tier.min > karma);
   const karmaProgress = nextTier ? Math.min(1, (karma - (nextTier.min - 50)) / 50) : 1;
+  const karmaUnlockProgress = Math.min(1, karma / PERSONALIZATION_UNLOCK_KARMA);
+  const hasKarmaUnlock = karma >= PERSONALIZATION_UNLOCK_KARMA;
+  const personalizationLocked = subscriptionFeaturesLocked && !hasKarmaUnlock;
+  const currentTier = getCurrentKarmaTier(karma);
 
-  const featureBadgeText = subscriptionFeaturesLocked ? "Locked" : "Preview";
-  const featureLockCopy = subscriptionFeaturesLocked
-    ? "Locked until subscriptions launch."
-    : "Temporarily unlocked for testing.";
-  const featureStatusLabel = subscriptionFeaturesLocked ? "Locked" : "Unlocked for testing";
+  const animalIconSource = useMemo(
+    () => getAnimalIconSource(activeProfile?.codename),
+    [activeProfile?.codename],
+  );
+
+  const featureBadgeText = personalizationLocked
+    ? "Locked"
+    : hasKarmaUnlock
+      ? "Karma unlocked"
+      : "Preview";
+  const featureLockCopy = personalizationLocked
+    ? `Earn ${PERSONALIZATION_UNLOCK_KARMA} karma to unlock now. Purchases will arrive later.`
+    : hasKarmaUnlock
+      ? "Unlocked with karma. Purchases will arrive later."
+      : "Temporarily unlocked for testing.";
+  const featureStatusLabel = personalizationLocked
+    ? "Locked"
+    : hasKarmaUnlock
+      ? "Unlocked with karma"
+      : "Unlocked for testing";
+  const sheetTitleCopy =
+    sheetAccessStatus === "locked"
+      ? "Unlock with karma"
+      : sheetAccessStatus === "karma-unlocked"
+        ? "Unlocked with karma"
+        : "Debug: unlocked";
+  const sheetSubtitleCopy =
+    sheetAccessStatus === "locked"
+      ? `Earn ${PERSONALIZATION_UNLOCK_KARMA} karma to unlock personalization and advanced features today. Purchases will be available later.`
+      : sheetAccessStatus === "karma-unlocked"
+        ? "You unlocked personalization with your reading karma. Purchases will be available later."
+        : "Currently unlocked for debugging. Toggle gating in Debug → Force subscription gating to simulate the paywall.";
+
+  const appleSignedIn = Boolean(activeProfile?.appleUserId);
+  const appleStatusLine = appleSignedIn
+    ? activeProfile?.email || activeProfile?.name || "Signed in with Apple"
+    : "Not signed in";
+  const appleBadgeText = appleSignedIn ? "Signed in" : "Signed out";
+
+  const lastReadDisplay = profileReady ? formatRelativeDate(activeProfile?.stats?.lastReadAt) : "—";
+  const lastSavedDisplay = profileReady
+    ? formatRelativeDate(activeProfile?.stats?.lastSavedAt)
+    : "—";
+  const karmaTierLabel = profileReady ? `${currentTier.label} tier` : "—";
 
   const sheetPanResponder = useRef(
     PanResponder.create({
@@ -137,16 +329,19 @@ const ProfileScreen: React.FC = () => {
     });
   };
 
-  const openSubscriptionSheet = (feature: string, locked: boolean) => {
+  const openSubscriptionSheet = (feature: string) => {
+    const status = personalizationLocked ? "locked" : hasKarmaUnlock ? "karma-unlocked" : "preview";
     setSheetVisible(true);
     setSheetFeature(feature);
-    setSheetLocked(locked);
+    setSheetLocked(status === "locked");
+    setSheetAccessStatus(status);
     animateSheet(true);
   };
 
   const closeSubscriptionSheet = () => {
     animateSheet(false);
     setSheetVisible(false);
+    setSheetAccessStatus("locked");
   };
 
   useEffect(() => {
@@ -159,6 +354,42 @@ const ProfileScreen: React.FC = () => {
     parent.setOptions({ tabBarStyle: sheetVisible ? { display: "none" } : undefined });
   }, [navigation, sheetVisible]);
 
+  useEffect(() => {
+    if (reduceMotion) {
+      featureProgressAnim.setValue(karmaUnlockProgress);
+      return;
+    }
+    Animated.timing(featureProgressAnim, {
+      toValue: karmaUnlockProgress,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }, [featureProgressAnim, karmaUnlockProgress, reduceMotion]);
+
+  useEffect(() => {
+    if (!profileReady) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(skeletonPulse, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(skeletonPulse, {
+            toValue: 0.5,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+    skeletonPulse.setValue(0.5);
+  }, [profileReady, skeletonPulse]);
+
+  const skeletonStyle = { opacity: skeletonPulse } as const;
+
   const handleSettings = () => navigation.navigate("Settings" as never);
 
   const handleShare = async () => {
@@ -167,7 +398,9 @@ const ProfileScreen: React.FC = () => {
         message: `Try ${APP_NAME} — calm, Pittsburgh-focused news with RSVP reading. (${APP_VERSION} build ${APP_BUILD})`,
         url: "https://abridgd.app",
       });
+      triggerHaptic("success", hapticIntensity, reduceMotion);
     } catch {
+      triggerHaptic("warning", hapticIntensity, reduceMotion);
       Alert.alert("Error", "Unable to open share sheet.");
     }
   };
@@ -180,10 +413,12 @@ const ProfileScreen: React.FC = () => {
       const supported = await Linking.canOpenURL(mailto);
       if (supported) {
         await Linking.openURL(mailto);
+        triggerHaptic("success", hapticIntensity, reduceMotion);
       } else {
         Alert.alert("No mail app", "No mail client is available on this device.");
       }
     } catch {
+      triggerHaptic("warning", hapticIntensity, reduceMotion);
       Alert.alert("Error", "Unable to open mail composer.");
     }
   };
@@ -203,6 +438,7 @@ const ProfileScreen: React.FC = () => {
     NativeShare.share({
       message: `Abridgd profile key: ${key}`,
     });
+    triggerHaptic("success", hapticIntensity, reduceMotion);
   };
 
   const handleImportProfile = () => {
@@ -212,7 +448,9 @@ const ProfileScreen: React.FC = () => {
     if (success) {
       Alert.alert("Imported", "Profile imported and activated.");
       setImportCode("");
+      triggerHaptic("success", hapticIntensity, reduceMotion);
     } else {
+      triggerHaptic("warning", hapticIntensity, reduceMotion);
       Alert.alert("Import failed", "Please check the code and try again.");
     }
   };
@@ -220,6 +458,12 @@ const ProfileScreen: React.FC = () => {
   const sheetTranslate = sheetAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [360, 0],
+    extrapolate: "clamp",
+  });
+
+  const featureProgressWidth = featureProgressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
     extrapolate: "clamp",
   });
 
@@ -233,7 +477,16 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.card}>
           <View style={styles.profileRow}>
             <View style={styles.avatarContainer}>
-              <User size={46} color={colors.textSecondary} strokeWidth={1.5} />
+              {animalIconSource ? (
+                <Image
+                  source={animalIconSource}
+                  style={styles.avatarImage}
+                  resizeMode="contain"
+                  accessibilityIgnoresInvertColors
+                />
+              ) : (
+                <User size={46} color={colors.textSecondary} strokeWidth={1.5} />
+              )}
             </View>
             <View style={styles.profileTextBlock}>
               <Text style={styles.profileName}>{activeProfile?.name || "Anonymous Reader"}</Text>
@@ -261,42 +514,37 @@ const ProfileScreen: React.FC = () => {
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{achievementsDisplay} achievements</Text>
                 </View>
+                <View style={[styles.badge, styles.karmaTierBadge]} accessibilityRole="text">
+                  <Text style={styles.badgeText}>{karmaTierLabel}</Text>
+                </View>
               </View>
             </View>
           </View>
 
           <View style={styles.profilePillsRow}>
-            <View style={styles.profilePill}>
-              <Text style={styles.profilePillLabel}>Reads</Text>
-              <Text
-                style={styles.profilePillValue}
-                accessibilityLabel={`Articles read ${articlesReadDisplay}`}
-              >
-                {articlesReadDisplay}
-              </Text>
-            </View>
-            <View style={styles.profilePill}>
-              <Text style={styles.profilePillLabel}>Saved</Text>
-              <Text
-                style={styles.profilePillValue}
-                accessibilityLabel={`Saved articles ${savedCountDisplay}`}
-              >
-                {savedCountDisplay}
-              </Text>
-            </View>
-            <View style={styles.profilePill}>
-              <Text style={styles.profilePillLabel}>Achievements</Text>
-              <Text
-                style={styles.profilePillValue}
-                accessibilityLabel={`Achievements ${achievementsDisplay}`}
-              >
-                {achievementsDisplay}
-              </Text>
-            </View>
+            <ProfilePill
+              label="Reads"
+              value={articlesReadDisplay}
+              accessibilityLabel={`Articles read ${articlesReadDisplay}`}
+            />
+            <ProfilePill
+              label="Saved"
+              value={savedCountDisplay}
+              accessibilityLabel={`Saved articles ${savedCountDisplay}`}
+            />
+            <ProfilePill
+              label="Achievements"
+              value={achievementsDisplay}
+              accessibilityLabel={`Achievements ${achievementsDisplay}`}
+            />
           </View>
 
           {!profileReady ? (
-            <Text style={styles.noteText}>Loading your profile…</Text>
+            <Animated.View
+              style={[styles.skeletonBar, skeletonStyle, { width: "65%", marginTop: spacing.sm }]}
+              accessibilityLabel="Loading profile stats"
+              accessible
+            />
           ) : (
             <Text style={styles.noteText}>
               Stats and saved articles stay on this device until sync launches.
@@ -368,9 +616,15 @@ const ProfileScreen: React.FC = () => {
               hint="Times you saved from feed or article"
             />
             <StatRow
-              label="Reading streak"
-              value="0 days"
-              hint="Read today to start your streak"
+              label="Last saved"
+              value={lastSavedDisplay}
+              hint="Most recent save or sync write"
+            />
+            <StatRow label="Last read" value={lastReadDisplay} hint="Relative to today" />
+            <StatRow
+              label="Karma tier"
+              value={karmaTierLabel}
+              hint={nextTier ? `${nextTier.label} up next` : "Top tier reached"}
               isLast
             />
           </View>
@@ -395,51 +649,81 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.section}>
           <SectionHeader title="Personalization & advanced features" />
           <Text style={styles.sectionDesc}>
-            Capability layer for readers who want extra control. These stay off until subscriptions
-            launch.
+            Capability layer for readers who want extra control. Earn enough karma to unlock it now;
+            purchases will come later.
           </Text>
+          <View
+            style={styles.featureStatusChip}
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={`${featureStatusLabel}. ${featureLockCopy}`}
+          >
+            <Sparkles size={16} color={colors.textSecondary} />
+            <Text style={styles.featureStatusText}>{featureStatusLabel}</Text>
+            <Text style={styles.featureStatusHint}>{featureLockCopy}</Text>
+          </View>
+          <View
+            style={styles.featureProgress}
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel="Karma toward personalization unlock"
+            accessibilityValue={{
+              min: 0,
+              max: PERSONALIZATION_UNLOCK_KARMA,
+              now: karma,
+              text: `${karma}/${PERSONALIZATION_UNLOCK_KARMA} karma`,
+            }}
+          >
+            <View
+              style={[styles.featureProgressFill, { width: `${karmaUnlockProgress * 100}%` }]}
+            />
+          </View>
+          <View style={styles.featureProgressMeta}>
+            <Text style={styles.featureProgressText}>
+              {karma}/{PERSONALIZATION_UNLOCK_KARMA} karma
+            </Text>
+            <Text style={styles.featureProgressHint}>
+              {hasKarmaUnlock ? "Unlocked with karma" : `Keep reading to unlock personalization`}
+            </Text>
+          </View>
           <View style={styles.card}>
-            <TouchableOpacity
-              style={styles.featureRow}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Reading pace and presentation. ${featureStatusLabel}. ${featureLockCopy}`}
-              accessibilityHint="Opens subscription sheet for pacing controls"
-              onPress={() =>
-                openSubscriptionSheet("Reading pace & presentation", subscriptionFeaturesLocked)
-              }
-              activeOpacity={0.75}
-            >
-              <View style={styles.featureIcon}>
-                <Sparkles size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.featureTextBlock}>
-                <Text style={styles.featureTitle}>Reading pace & presentation</Text>
-                <Text style={styles.featureDesc}>
-                  Adjust pacing, typography, and density. {featureLockCopy}
+            <TouchableOpacity style={styles.featureRow} accessible>
+              <View style={styles.card}>
+                <Text style={styles.sectionDesc}>
+                  Sign in with Apple syncs preferences, history, and saved articles across devices.
+                  Data stays on-device until you opt in.
                 </Text>
-              </View>
-              <View style={styles.featureBadge}>
-                <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.featureRow}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Digest tuning. ${featureStatusLabel}. ${featureLockCopy}`}
-              accessibilityHint="Opens subscription sheet for digest tuning"
-              onPress={() => openSubscriptionSheet("Digest tuning", subscriptionFeaturesLocked)}
-              activeOpacity={0.75}
-            >
-              <View style={styles.featureIcon}>
-                <Target size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.featureTextBlock}>
-                <Text style={styles.featureTitle}>Digest tuning</Text>
-                <Text style={styles.featureDesc}>
-                  Control cadence, sections, and signal. {featureLockCopy}
-                </Text>
+                <View style={styles.connectedRow}>
+                  <View style={styles.connectedIcon}>
+                    <Shield size={18} color={colors.textSecondary} />
+                  </View>
+                  <View style={styles.connectedTextBlock}>
+                    <Text style={styles.connectedTitle}>Apple Account</Text>
+                    <Text style={styles.connectedDesc}>{appleStatusLine}</Text>
+                  </View>
+                  <View style={styles.connectedBadge}>
+                    <Text style={styles.connectedBadgeText}>{appleBadgeText}</Text>
+                  </View>
+                </View>
+                <SignInWithApple
+                  onSuccess={(user) => {
+                    const profile = signInWithAppleProfile({
+                      id: user.id,
+                      email: user.email,
+                      displayName: user.displayName,
+                    });
+                    Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
+                  }}
+                  onError={(error) => {
+                    console.error("Sign in error:", error);
+                  }}
+                />
+                <View style={styles.noticeRow}>
+                  <Shield size={18} color={colors.textSecondary} />
+                  <Text style={styles.noticeText}>
+                    No tracking. Data stays on-device until you opt in.
+                  </Text>
+                </View>
               </View>
               <View style={styles.featureBadge}>
                 <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
@@ -451,9 +735,7 @@ const ProfileScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel={`Focus and grounding modes. ${featureStatusLabel}. ${featureLockCopy}`}
               accessibilityHint="Opens subscription sheet for focus & grounding"
-              onPress={() =>
-                openSubscriptionSheet("Focus & grounding modes", subscriptionFeaturesLocked)
-              }
+              onPress={() => openSubscriptionSheet("Focus & grounding modes")}
               activeOpacity={0.75}
             >
               <View style={styles.featureIcon}>
@@ -476,8 +758,8 @@ const ProfileScreen: React.FC = () => {
           <SectionHeader title="Sync & privacy" />
           <View style={styles.card}>
             <Text style={styles.sectionDesc}>
-              Sign in with Apple will sync preferences, history, and saved articles when it
-              launches.
+              Sign in with Apple syncs preferences, history, and saved articles across devices. Your
+              data stays on-device until you choose to sign in.
             </Text>
             <View style={styles.connectedRow}>
               <View style={styles.connectedIcon}>
@@ -485,10 +767,10 @@ const ProfileScreen: React.FC = () => {
               </View>
               <View style={styles.connectedTextBlock}>
                 <Text style={styles.connectedTitle}>Apple Account</Text>
-                <Text style={styles.connectedDesc}>Temporarily disabled — coming soon</Text>
+                <Text style={styles.connectedDesc}>{appleStatusLine}</Text>
               </View>
               <View style={styles.connectedBadge}>
-                <Text style={styles.connectedBadgeText}>Offline</Text>
+                <Text style={styles.connectedBadgeText}>{appleBadgeText}</Text>
               </View>
             </View>
             <SignInWithApple
@@ -581,34 +863,54 @@ const ProfileScreen: React.FC = () => {
 
           <View style={[styles.card, { marginTop: spacing.md }]}>
             <SectionHeader title="Data controls" compact />
-            <Text style={styles.sectionDesc}>
-              Manage your data on this device. Full export/delete and consent controls will ship
-              with sync.
-            </Text>
-            <GlassButton
-              label="Export profile key"
-              prominence="standard"
-              onPress={handleExportProfile}
-              accessibilityLabel="Export profile key"
-              accessibilityHint="Generates and shares your profile key for backup."
-              style={styles.inlineButton}
-              icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
-            />
-            <GlassButton
-              label="Delete local data"
-              prominence="standard"
-              onPress={() => Alert.alert("Coming soon", "Local data deletion will ship with sync.")}
-              accessibilityLabel="Delete local data"
-              accessibilityHint="Future control to remove local profile data."
-              style={[styles.inlineButton, styles.destructiveSpacing]}
-            />
-            <ComingSoon
-              variant="inline"
-              title="Data consent"
-              description="Granular consent and deletion controls arrive with sync."
-              icon="clock"
-              style={{ marginTop: spacing.md }}
-            />
+            {devDataControlsEnabled ? (
+              <>
+                <Text style={styles.sectionDesc}>
+                  Manage your data on this device. Full export/delete and consent controls will ship
+                  with sync.
+                </Text>
+                <GlassButton
+                  label="Export profile key"
+                  prominence="standard"
+                  onPress={handleExportProfile}
+                  accessibilityLabel="Export profile key"
+                  accessibilityHint="Generates and shares your profile key for backup."
+                  style={styles.inlineButton}
+                  icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
+                />
+                <GlassButton
+                  label="Delete local data"
+                  prominence="standard"
+                  onPress={() =>
+                    Alert.alert("Coming soon", "Local data deletion will ship with sync.")
+                  }
+                  accessibilityLabel="Delete local data"
+                  accessibilityHint="Future control to remove local profile data."
+                  style={[styles.inlineButton, styles.destructiveSpacing]}
+                />
+                <ComingSoon
+                  variant="inline"
+                  title="Data consent"
+                  description="Granular consent and deletion controls arrive with sync."
+                  icon="clock"
+                  style={{ marginTop: spacing.md }}
+                />
+              </>
+            ) : (
+              <>
+                <Text style={styles.sectionDesc}>
+                  Data stays on this device. A device-only wipe will ship with sync along with
+                  consent controls.
+                </Text>
+                <ComingSoon
+                  variant="inline"
+                  title="Device-only wipe"
+                  description="Arriving with sync. Keeps data local until you opt in."
+                  icon="clock"
+                  style={{ marginTop: spacing.sm }}
+                />
+              </>
+            )}
           </View>
         </View>
 
@@ -616,12 +918,12 @@ const ProfileScreen: React.FC = () => {
           <SectionHeader title="Quick actions" />
           <View style={styles.actionsRow}>
             <ActionButton
-              label="Settings"
-              Icon={Mail}
-              onPress={handleSettings}
-              accessibilityLabel="Open settings"
-              accessibilityHint="Opens app settings including reading and customization options."
-              prominence="filled"
+              label="Share app"
+              Icon={Share2}
+              onPress={handleShare}
+              accessibilityLabel="Share app"
+              accessibilityHint="Opens the native share sheet with a link to Abridgd."
+              prominence="tinted"
             />
             <ActionButton
               label="Send feedback"
@@ -632,12 +934,12 @@ const ProfileScreen: React.FC = () => {
               prominence="standard"
             />
             <ActionButton
-              label="Share app"
-              Icon={Sparkles}
-              onPress={handleShare}
-              accessibilityLabel="Share app"
-              accessibilityHint="Opens the native share sheet with a link to Abridgd."
-              prominence="tinted"
+              label="Settings"
+              Icon={Settings}
+              onPress={handleSettings}
+              accessibilityLabel="Open settings"
+              accessibilityHint="Opens app settings including reading and customization options."
+              prominence="filled"
             />
           </View>
         </View>
@@ -672,15 +974,9 @@ const ProfileScreen: React.FC = () => {
             {...sheetPanResponder.panHandlers}
           >
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>
-              {sheetLocked ? "Subscription required" : "Debug: unlocked"}
-            </Text>
+            <Text style={styles.sheetTitle}>{sheetTitleCopy}</Text>
             <Text style={styles.sheetSubtitle}>
-              {sheetFeature || "This control"} is{" "}
-              {sheetLocked
-                ? "part of our upcoming subscription."
-                : "currently unlocked for debugging."}{" "}
-              Toggle gating in Debug → Force subscription gating to simulate the paywall.
+              {sheetFeature || "This control"} — {sheetSubtitleCopy}
             </Text>
             <GlassButton
               label="Maybe later"
@@ -741,7 +1037,9 @@ const StatRow = ({
       <Text style={styles.statRowLabel}>{label}</Text>
       {hint ? <Text style={styles.statRowHint}>{hint}</Text> : null}
     </View>
-    <Text style={styles.statRowValue}>{value}</Text>
+    <Text style={styles.statRowValue} adjustsFontSizeToFit minimumFontScale={0.8}>
+      {value}
+    </Text>
   </View>
 );
 
@@ -771,6 +1069,28 @@ const ActionButton = ({
   />
 );
 
+const ProfilePill = ({
+  label,
+  value,
+  accessibilityLabel,
+}: {
+  label: string;
+  value: string;
+  accessibilityLabel?: string;
+}) => (
+  <View
+    style={styles.profilePill}
+    accessible
+    accessibilityRole="text"
+    accessibilityLabel={accessibilityLabel || `${label}: ${value}`}
+  >
+    <Text style={styles.profilePillLabel}>{label}</Text>
+    <Text style={styles.profilePillValue} adjustsFontSizeToFit minimumFontScale={0.8}>
+      {value}
+    </Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -783,6 +1103,11 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.gutter,
     paddingBottom: spacing.xxl + spacing.lg,
+  },
+  skeletonBar: {
+    height: 12,
+    backgroundColor: colors.border,
+    borderRadius: 6,
   },
   settingsButton: {
     alignSelf: "flex-start",
@@ -829,6 +1154,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.border,
   },
+  avatarImage: {
+    width: 64,
+    height: 64,
+    tintColor: colors.text,
+  },
   profileTextBlock: { flex: 1, marginLeft: spacing.md },
   profileName: {
     fontFamily: typography.fontFamily.sans,
@@ -869,6 +1199,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  karmaTierBadge: {
+    backgroundColor: colors.background,
+    borderColor: colors.border,
   },
   karmaBadge: {
     backgroundColor: colors.secondaryBackground,
@@ -1135,6 +1469,38 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
+  featureProgress: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: colors.border,
+    overflow: "hidden",
+    marginTop: spacing.sm,
+  },
+  featureProgressFill: {
+    height: "100%",
+    backgroundColor: `${colors.tint}70`,
+  },
+  featureProgressMeta: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  featureProgressText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  featureProgressHint: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
+    flex: 1,
+    textAlign: "right",
+  },
   sheetOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
@@ -1199,10 +1565,14 @@ const styles = StyleSheet.create({
   },
   profilePill: {
     flex: 1,
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: spacing.xs,
+    backgroundColor: colors.secondaryBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 64,
+    justifyContent: "center",
   },
   profilePillLabel: {
     fontFamily: typography.fontFamily.sans,
@@ -1211,10 +1581,33 @@ const styles = StyleSheet.create({
   },
   profilePillValue: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.text,
-    marginTop: 2,
+    marginTop: 4,
+  },
+  featureStatusChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.secondaryBackground,
+    marginTop: spacing.xs,
+    gap: spacing.sm,
+  },
+  featureStatusText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  featureStatusHint: {
+    flex: 1,
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
 });
 

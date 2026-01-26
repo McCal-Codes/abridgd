@@ -1,4 +1,5 @@
 # Onboarding & Grounding Design Agent Prompt
+Last Updated: 2026-01-26
 
 ## Purpose
 

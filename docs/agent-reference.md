@@ -1,4 +1,5 @@
 # Agent Reference — rules the agent follows when working on this repo
+Last Updated: 2026-01-26
 
 Location: `docs/agent-reference.md`
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -67,6 +67,9 @@ export const ArticleScreen: React.FC = () => {
   // Reading progress state
   const [readStartTime] = useState(Date.now());
   const readingTimeIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [pendingRestoreOffset, setPendingRestoreOffset] = useState<number | null>(null);
+  const [initialScrollRestored, setInitialScrollRestored] = useState(false);
 
   // Use local state for body so we can update it
   const [bodyContent, setBodyContent] = useState(article.body);
@@ -133,6 +136,14 @@ export const ArticleScreen: React.FC = () => {
   useEffect(() => {
     setHasConsented(!shouldGate);
   }, [shouldGate, article.id]);
+
+  // Restore prior reading position once content is measured
+  useEffect(() => {
+    const progress = getProgress?.(article.id);
+    if (progress?.scrollPixels != null && !initialScrollRestored) {
+      setPendingRestoreOffset(progress.scrollPixels);
+    }
+  }, [article.id, getProgress, initialScrollRestored]);
 
   const warningSummaryBase = useMemo(() => {
     if (article.sensitivityWarning) {
@@ -494,6 +505,7 @@ export const ArticleScreen: React.FC = () => {
     articleContent = (
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         <ScrollView
+          ref={scrollViewRef}
           style={styles.container}
           contentContainerStyle={[
             styles.content,
@@ -508,6 +520,15 @@ export const ArticleScreen: React.FC = () => {
                   16,
             },
           ]}
+          onContentSizeChange={() => {
+            if (pendingRestoreOffset != null && !initialScrollRestored) {
+              requestAnimationFrame(() => {
+                scrollViewRef.current?.scrollTo({ y: pendingRestoreOffset, animated: false });
+                setInitialScrollRestored(true);
+                setPendingRestoreOffset(null);
+              });
+            }
+          }}
           onScroll={(event) => {
             const contentHeight = event.nativeEvent.contentSize.height;
             const scrollPosition = event.nativeEvent.contentOffset.y;
@@ -524,6 +545,8 @@ export const ArticleScreen: React.FC = () => {
               scrollPixels: scrollPosition,
               completionPercentage,
               lastReadAt: Date.now(),
+              startedAt: readStartTime,
+              status: completionPercentage >= 95 ? "completed" : "in-progress",
             }).catch((error) => console.error("Failed to update scroll progress:", error));
 
             // Mark as finished when user scrolls near the bottom
@@ -538,6 +561,30 @@ export const ArticleScreen: React.FC = () => {
           }}
           scrollEventThrottle={16}
         >
+          <View style={styles.topActions}>
+            <ScaleButton
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? "Remove bookmark" : "Save article"}
+              style={[styles.iconButton, isSaved && styles.iconButtonSaved]}
+              onPress={async () => {
+                const wasSaved = isSaved;
+                if (wasSaved) {
+                  try {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  unsaveArticle(article.id);
+                } else {
+                  try {
+                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  } catch {}
+                  saveArticle(article);
+                }
+              }}
+            >
+              <Bookmark size={22} color={isSaved ? colors.surface : colors.primary} />
+            </ScaleButton>
+          </View>
+
           <Text style={styles.headline}>{article.headline}</Text>
 
           <View style={styles.metaRow}>
@@ -765,6 +812,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  topActions: {
+    width: "100%",
+    alignItems: "flex-end",
+    marginBottom: spacing.sm,
+  },
+  iconButton: {
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  iconButtonSaved: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   content: {
     flexGrow: 1,

@@ -23,6 +23,7 @@ const importService = () => {
   return {
     fetchArticlesByCategory: service.fetchArticlesByCategory,
     getCachedArticles: service.getCachedArticles,
+    validateFeedSource: service.validateFeedSource,
   };
 };
 
@@ -117,5 +118,60 @@ describe("RssService cache and storage", () => {
 
     expect(articles).toHaveLength(1);
     expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("fetches custom feeds alongside default feeds", async () => {
+    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
+    // @ts-expect-error allow global assignment for test
+    global.fetch = mockFetch;
+
+    mockLoadSourcePrefs.mockResolvedValueOnce({
+      overrides: {},
+      customFeeds: [
+        {
+          id: "custom-1",
+          name: "Custom Feed",
+          url: "https://custom.example.com/rss",
+          category: "Top",
+          addedAt: Date.now(),
+        },
+      ],
+    });
+
+    const { fetchArticlesByCategory } = await importService();
+
+    const articles = await fetchArticlesByCategory("Top" as ArticleCategory, {
+      forceRefresh: true,
+    });
+
+    expect(articles).toHaveLength(2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("validateFeedSource", () => {
+  const SAMPLE_FEED = `<?xml version="1.0"?><rss><channel><item><title>Ok</title><link>https://a</link><description>Body</description><pubDate>Mon, 01 Jan 2026 00:00:00 GMT</pubDate></item></channel></rss>`;
+
+  it("returns ok for a reachable feed with items", async () => {
+    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
+    // @ts-expect-error allow global assignment for test
+    global.fetch = mockFetch;
+
+    const { validateFeedSource } = await importService();
+    const result = await validateFeedSource({ url: "https://example.com/rss" });
+
+    expect(result.status).toBe("ok");
+    expect(result.itemsFound).toBe(1);
+  });
+
+  it("returns unreachable for non-200 responses", async () => {
+    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED, false));
+    // @ts-expect-error allow global assignment for test
+    global.fetch = mockFetch;
+
+    const { validateFeedSource } = await importService();
+    const result = await validateFeedSource({ url: "https://example.com/rss" });
+
+    expect(result.status).toBe("unreachable");
   });
 });

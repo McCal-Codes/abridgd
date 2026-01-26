@@ -7,6 +7,7 @@
 
 import React, { useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -32,40 +33,77 @@ interface SignInWithAppleProps {
  *
  * TODO: Add Apple Sign In capability in Xcode project
  */
-export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError }) => {
-  const handleComingSoon = useCallback(() => {
-    const error = ErrorHandler.createError(
-      ErrorCode.FEATURE_NOT_IMPLEMENTED,
-      "Sign in with Apple is temporarily disabled",
-    );
+export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError, onSuccess }) => {
+  const formatFullName = (fullName?: AppleAuthentication.AppleAuthenticationFullName | null) => {
+    if (!fullName) return undefined;
+    const parts = [fullName.givenName, fullName.familyName].filter(Boolean);
+    if (parts.length === 0) return undefined;
+    return parts.join(" ");
+  };
 
-    onError?.(error);
+  const handleSignIn = useCallback(async () => {
+    try {
+      const available = await AppleAuthentication.isAvailableAsync();
+      if (!available) {
+        const appError = ErrorHandler.createError(
+          ErrorCode.APPLE_SIGNIN_UNAVAILABLE,
+          "Sign in with Apple is not available on this device",
+        );
+        onError?.(appError);
+        Alert.alert("Not available", appError.userMessage);
+        return;
+      }
 
-    Alert.alert(
-      "Coming soon",
-      "Sign in with Apple is disabled while we finish setup. Your local profile stays active for now.",
-    );
-  }, [onError]);
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const user = {
+        id: credential.user,
+        email: credential.email ?? undefined,
+        displayName: formatFullName(credential.fullName),
+      };
+
+      onSuccess?.(user);
+    } catch (error: any) {
+      if (error?.code === "ERR_CANCELED") {
+        const appError = ErrorHandler.createError(
+          ErrorCode.AUTH_CANCELLED,
+          "Sign in was cancelled",
+        );
+        onError?.(appError);
+        return;
+      }
+
+      const appError = ErrorHandler.createError(
+        ErrorCode.APPLE_SIGNIN_FAILED,
+        error?.message || "Sign in with Apple failed",
+        error?.stack || JSON.stringify(error),
+      );
+
+      onError?.(appError);
+      Alert.alert("Sign in failed", appError.userMessage);
+    }
+  }, [onError, onSuccess]);
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.button, styles.buttonDisabled]}
-        onPress={handleComingSoon}
+        style={styles.button}
+        onPress={handleSignIn}
         activeOpacity={0.75}
         accessibilityRole="button"
-        accessibilityLabel="Sign in with Apple coming soon"
-        accessibilityHint="Feature is temporarily disabled; your local profile remains active."
+        accessibilityLabel="Sign in with Apple"
+        accessibilityHint="Sign in to sync your preferences and saved articles."
       >
         <Text style={styles.buttonText}>Sign in with Apple</Text>
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>Coming soon</Text>
-        </View>
       </TouchableOpacity>
 
       <Text style={styles.disclaimer}>
-        Sync and backup will be enabled when Sign in with Apple launches. You’re using your local
-        profile for now.
+        Use your Apple ID to sync preferences, history, and saved articles across your devices.
       </Text>
     </View>
   );
@@ -87,9 +125,6 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: spacing.sm,
   },
-  buttonDisabled: {
-    opacity: 0.75,
-  },
   buttonText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
@@ -103,21 +138,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.md,
     paddingHorizontal: spacing.xl,
-  },
-  tag: {
-    backgroundColor: `${colors.surface}60`,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    marginLeft: spacing.sm,
-    borderWidth: 1,
-    borderColor: `${colors.textSecondary}25`,
-  },
-  tagText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
 });

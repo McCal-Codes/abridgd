@@ -1,4 +1,5 @@
 # iOS 26 UI Components - Quick Reference
+Last Updated: 2026-01-26
 
 ## Component Cheat Sheet
 
@@ -51,9 +52,9 @@
   <ToolbarItem>
     <GlassButton label="Delete" destructive />
   </ToolbarItem>
-  
+
   <ToolbarSpacer spacing="flexible" /> {/* Pushes buttons apart */}
-  
+
   <ToolbarItem>
     <GlassButton label="Done" prominence="filled" />
   </ToolbarItem>
@@ -62,7 +63,7 @@
 // Toolbar with grouped buttons
 <BottomToolbar visible={true} blur>
   <ToolbarSpacer spacing="flexible" />
-  
+
   <ToolbarItemGroup gap={12}>
     <GlassButton label="New" icon={<Plus />} />
     <GlassButton label="Edit" icon={<Pencil />} />
@@ -83,9 +84,9 @@ function MyComponent() {
     <>
       {/* Trigger button with ref */}
       <View ref={buttonRef}>
-        <GlassButton 
-          label="Open" 
-          onPress={() => setShowModal(true)} 
+        <GlassButton
+          label="Open"
+          onPress={() => setShowModal(true)}
         />
       </View>
 
@@ -163,24 +164,24 @@ function MyScreen() {
 ```tsx
 <BottomToolbar visible={true} blur>
   <ToolbarItem>
-    <GlassButton 
-      label="Delete" 
+    <GlassButton
+      label="Delete"
       icon={<Trash size={18} />}
-      destructive 
+      destructive
       onPress={handleDelete}
     />
   </ToolbarItem>
-  
+
   <ToolbarSpacer spacing="flexible" />
-  
+
   <ToolbarItemGroup gap={12}>
-    <GlassButton 
-      label="Share" 
+    <GlassButton
+      label="Share"
       icon={<Share size={18} />}
       onPress={handleShare}
     />
-    <GlassButton 
-      label="Save" 
+    <GlassButton
+      label="Save"
       icon={<Bookmark size={18} />}
       onPress={handleSave}
     />
@@ -193,8 +194,8 @@ function MyScreen() {
 ```tsx
 const [showSettings, setShowSettings] = useState(false);
 
-<GlassButton 
-  label="Settings" 
+<GlassButton
+  label="Settings"
   icon={<Settings />}
   onPress={() => setShowSettings(true)}
 />
@@ -208,8 +209,8 @@ const [showSettings, setShowSettings] = useState(false);
   <View style={styles.settingsContent}>
     <Text style={styles.settingsTitle}>Settings</Text>
     {/* Settings options */}
-    <GlassButton 
-      label="Done" 
+    <GlassButton
+      label="Done"
       prominence="filled"
       onPress={() => setShowSettings(false)}
     />
@@ -224,8 +225,8 @@ const buttonRef = useRef<View>(null);
 const [showConfirm, setShowConfirm] = useState(false);
 
 <View ref={buttonRef}>
-  <GlassButton 
-    label="Delete All" 
+  <GlassButton
+    label="Delete All"
     destructive
     onPress={() => setShowConfirm(true)}
   />
@@ -242,14 +243,14 @@ const [showConfirm, setShowConfirm] = useState(false);
     <Text style={styles.confirmMessage}>
       This action cannot be undone.
     </Text>
-    
+
     <View style={styles.confirmActions}>
-      <GlassButton 
-        label="Cancel" 
+      <GlassButton
+        label="Cancel"
         onPress={() => setShowConfirm(false)}
       />
-      <GlassButton 
-        label="Delete" 
+      <GlassButton
+        label="Delete"
         destructive
         prominence="filled"
         onPress={handleConfirmedDelete}
@@ -281,8 +282,8 @@ const [showConfirm, setShowConfirm] = useState(false);
 // Toolbar is positioned absolutely at bottom
 // Remember to add padding to scrollable content
 <ScrollView
-  contentContainerStyle={{ 
-    paddingBottom: showToolbar ? 120 : 40 
+  contentContainerStyle={{
+    paddingBottom: showToolbar ? 120 : 40
   }}
 >
 ```
@@ -344,8 +345,8 @@ All components include:
 
 **Before:**
 ```tsx
-<TouchableOpacity 
-  style={styles.button} 
+<TouchableOpacity
+  style={styles.button}
   onPress={handlePress}
 >
   <Icon name="check" size={20} />
@@ -397,3 +398,5 @@ Or navigate directly:
 ```tsx
 navigation.navigate('iOS26Demo');
 ```
+
+Use these patterns as a starting point and tailor spacing, typography, and motion to each screen.

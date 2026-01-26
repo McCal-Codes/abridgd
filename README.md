@@ -98,6 +98,7 @@ It features two distinct reading modes:
 *   [Development Setup](./docs/development/development.md) — Getting started with development
 *   [Debugging Guide](./docs/development/debugging.md) — Debugging tips and tools
 *   [Engineering Standards](./docs/development/engineering-standards.md) — Code quality standards
+*   [Session Notes](./docs/development/session-notes/README.md) — Dated development logs and decisions
 
 ### iOS 26 UI Components
 *   [iOS 26 Components](./docs/ios26/ios26-ui-components.md) — Complete technical documentation
@@ -108,8 +109,10 @@ It features two distinct reading modes:
 ### Deployment
 *   [Deployment Guide](./docs/deployment/deployment.md) — Production deployment process
 *   [EAS Workflows](./docs/deployment/eas-workflows.md) — Expo Application Services setup
-*   [iOS IPA Build](./docs/deployment/ios-ipa-testflight.md) — TestFlight build guide
-*   [TestFlight Testing](./docs/deployment/TESTFLIGHT_TESTING_GUIDE.md) — Beta testing guide
+*   [iOS IPA Build](./docs/deployment/testflight/ios-ipa-testflight.md) — TestFlight build guide
+*   [TestFlight Testing](./docs/deployment/testflight/TESTFLIGHT_TESTING_GUIDE.md) — Beta testing guide
+*   [TestFlight Release Notes](./docs/deployment/testflight/APP_STORE_CONNECT_TESTFLIGHT_NOTES.md) — Current beta notes
+*   [1.2.0 Testing Focus](./docs/deployment/testflight/TESTFLIGHT_1_2_0_TESTING.md) — Experimental navbar checks
 
 ### Research & Standards
 *   [RSVP Research](./docs/research/rsvp-notes.md) — Speed reading research notes

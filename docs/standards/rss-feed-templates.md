@@ -1,9 +1,16 @@
 # RSS Feed Templates & Pittsburgh Source Catalog
 Version 1.0
-Last Updated: January 21, 2026
+Last Updated: January 26, 2026
 
 ## Purpose
 Document how we select, template, and validate RSS feeds, with a Pittsburgh-first catalog. This is **documentation only**—no code changes implied.
+
+## In-app templates (1.4+)
+- **Pittsburgh**: local-first mix of breaking, business, sports, and culture (see `src/data/feedTemplates.ts`).
+- **National (US)**: AP/Reuter/NPR mix for broad headlines plus business/sports.
+- **International**: BBC/Reuters/Al Jazeera/Guardian world coverage plus culture.
+
+Templates are used to prefill the custom feed form in Settings; users can edit the name/category before saving.
 
 ## Template schema (conceptual)
 Define bundles by area/category so updates stay predictable:
@@ -14,15 +21,15 @@ Define bundles by area/category so updates stay predictable:
 
 ## Pittsburgh template examples
 
-### Current app feed template (as of January 21, 2026)
+### Current app feed template (as of January 26, 2026)
 These are the feeds currently shipped in-app and their default toggle states (default **off** means opt-in via Settings).
 
 #### Top
 - WTAE
 - CBS Pittsburgh
 - WPXI
-- WESA
-- Pittsburgh Independent
+- WESA (**default off**, 404 as of Jan 26, 2026)
+- Pittsburgh Independent (**default off**, 404 as of Jan 26, 2026)
 - Pittsburgh City Cast (**default off**, podcast/audio)
 
 #### Local
@@ -32,10 +39,10 @@ These are the feeds currently shipped in-app and their default toggle states (de
 - New Pittsburgh Courier
 - Kidsburgh
 - Pittsburgh Mom Collective (**default off**, noisy/parenting-heavy)
-- The Incline
+- The Incline (**default off**, domain parked/expired)
 
 #### Business
-- Pittsburgh Business Times
+- Pittsburgh Business Times (**default off**, 403/blocked)
 - TribLive Business
 - Post-Gazette Business
 - NEXTpittsburgh
@@ -46,14 +53,14 @@ These are the feeds currently shipped in-app and their default toggle states (de
 - Steelers.com
 - DK Pittsburgh Sports
 - TribLive Sports
-- Penguins (NHL.com)
-- Pirates (MLB.com) — proxy may be needed on web
-- Pitt Panthers (athletics)
+- Penguins (NHL.com) (**default off**, NHL feed returning error/403)
+- Pirates (MLB.com team feed) (**default off**)
+- Pitt Panthers (athletics) (**default off**, intermittent 500)
 
 #### Culture
 - Pittsburgh City Paper
 - Pittsburgh Magazine A&E
-- WESA Arts
+- WESA Arts (**default off**, 404)
 
 ### Top (Breaking/General)
 - Primary: WTAE, CBS Pittsburgh, WPXI
@@ -79,19 +86,19 @@ These are the feeds currently shipped in-app and their default toggle states (de
 
 | Category | Source | URL | Validation status | Default toggle | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Top/Local | WESA | https://www.wesa.fm/rss | Pending | On | Usually fetchable; keep proxy fallback |
-| Top/Local | Pittsburgh Independent | https://pghindependent.com/feed/ | Pending | On | WordPress; typically CORS-friendly |
+| Top/Local | WESA | https://www.wesa.fm/rss | Failing (404 Jan 2026) | Off | 404; keep disabled until restored |
+| Top/Local | Pittsburgh Independent | https://pghindependent.com/feed/ | Failing (404 Jan 2026) | Off | Site/feed returning 404 |
 | Top/Local | Pittsburgh City Cast | https://omny.fm/shows/city-cast-pittsburgh/playlists/podcast.rss | Pending | Off (audio-heavy) | Podcast feed; treat as long-form |
 | Local | Kidsburgh | https://www.kidsburgh.org/feed/ | Pending | On | Family/education; light media |
 | Local | Pittsburgh Mom Collective | https://pittsburgh.momcollective.com/feed/ | Pending | Off (noisy) | Parenting/local |
-| Local | The Incline | https://theincline.com/feed/ | Pending | On | General/local |
+| Local | The Incline | https://theincline.com/feed/ | Failing (domain parked) | Off | Domain expired/parking page |
 | Business | TechVibe Radio | https://techviberadio.libsyn.com/rss | Pending | Off (audio-first) | Audio-first; summary bodies |
 | Business | InnovatePGH | https://pghtech.org/feed/ (verify) | Unknown | Off (await verify) | Confirm RSS availability |
-| Sports | Penguins | https://www.nhl.com/penguins/rss/news | Pending | On | Inline media; check image protocols |
-| Sports | Pirates | https://www.mlb.com/pirates/feeds/news/rss | Pending | On (proxy ok) | May need proxy on web |
-| Sports | Pitt Panthers | https://pittsburghpanthers.com/rss.aspx?path=general | Pending | On | Sometimes summary-only |
-| Culture | WESA Arts | https://www.wesa.fm/arts-culture/rss | Pending | On | Same host as news |
-| Culture | The Incline | https://theincline.com/feed/ | Pending | On | Shared with Local |
+| Sports | Penguins | https://www.nhl.com/penguins/rss/news | Failing (403/error page) | Off | NHL host returning error; left opt-in only |
+| Sports | Pirates | https://www.mlb.com/feeds/news/rss.xml?teamId=134 | Pending | Off | MLB team feed; enable if acceptable |
+| Sports | Pitt Panthers | https://pittsburghpanthers.com/rss.aspx?path=general | Intermittent (500) | Off | Sometimes summary-only/blocked |
+| Culture | WESA Arts | https://www.wesa.fm/arts-culture/rss | Failing (404) | Off | Same host as news; currently 404 |
+| Culture | The Incline | https://theincline.com/feed/ | Failing (domain parked) | Off | Shared with Local |
 
 ## Validation checklist (before editing code)
 1. **Reachability**: Direct fetch succeeds on device; if blocked, confirm proxy works (`corsproxy.io`) and note it.
@@ -104,6 +111,7 @@ These are the feeds currently shipped in-app and their default toggle states (de
 8. **User controls**: Ensure new sources are toggleable via `sourcePreferences` (already supported by `RssService`).
 9. **Sorting behavior**: Current sorter favors recency; if within 12h, longer bodies rank higher.
 10. **Cache fit**: `CACHE_TTL_MS` is 5 minutes; avoid extremely noisy feeds that would churn cache.
+11. **Health checks**: The Settings custom feed form calls `validateFeedSource` (see `RssService`) to flag unreachable/retired/empty feeds before saving.
 
 ## RssService constraints to keep in mind
 - **Timeouts**: `FETCH_TIMEOUT_MS = 7000ms`; avoid feeds with very slow responses.

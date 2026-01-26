@@ -2,6 +2,7 @@ import React from "react";
 import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
+import { useProfilesOptional } from "../context/ProfileContext";
 import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
 import { fetchArticlesByCategory, getLastFetchedAt } from "../services/RssService";
@@ -42,6 +43,7 @@ export const SectionScreen: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  const profileContext = useProfilesOptional?.();
   const insets = useSafeAreaInsets();
   const {
     tabBarHeight,
@@ -59,6 +61,7 @@ export const SectionScreen: React.FC = () => {
         setError(null);
         const data = await fetchArticlesByCategory(category);
         setArticles(data);
+        profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
         const fetchedAt = getLastFetchedAt(category);
         setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
       } catch (e: any) {
@@ -104,6 +107,7 @@ export const SectionScreen: React.FC = () => {
                 fetchArticlesByCategory(category)
                   .then((data) => {
                     setArticles(data);
+                    profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
                     const fetchedAt = getLastFetchedAt(category);
                     setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
                     setLoading(false);
@@ -130,6 +134,11 @@ export const SectionScreen: React.FC = () => {
               onPress={(article) => navigation.navigate("Article", { article: article })}
             />
           )}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={6}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews
           contentContainerStyle={[
             styles.listContent,
             {
@@ -165,6 +174,7 @@ export const SectionScreen: React.FC = () => {
             try {
               const data = await fetchArticlesByCategory(category, { forceRefresh: true });
               setArticles(data);
+              profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
               const fetchedAt = getLastFetchedAt(category);
               setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
             } catch (e: any) {

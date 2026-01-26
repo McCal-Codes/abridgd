@@ -1,6 +1,7 @@
 # 👋 Welcome back!
+Last Updated: January 16, 2026
 
-**Session Summary** — January 16, 2026
+> Historical snapshot from Jan 16, 2026. For the live backlog, use the root `todo.md`; for completed items, see `updates/completed.md`.
 
 You've established a complete project tracking system for Abridgd with versioned roadmap, professional TODO/ACHIEVED structure, and comprehensive documentation.
 
@@ -119,7 +120,6 @@ See [updates/todo.md](./todo.md#-v12-0-next-release--enhanced-features--ux) for 
 
 ---
 
-**Last Updated**: January 16, 2026
 **Next Review**: After EAS build completes + TestFlight submission
 
 _Tip: Run any of these commands to continue:_

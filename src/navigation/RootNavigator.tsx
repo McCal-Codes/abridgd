@@ -174,6 +174,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
             initialParams={config.params}
             options={{
               title: config.title || config.name,
+              tabBarAccessibilityLabel: `${config.title || config.name} tab`,
               tabBarIcon: ({ color }: { color: string }) => (
                 <config.Icon color={color} size={tabIconSize || 25} />
               ),

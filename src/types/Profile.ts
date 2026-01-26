@@ -31,6 +31,9 @@ export interface Profile {
     articlesRead: number;
     savedActions: number;
     lastReadAt?: number | null;
+    lastSavedAt?: number | null;
+    lastFetchedArticleIds?: string[];
+    lastFetchedAt?: number | null;
   };
   settingsTag?: string;
   transferKey?: string;

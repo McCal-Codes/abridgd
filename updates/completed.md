@@ -2,6 +2,8 @@
 
 Last Updated: January 16, 2026
 
+> Source of truth for completed tasks by phase/version. Add new completions here; keep active work in the root `todo.md` (historical roadmap remains in `updates/todo.md`).
+
 This file tracks all completed tasks for project transparency and historical reference.
 
 ---
