@@ -4,6 +4,8 @@
 
 **Vision:** Transform 1.4 into a polished, delightful experience that feels thoughtfully crafted in every interaction. Not just feature-complete, but genuinely special.
 
+**Recent release:** **v1.3.6** — Patch release stabilizing auth/settings (merged PR #2, 2026-01-26).
+
 ---
 
 ### Onboarding & Grounding Polish
@@ -60,6 +62,7 @@
 
 ### Priority Fixes & Stability — Do These First
 
+- [x] Stabilize auth/settings (backported & released in v1.3.6 — see PR #2)
 - [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
 - [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
 - [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)
