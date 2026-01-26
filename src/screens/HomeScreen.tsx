@@ -223,6 +223,15 @@ export const HomeScreen: React.FC = () => {
       {showSkeleton ? (
         <View style={styles.flexContent}>
           {renderHeroHeader()}
+          {isContinueReadingEnabled && continueReadingItems.length > 0 && (
+            <ContinueReadingSection
+              items={continueReadingItems}
+              onPress={(article) => navigation.navigate("Article", { article })}
+              showAll={showAllContinue}
+              onToggleShowAll={handleToggleShowAll}
+              lastUpdated={lastUpdated}
+            />
+          )}
           <View style={styles.centerContent}>
             <FunLoadingIndicator message="Fetching top stories…" />
           </View>
@@ -230,6 +239,15 @@ export const HomeScreen: React.FC = () => {
       ) : showErrorState ? (
         <View style={styles.flexContent}>
           {renderHeroHeader()}
+          {isContinueReadingEnabled && continueReadingItems.length > 0 && (
+            <ContinueReadingSection
+              items={continueReadingItems}
+              onPress={(article) => navigation.navigate("Article", { article })}
+              showAll={showAllContinue}
+              onToggleShowAll={handleToggleShowAll}
+              lastUpdated={lastUpdated}
+            />
+          )}
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
             <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
               <Animated.Text style={{ color: colors.systemRed, marginBottom: 8 }}>
@@ -264,6 +282,15 @@ export const HomeScreen: React.FC = () => {
       ) : showEmptyState ? (
         <View style={styles.flexContent}>
           {renderHeroHeader()}
+          {isContinueReadingEnabled && continueReadingItems.length > 0 && (
+            <ContinueReadingSection
+              items={continueReadingItems}
+              onPress={(article) => navigation.navigate("Article", { article })}
+              showAll={showAllContinue}
+              onToggleShowAll={handleToggleShowAll}
+              lastUpdated={lastUpdated}
+            />
+          )}
           <View style={styles.centerContent}>
             <FunLoadingIndicator message="Syncing your feed…" />
           </View>
