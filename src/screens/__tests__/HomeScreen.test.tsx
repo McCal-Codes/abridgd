@@ -147,6 +147,8 @@ describe("HomeScreen", () => {
   });
 
   it("renders loading skeletons initially", () => {
+    // Keep the fetch pending so the initial loading skeleton is rendered deterministically
+    (fetchArticlesByCategory as jest.Mock).mockImplementation(() => new Promise(() => {}));
     const { getAllByTestId } = renderScreen();
     expect(getAllByTestId("article-card-skeleton").length).toBeGreaterThan(0);
   });
