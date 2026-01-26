@@ -26,5 +26,5 @@ Notes for reviewers:
 Checklist:
 - [x] Tests added and passing for PoC modules
 - [x] Docs added explaining design and usage
-- [ ] Add Sentry breadcrumb instrumentation (follow-up PR)
+- [x] Add Sentry breadcrumb instrumentation (implemented in this PR)
 - [ ] Evaluate and propose `react-query` adoption (follow-up RFC)
