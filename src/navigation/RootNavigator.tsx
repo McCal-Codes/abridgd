@@ -8,7 +8,7 @@ import { DigestScreen } from "../screens/DigestScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { SectionScreen } from "../screens/SectionScreen";
 import { SavedScreen } from "../screens/SavedScreen";
-import { ProfileScreen } from "../screens/ProfileScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 import { OnboardingScreen } from "../screens/OnboardingScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -23,6 +23,7 @@ import { SourcesSettingsScreen } from "../screens/SourcesSettingsScreen";
 import { TabBarSettingsScreen } from "../screens/TabBarSettingsScreen";
 import { DebugSettingsScreen } from "../screens/DebugSettingsScreen";
 import { IOS26DemoScreen } from "../screens/iOS26DemoScreen";
+import { AchievementsScreen } from "../screens/AchievementsScreen";
 import { useSettings, sanitizeTabs } from "../context/SettingsContext";
 import { View, ActivityIndicator } from "react-native";
 import { ScrollProvider } from "../context/ScrollContext";
@@ -118,20 +119,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
       initialRouteName={resolvedDefaultRouteName as keyof TabParamList | undefined}
       tabBar={(props) => <LiquidTabBar {...props} />}
       screenOptions={{
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: colors.background,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.separator,
-          shadowColor: "transparent",
-          elevation: 0,
-        },
-        headerTitleStyle: {
-          fontFamily: typography.fontFamily.serif,
-          fontWeight: "700",
-          fontSize: typography.size.xl,
-          color: colors.label,
-        },
+        headerShown: false,
         tabBarStyle: {
           // More Apple-like floating capsule (translucent by default; LiquidTabBar will respect blur setting)
           backgroundColor: "rgba(255,255,255,0.82)",
@@ -186,7 +174,9 @@ const TabNavigatorScreen = ({ navigation }: any) => {
             initialParams={config.params}
             options={{
               title: config.title || config.name,
-              tabBarIcon: ({ color }) => <config.Icon color={color} size={tabIconSize || 25} />,
+              tabBarIcon: ({ color }: { color: string }) => (
+                <config.Icon color={color} size={tabIconSize || 25} />
+              ),
             }}
           />
         );
@@ -196,9 +186,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
 };
 
 export const RootNavigator = () => {
-  const { hasCompletedOnboarding, isLoadingSettings, isWelcomeBackEnabled, shouldShowWhatsNew } =
-    useSettings();
-  const [hasSeenWelcomeBack, setHasSeenWelcomeBack] = React.useState(false);
+  const { hasCompletedOnboarding, isLoadingSettings, shouldShowWhatsNew } = useSettings();
 
   if (isLoadingSettings) {
     return (
@@ -219,10 +207,22 @@ export const RootNavigator = () => {
   const onboardingParams = shouldShowWhatsNew ? { startSlideId: "whats-new" } : undefined;
 
   return (
-    // Allow content to extend to the bottom so our floating tab capsule can overlay the safe area
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["right", "left"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      edges={["top", "right", "left"]}
+    >
       <ScrollProvider>
-        <Stack.Navigator initialRouteName={initialRouteName}>
+        <Stack.Navigator
+          initialRouteName={initialRouteName}
+          screenOptions={{
+            headerShown: true,
+            headerTransparent: false,
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+            headerTitleAlign: "left",
+          }}
+        >
           <Stack.Screen
             name="Onboarding"
             component={OnboardingScreen}
@@ -241,7 +241,7 @@ export const RootNavigator = () => {
               headerShown: true,
               headerBackTitle: "Back",
               headerTitle: "",
-              headerTintColor: "#000",
+              headerTintColor: colors.text,
             }}
           />
           <Stack.Screen
@@ -250,7 +250,6 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Settings",
-              headerTintColor: colors.text,
             }}
           />
           <Stack.Screen
@@ -259,7 +258,6 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Reading Experience",
-              headerTintColor: colors.text,
             }}
           />
           <Stack.Screen
@@ -268,13 +266,15 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Data & Performance",
-              headerTintColor: colors.text,
             }}
           />
           <Stack.Screen
             name="DigestSettings"
             component={DigestSettingsScreen}
-            options={{ headerShown: true, title: "Digest & Launch", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "Digest & Launch",
+            }}
           />
           <Stack.Screen
             name="GroundingFocusSettings"
@@ -282,43 +282,68 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Grounding & Focus",
-              headerTintColor: colors.text,
             }}
           />
           <Stack.Screen
             name="AccessibilitySettings"
             component={AccessibilitySettingsScreen}
-            options={{ headerShown: true, title: "Accessibility", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "Accessibility",
+            }}
           />
           <Stack.Screen
             name="NavigationSettings"
             component={NavigationSettingsScreen}
-            options={{ headerShown: true, title: "Navigation", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "Navigation",
+            }}
           />
           <Stack.Screen
             name="AppInfo"
             component={AppInfoScreen}
-            options={{ headerShown: true, title: "App Info", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "App Info",
+            }}
           />
           <Stack.Screen
             name="SourcesSettings"
             component={SourcesSettingsScreen}
-            options={{ headerShown: true, title: "News Sources", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "News Sources",
+            }}
           />
           <Stack.Screen
             name="TabBarSettings"
             component={TabBarSettingsScreen}
-            options={{ headerShown: true, title: "Tab Bar Studio", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "Tab Bar Studio",
+            }}
           />
           <Stack.Screen
             name="DebugSettings"
             component={DebugSettingsScreen}
-            options={{ headerShown: true, title: "Debug & Advanced", headerTintColor: colors.text }}
+            options={{
+              headerShown: true,
+              title: "Debug & Advanced",
+            }}
           />
           <Stack.Screen
             name="iOS26Demo"
             component={IOS26DemoScreen}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Achievements"
+            component={AchievementsScreen}
+            options={{
+              headerShown: true,
+              title: "Achievements",
+            }}
           />
         </Stack.Navigator>
       </ScrollProvider>

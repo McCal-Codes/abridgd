@@ -1,6 +1,6 @@
 # Abridged App — UI & Design Standards
-Version 1.2
-Last Updated: January 15, 2026
+Version 1.4
+Last Updated: January 20, 2026
 
 ## Canonical Sources (Authoritative)
 
@@ -242,9 +242,10 @@ All interactive elements, navigation tabs, and UI indicators must use proper ico
 - One primary action per screen
 
 **Current Implementation**
-- TouchableOpacity with system-like behavior
-- Minimum 44pt hit targets
-- Clear visual feedback on press
+- `GlassButton` component (iOS 26-inspired) with three prominence levels: `standard` (blurred), `tinted`, and `filled`
+- Minimum 44pt hit targets; 40pt for compact variants
+- Light haptic feedback on iOS; active opacity kept subtle
+- Destructive state uses semantic error color; disabled state reduces contrast
 
 ---
 
@@ -252,6 +253,36 @@ All interactive elements, navigation tabs, and UI indicators must use proper ico
 
 - Lists are the default container for structured content
 - Custom layouts must demonstrably improve clarity over lists
+
+---
+
+### 7.4 Progress & Status Components
+
+- Progress indicators use rounded, thin bars on neutral borders with `tint` fills; no gradients
+- Status pills communicate binary state (e.g., "Locked" / "Unlocked") with outline and subtle background
+- Earned/active items may use light `tint` overlays and border highlights; avoid heavy fills
+- Pair progress visuals with text that explains the metric and how it updates
+
+**Current Implementation**
+- Reading karma (Profile, Achievements): summary card with left icon, numeric score, hint text, and a rounded progress bar
+- Achievements list: each row shows icon, description, status pill, and a small progress bar; earned items get `tint` border and background at ~10–18% opacity
+- Locked pill uses 11–12pt sans text, outlined on neutral background
+
+---
+
+### 7.5 Capability Gating (Subscription Layer)
+
+- Gate only depth/controls; core reading remains available without subscription
+- Locked capabilities are informational rows (icon + title + description + right-aligned pill); no toggles until live
+- Messaging should specify availability ("Available with subscription", "Coming soon") and avoid dark patterns
+- Keep gating in the capability layer, not in primary navigation or safety controls
+
+**Current Implementation**
+- Profile → Personalization & advanced features: three locked rows (Reading pace & presentation, Digest tuning, Focus & grounding modes) with Lucide icons and "Locked" pills
+- Profile → Sync & privacy: Sign in with Apple surfaced as Offline badge; CTA present but described as temporarily disabled
+- Profile → Data controls: export/share profile key available; delete local data and granular consent marked "Coming soon"
+- Profile identity: badge shows Local vs Apple account; settings tag editable via text input on blur
+- Debt: Sync/subscription not yet live; locked/offline messaging kept visible to set expectation
 
 ---
 
@@ -300,6 +331,12 @@ When uncertain, default to the system.
 ---
 
 ## Version History
+
+### v1.4 (January 20, 2026)
+- Updated button standard to reflect `GlassButton` prominence styles, haptics, and sizing
+- Documented progress/status components (karma and achievements) and locked pill patterns
+- Added capability-gating rules to align with current Profile screen implementation and ethical subscription gating
+- Noted current sync/offline and data-control behaviors (export live; delete/consent pending)
 
 ### v1.3 (January 19, 2026)
 - **Added icon standard**: All UI elements must use Lucide React Native icons, NOT emojis

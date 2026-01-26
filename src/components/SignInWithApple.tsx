@@ -1,12 +1,12 @@
 /**
- * Sign in with Apple Component (Stub)
+ * Sign in with Apple Component (Temporarily Disabled)
  *
- * Ready for implementation when Apple Developer account and entitlements are configured.
- * Requires: expo-apple-authentication package and proper Apple Developer setup.
+ * Apple sign-in is paused while entitlements are finalized. Shows a friendly
+ * “coming soon” prompt and keeps users on their local profile.
  */
 
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from "react-native";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -32,84 +32,40 @@ interface SignInWithAppleProps {
  *
  * TODO: Add Apple Sign In capability in Xcode project
  */
-export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onSuccess, onError }) => {
-  const handleSignIn = async () => {
-    if (Platform.OS !== "ios") {
-      const error = ErrorHandler.createError(
-        ErrorCode.APPLE_SIGNIN_UNAVAILABLE,
-        "Sign in with Apple is only available on iOS devices",
-        undefined,
-        false,
-      );
-      Alert.alert("Not Available", error.userMessage);
-      onError?.(error);
-      return;
-    }
-
-    // TODO: Implement actual Sign in with Apple flow
-    // Example implementation:
-    /*
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-
-      // Extract user info
-      const user = {
-        id: credential.user,
-        email: credential.email,
-        displayName: credential.fullName
-          ? `${credential.fullName.givenName} ${credential.fullName.familyName}`
-          : undefined,
-        appleUserId: credential.user,
-        identityToken: credential.identityToken,
-        authorizationCode: credential.authorizationCode,
-      };
-
-      onSuccess?.(user);
-    } catch (e: any) {
-      if (e.code === 'ERR_CANCELED') {
-        const error = ErrorHandler.createError(
-          ErrorCode.AUTH_CANCELLED,
-          'User cancelled sign in',
-        );
-        onError?.(error);
-      } else {
-        const error = ErrorHandler.createError(
-          ErrorCode.APPLE_SIGNIN_FAILED,
-          'Apple Sign In failed',
-          e.message
-        );
-        ErrorHandler.logError(error, 'SignInWithApple');
-        Alert.alert('Sign In Failed', error.userMessage);
-        onError?.(error);
-      }
-    }
-    */
-
-    // Stub implementation
+export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError }) => {
+  const handleComingSoon = useCallback(() => {
     const error = ErrorHandler.createError(
       ErrorCode.FEATURE_NOT_IMPLEMENTED,
-      "Sign in with Apple not yet configured",
-      "Install expo-apple-authentication and configure entitlements",
-      true,
+      "Sign in with Apple is temporarily disabled",
     );
-    Alert.alert("Coming Soon", error.userMessage);
+
     onError?.(error);
-  };
+
+    Alert.alert(
+      "Coming soon",
+      "Sign in with Apple is disabled while we finish setup. Your local profile stays active for now.",
+    );
+  }, [onError]);
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button} onPress={handleSignIn} activeOpacity={0.8}>
-        <Text style={styles.appleIcon}></Text>
+      <TouchableOpacity
+        style={[styles.button, styles.buttonDisabled]}
+        onPress={handleComingSoon}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel="Sign in with Apple coming soon"
+        accessibilityHint="Feature is temporarily disabled; your local profile remains active."
+      >
         <Text style={styles.buttonText}>Sign in with Apple</Text>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>Coming soon</Text>
+        </View>
       </TouchableOpacity>
 
       <Text style={styles.disclaimer}>
-        Sign in to sync your preferences and reading history across devices.
+        Sync and backup will be enabled when Sign in with Apple launches. You’re using your local
+        profile for now.
       </Text>
     </View>
   );
@@ -131,9 +87,8 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: spacing.sm,
   },
-  appleIcon: {
-    fontSize: 20,
-    color: "#FFF",
+  buttonDisabled: {
+    opacity: 0.75,
   },
   buttonText: {
     fontFamily: typography.fontFamily.sans,
@@ -148,5 +103,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.md,
     paddingHorizontal: spacing.xl,
+  },
+  tag: {
+    backgroundColor: `${colors.surface}60`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginLeft: spacing.sm,
+    borderWidth: 1,
+    borderColor: `${colors.textSecondary}25`,
+  },
+  tagText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

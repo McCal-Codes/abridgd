@@ -31,6 +31,8 @@ export interface Article {
   publishedAt: number; // Unix timestamp for when article was published
   category: ArticleCategory;
   imageUrl?: string;
+  mediaImages?: string[];
+  mediaVideos?: string[];
   readTimeMinutes: number;
   isSensitive?: boolean;
   sensitivityWarning?: string;

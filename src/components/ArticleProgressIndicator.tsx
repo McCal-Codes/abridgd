@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from "react-native";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
-import { typography } from "../theme/typography";
 
 interface ArticleProgressIndicatorProps {
   articleId: string;
@@ -31,43 +30,21 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
 
   const sizeConfig = useMemo(() => {
     switch (size) {
-      case "large":
-        return {
-          height: 24,
-          barHeight: 4,
-          gap: spacing.sm,
-          textSize: typography.size.sm,
-        };
       case "medium":
-        return {
-          height: 20,
-          barHeight: 3,
-          gap: spacing.xs,
-          textSize: typography.size.xs,
-        };
+        return { height: 14, barHeight: 8, textSize: 11 };
+      case "large":
+        return { height: 18, barHeight: 10, textSize: 12 };
       case "small":
       default:
-        return {
-          height: 16,
-          barHeight: 2,
-          gap: spacing.xs,
-          textSize: typography.size.xs,
-        };
+        return { height: 12, barHeight: 6, textSize: 10 };
     }
   }, [size]);
 
   const progressColor = useMemo(() => {
-    switch (progressLevel) {
-      case "completed":
-        return colors.tint;
-      case "50%":
-        return colors.accent;
-      case "20%":
-        return colors.systemBlue;
-      case "unread":
-      default:
-        return colors.border;
-    }
+    if (progressLevel === "completed") return colors.tint;
+    if (progressLevel === "50%") return colors.tint;
+    if (progressLevel === "20%") return `${colors.tint}AA`;
+    return colors.border;
   }, [progressLevel]);
 
   // Don't show indicator for unread articles (unless explicitly requested via showLabel)
@@ -76,7 +53,17 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
   }
 
   return (
-    <View style={[styles.container, { height: sizeConfig.height }]}>
+    <View
+      style={[styles.container, { height: sizeConfig.height }]}
+      accessibilityRole="progressbar"
+      accessibilityValue={{
+        min: 0,
+        max: 100,
+        now: Math.min(100, Math.max(0, Math.round(completionPercentage))),
+        text: progressLevel === "completed" ? "Completed" : `${Math.round(completionPercentage)}%`,
+      }}
+      accessibilityLabel="Reading progress"
+    >
       {/* Progress bar background */}
       <View
         style={[

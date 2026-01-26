@@ -7,6 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/node_modules/.bin/expo",
             "args": ["start", "--ios"],
+            "cwd": "${workspaceFolder}",
             "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -16,11 +17,12 @@
             }
         },
         {
-            "name": "dev: Expo (Android Emulator)",
+            "name": "dev: Expo (iOS Simulator, clear cache)",
             "type": "node",
             "request": "launch",
             "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--android"],
+            "args": ["start", "--ios", "--clear"],
+            "cwd": "${workspaceFolder}",
             "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -30,11 +32,12 @@
             }
         },
         {
-            "name": "dev: Expo (Web)",
+            "name": "dev: Expo (Android Emulator)",
             "type": "node",
             "request": "launch",
             "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--web"],
+            "args": ["start", "--android"],
+            "cwd": "${workspaceFolder}",
             "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -44,13 +47,74 @@
             }
         },
         {
+            "name": "dev: Expo (Android Emulator, clear cache)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/expo",
+            "args": ["start", "--android", "--clear"],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 4,
+                "group": "development"
+            }
+        },
+        {
+            "name": "dev: Expo (Web)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/expo",
+            "args": ["start", "--web"],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 5,
+                "group": "development"
+            }
+        },
+        {
+            "name": "dev: Expo (Web, clear cache)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/expo",
+            "args": ["start", "--web", "--clear"],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 6,
+                "group": "development"
+            }
+        },
+        {
+            "name": "dev: Expo (start only, LAN)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/expo",
+            "args": ["start", "--lan"],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "presentation": {
+                "order": 7,
+                "group": "development"
+            }
+        },
+        {
             "name": "dev: Attach to Expo Packager",
             "type": "node",
             "request": "attach",
             "port": 19000,
+            "cwd": "${workspaceFolder}",
             "sourceMaps": true,
             "presentation": {
-                "order": 4,
+                "order": 8,
                 "group": "development"
             }
         },
@@ -61,7 +125,7 @@
             "port": 9222,
             "urlFilter": "*localhost:8081*",
             "presentation": {
-                "order": 5,
+                "order": 9,
                 "group": "debugging"
             }
         }

@@ -61,7 +61,7 @@ export const deserializeArticles = (data: string): Article[] => {
     if (schema.version === 2) {
       const v2Schema = schema as StorageSchemaV2;
       const payloadString = v2Schema.compressed
-        ? decompressFromUTF16(v2Schema.payload) ?? ""
+        ? (decompressFromUTF16(v2Schema.payload) ?? "")
         : v2Schema.payload;
 
       if (!payloadString) {
@@ -90,11 +90,12 @@ export const saveArticlesToStorage = async (
   articles: Article[],
   retries = 3,
   delay = 100,
+  storageKey: string = SAVED_ARTICLES_KEY,
 ): Promise<void> => {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const serialized = serializeArticles(articles);
-      await AsyncStorage.setItem(SAVED_ARTICLES_KEY, serialized);
+      await AsyncStorage.setItem(storageKey, serialized);
       return;
     } catch (error) {
       console.warn(`Save attempt ${attempt + 1}/${retries} failed:`, error);
@@ -112,10 +113,14 @@ export const saveArticlesToStorage = async (
 /**
  * Load articles from AsyncStorage with error handling
  */
-export const loadArticlesFromStorage = async (retries = 3, delay = 100): Promise<Article[]> => {
+export const loadArticlesFromStorage = async (
+  retries = 3,
+  delay = 100,
+  storageKey: string = SAVED_ARTICLES_KEY,
+): Promise<Article[]> => {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const data = await AsyncStorage.getItem(SAVED_ARTICLES_KEY);
+      const data = await AsyncStorage.getItem(storageKey);
       if (!data) {
         return [];
       }
@@ -162,9 +167,11 @@ export const markMigrationComplete = async (): Promise<void> => {
 /**
  * Clear all saved articles from storage
  */
-export const clearSavedArticles = async (): Promise<void> => {
+export const clearSavedArticles = async (
+  storageKey: string = SAVED_ARTICLES_KEY,
+): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(SAVED_ARTICLES_KEY);
+    await AsyncStorage.removeItem(storageKey);
   } catch (error) {
     console.error("Failed to clear saved articles:", error);
     throw error;

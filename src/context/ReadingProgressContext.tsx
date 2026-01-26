@@ -15,6 +15,7 @@ import {
   getReadingStats,
   clearArticleProgress,
 } from "../utils/readingProgressStorage";
+import { useProfiles } from "./ProfileContext";
 
 interface ReadingProgressContextType {
   progressData: ReadingProgressState;
@@ -46,6 +47,7 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { trackArticleRead } = useProfiles();
 
   // Initialize: Load reading progress on app start
   useEffect(() => {
@@ -100,10 +102,20 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
     async (articleId: string, updates: Partial<ReadingProgress>) => {
       try {
         const updated = await updateArticleProgress(articleId, updates);
-        setProgressData((prev) => ({
-          ...prev,
-          [articleId]: updated,
-        }));
+        setProgressData((prev) => {
+          const previousStatus = prev[articleId]?.status;
+          const next = {
+            ...prev,
+            [articleId]: updated,
+          };
+
+          if (updated.status === "completed" && previousStatus !== "completed") {
+            // Defer profile stat update to avoid setState during provider render
+            Promise.resolve().then(trackArticleRead);
+          }
+
+          return next;
+        });
 
         // Refresh stats if status changed
         if (updates.status) {
@@ -122,7 +134,7 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
         throw err;
       }
     },
-    [],
+    [trackArticleRead],
   );
 
   const getProgress = useCallback(

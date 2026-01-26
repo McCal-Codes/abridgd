@@ -149,8 +149,53 @@ jest.mock("expo-font", () => ({
   isLoaded: jest.fn(() => true),
 }));
 
+// Mock expo-apple-authentication
+jest.mock("expo-apple-authentication", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  const AppleAuthenticationButton = (props) => React.createElement(View, props, props.children);
+  return {
+    AppleAuthenticationButton,
+    AppleAuthenticationButtonType: { SIGN_IN: "SIGN_IN" },
+    AppleAuthenticationButtonStyle: { BLACK: "BLACK" },
+    AppleAuthenticationScope: { FULL_NAME: "FULL_NAME", EMAIL: "EMAIL" },
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+    signInAsync: jest.fn(() =>
+      Promise.resolve({
+        user: "test-user",
+        email: "user@example.com",
+        fullName: { givenName: "Test", familyName: "User" },
+        identityToken: "token",
+        authorizationCode: "code",
+        realUserStatus: 1,
+      }),
+    ),
+  };
+});
+
 jest.mock("expo-status-bar", () => ({
   StatusBar: "StatusBar",
 }));
+
+// Mock expo-av Video
+jest.mock("expo-av", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  const MockVideo = React.forwardRef((props, ref) => React.createElement(View, { ref, ...props }));
+  return {
+    Video: MockVideo,
+    Audio: {
+      setAudioModeAsync: jest.fn(),
+      Sound: function MockSound() {
+        return {
+          loadAsync: jest.fn(),
+          playAsync: jest.fn(),
+          unloadAsync: jest.fn(),
+          setPositionAsync: jest.fn(),
+        };
+      },
+    },
+  };
+});
 
 // Use real console for better error visibility during debugging

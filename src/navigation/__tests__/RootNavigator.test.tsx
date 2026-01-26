@@ -1,5 +1,5 @@
 import { getTabConfig } from "../RootNavigator";
-import { ProfileScreen } from "../../screens/ProfileScreen";
+import ProfileScreen from "../../screens/ProfileScreen";
 
 describe("getTabConfig", () => {
   it("includes Profile tab in minimal layout and stays within 5 tabs", () => {

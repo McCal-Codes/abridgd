@@ -51,14 +51,15 @@ export const updateSourceEnabled = async (
   category: ArticleCategory,
   sourceName: string,
   enabled: boolean,
+  defaultEnabled = true,
 ): Promise<SourcePreferences> => {
   const current = await loadSourcePreferences();
   const key = getSourceKey(category, sourceName);
   const overrides: SourceOverrideMap = { ...current.overrides };
-  if (enabled) {
+  if (enabled === defaultEnabled) {
     delete overrides[key];
   } else {
-    overrides[key] = false;
+    overrides[key] = enabled;
   }
   const next = { ...current, overrides };
   await persistPreferences(next);
@@ -76,4 +77,9 @@ export const isSourceEnabled = (
   overrides: SourceOverrideMap,
   category: ArticleCategory,
   sourceName: string,
-) => overrides[getSourceKey(category, sourceName)] !== false;
+  defaultEnabled = true,
+) => {
+  const override = overrides[getSourceKey(category, sourceName)];
+  if (override === undefined) return defaultEnabled;
+  return override;
+};

@@ -69,6 +69,8 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityRole={restProps.accessibilityRole || "button"}
+      accessible={restProps.accessible ?? true}
       {...restProps}
     >
       <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>

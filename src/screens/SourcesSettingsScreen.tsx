@@ -33,22 +33,27 @@ export const SourcesSettingsScreen: React.FC = () => {
     };
   }, []);
 
-  const toggleSource = async (category: ArticleCategory, sourceName: string) => {
-    const currentlyEnabled = isSourceEnabled(overrides, category, sourceName);
+  const toggleSource = async (
+    category: ArticleCategory,
+    sourceName: string,
+    defaultEnabled = true,
+  ) => {
+    const currentlyEnabled = isSourceEnabled(overrides, category, sourceName, defaultEnabled);
     const key = getSourceKey(category, sourceName);
+    const nextEnabled = !currentlyEnabled;
 
     setOverrides((prev) => {
       const next: SourceOverrideMap = { ...prev };
-      if (currentlyEnabled) {
-        next[key] = false;
-      } else {
+      if (nextEnabled === defaultEnabled) {
         delete next[key];
+      } else {
+        next[key] = nextEnabled;
       }
       return next;
     });
 
     try {
-      const prefs = await updateSourceEnabled(category, sourceName, !currentlyEnabled);
+      const prefs = await updateSourceEnabled(category, sourceName, nextEnabled, defaultEnabled);
       setOverrides(prefs.overrides);
     } catch (error) {
       Alert.alert("Error", "Couldn't update source preference. Please try again.");
@@ -78,19 +83,28 @@ export const SourcesSettingsScreen: React.FC = () => {
               <Text style={styles.categoryTitle}>{category}</Text>
               {RSS_FEEDS[category].map((source) => {
                 const sourceKey = getSourceKey(category, source.name);
-                const isEnabled = isSourceEnabled(overrides, category, source.name);
+                const defaultEnabled = source.defaultEnabled ?? true;
+                const isEnabled = isSourceEnabled(overrides, category, source.name, defaultEnabled);
 
                 return (
                   <View key={sourceKey} style={styles.sourceRow}>
                     <View style={styles.sourceInfo}>
                       <Text style={styles.sourceName}>{source.name}</Text>
-                      <Text style={styles.sourceUrl} numberOfLines={1}>
-                        {source.url}
-                      </Text>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.sourceUrl} numberOfLines={1}>
+                          {source.url}
+                        </Text>
+                        {!defaultEnabled && <Text style={styles.defaultOff}>Default off</Text>}
+                      </View>
+                      {!defaultEnabled && (
+                        <Text style={styles.defaultOffNote}>
+                          Temporarily disabled while the feed is down; toggle on if it recovers.
+                        </Text>
+                      )}
                     </View>
                     <Switch
                       value={isEnabled}
-                      onValueChange={() => toggleSource(category, source.name)}
+                      onValueChange={() => toggleSource(category, source.name, defaultEnabled)}
                       trackColor={{ false: colors.border, true: colors.primary }}
                     />
                   </View>
@@ -175,10 +189,31 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 2,
   },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   sourceUrl: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  defaultOff: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs / 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+  },
+  defaultOffNote: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   section: {
     marginTop: spacing.xl,
