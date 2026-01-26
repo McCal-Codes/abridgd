@@ -20,9 +20,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Documentation
 - New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.
 
-## [1.3.5] - TBD
+## [1.3.6] - TBD
 
-_No recorded changes yet. Add fixes here if a patch is cut after 1.3.0._
+### Fixed
+- Stabilize auth/settings to prevent intermittent sign-in and settings-sync issues (backported from `patch/1.3.5-fixes`).
+
+### Notes
+- Includes hotfixes from `patch/1.3.5-fixes`. Work for 1.4 remains on `release/1.4.0` and will be released separately.
 
 ## [1.3.0] - 2026-01-21
 
