@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, Animated, Easing } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Easing,
+  AccessibilityInfo,
+  useWindowDimensions,
+} from "react-native";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useTheme, Colors } from "../theme/ThemeContext";
@@ -44,13 +52,31 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
   message = "Loading fresh news...",
 }) => {
   const { colors } = useTheme();
-  const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const { fontScale } = useWindowDimensions();
+  const [reduceMotion, setReduceMotion] = React.useState(false);
+  const styles = React.useMemo(() => createStyles(colors, fontScale), [colors, fontScale]);
   const [currentFact, setCurrentFact] = React.useState(0);
   const spinValue = React.useRef(new Animated.Value(0)).current;
   const fadeValue = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
-    // Start spinning animation
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => mounted && setReduceMotion(value));
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", (value) => {
+      setReduceMotion(value);
+    });
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      fadeValue.setValue(1);
+      return undefined;
+    }
+
     const spinAnimation = Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
@@ -61,7 +87,6 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
     );
     spinAnimation.start();
 
-    // Cycle through fun facts
     const factInterval = setInterval(() => {
       Animated.timing(fadeValue, {
         toValue: 0,
@@ -77,7 +102,6 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
       });
     }, 3000);
 
-    // Start with first fact
     Animated.timing(fadeValue, {
       toValue: 1,
       duration: 500,
@@ -88,7 +112,7 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
       spinAnimation.stop();
       clearInterval(factInterval);
     };
-  }, []);
+  }, [reduceMotion, fadeValue, spinValue]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
@@ -102,7 +126,7 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
           style={[
             styles.spinner,
             {
-              transform: [{ rotate: spin }],
+              transform: reduceMotion ? undefined : [{ rotate: spin }],
               width: size === "large" ? 60 : 40,
               height: size === "large" ? 60 : 40,
               borderWidth: size === "large" ? 4 : 3,
@@ -141,8 +165,9 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
   );
 };
 
-const createStyles = (colors: Colors) =>
-  StyleSheet.create({
+const createStyles = (colors: Colors, fontScale: number) => {
+  const scale = (size: number) => size * Math.min(fontScale || 1, 1.6);
+  return StyleSheet.create({
     container: {
       flex: 1,
       justifyContent: "center",
@@ -173,15 +198,18 @@ const createStyles = (colors: Colors) =>
       color: colors.text,
       textAlign: "center",
       marginBottom: spacing.lg,
+      fontSize: scale(17),
     },
     factContainer: {
       maxWidth: 300,
+      paddingHorizontal: spacing.sm,
     },
     factText: {
       fontFamily: typography.fontFamily.sans,
-      fontSize: typography.size.sm,
+      fontSize: scale(13),
       color: colors.textSecondary,
       textAlign: "center",
-      lineHeight: 20,
+      lineHeight: scale(19),
     },
   });
+};

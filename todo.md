@@ -2,482 +2,244 @@
 
 > Adding tasks? Use this format: `- [ ] TODO-XXX | Scope | Brief description (1 line)` and keep statuses synchronized. Prefer adding new items here (source of truth) and mark related entries in `updates/todo.md` as historical only. When completed, move a summary to `updates/completed.md`.
 
-## Version 1.4 - The Refinement Release (In Progress)
+<!--
+Maintainer prompt: Backlog grooming guardrails
 
-**Vision:** Transform 1.4 into a polished, delightful experience that feels thoughtfully crafted in every interaction. Not just feature-complete, but genuinely special.
+You are helping maintain and refine the product backlog for Abridged (iOS news app). Backlog below is the source of truth for Version 1.4+. Keep it clear, coherent, and execution-ready without losing nuance or intent.
 
----
+Ground rules:
+- Do not invent features beyond vision; do not delete—defer instead.
+- Preserve voice (calm, intentional, trust-focused, Apple-native).
+- Prefer small structural edits (grouping, renaming, deduping); keep markdown structure consistent.
+- Todo format: `- [ ] TODO-XXX | Scope | Brief description (1 line)`; keep status synced. Backlog is live; `updates/todo.md` is historical only.
 
-### Onboarding & Grounding Polish
-- [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
-- [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.
-- [x] Centered, margin-aware pagination and action buttons with breathable padding.
-- [ ] Capture updated screenshots for docs and App Store metadata.
+Tasks when editing:
+1) Normalize/dedupe. Merge overlapping loading/error/offline bullets; keep crisp 1–2 line goals per phase.
+2) Enforce priority spine: Stability → Core reading loop → Trust/identity.
+3) Tighten wording for execution: actionable, shippable in 1–2 sittings; split if larger.
+4) Align themes: Accessibility, Offline, Trust/Intent, Reader Identity; move items to correct phase if needed.
+5) Tagging/IDs: Add unique TODO-XXX where obvious; don’t renumber existing.
+6) Separation: App vs Website/Marketing vs Security. In web/marketing, keep 3–7 most important bullets per subsection.
+7) Security Playbook: phrase as checklists/cadence, not maybes.
 
-### Phase 1: Core Data & Persistence 🗄️
-
-#### Saved Articles System (Enhanced)
-- [ ] **Persistent Storage with AsyncStorage**
-    - Migrate SavedArticlesContext to use AsyncStorage
-    - Add versioned schema for future migrations
-    - ✅ Implement data compression for large article bodies
-    - Add save/load error handling with retry logic
-    - Migration from in-memory state on first launch
-- [ ] **Reading Progress Tracking**
-    - Track scroll position in articles (resume where you left off)
-    - Track RSVP reading progress (which word you stopped at)
-    - Show progress indicators on ArticleCards (20%, 50%, 100% read)
-    - ✅ "Continue Reading" section on HomeScreen for in-progress articles
-- [ ] **Smart Collections & Tags**
-    - Auto-tag articles by category and topic
-    - "Read Later" vs "Archived" states
-    - Favorites/priority marking with star icon
-    - Last read timestamp and reading duration tracking
-
----
-
-### Phase 2: Refresh & Discovery ♻️
-
-#### Pull-to-Refresh Implementation
-- [x] **HomeScreen Pull-to-Refresh**
-    - ✅ Smooth pull-to-refresh with native RefreshControl
-    - ✅ Timestamp tracking (lastUpdated state)
-    - ✅ Separate refreshing state (no full-screen loading on pull)
-    - ✅ Show "Updated 2m ago" timestamp (UI)
-    - ✅ Haptic feedback on refresh trigger
-- [x] **SectionScreen Pull-to-Refresh**
-    - ✅ Consistent refresh UX across all sections
-    - ✅ Timestamp tracking per section
-    - ✅ Show "Updated 2m ago" timestamp
-    - ✅ Smart caching (don't re-fetch if < 5 minutes old)
-- [x] **SavedScreen Pull-to-Refresh**
-    - Placeholder refresh with updated timestamp + haptic; ready to plug in metadata (view counts, comments) when available
-# Backlog (Adjusted)
+Output rules:
+- Keep headings order (Version 1.4 → phases → Future → Defer → Web/Marketing → Security).
+- Add a short “Backlog maintenance notes” delta when you edit.
+-->
 
 ## Version 1.4 — The Refinement Release (In Progress)
 
-**Vision:** Polish the reading experience and navigation surfaces so the app feels calm, intentional, and Apple-native. Add trust + explicit intent features that complete the mental model without expanding surface area.
+**Vision:** Polish the reading experience so it feels calm, intentional, and Apple-native—trustworthy, resilient, and ready for launch.
 
 ---
 
 ### Priority Fixes & Stability — Do These First
 
-- [x] Screens: Home loading skeletons restored and WTAE feed reliability hardened.
-- [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
-- [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
-- [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)
-- [ ] Offline indicator + queued actions (save/unsave) until reconnected
-- [ ] Accessibility audit (VoiceOver, Dynamic Type, contrast)
-- [ ] Global animation + haptics controls (respect Reduce Motion, provide overrides)
+- [x] TODO-025 | Stability | Screens: Home loading skeletons restored and WTAE feed reliability hardened.
+- [ ] TODO-029 | Stability | Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch).
+- [ ] TODO-030 | Stability | Network/Feed error states with offline-friendly retry and last-updated labeling.
+- [ ] TODO-031 | Stability | Loading and skeleton experience (avoid blank screens; progressive image loading).
+- [ ] TODO-032 | Offline | Offline indicator + queued save/unsave actions until reconnected.
+- [ ] TODO-033 | Accessibility | Accessibility audit (VoiceOver, Dynamic Type, contrast).
+- [ ] TODO-034 | Controls | Global animation + haptics controls (respect Reduce Motion, allow overrides).
 
 ---
 
 ### Onboarding & Grounding Polish
+
 - [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
 - [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.
 - [x] Centered, margin-aware pagination and action buttons with breathable padding.
-- [ ] Capture updated screenshots for docs and App Store metadata.
+- [ ] TODO-035 | Onboarding | Capture updated screenshots for docs and App Store metadata.
 
 ---
 
-## Phase 1: Core Data & Persistence 🗄️ (Keep)
+## Phase 1: Core Data & Persistence 🗄️
+**Goal:** Make saving/continuing reading durable and migration-safe.
 
 ### Saved Articles System (Enhanced)
-- [ ] Persistent Storage with AsyncStorage
-  - [ ] Migrate SavedArticlesContext to AsyncStorage
-  - [ ] Add versioned schema for future migrations
-  - [x] Implement data compression for large article bodies (schema v2)
-  - [ ] Save/load error handling with retry logic
-  - [ ] Migration from in-memory state on first launch
+- [ ] TODO-040 | Storage | Migrate `SavedArticlesContext` to AsyncStorage.
+- [ ] TODO-041 | Storage | Add versioned schema to support future migrations.
+- [x] TODO-042 | Storage | Implement data compression for large article bodies (schema v2).
+- [ ] TODO-043 | Stability | Add save/load error handling with retry logic.
+- [ ] TODO-044 | Migration | Migrate in-memory saved items on first launch.
 
 ### Reading Progress Tracking
-- [ ] Track scroll position in articles (resume where you left off)
-- [ ] Track RSVP progress (word index + timestamp)
-- [ ] Progress indicators on ArticleCards (unread/in-progress/completed)
-- [x] Continue Reading section on HomeScreen for in-progress articles
+- [ ] TODO-045 | Progress | Track scroll position per article (resume where you left off).
+- [ ] TODO-046 | Progress | Track RSVP progress (word index + timestamp).
+- [ ] TODO-047 | Progress | Progress indicators on ArticleCards (unread/in-progress/completed).
+- [x] TODO-048 | Progress | “Continue Reading” section on HomeScreen for in-progress articles.
 
-### Smart Collections & States (Rename for clarity)
-- [ ] Reading state model: Read Later / Archived / Favorite
-- [ ] Last read timestamp
-- [ ] (Optional) Reading duration tracking (local-only)
+### Smart Collections & States
+- [ ] TODO-049 | States | Reading state model: Read Later / Archived / Favorite.
+- [ ] TODO-050 | States | Last read timestamp persisted with saved items.
+- [ ] TODO-051 | States | (Optional) Reading duration tracking (local-only).
 
 ---
 
 ## Phase 2: Empty, Error, Loading States 🎨
+**Goal:** Keep feeds calm and informative when data is missing, slow, or failing.
 
 - [x] TODO-028 | Phase 2: Empty, Error, Loading States | Add profile onboarding, single-line headers, cached story hydration, and fun loading/error surfaces for feeds.
-
-### Network Error State
-- [ ] Offline-friendly error UI (“Can’t connect” + last successful update)
-- [ ] Retry with loading state
-- [ ] Show cached items with a subtle “From cache” label
-
-### Feed Load Error
-- [ ] “Couldn’t load new stories” + timestamp of last success
-- [ ] Pull to retry
-
-### Loading / Skeletons
-- [ ] Skeleton cells for feeds (avoid blank screen)
-- [ ] Progressive image loading (reserve space to prevent layout jumps)
-- [ ] Optional contextual loading messages (keep minimal and calm)
+- [ ] TODO-052 | Network | Offline-friendly error UI (“Can’t connect”) showing last successful update + “From cache” label when applicable.
+- [ ] TODO-053 | Network | Retry flows reuse loading state and support pull-to-retry.
+- [ ] TODO-054 | Loading | Skeleton cells + reserved image space to prevent layout jumps; progressive image loading.
+- [ ] TODO-055 | Copy | Calm, minimal loading/error copy consistent across sections.
 
 ---
 
 ## Phase 3: Accessibility & Controls ♿
+**Goal:** Respect user preferences for motion, haptics, and readability.
 
-### Global Animation + Haptics Controls
-- [ ] Global toggle: Enable Animations
-- [ ] Respect Reduce Motion (system), allow override
-- [ ] Animation speed/scale (0.5×–2×)
-- [ ] Global haptics toggle + intensity levels
-
-### Accessibility Audit
-- [ ] VoiceOver labels everywhere + announce state changes
-- [ ] Dynamic Type stress test (largest/smallest)
-- [ ] Contrast checks (light/dark + colorblind friendliness)
+- [ ] TODO-034 | Controls | Global animation + haptics controls (respect Reduce Motion, allow overrides).
+- [ ] TODO-056 | Controls | Animation speed/scale presets (0.5×–2×) gated by Reduce Motion.
+- [ ] TODO-057 | Accessibility | VoiceOver labels everywhere + announce state changes.
+- [ ] TODO-058 | Accessibility | Dynamic Type stress test (largest/smallest) across key screens.
+- [ ] TODO-059 | Accessibility | Contrast checks for light/dark and colorblind friendliness.
 
 ---
 
-## Phase 4: Offline & Caching 🚀 (Keep, but make it coherent)
+## Phase 4: Offline & Caching 🚀
+**Goal:** Ensure the reading loop works without network and recovers gracefully.
 
-### Offline Reading Support
-- [ ] Cache full article content when saved
-- [ ] Cache images for saved articles
-- [ ] Cache cleanup (LRU, size limit)
-- [ ] Offline indicator (“Offline” badge in status area)
-- [ ] Queue actions (save/unsave) when offline, apply on reconnect
-
----
-
-## Phase 5: Refresh & Discovery ♻️ (Keep)
-
-### Pull-to-Refresh Implementation
-- [x] HomeScreen pull-to-refresh + timestamp + haptics
-- [x] SectionScreen pull-to-refresh + per-section timestamp + cache TTL
-- [x] SavedScreen pull-to-refresh scaffold + timestamp + haptics
-
-### Search & Filter (Power User Features)
-- [x] SavedScreen debounced search + recent queries
-- [x] Filters (source/category/status/date)
-- [x] Sorting (newest/oldest/progress/length/source)
-- [x] “No results” state with clear action
+- [ ] TODO-032 | Offline | Offline indicator + queued save/unsave actions until reconnected.
+- [ ] TODO-060 | Caching | Cache full article content when saved.
+- [ ] TODO-061 | Caching | Cache images for saved articles.
+- [ ] TODO-062 | Caching | Cache cleanup policy (LRU, size limit).
+- [ ] TODO-063 | Offline | Apply queued actions on reconnect with status feedback.
 
 ---
 
-## Phase 6: Trust & Intent (NEW, iOS 26-native) 🧭
+## Phase 5: Refresh & Discovery ♻️
+**Goal:** Keep content fresh without jitter while empowering power users.
+
+- [x] TODO-064 | Refresh | HomeScreen pull-to-refresh + timestamp + haptics.
+- [x] TODO-065 | Refresh | SectionScreen pull-to-refresh + per-section timestamp + cache TTL.
+- [x] TODO-066 | Refresh | SavedScreen pull-to-refresh scaffold + timestamp + haptics.
+- [x] TODO-067 | Search | SavedScreen debounced search + recent queries.
+- [x] TODO-068 | Filters | Filters (source/category/status/date).
+- [x] TODO-069 | Sorting | Sorting (newest/oldest/progress/length/source).
+- [x] TODO-070 | UX | “No results” state with clear action.
+
+---
+
+## Phase 6: Trust & Intent (iOS 26-native) 🧭
+**Goal:** Make feed logic legible and user-directed without algorithm creep.
 
 ### Trust Panel — “Why am I seeing this?”
-**Goal:** Make feed logic legible and non-manipulative.
+- [ ] TODO-071 | Trust | ArticleScreen overflow action: “Why am I seeing this?” presented as BlurSheet (medium/large detents).
+- [ ] TODO-072 | Trust | Panel fields: source + canonical domain, feed context (Top/Local/Digest), relevance reason, sensitive-content flags/grounding rationale, last updated timestamp (screen vs item).
+- [ ] TODO-073 | Trust | Copy tone stays calm, factual, non-judgmental; VoiceOver reads combined summary.
 
-- [ ] ArticleScreen overflow action: “Why am I seeing this?”
-- [ ] Present as BlurSheet (medium/large detents)
-- [ ] Panel includes:
-  - [ ] Source + canonical link domain
-  - [ ] Feed context (Top / Local / Digest)
-  - [ ] Relevance reason (Local tag, Followed source/topic, Digest bucket)
-  - [ ] Sensitive content flags + grounding rationale (if applicable)
-  - [ ] Last updated timestamp (screen-level vs item-level correct placement)
-- [ ] Copy tone: calm, factual, non-judgmental
-- [ ] Accessibility: VoiceOver reads as one combined summary
-
-### Follow System (explicit choice, no algorithm creep)
-- [ ] Follow Source (from ArticleScreen + Sources screen)
-- [ ] Follow Topic (from ArticleScreen tags or inferred topic list)
-- [ ] Follow Location scope (v1: Pittsburgh; later: neighborhoods/radius)
-- [ ] Profile → Manage:
-  - [ ] Sources you follow
-  - [ ] Topics you follow
-  - [ ] Location scope
-- [ ] Feed integration:
-  - [ ] Follows influence ordering/sections, but do NOT hide non-followed content by default
-  - [ ] Provide a clear “Following” section inside Top/Digest (not a new tab)
+### Follow System (explicit choice)
+- [ ] TODO-074 | Follow | Follow Source from ArticleScreen + Sources screen.
+- [ ] TODO-075 | Follow | Follow Topic from ArticleScreen tags or inferred list.
+- [ ] TODO-076 | Follow | Follow Location scope (v1: Pittsburgh; later neighborhoods/radius).
+- [ ] TODO-077 | Follow | Profile → Manage follows (sources, topics, location).
+- [ ] TODO-078 | Follow | Feed integration: “Following” section inside Top/Digest; follows influence ordering without hiding other content.
 
 ---
 
-  ## Phase 7: Reader Identity (NEW) 🎛️
+## Phase 7: Reader Identity 🎛️
+**Goal:** Make “how you read” intentional without settings sprawl.
 
-### Reader Studio (RSVP as an instrument, not a toggle)
-**Goal:** Reduce settings sprawl and make “how you read” feel intentional.
-
-- [ ] Create Reader Studio surface (Profile → Reader Studio)
-- [ ] Contents:
-  - [ ] RSVP speed presets (saved presets + quick selection)
-  - [ ] Focus anchor strategy selector
-  - [ ] Grounding style selector (swipeable cards, visual previews)
-  - [ ] Contrast + motion preferences (links to settings where needed)
-- [ ] Uses iOS 26 components:
-  - [ ] NavigationHeader title + subtitle (no duplicate inline context)
-  - [ ] BlurSheet for deeper configuration
-- [ ] Ensure classic RSVP “writing” / pacing is preserved (do not over-sanitize)
+- [ ] TODO-079 | Reader Studio | Create Reader Studio surface (Profile → Reader Studio).
+- [ ] TODO-080 | Reader Studio | RSVP speed presets + quick selection.
+- [ ] TODO-081 | Reader Studio | Focus anchor strategy selector.
+- [ ] TODO-082 | Reader Studio | Grounding style selector (swipeable cards with previews).
+- [ ] TODO-083 | Reader Studio | Contrast + motion preferences linking to settings where needed.
+- [ ] TODO-084 | Reader Studio | Use iOS 26 components (NavigationHeader title+subtitle; BlurSheet for deeper config).
+- [ ] TODO-085 | Reader Studio | Preserve classic RSVP “writing”/pacing feel.
 
 ---
 
-## Phase 8: Profiles (Reduce scope, align to product) 👤
+## Phase 8: Profiles 👤
+**Goal:** Practical, calm profile surface focused on navigation and utility.
 
-### Profile Screen (Practical, calm)
-- [ ] Profile screen redesign focused on navigation + utility (not gamification-first)
-  - [ ] Quick actions: Settings, Send Feedback, Share App
-  - [ ] Entry points: Reader Studio, Sources/Topics, Reading History (when added)
-- [ ] Avoid streak/fire-emoji gamification in 1.4 (can revisit later)
-
-> NOTE: “Profile tab integration” is already done per changelog. Keep only what remains.
+- [ ] TODO-086 | Profile | Redesign Profile screen for navigation-first utility (no gamification).
+  - [ ] TODO-087 | Profile | Quick actions: Settings, Send Feedback, Share App.
+  - [ ] TODO-088 | Profile | Entry points: Reader Studio, Sources/Topics, Reading History (when added).
+- [ ] TODO-089 | Profile | Avoid streak/fire-emoji gamification in 1.4 (keep note for future).
+> NOTE: “Profile tab integration” is already done per changelog.
 
 ---
 
-## Phase 9: Pre-Launch Essentials 📱 (Keep)
+## Phase 9: Pre-Launch Essentials 📱
+**Goal:** Ship-ready compliance, feedback, and store assets.
 
-### Legal & Compliance
-- [ ] Privacy policy (Sentry, Perplexity, storage)
-- [ ] Terms of service + first-launch acceptance
-
-### Feedback & Support
-- [ ] In-app feedback mail with device/app info
-- [ ] Help/FAQ section
-
-### App Store Preparation
-- [ ] App Store Connect setup
-- [ ] Screenshots & preview video (show RSVP + glass UI + trust panel)
+- [ ] TODO-090 | Legal | Privacy policy (Sentry, Perplexity, storage).
+- [ ] TODO-091 | Legal | Terms of service + first-launch acceptance.
+- [ ] TODO-092 | Support | In-app feedback mail with device/app info.
+- [ ] TODO-093 | Support | Help/FAQ section.
+- [ ] TODO-094 | App Store | App Store Connect setup.
+- [ ] TODO-095 | App Store | Screenshots & preview video (show RSVP + glass UI + trust panel).
 
 ---
 
 ## Version 1.5+ — Future Features (Roadmap-aligned)
+**Goal:** Post-1.4 evolution that deepens the reading loop and trust model.
 
 ### Reading History (local-first)
-- [ ] Recently read list + resume points
-- [ ] Clear history control
-- [ ] Surface in Profile and/or Continue Reading
+- [ ] TODO-100 | History | Recently read list + resume points.
+- [ ] TODO-101 | History | Clear history control.
+- [ ] TODO-102 | History | Surface in Profile and/or Continue Reading.
 
 ### Editorial Quote / Excerpt Sharing
-- [ ] Share selected paragraph or RSVP-highlighted text as image card
-- [ ] Include attribution + source
-- [ ] Keep it editorial, not viral
+- [ ] TODO-103 | Sharing | Share selected paragraph or RSVP-highlighted text as image card with attribution.
+- [ ] TODO-104 | Sharing | Keep sharing editorial (not viral) in tone.
 
-### Smart Suggestions (Only after Follow + Trust Panel)
-- [ ] “Based on what you follow…” suggestions (explicit, transparent)
-- [ ] No opaque “For You” ranking without explanation
+### Smart Suggestions (after Follow + Trust Panel)
+- [ ] TODO-105 | Suggestions | “Based on what you follow…” suggestions with transparent rationale.
+- [ ] TODO-106 | Suggestions | No opaque “For You” ranking without explanation.
 
 ---
 
 ## Remove / Defer (to avoid feature drift)
+**Goal:** Preserve focus for 1.4; revisit later if aligned.**
 
-- [ ] Community Tab (local resources) — move to 1.6+ unless it’s core to launch
-- [ ] Streaks/fire emoji dashboards — defer (can bias behavior toward engagement)
-- [ ] “Trending in Pittsburgh” — defer until you have clear, non-creepy metric definition
+- [ ] TODO-120 | Defer | Community Tab (local resources) — move to 1.6+ unless core to launch.
+- [ ] TODO-121 | Defer | Streaks/fire-emoji dashboards — defer to avoid engagement bias.
+- [ ] TODO-122 | Defer | “Trending in Pittsburgh” — defer until metric definition is clear and non-creepy.
 
 ---
 
 ## Website/Marketing (Other Repo)
+**Goal:** Launch-ready web presence that drives beta signups and trust without bloat.**
 
 ### Landing Page & Web Presence
-- [ ] Marketing Landing Page
-  - [ ] Email capture form for TestFlight beta access with Mailchimp/ConvertKit integration
-  - [ ] Hero section with app screenshot and compelling headline
-  - [ ] Feature highlights with icons and descriptions
-  - [ ] Video demo or animated GIF of RSVP reader in action
-  - [ ] Social proof section (beta tester testimonials once available)
-  - [ ] FAQ section addressing common questions
-  - [ ] Footer with links to Privacy Policy, Terms, Contact
-  - [ ] Responsive design for mobile/tablet/desktop
-- [ ] About Page
-  - [ ] Story behind Abridged (why it exists)
-  - [ ] Mission and values
-  - [ ] Team introduction (if applicable)
-  - [ ] Pittsburgh connection and local focus
-- [ ] Features Page
-  - [ ] Detailed breakdown of key features:
-    - [ ] RSVP Reader with interactive demo
-    - [ ] Grounding Mode explanation
-    - [ ] iOS 26 UI showcase
-    - [ ] Customization options
-    - [ ] Pittsburgh local news focus
-  - [ ] Screenshots and screen recordings
-  - [ ] Comparison to other news apps (subtle, not aggressive)
-- [ ] Blog/News Section (Optional)
-  - [ ] Launch announcement posts
-  - [ ] Feature deep-dives
-  - [ ] Pittsburgh news aggregation (meta-content)
-  - [ ] Development updates and behind-the-scenes
-  - [ ] SEO-optimized content for discovery
+- [ ] TODO-130 | Web | Marketing landing page with email capture, hero screenshot, feature highlights, and responsive layout.
+- [ ] TODO-131 | Web | About page (story, mission/values, Pittsburgh focus).
+- [ ] TODO-132 | Web | Features page showcasing RSVP, Grounding Mode, iOS 26 UI, customization, with screenshots/recordings.
+- [ ] TODO-133 | Web | FAQ + footer links (Privacy, Terms, Contact) and optional blog/news section if time allows.
 
 ### SEO & Discovery
-- [ ] Search Engine Optimization
-  - [ ] Keyword research (news app, Pittsburgh news, RSVP reading, speed reading, etc.)
-  - [ ] Meta titles and descriptions for all pages
-  - [ ] Open Graph tags for social sharing
-  - [ ] Twitter Card tags
-  - [ ] Schema.org markup for app
-  - [ ] XML sitemap
-  - [ ] robots.txt configuration
-- [ ] Google Analytics & Tracking
-  - [ ] GA4 setup with conversion tracking
-  - [ ] Track email signups, TestFlight clicks, page views
-  - [ ] Funnel analysis (landing → signup → download)
-  - [ ] Plausible Analytics alternative (privacy-focused)
-- [ ] Domain & Hosting
-  - [ ] Purchase domain (abridgd.app or similar)
-  - [ ] Set up hosting (Vercel, Netlify, or Cloudflare Pages)
-  - [ ] SSL certificate (automatic with most hosts)
-  - [ ] CDN configuration for fast global loading
-  - [ ] Configure DNS records
+- [ ] TODO-134 | SEO | Keyword research + meta titles/descriptions + OG/Twitter cards.
+- [ ] TODO-135 | SEO | Schema.org markup, XML sitemap, robots.txt.
+- [ ] TODO-136 | Analytics | GA4 or Plausible tracking for signups/TestFlight clicks with funnel basics.
 
-### Social Media & Community
-- [ ] Social Media Presence
-  - [ ] Twitter/X account (@abridgdapp or similar)
-  - [ ] Instagram account for visual content
-  - [ ] Optional: TikTok for short demos
-  - [ ] LinkedIn page (for press and professional outreach)
-  - [ ] Consistent branding across all platforms
-- [ ] Launch Content Calendar
-  - [ ] Pre-launch teasers (2-3 weeks before)
-  - [ ] Feature highlights (one per week)
-  - [ ] Behind-the-scenes development content
-  - [ ] Beta tester spotlights
-  - [ ] Launch day announcements
-  - [ ] Post-launch updates and milestones
-- [ ] Community Building
-  - [ ] Discord or Slack community for beta testers
-  - [ ] Reddit presence (r/pittsburgh, r/apps, relevant subreddits)
-  - [ ] ProductHunt launch preparation
-  - [ ] Hacker News post (Show HN: format)
-  - [ ] Pittsburgh-specific forums and communities
+### Social, Launch Content, Community
+- [ ] TODO-137 | Social | Stand up Twitter/X, Instagram, LinkedIn with consistent branding; optional TikTok.
+- [ ] TODO-138 | Social | Launch content calendar (teasers → highlights → launch day → post-launch updates).
+- [ ] TODO-139 | Community | Discord/Slack for beta testers + ProductHunt/HN/Reddit launch prep.
 
 ### Press & Media Kit
-- [ ] Press Kit
-  - [ ] High-resolution app icon (multiple sizes)
-  - [ ] Screenshots for press (light and dark mode)
-  - [ ] App Store preview video for embedding
-  - [ ] Company/product description (short, medium, long versions)
-  - [ ] Founder/developer bio and photo
-  - [ ] Press contact information
-  - [ ] Product fact sheet
-- [ ] Press Release
-  - [ ] Launch announcement press release
-  - [ ] Target: Pittsburgh tech blogs, local news outlets
-  - [ ] Tech press (TechCrunch, The Verge, etc. - reach high)
-  - [ ] Submit to PR distribution services
-- [ ] Media Outreach
-  - [ ] List of target publications and journalists
-  - [ ] Personalized pitch emails
-  - [ ] Review copies/TestFlight access for journalists
-  - [ ] Follow-up schedule
-  - [ ] Track coverage and mentions
-
-### Beta Program Management
-- [ ] Beta Testing Hub
-  - [ ] Dedicated beta signup page
-  - [ ] TestFlight instructions and troubleshooting
-  - [ ] Beta tester onboarding email sequence
-  - [ ] Feedback collection system (Typeform, Google Forms, or custom)
-  - [ ] Beta tester recognition/rewards
-  - [ ] Private Discord/Slack channel for testers
-- [ ] Beta Tester Resources
-  - [ ] Testing guide and priorities
-  - [ ] Known issues list (updated regularly)
-  - [ ] Feature roadmap visibility
-  - [ ] How to submit bug reports
-  - [ ] Feature request process
+- [ ] TODO-140 | Press | Media kit: app icon, screenshots (light/dark), preview video, product fact sheet, founder bio, press contact.
+- [ ] TODO-141 | Press | Launch press release + targeted outreach list (Pittsburgh + tech press) with follow-up plan.
 
 ### App Store Optimization (ASO)
-- [ ] App Store Assets (if not in app repo)
-  - [ ] App name optimization
-  - [ ] Subtitle (30 characters)
-  - [ ] Keyword optimization (100 characters)
-  - [ ] Screenshots with captions (all device sizes)
-  - [ ] Preview video (15-30 seconds)
-  - [ ] Promotional text (170 characters)
-- [ ] App Description
-  - [ ] Compelling opening paragraph
-  - [ ] Feature bullet points
-  - [ ] Pittsburgh focus highlighted
-  - [ ] Call-to-action
-  - [ ] Regular updates based on new features
-- [ ] Localization (Future)
-  - [ ] Spanish translation (large Pittsburgh demographic)
-  - [ ] Additional languages based on demand
+- [ ] TODO-142 | ASO | App name/subtitle/keywords + promotional text.
+- [ ] TODO-143 | ASO | Screenshot set with captions across device sizes + short preview video.
+- [ ] TODO-144 | ASO | Future localization plan (start with Spanish).
 
-### Analytics & Growth
-- [ ] Conversion Optimization
-  - [ ] A/B test landing page headlines
-  - [ ] Test different CTAs (button text, colors, placement)
-  - [ ] Optimize email signup form (fields, copy, positioning)
-  - [ ] Heat mapping (Hotjar or similar)
-  - [ ] Session recordings to identify friction points
-- [ ] Email Marketing
-  - [ ] Welcome email sequence for signups
-  - [ ] Launch announcement email
-  - [ ] Feature update emails
-  - [ ] Monthly newsletter (optional)
-  - [ ] Re-engagement campaigns for inactive testers
-  - [ ] Segmentation by user behavior
-- [ ] Referral Program (Future)
-  - [ ] Refer-a-friend incentives
-  - [ ] Social sharing buttons and pre-written tweets
-  - [ ] Track referral sources
-  - [ ] Reward top referrers
-
-### Legal & Compliance (Web)
-- [ ] Legal Pages on Website
-  - [ ] Privacy Policy (same as in-app)
-  - [ ] Terms of Service (same as in-app)
-  - [ ] Cookie policy (if using cookies)
-  - [ ] DMCA policy (if applicable)
-  - [ ] Accessibility statement
-- [ ] Cookie Consent
-  - [ ] GDPR-compliant cookie banner
-  - [ ] Cookie preferences management
-  - [ ] Clear explanation of tracking
-
-### Technical Infrastructure
-- [ ] Website Performance
-  - [ ] Lighthouse score optimization (aim for 90+)
-  - [ ] Image optimization (WebP format, lazy loading)
-  - [ ] Minimize JavaScript bundle size
-  - [ ] Fast loading on slow connections (< 3s)
-- [ ] Monitoring & Uptime
-  - [ ] Uptime monitoring (UptimeRobot, Pingdom)
-  - [ ] Error tracking (Sentry for web)
-  - [ ] Performance monitoring
-  - [ ] Broken link checker
-- [ ] Email Infrastructure
-  - [ ] Email service provider setup (SendGrid, Mailgun, or Postmark)
-  - [ ] Transactional email templates
-  - [ ] Email deliverability monitoring
-  - [ ] Unsubscribe management
-
-### Post-Launch Marketing
-- [ ] Content Marketing
-  - [ ] “How to use RSVP reading” guide
-  - [ ] “Best Pittsburgh news sources” article
-  - [ ] “Digital wellness and news consumption” thought pieces
-  - [ ] Guest posts on relevant blogs
-  - [ ] Pittsburgh news aggregation (meta-content)
-- [ ] Partnerships
-  - [ ] Reach out to Pittsburgh influencers and bloggers
-  - [ ] Partner with local organizations
-  - [ ] Cross-promotion with complementary apps
-- [ ] App Store Features
-  - [ ] Submit for App Store featuring
-  - [ ] “Apps We Love” pitch
-  - [ ] Time-based featuring opportunities (e.g., News & Events)
-  - [ ] Collection inclusion pitches
-
-### Metrics & KPIs
-- [ ] Track Success Metrics
-  - [ ] Website traffic (unique visitors, pageviews)
-  - [ ] Email signup conversion rate
-  - [ ] TestFlight download rate
-  - [ ] App Store impressions and conversions
-  - [ ] User retention rates
-  - [ ] Active users (DAU, MAU)
-  - [ ] Feature usage analytics
-  - [ ] Net Promoter Score (NPS)
-  - [ ] App Store ratings and reviews
+### Technical Infrastructure (Web)
+- [ ] TODO-145 | Web Perf | Lighthouse 90+ targets: image optimization (WebP/lazy), minimized JS, fast loads <3s.
+- [ ] TODO-146 | Reliability | Uptime monitoring + error/performance tracking; broken link checks.
+- [ ] TODO-147 | Email | ESP setup (SendGrid/Mailgun/Postmark), templates, deliverability monitoring, unsubscribe handling.
 
 ---
 
 ## Security Playbook (GitHub Repos: Website + App)
-
-Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vulnerable dependencies/unsafe code before it ships.
+**Goal:** Reduce compromise risk and keep supply chain clean.**
 
 ### 0) Baseline assumptions
 - `main` is the protected integration branch.
@@ -485,127 +247,42 @@ Goal: reduce account/repo compromise risk, prevent secrets leaks, and catch vuln
 - CI runs on PRs and on a schedule.
 - No secrets are ever committed to git (including “temporary” ones).
 
----
-
 ### 1) Repo settings (one-time hardening)
+- [ ] TODO-150 | Security | Enable branch protection for `main` (PR required, approval, status checks, conversation resolution; optional: signed commits/push restrictions).
+- [ ] TODO-151 | Security | Enable Dependabot alerts + security updates.
+- [ ] TODO-152 | Security | Enable code scanning (PR + scheduled on default branch).
+- [ ] TODO-153 | Security | Enable secret scanning + push protection (if available).
+- [ ] TODO-154 | Security | Harden GitHub Actions: least-privilege permissions, pin third-party Actions by SHA, separate checks vs deploy, block secrets on untrusted PRs, limit reruns.
+- [ ] TODO-155 | Security | Add SECURITY.md, CODEOWNERS, and tighten `.gitignore` for env/build outputs.
 
-#### 1.1 Protect how code gets into `main`
-- [ ] Enable branch protection for `main`
-  - [ ] Require pull request before merging (no direct pushes)
-  - [ ] Require at least 1 approval
-  - [ ] Require status checks to pass before merging (CI + security scans)
-  - [ ] Require conversation resolution before merging
-  - [ ] (Optional) Require signed commits
-  - [ ] (Optional) Restrict who can push to matching branches
-
-#### 1.2 Enable GitHub-native security features
-- [ ] Enable Dependabot alerts
-- [ ] Enable Dependabot security updates (auto PRs)
-- [ ] Enable code scanning (CodeQL or equivalent)
-  - [ ] Run on PRs
-  - [ ] Run on default branch (scheduled)
-- [ ] Enable secret scanning
-- [ ] Enable secret scanning push protection (if available)
-
-#### 1.3 Harden GitHub Actions (CI/CD attack surface)
-- [ ] Set workflow permissions to least privilege (avoid broad write tokens)
-- [ ] Pin third-party Actions to a commit SHA (not a moving tag)
-- [ ] Separate “checks” workflows from “deploy” workflows
-- [ ] Ensure deploy workflows do NOT run with secrets on untrusted PR code
-- [ ] Limit who can approve/rerun privileged workflows (environments, reviewers)
-
-#### 1.4 Add basic security docs + ownership
-- [ ] Add `SECURITY.md` (how to report vulnerabilities, expected response)
-- [ ] Add `CODEOWNERS` (even if it's just you)
-- [ ] Add/update `.gitignore` to prevent committing local env files, build outputs, keys
-
----
-
-### 2) Secrets policy (do not negotiate with the repo history)
-
-#### 2.1 Rules
-- [ ] Never store API keys/tokens in the repo (including config files)
-- [ ] Never store secrets in client apps (mobile/web) as “hidden strings” (assume extractable)
-- [ ] Use GitHub Secrets / Environment Secrets or your hosting provider's secret store
-
-#### 2.2 If a secret is committed (incident response)
-- [ ] Assume it is compromised
-- [ ] Revoke/rotate immediately (provider dashboard)
-- [ ] Remove from code paths
-- [ ] Audit access logs if available
-- [ ] If necessary, rewrite history ONLY after rotation (history rewrite is not rotation)
-
----
+### 2) Secrets policy (do not negotiate with history)
+- [ ] TODO-156 | Secrets | Enforce “no secrets in repo/client”; use provider or GitHub secrets.
+- [ ] TODO-157 | Secrets | Incident playbook: revoke/rotate immediately, remove from code paths, audit access logs, rewrite history only after rotation.
 
 ### 3) Dependency + supply chain safety (ongoing)
-
-#### 3.1 Continuous dependency maintenance
-- [ ] Review Dependabot PRs weekly (or as they arrive)
-- [ ] Patch high/critical vulnerabilities ASAP
-- [ ] Avoid unmaintained dependencies when alternatives exist
-
-#### 3.2 Locking and provenance
-- [ ] Use lockfiles when supported and commit them
-- [ ] Avoid “latest” ranges for critical deps where possible
-- [ ] For website: treat third-party scripts as supply-chain risk (pin versions, minimize vendors)
-
----
+- [ ] TODO-158 | Supply Chain | Weekly Dependabot triage; patch high/critical quickly; avoid unmaintained deps.
+- [ ] TODO-159 | Supply Chain | Lockfiles committed; avoid `latest` for critical deps; pin/limit third-party web scripts.
 
 ### 4) Code scanning + quality gates (ongoing)
-
-#### 4.1 Required checks (must pass to merge)
-- [ ] CI build passes (app + site)
-- [ ] Lint/format (as applicable)
-- [ ] Code scanning passes (or findings are triaged with documented rationale)
-
-#### 4.2 Triage rules
-- [ ] Security alerts are triaged within 24–72 hours
-- [ ] High/critical: fix or mitigate before release
-- [ ] False positives: document why and suppress narrowly
-
----
+- [ ] TODO-160 | Quality | Required checks: CI build, lint/format, code scanning; triage alerts within 24–72h (fix/mitigate or narrowly suppress false positives).
 
 ### 5) Release integrity (app + website)
-
-#### 5.1 Git hygiene
-- [ ] Tag releases (e.g., `vX.Y.Z`)
-- [ ] Keep a simple CHANGELOG entry per release
-- [ ] Prefer release branches or protected tags for production
-
-#### 5.2 Access control
-- [ ] Enable 2FA on GitHub account
-- [ ] Use least privilege collaborators and tokens
-- [ ] Rotate long-lived tokens periodically
-
----
+- [ ] TODO-161 | Release | Tag releases (vX.Y.Z), keep CHANGELOG entries, prefer release branches/protected tags.
+- [ ] TODO-162 | Access | Enable 2FA; least-privilege collaborators/tokens; rotate long-lived tokens periodically.
 
 ### 6) Repo-specific notes
+- [ ] TODO-163 | Web Security | No secrets in static site; pin and audit third-party JS; gate deploy workflows via environments.
+- [ ] TODO-164 | App Security | No hardcoded API keys; keep mobile dependencies current; protect build/signing credentials from PR exposure.
 
-#### Website repo (common pitfalls)
-- [ ] No secrets in static site code (analytics keys still matter)
-- [ ] Minimize third-party JS; pin versions; audit periodically
-- [ ] If using Actions for deploy: treat deploy as privileged, gated via environments
-
-#### App repo (common pitfalls)
-- [ ] No hardcoded API keys (clients can be reverse engineered)
-- [ ] Keep dependencies current (SwiftPM/CocoaPods/Carthage)
-- [ ] Ensure build/signing credentials are protected and not exposed to PR builds
+### 7) Cadence checklist (repeatable)
+- [ ] TODO-165 | Cadence Weekly | Review Dependabot alerts/PRs; check code scanning and secret scanning alerts.
+- [ ] TODO-166 | Cadence Per PR | Verify required checks, no unpinned new Actions, no secrets/config leaks.
+- [ ] TODO-167 | Cadence Monthly | Review Actions permissions/environments; audit access tokens; dependency health spot-check.
 
 ---
 
-### 7) Cadence checklist (repeatable)
-
-Weekly:
-- [ ] Review Dependabot alerts/PRs
-- [ ] Check code scanning findings
-- [ ] Check secret scanning alerts
-
-Per PR:
-- [ ] Confirm required checks run and pass
-- [ ] Verify no new third-party Actions were added unpinned
-- [ ] Verify no secrets/config leaks
-
-Monthly:
-- [ ] Review GitHub Actions permissions & environments
-- [ ] Audit access tokens and remove unused ones
-- [ ] Quick dependency “health” audit (maintained? trusted? necessary?)
+### Backlog maintenance notes
+- Merged duplicate backlogs into a single, ordered Version 1.4 spine.
+- Added TODO IDs (029–167) and scoped bullets to be execution-ready and non-duplicative.
+- Clarified phase goals and moved offline/controls items to coherent homes.
+- Trimmed Website/Marketing into goal-led sections and tightened Security Playbook into checklist tasks.

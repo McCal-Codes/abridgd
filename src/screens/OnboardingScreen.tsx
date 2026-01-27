@@ -1,5 +1,13 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, useWindowDimensions, ScrollView, Switch } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  useWindowDimensions,
+  ScrollView,
+  Switch,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -85,30 +93,19 @@ const SLIDES = [
 
 const GROUNDING_POINTS = ["Optional before tough reads", "≈30s steady loop"];
 
-const BREATH_SEGMENTS = [
-  { label: "In", flex: 4, color: "#3FA2A7" },
-  { label: "Hold", flex: 1, color: "#7FC6C9" },
-  { label: "Out", flex: 6, color: "#A3D8DA" },
-];
-
 const GROUNDING_STYLES: { id: GroundingAnimationStyle; label: string; description: string }[] = [
   { id: "simple", label: "Calm Loop", description: "Soft inhale / exhale — classic." },
   { id: "waves", label: "Wave Drift", description: "Slow gradients, like tide coming in." },
   { id: "pulse", label: "Focus Pulse", description: "Minimal ring, steady and quiet." },
 ];
 
-const GROUNDING_STYLE_COLORS: Record<GroundingAnimationStyle, string> = {
-  simple: "#3FA2A7",
-  waves: "#7FC6C9",
-  pulse: "#A3D8DA",
-};
-
 const GroundingPreviewCard: React.FC<{
   isCompactHeight: boolean;
   currentStyle: GroundingAnimationStyle;
   styles: OnboardingStyles;
+  breathSegments: { label: string; flex: number; color: string }[];
   styleOverride?: any;
-}> = ({ isCompactHeight, currentStyle, styles, styleOverride }) => {
+}> = ({ isCompactHeight, currentStyle, styles, breathSegments, styleOverride }) => {
   if (!styles) return null;
   const pulseSize = isCompactHeight ? 68 : 96;
   const cardPadding = isCompactHeight ? spacing.sm : spacing.md + spacing.xs;
@@ -149,12 +146,10 @@ const GroundingPreviewCard: React.FC<{
           </Text>
           <Text style={styles.groundingPulseSubtext}>softly</Text>
         </View>
-        <View
-          style={[styles.groundingDetails, isCompactHeight && styles.groundingDetailsCompact]}
-        >
+        <View style={[styles.groundingDetails, isCompactHeight && styles.groundingDetailsCompact]}>
           <Text style={styles.groundingStyleDescriptionPreview}>{selectedStyle.description}</Text>
           <View style={styles.breathRow}>
-            {BREATH_SEGMENTS.map((seg) => (
+            {breathSegments.map((seg) => (
               <View
                 key={seg.label}
                 style={[styles.breathSegment, { flex: seg.flex, backgroundColor: seg.color }]}
@@ -175,12 +170,14 @@ const GroundingStyleSelector: React.FC<{
   onChange: (style: GroundingAnimationStyle) => void;
   isCompactHeight: boolean;
   styles: OnboardingStyles;
-}> = ({ value, onChange, isCompactHeight, styles }) => {
+  groundingStyleColors: Record<GroundingAnimationStyle, string>;
+  reduceMotion: boolean;
+}> = ({ value, onChange, isCompactHeight, styles, groundingStyleColors, reduceMotion }) => {
   if (!styles) return null;
   const { width: screenWidth } = useWindowDimensions();
-  const horizontalPadding = isCompactHeight ? spacing.md : spacing.lg;
   const listPadding = spacing.xs;
   const cardGap = isCompactHeight ? spacing.sm : spacing.md;
+  const horizontalPadding = spacing.lg;
   const cardWidth = Math.max(0, screenWidth - 2 * horizontalPadding - cardGap);
   const cardPadding = isCompactHeight ? spacing.sm : spacing.md;
   const snapInterval = cardWidth + cardGap;
@@ -198,8 +195,11 @@ const GroundingStyleSelector: React.FC<{
               key={style.id}
               onPress={() => onChange(style.id)}
               style={[styles.miniPreviewBtn, active && styles.miniPreviewPillActive]}
+              hitSlop={12}
+              disableScale={reduceMotion}
               accessibilityLabel={`Select ${style.label} grounding style`}
               accessibilityRole="button"
+              accessibilityState={{ selected: active }}
             >
               <View style={styles.miniPreviewPill}>
                 <Text style={[styles.miniPreviewLabel, active && styles.miniPreviewLabelActive]}>
@@ -229,9 +229,17 @@ const GroundingStyleSelector: React.FC<{
         ]}
         renderItem={({ item }) => {
           const selected = item.id === value;
-          const swatchColor = GROUNDING_STYLE_COLORS[item.id];
+          const swatchColor = groundingStyleColors[item.id];
           return (
-            <ScaleButton onPress={() => onChange(item.id)} style={{ width: cardWidth }}>
+            <ScaleButton
+              onPress={() => onChange(item.id)}
+              style={{ width: cardWidth }}
+              hitSlop={12}
+              disableScale={reduceMotion}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={`Select ${item.label} grounding style`}
+            >
               <View
                 style={[
                   styles.groundingStyleCard,
@@ -322,12 +330,15 @@ const LayoutOptionCard: React.FC<{
   isCompactHeight: boolean;
   styles: OnboardingStyles;
   colors: Colors;
-}> = ({ option, selected, onSelect, isCompactHeight, styles, colors }) => {
+  reduceMotion: boolean;
+}> = ({ option, selected, onSelect, isCompactHeight, styles, colors, reduceMotion }) => {
   if (!styles) return null;
   return (
     <ScaleButton
       onPress={onSelect}
       style={styles.layoutCard}
+      hitSlop={12}
+      disableScale={reduceMotion}
       accessibilityLabel={`Choose ${option.title} layout`}
       accessibilityState={{ selected }}
     >
@@ -388,30 +399,32 @@ const LayoutSelector: React.FC<{
   }[];
   styles: OnboardingStyles;
   colors: Colors;
-}> = ({ value, onChange, isCompactHeight, options, styles, colors }) => (
+  reduceMotion: boolean;
+}> = ({ value, onChange, isCompactHeight, options, styles, colors, reduceMotion }) =>
   !styles ? null : (
-  <View style={styles.layoutSelectorContainer}>
-    <Text style={[styles.layoutSelectorTitle, isCompactHeight && { fontSize: 16 }]}>
-      Pick your starting layout
-    </Text>
-    <Text style={[styles.layoutSelectorSubtitle, isCompactHeight && { fontSize: 13 }]}>
-      You can switch anytime in Settings → Tab Bar Studio.
-    </Text>
-    <View style={styles.layoutGrid}>
-      {options.map((option) => (
-        <LayoutOptionCard
-          key={option.id}
-          option={option}
-          selected={option.id === value}
-          onSelect={() => onChange(option.id)}
-          isCompactHeight={isCompactHeight}
-          styles={styles}
-          colors={colors}
-        />
-      ))}
+    <View style={styles.layoutSelectorContainer}>
+      <Text style={[styles.layoutSelectorTitle, isCompactHeight && { fontSize: 16 }]}>
+        Pick your starting layout
+      </Text>
+      <Text style={[styles.layoutSelectorSubtitle, isCompactHeight && { fontSize: 13 }]}>
+        You can switch anytime in Settings → Tab Bar Studio.
+      </Text>
+      <View style={styles.layoutGrid}>
+        {options.map((option) => (
+          <LayoutOptionCard
+            key={option.id}
+            option={option}
+            selected={option.id === value}
+            onSelect={() => onChange(option.id)}
+            isCompactHeight={isCompactHeight}
+            styles={styles}
+            colors={colors}
+            reduceMotion={reduceMotion}
+          />
+        ))}
+      </View>
     </View>
-  </View>
-));
+  );
 export const OnboardingScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<any>();
@@ -457,12 +470,29 @@ export const OnboardingScreen: React.FC = () => {
   const isCompactHeight = screenHeight < 720;
   const isMediumHeight = screenHeight >= 720 && screenHeight < 820;
   const demoHeight = isCompactHeight ? 120 : isMediumHeight ? 220 : 300;
+  const { reduceMotion } = useSettings();
   const [selectedGroundingStyle, setSelectedGroundingStyle] =
     useState<GroundingAnimationStyle>(groundingAnimationStyle);
   const [selectedLayout, setSelectedLayout] = useState<TabLayoutMode>(tabLayout);
   const [comfortDark, setComfortDark] = useState(colorScheme === "dark");
   const footerBottomPadding = Math.max(spacing.lg, insets.bottom + spacing.md);
   const contentBottomPadding = footerBottomPadding + (isCompactHeight ? spacing.sm : spacing.xl);
+  const groundingStyleColors = React.useMemo(
+    () => ({
+      simple: colors.tint,
+      waves: colors.tintTransparent,
+      pulse: `${colors.tint}66`,
+    }),
+    [colors.tint, colors.tintTransparent],
+  );
+  const breathSegments = React.useMemo(
+    () => [
+      { label: "In", flex: 4, color: colors.tintTransparent },
+      { label: "Hold", flex: 1, color: `${colors.tint}40` },
+      { label: "Out", flex: 6, color: `${colors.tint}26` },
+    ],
+    [colors.tint, colors.tintTransparent],
+  );
 
   useEffect(() => {
     setSelectedGroundingStyle(groundingAnimationStyle);
@@ -538,6 +568,7 @@ export const OnboardingScreen: React.FC = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           bounces={false}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[
             styles.slideContent,
             styles.slideScrollContent,
@@ -585,6 +616,7 @@ export const OnboardingScreen: React.FC = () => {
                 isCompactHeight={isCompactHeight}
                 currentStyle={selectedGroundingStyle}
                 styles={styles}
+                breathSegments={breathSegments}
                 styleOverride={isCompactHeight ? styles.groundingCardCompact : undefined}
               />
               <GroundingStyleSelector
@@ -592,6 +624,8 @@ export const OnboardingScreen: React.FC = () => {
                 onChange={handleGroundingChange}
                 isCompactHeight={isCompactHeight}
                 styles={styles}
+                groundingStyleColors={groundingStyleColors}
+                reduceMotion={reduceMotion}
               />
             </View>
           )}
@@ -604,6 +638,7 @@ export const OnboardingScreen: React.FC = () => {
               options={layoutOptions}
               styles={styles}
               colors={colors}
+              reduceMotion={reduceMotion}
             />
           )}
 
@@ -648,7 +683,7 @@ export const OnboardingScreen: React.FC = () => {
         pagingEnabled
         snapToInterval={width}
         snapToAlignment="start"
-        decelerationRate="fast"
+        decelerationRate={reduceMotion ? "normal" : "fast"}
         disableIntervalMomentum
         bounces={false}
         showsHorizontalScrollIndicator={false}
@@ -657,6 +692,7 @@ export const OnboardingScreen: React.FC = () => {
           setCurrentIndex(newIndex);
         }}
         keyExtractor={(item) => item.id}
+        scrollEnabled={!reduceMotion || SLIDES.length <= 1}
       />
 
       <View
@@ -666,19 +702,38 @@ export const OnboardingScreen: React.FC = () => {
           { paddingBottom: footerBottomPadding },
         ]}
       >
+        <Text
+          style={styles.srOnly}
+          accessibilityLiveRegion="polite"
+          importantForAccessibility="yes"
+        >
+          Onboarding progress: slide {currentIndex + 1} of {SLIDES.length}
+        </Text>
         <View
           style={styles.pagination}
           accessibilityRole="progressbar"
           accessibilityValue={{ min: 1, max: SLIDES.length, now: currentIndex + 1 }}
+          accessibilityLabel={`Onboarding progress: slide ${currentIndex + 1} of ${SLIDES.length}`}
+          importantForAccessibility="yes"
         >
           {SLIDES.map((_, index) => (
-            <View key={index} style={[styles.dot, currentIndex === index && styles.dotActive]} />
+            <View
+              key={index}
+              accessibilityLabel={`Slide ${index + 1} of ${SLIDES.length}`}
+              accessibilityRole="text"
+              style={[styles.dot, currentIndex === index && styles.dotActive]}
+            />
           ))}
         </View>
 
         {currentIndex === SLIDES.length - 1 ? (
           <View style={styles.finishActions}>
-            <ScaleButton style={styles.button} onPress={() => handleFinish()}>
+            <ScaleButton
+              style={styles.button}
+              disableScale={reduceMotion}
+              onPress={() => handleFinish()}
+              accessibilityHint="Completes onboarding and opens the app"
+            >
               <View style={styles.finishBtn}>
                 <Text style={styles.buttonText} allowFontScaling>
                   Get Started
@@ -688,7 +743,9 @@ export const OnboardingScreen: React.FC = () => {
 
             <ScaleButton
               style={[styles.button, styles.secondaryButton]}
+              disableScale={reduceMotion}
               onPress={() => handleFinish({ openReadingSettings: true })}
+              accessibilityHint="Completes onboarding and opens Reading Settings"
             >
               <View style={styles.secondaryBtnContent}>
                 <Text style={styles.secondaryButtonText} allowFontScaling>
@@ -701,11 +758,13 @@ export const OnboardingScreen: React.FC = () => {
           <View style={styles.progressActions}>
             <ScaleButton
               style={styles.button}
+              disableScale={reduceMotion}
               onPress={() => {
                 const nextIndex = Math.min(currentIndex + 1, SLIDES.length - 1);
                 setCurrentIndex(nextIndex);
-                listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+                listRef.current?.scrollToIndex({ index: nextIndex, animated: !reduceMotion });
               }}
+              accessibilityHint="Moves to the next slide"
             >
               <View style={{ width: "100%", alignItems: "center" }}>
                 <Text style={styles.swipeText} allowFontScaling>
@@ -714,7 +773,12 @@ export const OnboardingScreen: React.FC = () => {
               </View>
             </ScaleButton>
 
-            <ScaleButton style={[styles.button, styles.skipButton]} onPress={() => handleFinish()}>
+            <ScaleButton
+              style={[styles.button, styles.skipButton]}
+              disableScale={reduceMotion}
+              onPress={() => handleFinish()}
+              accessibilityHint="Skips onboarding and opens the app"
+            >
               <View style={styles.skipBtnContent}>
                 <Text style={styles.skipButtonText} allowFontScaling>
                   Skip for now
@@ -729,7 +793,7 @@ export const OnboardingScreen: React.FC = () => {
 };
 
 const createStyles = (colors: Colors, fontScale: number) => {
-  const scale = (size: number) => size * Math.min(fontScale || 1, 1.3);
+  const scale = (size: number) => size * Math.min(fontScale || 1, 1.6);
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -856,11 +920,11 @@ const createStyles = (colors: Colors, fontScale: number) => {
       width: 88,
       height: 88,
       borderRadius: 44,
-      backgroundColor: "#E6F4F4",
+      backgroundColor: colors.tintTransparent,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: "#C8E1E0",
+      borderColor: `${colors.tint}40`,
     },
     groundingPulseText: {
       fontFamily: typography.fontFamily.serif,
@@ -1187,12 +1251,12 @@ const createStyles = (colors: Colors, fontScale: number) => {
       paddingBottom: spacing.xl,
       alignItems: "center",
     },
-  footerCompact: {
-    paddingTop: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.lg,
-    alignItems: "center",
-  },
+    footerCompact: {
+      paddingTop: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingBottom: spacing.lg,
+      alignItems: "center",
+    },
     pagination: {
       flexDirection: "row",
       justifyContent: "center",
@@ -1274,6 +1338,12 @@ const createStyles = (colors: Colors, fontScale: number) => {
       fontSize: scale(15),
       fontFamily: typography.fontFamily.sans,
       fontWeight: "600",
+    },
+    srOnly: {
+      position: "absolute",
+      height: 0,
+      width: 0,
+      opacity: 0,
     },
     comfortContainer: {
       width: "100%",

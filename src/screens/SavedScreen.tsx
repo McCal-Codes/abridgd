@@ -546,6 +546,7 @@ export const SavedScreen: React.FC = () => {
               )}
             </ScaleButton>
           )}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[
             styles.listContent,
             {

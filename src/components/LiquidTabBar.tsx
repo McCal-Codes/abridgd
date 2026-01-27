@@ -1,23 +1,22 @@
 import React from "react";
 import {
   Animated,
-  StyleSheet,
-  View,
-  Platform,
-  TouchableOpacity,
-  Text,
+  AccessibilityInfo,
   LayoutChangeEvent,
   LayoutRectangle,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { useSavedArticles } from "../context/SavedArticlesContext";
-import { useTheme, Colors } from "../theme/ThemeContext";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ScrollContext } from "../context/ScrollContext";
-import { AccessibilityInfo } from "react-native";
+import { Colors, useTheme } from "../theme/ThemeContext";
 
 let BlurView: any = null;
 try {
@@ -29,161 +28,22 @@ try {
 }
 
 const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
-  const insets = useSafeAreaInsets();
-  const { scrollY } = React.useContext(ScrollContext);
-  const { colors, isDark } = useTheme();
-  const [reduceMotion, setReduceMotion] = React.useState(false);
+type BadgeConfig = { type: "count"; value: string } | { type: "dot" };
 
-  React.useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((value) => mounted && setReduceMotion(value));
-    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", (value) => {
-      setReduceMotion(value);
-    });
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
-  }, []);
-
-  const {
-    tabBarBlur,
-    tabBarStyle,
-    tabBarDockedHeight,
-    tabBarHiddenHeight,
-    tabBarFloatingHeight,
-    experimentalIOS26NavBar,
-    showTabLabels,
-    tabBadgeStyle,
-    tabIndicatorStyle,
-    tabIconSize,
-  } = useSettings();
-  const { savedArticles } = useSavedArticles();
-  const savedArticlesCount = savedArticles.length;
-  const resolveBadge = React.useCallback(
-    (routeName: string) => {
-      if (tabBadgeStyle === "none") {
-        return null;
-      }
-
-      if (routeName === "Saved" && savedArticlesCount > 0) {
-        if (tabBadgeStyle === "dot") {
-          return { type: "dot" as const };
-        }
-        return {
-          type: "count" as const,
-          value: savedArticlesCount > 99 ? "99+" : savedArticlesCount.toString(),
-        };
-      }
-
-      return null;
-    },
-    [savedArticlesCount, tabBadgeStyle],
-  );
-  const isStandard = tabBarStyle === "standard";
-
-  // animate translateY and opacity from the shared scrollY value
-  // compute base heights: standard (docked) has enforced minimum; floating capsule may be thinner
-  const dockedHeight = Math.max(92, tabBarDockedHeight || 92);
-  const floatingHeight = Math.max(48, tabBarFloatingHeight || 64);
-  const normalHeight = isStandard ? dockedHeight : floatingHeight;
-  const hiddenHeight = Math.max(dockedHeight, tabBarHiddenHeight || dockedHeight + 8);
-
-  // Keep the tab bar fully visible at all times (do not allow it to be cut off)
-  // Use a static zero translate so scrolling does not move the bar offscreen.
-  const translateY = React.useRef(new Animated.Value(0)).current;
-  // Animate blur opacity based on scroll but respect user preference
-  const blurOpacityAnimated = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [1, 0.7],
-    extrapolate: "clamp",
-  });
-  const blurOpacity = tabBarBlur ? blurOpacityAnimated : 1;
-
-  // Enhanced blur intensity for experimental iOS 26 navbar effect
-  const blurIntensity = experimentalIOS26NavBar && tabBarBlur ? 80 : tabBarBlur ? 60 : 0;
-  // (normalHeight/hiddenHeight already computed above)
-
-  // Place the capsule very close to the bottom; keep a small base offset and add the inset
-  const containerStyle = [
-    styles.container,
-    {
-      // anchor to the absolute bottom so we can visually cover the safe area
-      left: isStandard ? 0 : 16,
-      right: isStandard ? 0 : 16,
-      // Floating style should sit above the safe area rather than flush to bottom
-      bottom: isStandard ? 0 : insets.bottom + 12,
-      transform: [{ translateY }],
-    },
-  ];
-
-  return (
-    <Animated.View style={containerStyle} pointerEvents="box-none">
-      <AnimatedBlur
-        intensity={blurIntensity}
-        style={[
-          styles.blur,
-          {
-            borderRadius: isStandard ? 0 : 32,
-            opacity: typeof blurOpacity === "number" ? blurOpacity : blurOpacity,
-            backgroundColor: experimentalIOS26NavBar
-              ? "rgba(255, 255, 255, 0.95)"
-              : isStandard
-                ? "rgba(255, 255, 255, 0.85)"
-                : "rgba(255, 255, 255, 0.75)",
-          },
-        ]}
-        // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
-        tint={Platform.OS === "ios" ? "light" : "light"}
-      >
-        {/* Glass morphism background with subtle gradient */}
-        <View style={styles.gradientWrapper} pointerEvents="none">
-          <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <Defs>
-              <LinearGradient id="tabGrad" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
-                <Stop offset="50%" stopColor="rgba(245,245,247,0.6)" />
-                <Stop offset="100%" stopColor="rgba(250,250,252,0.5)" />
-              </LinearGradient>
-            </Defs>
-            <Rect x="0" y="0" width="100%" height="100%" fill="url(#tabGrad)" />
-          </Svg>
-        </View>
-        {/* inner padding: when floating we avoid duplicating safe area padding because container is already above it */}
-        <Animated.View
-          style={[
-            styles.inner,
-            {
-              height: normalHeight,
-              // center content vertically when in standard (docked) mode
-              justifyContent: isStandard ? "center" : styles.inner.justifyContent,
-              // floating: small bottom padding so capsule visually floats; standard: include safe area but keep centered
-              paddingBottom: isStandard ? insets.bottom : 8,
-              paddingTop: isStandard ? 0 : styles.inner.paddingTop,
-            },
-          ]}
-          pointerEvents="auto"
-        >
-          {/* Custom tab items so we can animate indicator and icon scale */}
-          <AnimatedIndicator
-            state={props.state}
-            descriptors={props.descriptors}
-            navigation={props.navigation}
-            isStandard={isStandard}
-            showTabLabels={showTabLabels}
-            tabIconSize={tabIconSize}
-            tabIndicatorStyle={tabIndicatorStyle}
-            resolveBadge={resolveBadge}
-            reduceMotion={reduceMotion}
-            colors={colors}
-            isDark={isDark}
-          />
-        </Animated.View>
-      </AnimatedBlur>
-    </Animated.View>
-  );
+type IndicatorProps = {
+  state: any;
+  descriptors: any;
+  navigation: any;
+  isStandard: boolean;
+  showTabLabels: boolean;
+  tabIconSize: number;
+  tabIndicatorStyle: "underline" | "bubble" | "none";
+  resolveBadge: (routeName: string) => BadgeConfig | null;
+  reduceMotion: boolean;
+  colors: Colors;
+  isDark: boolean;
 };
 
 const styles = StyleSheet.create({
@@ -191,13 +51,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     right: 16,
-    // initial placement uses safe area addition in runtime
     zIndex: 30,
   },
   blur: {
     borderRadius: 32,
     overflow: "hidden",
-    // Less transparent so the capsule reads as a solid surface while still using blur
     backgroundColor: "transparent",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -226,10 +84,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   label: {
     fontSize: 10,
     marginTop: 2,
+    fontWeight: "600",
   },
   badge: {
     position: "absolute",
@@ -267,27 +127,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(10,132,255,0.16)",
   },
 });
-
-export default LiquidTabBar;
-
-// Animated versions
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-type BadgeConfig = { type: "count"; value: string } | { type: "dot" };
-
-type IndicatorProps = {
-  state: any;
-  descriptors: any;
-  navigation: any;
-  isStandard: boolean;
-  showTabLabels: boolean;
-  tabIconSize: number;
-  tabIndicatorStyle: "underline" | "bubble" | "none";
-  resolveBadge: (routeName: string) => BadgeConfig | null;
-  reduceMotion: boolean;
-  colors: Colors;
-  isDark: boolean;
-};
 
 const AnimatedIndicator: React.FC<IndicatorProps> = ({
   state,
@@ -482,6 +321,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                 navigation.navigate(route.name);
               }}
               style={styles.tabButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               onLayout={(event: LayoutChangeEvent) =>
                 handleTabLayout(route.key, event.nativeEvent.layout)
               }
@@ -489,6 +329,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
               accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
               accessibilityLabel={accessibilityLabel}
+              accessibilityHint={focused ? undefined : `Switches to the ${label} tab`}
             >
               <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
                 {IconRenderer ? IconRenderer({ color, size: iconSize, focused }) : null}
@@ -502,6 +343,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                       marginTop: isStandard ? 0 : styles.label.marginTop,
                     },
                   ]}
+                  allowFontScaling
                 >
                   {label}
                 </Text>
@@ -522,3 +364,119 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
     </View>
   );
 };
+
+export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
+  const { state, descriptors, navigation } = props;
+  const {
+    tabBarBlur,
+    showTabLabels,
+    tabIndicatorStyle,
+    tabIconSize,
+    tabBadgeStyle,
+    reduceMotion: reduceMotionSetting,
+    animationsEnabled,
+  } = useSettings();
+  const { savedArticles } = useSavedArticles();
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const [reduceMotion, setReduceMotion] = React.useState(reduceMotionSetting);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const updateReduceMotion = async () => {
+      try {
+        const systemReduceMotion = await AccessibilityInfo.isReduceMotionEnabled();
+        if (isMounted) {
+          setReduceMotion(systemReduceMotion || reduceMotionSetting || !animationsEnabled);
+        }
+      } catch {
+        if (isMounted) {
+          setReduceMotion(reduceMotionSetting || !animationsEnabled);
+        }
+      }
+    };
+
+    updateReduceMotion();
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (enabled) => {
+      if (isMounted) {
+        setReduceMotion(enabled || reduceMotionSetting || !animationsEnabled);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (subscription && "remove" in subscription && typeof subscription.remove === "function") {
+        subscription.remove();
+      }
+    };
+  }, [reduceMotionSetting, animationsEnabled]);
+
+  const resolveBadge = React.useCallback(
+    (routeName: string): BadgeConfig | null => {
+      if (tabBadgeStyle === "none") return null;
+      const savedCount = savedArticles?.length || 0;
+      if (routeName.toLowerCase() !== "saved" || savedCount <= 0) return null;
+      if (tabBadgeStyle === "dot") return { type: "dot" };
+      return { type: "count", value: savedCount > 99 ? "99+" : `${savedCount}` };
+    },
+    [savedArticles, tabBadgeStyle],
+  );
+
+  const containerBottom = 12 + (insets.bottom ?? 0);
+  const blurEnabled = tabBarBlur && !!BlurView;
+  const isStandard = Platform.OS === "ios";
+  const indicatorStyle = reduceMotion ? "underline" : tabIndicatorStyle;
+
+  return (
+    <AnimatedBlur
+      style={[
+        styles.container,
+        styles.blur,
+        {
+          bottom: containerBottom,
+          backgroundColor: blurEnabled ? "transparent" : colors.surface,
+        },
+      ]}
+      intensity={blurEnabled ? 32 : undefined}
+      tint={isDark ? "dark" : "light"}
+      pointerEvents="box-none"
+    >
+      <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom / 2, 8) }]}>
+        <View style={styles.gradientWrapper} pointerEvents="none">
+          <Svg width="100%" height="100%">
+            <Defs>
+              <LinearGradient id="tabGradient" x1="0" y1="0" x2="0" y2="1">
+                <Stop
+                  offset="0"
+                  stopColor={isDark ? "rgba(18,18,18,0.92)" : "rgba(255,255,255,0.92)"}
+                />
+                <Stop
+                  offset="1"
+                  stopColor={isDark ? "rgba(18,18,18,0.88)" : "rgba(255,255,255,0.88)"}
+                />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#tabGradient)" />
+          </Svg>
+        </View>
+
+        <AnimatedIndicator
+          state={state}
+          descriptors={descriptors}
+          navigation={navigation}
+          isStandard={isStandard}
+          showTabLabels={showTabLabels}
+          tabIconSize={tabIconSize}
+          tabIndicatorStyle={indicatorStyle}
+          resolveBadge={resolveBadge}
+          reduceMotion={reduceMotion}
+          colors={colors}
+          isDark={isDark}
+        />
+      </View>
+    </AnimatedBlur>
+  );
+};
+
+export default LiquidTabBar;

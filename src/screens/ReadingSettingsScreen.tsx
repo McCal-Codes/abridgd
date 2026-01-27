@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
@@ -31,6 +31,36 @@ export const ReadingSettingsScreen: React.FC = () => {
     setRsvpAnchorStrategy,
   } = useSettings();
 
+  const [lastPreset, setLastPreset] = useState<"comfort" | "speed" | "default" | "custom">(
+    "custom",
+  );
+
+  const applyPreset = (preset: "comfort" | "speed") => {
+    if (preset === "comfort") {
+      setReadingSpeed(250);
+      setFontSize(1.1);
+      setLineHeight(1.5);
+    } else {
+      setReadingSpeed(350);
+      setFontSize(1.0);
+      setLineHeight(1.25);
+    }
+    setLastPreset(preset);
+  };
+
+  const restoreDefaults = () => {
+    setIsReaderEnabled(true);
+    setIsSummarizationEnabled(false);
+    setReadingSpeed(300);
+    setFontSize(1.0);
+    setLineHeight(1.5);
+    setAutoSaveOnComplete(false);
+    setIsContinueReadingEnabled(false);
+    setRsvpHighlightColor("#0097A7");
+    setRsvpAnchorStrategy("standard");
+    setLastPreset("default");
+  };
+
   const PRESET_COLORS: { color: string; name: string; accessible: boolean }[] = [
     { color: "#D32F2F", name: "Red", accessible: true },
     { color: "#1976D2", name: "Blue", accessible: true },
@@ -59,6 +89,16 @@ export const ReadingSettingsScreen: React.FC = () => {
         <View style={[styles.section, styles.cardGrid]}>
           <TouchableOpacity
             style={[styles.navCard, styles.accentCard]}
+            onPress={() => (navigation as any).navigate("DigestSettings")}
+            accessibilityRole="button"
+            accessibilityLabel="Digest and launch"
+            accessibilityHint="Open summary style and start screen"
+          >
+            <Text style={styles.navCardTitle}>Digest & Launch</Text>
+            <Text style={styles.navCardDesc}>Summary style, welcome-back, default tab.</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navCard}
             onPress={() => (navigation as any).navigate("SourcesSettings")}
             accessibilityRole="button"
             accessibilityLabel="News sources"
@@ -67,17 +107,45 @@ export const ReadingSettingsScreen: React.FC = () => {
             <Text style={styles.navCardTitle}>News Sources</Text>
             <Text style={styles.navCardDesc}>Enable/disable feeds, add custom RSS.</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.navCard}
-            onPress={() => (navigation as any).navigate("DigestSettings")}
-            accessibilityRole="button"
-          >
-            <Text style={styles.navCardTitle}>Digest & Launch</Text>
-            <Text style={styles.navCardDesc}>Summary style, welcome-back behavior.</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Presets</Text>
+          <Text style={styles.helperLabel}>Applies on this device only. Tap Restore to undo.</Text>
+          <View style={styles.chipRow}>
+            <TouchableOpacity
+              style={styles.pillButton}
+              onPress={() => applyPreset("comfort")}
+              accessibilityLabel="Comfort preset"
+              accessibilityHint="Applies gentler font and spacing"
+            >
+              <Text style={styles.pillButtonText}>Comfort (1.1× / 1.5× / 250 wpm)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.pillButton}
+              onPress={() => applyPreset("speed")}
+              accessibilityLabel="Speed preset"
+              accessibilityHint="Applies faster reading settings"
+            >
+              <Text style={styles.pillButtonText}>Speed (1.0× / 1.25× / 350 wpm)</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.presetStatus}>
+            <Text style={styles.helperLabel}>
+              Preset:{" "}
+              {lastPreset === "comfort"
+                ? "Comfort"
+                : lastPreset === "speed"
+                  ? "Speed"
+                  : lastPreset === "default"
+                    ? "Defaults"
+                    : "Custom"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Core reading controls</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextContainer}>
               <Text style={styles.toggleLabel}>Abridged Reader</Text>
@@ -189,6 +257,7 @@ export const ReadingSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Reading Speed</Text>
           <Text style={styles.sectionDesc}>Words per minute for RSVP reader</Text>
+          <Text style={styles.helperLabel}>Selected: {readingSpeed} wpm</Text>
           <View style={styles.speedRow}>
             {[200, 250, 300, 350, 400, 450, 500].map((speed) => (
               <TouchableOpacity
@@ -209,6 +278,7 @@ export const ReadingSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Font Size</Text>
           <Text style={styles.sectionDesc}>Adjust article text size</Text>
+          <Text style={styles.helperLabel}>Selected: {fontSize.toFixed(2)}×</Text>
           <View style={styles.fontRow}>
             {[
               { label: "Small", value: 0.85 },
@@ -233,9 +303,8 @@ export const ReadingSettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Line Spacing</Text>
-          <Text style={styles.sectionDesc}>
-            Increase space between lines for comfortable reading
-          </Text>
+          <Text style={styles.sectionDesc}>Increase space between lines for comfortable reading</Text>
+          <Text style={styles.helperLabel}>Selected: {lineHeight.toFixed(2)}×</Text>
           <View style={styles.lineHeightRow}>
             {[1.0, 1.25, 1.5, 1.75, 2.0].map((height) => (
               <TouchableOpacity
@@ -258,10 +327,10 @@ export const ReadingSettingsScreen: React.FC = () => {
             ))}
           </View>
           {/* Preview */}
-          <View style={[styles.lineHeightPreview, { lineHeight }]}>
-            <Text style={styles.previewText}>
-              This is how your articles will look with the selected line spacing. More space makes
-              reading easier on the eyes.
+          <View style={styles.lineHeightPreview}>
+            <Text style={[styles.previewText, { lineHeight: 22 * lineHeight, fontSize: 16 * fontSize }]}>
+              This is how your articles will look with the selected font size and line spacing.
+              More space can reduce fatigue for longer reads.
             </Text>
           </View>
         </View>
@@ -272,6 +341,10 @@ export const ReadingSettingsScreen: React.FC = () => {
           <Text style={styles.subsectionLabel}>Abridged Reader Preview</Text>
           <AbridgedReader content="I hope you are having a wonderful day, and by the way, I truly believe that almost anything tastes better when it is served as chicken on a stick." />
         </View>
+
+        <TouchableOpacity style={styles.restoreButton} onPress={restoreDefaults}>
+          <Text style={styles.restoreButtonText}>Restore reading defaults</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -371,6 +444,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.md,
   },
+  helperLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
   speedRow: {
     flexDirection: "row",
     gap: spacing.xs,
@@ -466,6 +545,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
+  pillButton: {
+    flex: 1,
+    minWidth: 160,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pillButtonText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  presetStatus: {
+    marginTop: spacing.xs,
+  },
   colorGrid: {
     flexDirection: "row",
     gap: spacing.md,
@@ -555,6 +653,20 @@ const styles = StyleSheet.create({
   previewText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
+    color: colors.text,
+  },
+  restoreButton: {
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+  },
+  restoreButtonText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
     color: colors.text,
   },
 });

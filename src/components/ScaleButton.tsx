@@ -19,6 +19,7 @@ interface ScaleButtonProps extends Omit<PressableProps, "style" | "children" | "
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   scaleTo?: number;
+  disableScale?: boolean;
 }
 
 export const ScaleButton: React.FC<ScaleButtonProps> = ({
@@ -28,6 +29,7 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
   children,
   style,
   scaleTo = 0.96,
+  disableScale = false,
   ...restProps
 }) => {
   const isTestEnv = typeof process !== "undefined" && !!process.env.JEST_WORKER_ID;
@@ -57,7 +59,7 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
 
   const handlePressIn = (event: GestureResponderEvent) => {
     onPressIn?.(event);
-    if (reduceMotionEnabled) {
+    if (reduceMotionEnabled || disableScale) {
       scale.value = 1;
       return;
     }
@@ -69,7 +71,7 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
 
   const handlePressOut = (event: GestureResponderEvent) => {
     onPressOut?.(event);
-    if (reduceMotionEnabled) {
+    if (reduceMotionEnabled || disableScale) {
       scale.value = 1;
       return;
     }

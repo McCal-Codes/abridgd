@@ -24,7 +24,10 @@ const AchievementIcon = ({ icon, earned }: { icon?: string; earned?: boolean }) 
 
 export const AchievementsScreen: React.FC = () => {
   const { activeProfile } = useProfiles();
-  const achievementStatuses = useMemo(() => getAchievementStatuses(activeProfile), [activeProfile]);
+  const achievementStatuses = useMemo(
+    () => getAchievementStatuses(activeProfile ?? undefined),
+    [activeProfile],
+  );
 
   const articlesRead = activeProfile?.stats?.articlesRead || 0;
   const savedActions = activeProfile?.stats?.savedActions || 0;

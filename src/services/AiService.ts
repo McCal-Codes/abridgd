@@ -11,6 +11,9 @@ export interface DigestItem {
   article: Article;
 }
 
+// Digest modes align with SettingsContext DigestSummaryMode union
+export type DigestMode = "fact-based" | "ai-summary" | "headline-only";
+
 // Perplexity API configuration
 const PERPLEXITY_API_KEY = process.env.EXPO_PUBLIC_PERPLEXITY_API_KEY || "";
 const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";

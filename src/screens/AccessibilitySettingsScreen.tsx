@@ -5,7 +5,6 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
-import { Clock, Volume2 } from "lucide-react-native";
 
 export const AccessibilitySettingsScreen: React.FC = () => {
   const {
@@ -24,6 +23,8 @@ export const AccessibilitySettingsScreen: React.FC = () => {
     quietHoursEnd,
     setQuietHoursEnd,
   } = useSettings();
+
+  const motionDisabled = reduceMotion || !animationsEnabled;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -55,9 +56,15 @@ export const AccessibilitySettingsScreen: React.FC = () => {
             <Switch
               value={animationsEnabled}
               onValueChange={setAnimationsEnabled}
+              disabled={reduceMotion}
               trackColor={{ false: colors.border, true: colors.primary }}
             />
           </View>
+          {reduceMotion ? (
+            <Text style={styles.helperText}>
+              Reduce Motion is on, so animations stay limited for comfort.
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -67,11 +74,23 @@ export const AccessibilitySettingsScreen: React.FC = () => {
             {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((scale) => (
               <TouchableOpacity
                 key={`anim-scale-${scale}`}
-                style={[styles.pill, animationScale === scale && styles.pillSelected]}
-                onPress={() => setAnimationScale(scale)}
+                style={[
+                  styles.pill,
+                  animationScale === scale && styles.pillSelected,
+                  motionDisabled && styles.pillDisabled,
+                ]}
+                onPress={() => {
+                  if (motionDisabled) return;
+                  setAnimationScale(scale);
+                }}
+                disabled={motionDisabled}
               >
                 <Text
-                  style={[styles.pillText, animationScale === scale && styles.pillTextSelected]}
+                  style={[
+                    styles.pillText,
+                    animationScale === scale && styles.pillTextSelected,
+                    motionDisabled && styles.pillTextDisabled,
+                  ]}
                 >
                   {scale}×
                 </Text>
@@ -143,7 +162,7 @@ export const AccessibilitySettingsScreen: React.FC = () => {
             </View>
           )}
           <Text style={styles.quietHoursNote}>
-            💡 Tip: Set quiet hours from 10 PM to 8 AM for better sleep hygiene.
+            Tip: Set quiet hours from 10 PM to 8 AM for better sleep hygiene.
           </Text>
         </View>
       </ScrollView>
@@ -234,6 +253,9 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: "#F0F4F8",
   },
+  pillDisabled: {
+    opacity: 0.55,
+  },
   pillText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 14,
@@ -242,6 +264,15 @@ const styles = StyleSheet.create({
   },
   pillTextSelected: {
     color: colors.primary,
+  },
+  pillTextDisabled: {
+    color: colors.textSecondary,
+  },
+  helperText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   timeRow: {
     flexDirection: "row",

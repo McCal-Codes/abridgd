@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import { useSettings, DigestSummaryMode } from "../context/SettingsContext";
+import { useSettings, DigestSummaryMode, sanitizeTabs } from "../context/SettingsContext";
+import { getTabConfig } from "../navigation/RootNavigator";
 
 const DIGEST_MODES: { label: string; value: DigestSummaryMode; description: string }[] = [
   {
@@ -22,7 +23,24 @@ export const DigestSettingsScreen: React.FC = () => {
     setIsWelcomeBackEnabled,
     digestSummaryMode,
     setDigestSummaryMode,
+    isContinueReadingEnabled,
+    setIsContinueReadingEnabled,
+    defaultTab,
+    setDefaultTab,
+    activeTabs,
+    tabLayout,
   } = useSettings();
+
+  const launchTabs = useMemo(() => {
+    const config = getTabConfig(tabLayout);
+    return sanitizeTabs(activeTabs, tabLayout)
+      .map((id) => {
+        const tab = config[id];
+        if (!tab) return null;
+        return { id, label: tab.title || tab.name };
+      })
+      .filter(Boolean) as { id: string; label: string }[];
+  }, [activeTabs, tabLayout]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -33,6 +51,9 @@ export const DigestSettingsScreen: React.FC = () => {
         </Text>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Launch & Start</Text>
+          <Text style={styles.sectionDesc}>Decide what greets you first when you launch.</Text>
+
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextContainer}>
               <Text style={styles.toggleLabel}>Welcome Back Digest</Text>
@@ -43,6 +64,38 @@ export const DigestSettingsScreen: React.FC = () => {
               onValueChange={setIsWelcomeBackEnabled}
               trackColor={{ false: colors.border, true: colors.primary }}
             />
+          </View>
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleTextContainer}>
+              <Text style={styles.toggleLabel}>Continue Reading on launch</Text>
+              <Text style={styles.toggleDesc}>Jump back to in-progress stories first.</Text>
+            </View>
+            <Switch
+              value={isContinueReadingEnabled}
+              onValueChange={setIsContinueReadingEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+
+          <Text style={[styles.sectionDesc, { marginTop: spacing.md }]}>Launch destination</Text>
+          <View style={styles.launchGrid}>
+            {launchTabs.map((tab) => (
+              <TouchableOpacity
+                key={tab.id}
+                style={[styles.launchOption, defaultTab === tab.id && styles.launchOptionSelected]}
+                onPress={() => setDefaultTab(tab.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`Launch to ${tab.label}`}
+              >
+                <Text
+                  style={[styles.launchLabel, defaultTab === tab.id && styles.launchLabelSelected]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -169,5 +222,34 @@ const styles = StyleSheet.create({
   strategyDesc: {
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  launchGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  launchOption: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    minWidth: 110,
+    alignItems: "center",
+  },
+  launchOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: "#F0F4F8",
+  },
+  launchLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  launchLabelSelected: {
+    color: colors.primary,
   },
 });

@@ -16,6 +16,7 @@ Operating notes for AI/automation working in this repo. Follow these to stay ali
 - Onboarding/What’s New: micro-adjustments only; preserve Caleb voice; no dead buttons; Reduced Motion safe; trust/reversibility language.
 - Backlog sources must stay consistent (`todo.md` priority list + `updates/todo.md` numbered tasks); user-facing changes land in `[Unreleased]` of `CHANGELOG.md`.
 - Trust/Intent features (Trust Panel, Follow system) and Reader Studio are scoped for 1.4; Smart Suggestions deferred until after follow + trust.
+- Backlog grooming prompt lives at the top of `todo.md` (HTML comment). Use it whenever editing the backlog; keep headings/IDs/statuses in sync and mirror history to `updates/todo.md`.
 
 ## Quick Facts
 - Stack: Expo 54, React Native 0.81, React 19, TypeScript.

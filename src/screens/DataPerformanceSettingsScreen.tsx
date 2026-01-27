@@ -10,24 +10,26 @@ import { HardDrive, Zap, Wifi } from "lucide-react-native";
 export const DataPerformanceSettingsScreen: React.FC = () => {
   const { imageLoadingMode, setImageLoadingMode, dataSaverMode, setDataSaverMode } = useSettings();
 
+  const applyPreset = (preset: "balanced" | "saver") => {
+    if (preset === "balanced") {
+      setDataSaverMode(false);
+      setImageLoadingMode("compressed");
+    } else {
+      setDataSaverMode(true);
+      setImageLoadingMode("compressed");
+    }
+  };
+
+  const restoreDefaults = () => {
+    setDataSaverMode(false);
+    setImageLoadingMode("full");
+  };
+
   const handleClearCache = () => {
     Alert.alert(
-      "Clear Cache",
-      "Are you sure you want to clear all cached images and articles? This cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Clear Cache",
-          style: "destructive",
-          onPress: async () => {
-            // Placeholder: actual cache clearing would be implemented here
-            Alert.alert("Success", "Cache cleared successfully");
-          },
-        },
-      ],
+      "Cache clearing is coming soon",
+      "This button is disabled until the cache module is wired.",
+      [{ text: "OK" }],
     );
   };
 
@@ -38,6 +40,18 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
         <Text style={styles.description}>
           Optimize bandwidth usage, battery life, and app performance.
         </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Presets</Text>
+          <View style={styles.optionRow}>
+            <TouchableOpacity style={styles.pillButton} onPress={() => applyPreset("balanced")}>
+              <Text style={styles.pillButtonText}>Balanced (compressed, saver off)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.pillButton} onPress={() => applyPreset("saver")}>
+              <Text style={styles.pillButtonText}>Saver (compressed + Data Saver)</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Data Saver Mode */}
         <View style={styles.section}>
@@ -51,10 +65,20 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={dataSaverMode}
-              onValueChange={setDataSaverMode}
+              onValueChange={(value) => {
+                setDataSaverMode(value);
+                if (value && imageLoadingMode === "full") {
+                  setImageLoadingMode("compressed");
+                }
+              }}
               trackColor={{ false: colors.border, true: colors.primary }}
             />
           </View>
+          {dataSaverMode ? (
+            <Text style={styles.helperText}>
+              Data Saver limits images to compressed and may pause prefetching until you turn it off.
+            </Text>
+          ) : null}
         </View>
 
         {/* Image Loading Mode */}
@@ -64,8 +88,16 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
 
           <View style={styles.optionRow}>
             <TouchableOpacity
-              style={[styles.optionCard, imageLoadingMode === "full" && styles.optionCardSelected]}
-              onPress={() => setImageLoadingMode("full")}
+              style={[
+                styles.optionCard,
+                imageLoadingMode === "full" && styles.optionCardSelected,
+                dataSaverMode && styles.optionCardDisabled,
+              ]}
+              onPress={() => {
+                if (dataSaverMode) return;
+                setImageLoadingMode("full");
+              }}
+              disabled={dataSaverMode}
             >
               <View style={styles.optionIcon}>
                 <Wifi
@@ -148,7 +180,7 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity style={styles.actionButton} onPress={handleClearCache}>
-            <Text style={styles.actionButtonText}>Clear Cache</Text>
+            <Text style={styles.actionButtonText}>Clear Cache (disabled)</Text>
           </TouchableOpacity>
         </View>
 
@@ -157,14 +189,14 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Performance Tips</Text>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>💡 WiFi Prefetching</Text>
+            <Text style={styles.tipTitle}>WiFi Prefetching</Text>
             <Text style={styles.tipDesc}>
               Articles are prefetched over WiFi when you're idle, making navigation faster.
             </Text>
           </View>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>⚡ Battery Optimization</Text>
+            <Text style={styles.tipTitle}>Battery Optimization</Text>
             <Text style={styles.tipDesc}>
               Data Saver Mode reduces CPU usage by skipping unnecessary animations and image
               loading.
@@ -172,12 +204,16 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
           </View>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>🔄 Smart Refresh</Text>
+            <Text style={styles.tipTitle}>Smart Refresh</Text>
             <Text style={styles.tipDesc}>
               Feeds refresh only when needed, not constantly in the background.
             </Text>
           </View>
         </View>
+
+        <TouchableOpacity style={styles.restoreButton} onPress={restoreDefaults}>
+          <Text style={styles.restoreButtonText}>Restore data defaults</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -261,6 +297,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 140,
+  },
+  optionCardDisabled: {
+    opacity: 0.5,
   },
   optionCardSelected: {
     borderColor: colors.primary,
@@ -353,5 +392,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     lineHeight: 20,
+  },
+  helperText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  pillButton: {
+    flex: 1,
+    minWidth: 160,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pillButtonText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text,
+    textAlign: "center",
+  },
+  restoreButton: {
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    marginTop: spacing.lg,
+  },
+  restoreButtonText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
   },
 });

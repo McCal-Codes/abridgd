@@ -189,6 +189,7 @@ export const SectionScreen: React.FC = () => {
           windowSize={6}
           updateCellsBatchingPeriod={50}
           removeClippedSubviews
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[
             styles.listContent,
             {

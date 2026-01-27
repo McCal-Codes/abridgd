@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
 import { RotateCcw, Undo2 } from "lucide-react-native";
 import { parse } from "node-html-parser";
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import { useSettings } from "../context/SettingsContext";
+import { useTheme, Colors } from "../theme/ThemeContext";
 
 interface AbridgedReaderProps {
   content?: string;
@@ -21,11 +21,14 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
   variant = "default",
 }) => {
   const { rsvpHighlightColor, rsvpAnchorStrategy } = useSettings();
+  const { fontScale } = useWindowDimensions();
   const [words, setWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [wpm, setWpm] = useState(300);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors, fontScale), [colors, fontScale]);
   const isCompact = variant === "compact";
 
   useEffect(() => {
@@ -128,16 +131,15 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
   const rightPart = currentWord.slice(pivotIndex + 1);
 
   // Dynamic font sizing for long words to prevent overflow
-  const baseFontSize = isCompact ? 32 : 36;
+  const scale = (size: number) => size * Math.min(fontScale || 1, 1.6);
+  const baseFontSize = scale(isCompact ? 32 : 36);
   let fontSize = baseFontSize;
-  if (len > 15) {
-    fontSize = 28;
-  } else if (len > 12) {
-    fontSize = 32;
-  }
-  // Extra small for very long words
   if (len > 20) {
-    fontSize = 22;
+    fontSize = scale(22);
+  } else if (len > 15) {
+    fontSize = scale(28);
+  } else if (len > 12) {
+    fontSize = scale(32);
   }
 
   return (
@@ -150,7 +152,12 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
         </View>
         <View style={styles.wordRow}>
           <View style={styles.leftContainer}>
-            <Text style={[styles.wordText, { fontSize }]} numberOfLines={1} ellipsizeMode="clip">
+            <Text
+              style={[styles.wordText, { fontSize }]}
+              numberOfLines={1}
+              ellipsizeMode="clip"
+              allowFontScaling
+            >
               {leftPart}
             </Text>
           </View>
@@ -158,12 +165,18 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
             <Text
               style={[styles.wordText, styles.wordPivot, { color: rsvpHighlightColor, fontSize }]}
               numberOfLines={1}
+              allowFontScaling
             >
               {pivotChar}
             </Text>
           </View>
           <View style={styles.rightContainer}>
-            <Text style={[styles.wordText, { fontSize }]} numberOfLines={1} ellipsizeMode="clip">
+            <Text
+              style={[styles.wordText, { fontSize }]}
+              numberOfLines={1}
+              ellipsizeMode="clip"
+              allowFontScaling
+            >
               {rightPart}
             </Text>
           </View>
@@ -172,9 +185,14 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
 
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { width: `${(currentIndex / words.length) * 100}%` }]} />
+        <View
+          style={[
+            styles.progressBar,
+            { width: `${(words.length ? currentIndex / words.length : 0) * 100}%` },
+          ]}
+        />
       </View>
-      <Text style={[styles.progressText, isCompact && styles.progressTextCompact]}>
+      <Text style={[styles.progressText, isCompact && styles.progressTextCompact]} allowFontScaling>
         {currentIndex} / {words.length} words
       </Text>
 
@@ -186,7 +204,9 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
         >
           <View style={styles.iconButtonContent}>
             <RotateCcw size={16} color={colors.text} strokeWidth={2.5} />
-            <Text style={styles.controlText}>10</Text>
+            <Text style={styles.controlText} allowFontScaling>
+              10
+            </Text>
           </View>
         </TouchableOpacity>
 
@@ -198,7 +218,9 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
           ]}
           onPress={() => setIsPlaying(!isPlaying)}
         >
-          <Text style={styles.playButtonText}>{isPlaying ? "PAUSE" : "READ"}</Text>
+          <Text style={styles.playButtonText} allowFontScaling>
+            {isPlaying ? "PAUSE" : "READ"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.controlBtn} onPress={() => setCurrentIndex(0)}>
@@ -208,7 +230,9 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
 
       {/* Speed Control */}
       <View style={styles.speedControl}>
-        <Text style={styles.speedLabel}>SPEED: {wpm} WPM</Text>
+        <Text style={styles.speedLabel} allowFontScaling>
+          SPEED: {wpm} WPM
+        </Text>
         <Slider
           style={{ width: isCompact ? 180 : 200, height: 40 }}
           minimumValue={100}
@@ -229,159 +253,162 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: spacing.md,
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    marginTop: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  containerCompact: {
-    padding: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  wordDisplay: {
-    height: 130,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: spacing.md,
-    position: "relative",
-    overflow: "hidden",
-  },
-  wordDisplayCompact: {
-    height: 100,
-    marginBottom: spacing.xs,
-  },
-  guideLines: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 0,
-  },
-  topGuide: {
-    width: 2,
-    height: 12,
-    backgroundColor: colors.text,
-    marginBottom: 52,
-  },
-  bottomGuide: {
-    width: 2,
-    height: 12,
-    backgroundColor: colors.text,
-    marginTop: 52,
-  },
-  wordRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    width: "100%",
-    zIndex: 1,
-  },
-  leftContainer: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  rightContainer: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
-  pivotContainer: {
-    width: "auto",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  wordText: {
-    fontFamily: typography.fontFamily.mono,
-    fontSize: 36, // Reduced from 42 to help prevent wrapping on long words
-    fontWeight: "400",
-    color: colors.text,
-  },
-  wordPivot: {
-    fontWeight: "700",
-  },
-
-  progressContainer: {
-    width: "100%",
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    marginBottom: spacing.xs,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: 2,
-  },
-  progressText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-  progressTextCompact: {
-    marginBottom: spacing.md,
-  },
-  controls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  controlsCompact: {
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  controlBtn: {
-    padding: spacing.sm,
-  },
-  controlText: {
-    color: colors.text,
-    fontWeight: "700",
-    fontSize: 12,
-  },
-  iconButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  playButton: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 50,
-    minWidth: 120,
-    alignItems: "center",
-  },
-  playButtonCompact: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    minWidth: 110,
-  },
-  playBtn: { backgroundColor: colors.primary },
-  pauseBtn: { backgroundColor: colors.text },
-  playButtonText: {
-    color: colors.surface,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-  speedControl: {
-    alignItems: "center",
-    width: "100%",
-  },
-  speedLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-});
+const createStyles = (colors: Colors, fontScale: number) => {
+  const scale = (size: number) => size * Math.min(fontScale || 1, 1.6);
+  return StyleSheet.create({
+    container: {
+      padding: spacing.md,
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      marginTop: spacing.sm,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    containerCompact: {
+      padding: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    wordDisplay: {
+      height: 130,
+      justifyContent: "center",
+      alignItems: "center",
+      width: "100%",
+      marginBottom: spacing.md,
+      position: "relative",
+      overflow: "hidden",
+    },
+    wordDisplayCompact: {
+      height: 100,
+      marginBottom: spacing.xs,
+    },
+    guideLines: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 0,
+    },
+    topGuide: {
+      width: 2,
+      height: 12,
+      backgroundColor: colors.text,
+      marginBottom: 52,
+    },
+    bottomGuide: {
+      width: 2,
+      height: 12,
+      backgroundColor: colors.text,
+      marginTop: 52,
+    },
+    wordRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      width: "100%",
+      zIndex: 1,
+    },
+    leftContainer: {
+      flex: 1,
+      alignItems: "flex-end",
+    },
+    rightContainer: {
+      flex: 1,
+      alignItems: "flex-start",
+    },
+    pivotContainer: {
+      width: "auto",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    wordText: {
+      fontFamily: typography.fontFamily.mono,
+      fontSize: scale(36), // Reduced from 42 to help prevent wrapping on long words
+      fontWeight: "400",
+      color: colors.text,
+    },
+    wordPivot: {
+      fontWeight: "700",
+    },
+    progressContainer: {
+      width: "100%",
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      marginBottom: spacing.xs,
+    },
+    progressBar: {
+      height: "100%",
+      backgroundColor: colors.primary,
+      borderRadius: 2,
+    },
+    progressText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(12),
+      color: colors.textSecondary,
+      marginBottom: spacing.lg,
+      textAlign: "center",
+    },
+    progressTextCompact: {
+      marginBottom: spacing.md,
+    },
+    controls: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    controlsCompact: {
+      gap: spacing.md,
+      marginBottom: spacing.md,
+    },
+    controlBtn: {
+      padding: spacing.sm,
+    },
+    controlText: {
+      color: colors.text,
+      fontWeight: "700",
+      fontSize: scale(12),
+    },
+    iconButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    playButton: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      borderRadius: 50,
+      minWidth: 120,
+      alignItems: "center",
+    },
+    playButtonCompact: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      minWidth: 110,
+    },
+    playBtn: { backgroundColor: colors.primary },
+    pauseBtn: { backgroundColor: colors.text },
+    playButtonText: {
+      color: colors.surface,
+      fontWeight: "800",
+      letterSpacing: scale(1),
+    },
+    speedControl: {
+      alignItems: "center",
+      width: "100%",
+    },
+    speedLabel: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(12),
+      fontWeight: "700",
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+  });
+};

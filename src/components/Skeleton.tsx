@@ -2,8 +2,10 @@ import React from "react";
 import { Animated, StyleProp, ViewStyle } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
 
+type SkeletonWidth = number | `${number}%`;
+
 interface SkeletonProps {
-  width?: number | string;
+  width?: SkeletonWidth;
   height?: number;
   borderRadius?: number;
   style?: StyleProp<ViewStyle>;
@@ -13,7 +15,7 @@ interface SkeletonProps {
  * Lightweight pulsing skeleton placeholder. No external deps, low CPU.
  */
 export const Skeleton: React.FC<SkeletonProps> = ({
-  width = "100%",
+  width = "100%" as SkeletonWidth,
   height = 16,
   borderRadius = 8,
   style,

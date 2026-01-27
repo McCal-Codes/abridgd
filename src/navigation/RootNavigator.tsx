@@ -28,7 +28,6 @@ import { useSettings, sanitizeTabs } from "../context/SettingsContext";
 import { View, ActivityIndicator } from "react-native";
 import { ScrollProvider } from "../context/ScrollContext";
 import LiquidTabBar from "../components/LiquidTabBar";
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import {
   Flame,
@@ -46,6 +45,7 @@ import {
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { TabLayoutMode } from "./tabs";
+import { useTheme } from "../theme/ThemeContext";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -98,13 +98,12 @@ export const getTabConfig = (layout: TabLayoutMode): Record<string, TabConfig> =
 // Tab Navigator component
 const TabNavigatorScreen = ({ navigation }: any) => {
   const { activeTabs, tabLayout, defaultTab, showTabLabels, tabIconSize } = useSettings();
+  const { colors } = useTheme();
   const TAB_CONFIG = getTabConfig(tabLayout);
   const insets = useSafeAreaInsets();
   const bottomInset = insets.bottom ?? 0;
-  // Clamp the inset used for layout so very large insets don't push the capsule too high
-  const clampedBottomInset = Math.min(bottomInset, 20);
-  // Compute a small internal padding to visually balance the capsule
-  const internalPaddingBottom = bottomInset > 0 ? Math.round(bottomInset / 3) : 8;
+  // Use full inset to keep the capsule comfortably above the home indicator
+  const internalPaddingBottom = bottomInset > 0 ? Math.round(bottomInset / 2) : 8;
 
   const safeActiveTabs = React.useMemo(
     () => sanitizeTabs(activeTabs, tabLayout),
@@ -140,7 +139,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
           position: "absolute",
           left: 16,
           right: 16,
-          bottom: 12 + clampedBottomInset,
+          bottom: 12 + bottomInset,
           borderRadius: 32,
           // Subtle diffuse shadow
           shadowColor: "#000",
@@ -197,6 +196,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
 };
 
 export const RootNavigator = () => {
+  const { colors } = useTheme();
   const { hasCompletedOnboarding, isLoadingSettings, shouldShowWhatsNew } = useSettings();
 
   if (isLoadingSettings) {

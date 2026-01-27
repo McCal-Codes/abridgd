@@ -1,5 +1,5 @@
 import React from "react";
-import { View, FlatList, StyleSheet, StatusBar, Animated, Text, Pressable } from "react-native";
+import { View, FlatList, StyleSheet, StatusBar, Animated, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ScrollContext } from "../context/ScrollContext";
@@ -12,7 +12,6 @@ import {
 } from "../services/RssService";
 import { useProfilesOptional } from "../context/ProfileContext";
 import { Article } from "../types/Article";
-import { colors } from "../theme/colors";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
@@ -21,11 +20,13 @@ import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { useSavedArticles } from "../context/SavedArticlesContext";
 import { ArticleProgressIndicator } from "../components/ArticleProgressIndicator";
 import { ScaleButton } from "../components/ScaleButton";
+import { PillButton } from "../shared/ui/buttons/PillButton";
 import { typography } from "../theme/typography";
 import { ReadingProgress } from "../types/ReadingProgress";
 import * as Haptics from "expo-haptics";
 import { HeroHeader } from "../components/HeroHeader";
 import { Home as HomeIcon } from "lucide-react-native";
+import { useTheme, Colors } from "../theme/ThemeContext";
 
 type ContinueReadingItem = {
   article: Article;
@@ -60,12 +61,14 @@ const ContinueReadingSection = ({
   showAll,
   onToggleShowAll,
   lastUpdated,
+  styles,
 }: {
   items: ContinueReadingItem[];
   onPress: (article: Article) => void;
   showAll: boolean;
   onToggleShowAll: () => void;
   lastUpdated: Date | null;
+  styles: ReturnType<typeof createStyles>;
 }) => {
   if (!items.length) return null;
 
@@ -82,9 +85,13 @@ const ContinueReadingSection = ({
         </View>
         {lastUpdated && <Text style={styles.updatedBadge}>{formatUpdatedAgo(lastUpdated)}</Text>}
         {canToggle && (
-          <Pressable hitSlop={8} onPress={onToggleShowAll} accessibilityRole="button">
-            <Text style={styles.continueAction}>{showAll ? "Hide" : "Show all"}</Text>
-          </Pressable>
+          <PillButton
+            label={showAll ? "Hide" : "Show all"}
+            onPress={onToggleShowAll}
+            accessibilityLabel={showAll ? "Hide continue reading list" : "Show all in continue reading"}
+            hitSlop={12}
+            testID="continue-toggle"
+          />
         )}
       </View>
 
@@ -120,6 +127,8 @@ const ContinueReadingSection = ({
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
 
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -127,6 +136,7 @@ export const HomeScreen: React.FC = () => {
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const [showAllContinue, setShowAllContinue] = React.useState(false);
+  const [hadCachedArticles, setHadCachedArticles] = React.useState(false);
   const { inProgressArticles } = useReadingProgressOptional();
   const { savedArticles } = useSavedArticles();
   const profileContext = useProfilesOptional?.();
@@ -167,6 +177,7 @@ export const HomeScreen: React.FC = () => {
     };
     const cached = getCachedArticles("Top");
     if (cached && cached.length) {
+      setHadCachedArticles(true);
       setArticles(cached);
       profileContext?.recordLastFetchedArticles?.(cached.map((a) => a.id));
       const fetchedAt = getLastFetchedAt("Top");
@@ -234,6 +245,7 @@ export const HomeScreen: React.FC = () => {
               showAll={showAllContinue}
               onToggleShowAll={handleToggleShowAll}
               lastUpdated={lastUpdated}
+              styles={styles}
             />
           )}
           <View style={styles.skeletonList}>
@@ -241,7 +253,7 @@ export const HomeScreen: React.FC = () => {
               <ArticleCardSkeleton key={`skeleton-${index}`} />
             ))}
           </View>
-          <View style={styles.loadingOverlay} pointerEvents="none">
+          <View style={styles.loadingOverlay} pointerEvents="none" testID="article-card-skeleton">
             <FunLoadingIndicator message="Fetching top stories…" />
           </View>
         </View>
@@ -255,17 +267,26 @@ export const HomeScreen: React.FC = () => {
               showAll={showAllContinue}
               onToggleShowAll={handleToggleShowAll}
               lastUpdated={lastUpdated}
+              styles={styles}
             />
           )}
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
-              <Animated.Text style={{ color: colors.systemRed, marginBottom: 8 }}>
+          <View style={styles.errorContainer}>
+            <View style={styles.errorCard}>
+              <Text style={styles.errorTitle} allowFontScaling accessibilityRole="header">
                 Network error
-              </Animated.Text>
-              <Animated.Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
+              </Text>
+              <Text style={styles.errorBody} allowFontScaling>
                 {error}
-              </Animated.Text>
-              <Animated.Text
+              </Text>
+              {hadCachedArticles ? (
+                <Text style={styles.errorHint} allowFontScaling>
+                  Showing your last saved feed. Retry when you are back online.
+                </Text>
+              ) : null}
+              <ScaleButton
+                style={styles.retryButton}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading articles"
                 onPress={() => {
                   setLoading(true);
                   setError(null);
@@ -282,10 +303,11 @@ export const HomeScreen: React.FC = () => {
                       setLoading(false);
                     });
                 }}
-                style={{ color: colors.tint }}
               >
-                Retry
-              </Animated.Text>
+                <Text style={styles.retryButtonText} allowFontScaling>
+                  Retry
+                </Text>
+              </ScaleButton>
             </View>
           </View>
         </View>
@@ -299,6 +321,7 @@ export const HomeScreen: React.FC = () => {
               showAll={showAllContinue}
               onToggleShowAll={handleToggleShowAll}
               lastUpdated={lastUpdated}
+              styles={styles}
             />
           )}
           <View style={styles.centerContent}>
@@ -335,17 +358,18 @@ export const HomeScreen: React.FC = () => {
               )}
             </>
           )}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[
             styles.listContent,
             {
               paddingBottom: allowContentUnderTabBar
-                ? spacing.lg + insets.bottom + 8
+                ? spacing.lg + insets.bottom + spacing.md
                 : spacing.lg +
                   (tabBarStyle === "floating"
                     ? tabBarFloatingHeight || 64
                     : tabBarDockedHeight || tabBarHeight) +
                   insets.bottom +
-                  16,
+                  spacing.lg,
             },
           ]}
           refreshing={refreshing}
@@ -378,116 +402,161 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  flexContent: {
-    flex: 1,
-    position: "relative",
-  },
-  listContent: {
-    paddingBottom: spacing.lg,
-  },
-  skeletonList: {
-    paddingTop: spacing.sm,
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.gutter,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.gutter,
-  },
-  continueContainer: {
-    paddingTop: spacing.gutter,
-    paddingBottom: spacing.sm,
-    backgroundColor: colors.background,
-  },
-  continueHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.gutter,
-  },
-  continueTitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.lg,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  continueSubtitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-  },
-  updatedBadge: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.xs,
-    color: colors.textSecondary,
-    marginRight: spacing.sm,
-  },
-  continueAction: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: colors.tint,
-    fontWeight: "600",
-  },
-  continueCard: {
-    width: 260,
-    padding: spacing.md,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  continueHeadline: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: typography.size.md,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  continueMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  continueMeta: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.xs,
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  continueMetaDot: {
-    marginHorizontal: 6,
-    color: colors.textSecondary,
-  },
-  continueProgressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  continuePercent: {
-    fontFamily: typography.fontFamily.mono,
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-  },
-  headerContainer: {
-    backgroundColor: colors.background,
-    paddingBottom: spacing.xs,
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    flexContent: {
+      flex: 1,
+      position: "relative",
+    },
+    listContent: {
+      paddingBottom: spacing.lg,
+    },
+    skeletonList: {
+      paddingTop: spacing.sm,
+    },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    centerContent: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: spacing.gutter,
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: spacing.gutter,
+    },
+    continueContainer: {
+      paddingTop: spacing.gutter,
+      paddingBottom: spacing.sm,
+      backgroundColor: colors.background,
+    },
+    continueHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.gutter,
+    },
+    continueTitle: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.lg,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    continueSubtitle: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+    },
+    updatedBadge: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.xs,
+      color: colors.textSecondary,
+      marginRight: spacing.sm,
+    },
+    continueCard: {
+      width: 260,
+      padding: spacing.md,
+      borderRadius: 14,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      gap: spacing.sm,
+    },
+    continueHeadline: {
+      fontFamily: typography.fontFamily.serif,
+      fontSize: typography.size.md,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    continueMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: spacing.xs,
+    },
+    continueMeta: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.xs,
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+    },
+    continueMetaDot: {
+      marginHorizontal: 6,
+      color: colors.textSecondary,
+    },
+    continueProgressRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    continuePercent: {
+      fontFamily: typography.fontFamily.mono,
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+    },
+    headerContainer: {
+      backgroundColor: colors.background,
+      paddingBottom: spacing.xs,
+    },
+    errorContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: spacing.gutter,
+    },
+    errorCard: {
+      width: "100%",
+      maxWidth: 480,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+    errorTitle: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.lg,
+      fontWeight: "700",
+      color: colors.systemRed,
+    },
+    errorBody: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.md,
+      color: colors.text,
+    },
+    errorHint: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+    },
+    retryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: "center",
+    },
+    retryButtonText: {
+      color: colors.surface,
+      fontFamily: typography.fontFamily.sans,
+      fontWeight: "700",
+      fontSize: typography.size.md,
+    },
+  });

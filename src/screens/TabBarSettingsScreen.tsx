@@ -37,7 +37,7 @@ import {
 } from "lucide-react-native";
 import { Switch } from "react-native";
 import { ArticleCategory } from "../types/Article";
-import { useSettings } from "../context/SettingsContext";
+import { sanitizeTabs, useSettings } from "../context/SettingsContext";
 import type { LucideIcon } from "lucide-react-native";
 
 interface TabOption {
@@ -331,6 +331,18 @@ export const TabBarSettingsScreen: React.FC = () => {
   useEffect(() => {
     setSelectedTabs(activeTabs);
   }, [activeTabs, tabLayout]);
+
+  // When layout changes, sanitize active tabs to available set for that layout
+  useEffect(() => {
+    const sanitized = sanitizeTabs(selectedTabs, tabLayout);
+    if (sanitized.join("|") !== selectedTabs.join("|")) {
+      setSelectedTabs(sanitized);
+      setActiveTabs(sanitized);
+      if (!sanitized.includes(defaultTab) && sanitized.length) {
+        setDefaultTab(sanitized[0]);
+      }
+    }
+  }, [tabLayout, selectedTabs, setActiveTabs, defaultTab, setDefaultTab]);
 
   // Ensure default tab always remains within active selection
   useEffect(() => {

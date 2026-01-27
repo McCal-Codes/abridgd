@@ -6,9 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Buffer } from "buffer";
 // Ensure Buffer exists in React Native runtime
-// @ts-expect-error - global may not have Buffer
-if (!(global as any).Buffer) {
-  // @ts-expect-error
+if (typeof (global as any).Buffer === "undefined") {
   (global as any).Buffer = Buffer;
 }
 
@@ -352,9 +350,18 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
   const updateActiveProfileStats = (changes: Partial<Profile["stats"]>) => {
     if (!activeProfile) return;
+    const baseStats =
+      activeProfile.stats ?? {
+        articlesRead: 0,
+        savedActions: 0,
+        lastReadAt: null,
+        lastSavedAt: null,
+        lastFetchedArticleIds: [],
+        lastFetchedAt: null,
+      };
     const updated: Profile = applyAchievements({
       ...activeProfile,
-      stats: { ...activeProfile.stats, ...changes },
+      stats: { ...baseStats, ...changes },
     });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
     setActiveProfile(updated);

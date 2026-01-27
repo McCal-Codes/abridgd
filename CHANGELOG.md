@@ -31,9 +31,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Top Stories pulls additional national sources (AP, Reuters, NPR) to reduce empty sections when local feeds are quiet.
 - Profile stats are driven by tracked reading progress with roomier pill grid and compact personalization preview.
 - Settings now surfaces “News Sources” as the first item and moves the Sources card to the top of Reading Settings for faster access.
+- Settings screen reorganized into grouped sections (Content & Delivery, Reading & Focus, Navigation, Support, Advanced) with clearer accessibility hints and consistent hierarchy.
 - Added BBC World, PA Capital-Star, Morning Brew, and ESPN Pittsburgh as optional feeds; disabled Reuters Top News by default due to 403/DataDome blocks and kept broken locals default-off.
+- Home “Show all” in Continue Reading is now a pill button with a 44pt tap target, and list content respects automatic inset adjustment to keep clear of the floating tab bar.
+- Article screen now clamps body line-height for large Dynamic Type, disables edge-swipe navigation when Reduce Motion is on, and applies automatic inset adjustment to avoid safe-area overlap.
 
 ### Fixed
+- Onboarding and Settings no longer throw Reduce Motion/theme token ReferenceErrors in Expo Go; the grounding selector honors motion preferences and spacing uses existing tokens.
 - Onboarding “Give Your Eyes a Break” slide no longer clips the RSVP reader demo on compact screens, preserving the card’s rounded corners.
 - Screens: Home now shows article-card skeletons during the initial load and WTAE feed retries via rss2json if proxies trim items, so the feed consistently appears.
 - Feed lists tuned for performance: added batching/windowing hints to FlatLists (Home, Sections, Saved) to quiet VirtualizedList warnings and keep scrolling smooth on long feeds.

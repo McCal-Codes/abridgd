@@ -5,10 +5,40 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useNavigation } from "@react-navigation/native";
-import { ChevronRight, Layout, Compass } from "lucide-react-native";
+import { ChevronRight, Layout, Compass, RotateCcw, Sparkles } from "lucide-react-native";
+import { useSettings, sanitizeTabs } from "../context/SettingsContext";
+import { getTabConfig } from "../navigation/RootNavigator";
+import { defaultTabs } from "../navigation/tabs";
 
 export const NavigationSettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const {
+    tabLayout,
+    showTabLabels,
+    defaultTab,
+    setTabLayout,
+    setDefaultTab,
+    setShowTabLabels,
+    activeTabs,
+    setActiveTabs,
+  } = useSettings();
+
+  const restoreNavigationDefaults = () => {
+    setTabLayout("standard");
+    setDefaultTab("home");
+    setShowTabLabels(true);
+  };
+
+  const sanitizedTabs = sanitizeTabs(activeTabs, tabLayout);
+  const TAB_CONFIG = getTabConfig(tabLayout);
+  const previewTabs = sanitizedTabs.map((id) => TAB_CONFIG[id] || null).filter(Boolean);
+
+  const applyLayout = (layout: typeof tabLayout) => {
+    const nextTabs = sanitizeTabs(defaultTabs[layout] as string[], layout);
+    setTabLayout(layout);
+    setActiveTabs(nextTabs);
+    setDefaultTab(nextTabs[0]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -49,6 +79,39 @@ export const NavigationSettingsScreen: React.FC = () => {
             <Text style={styles.infoText}>Open Tab Bar Studio to pick your default tab.</Text>
           </View>
         </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preview</Text>
+          <Text style={styles.sectionDesc}>Reflects your current active tabs and labels.</Text>
+          <View style={[styles.previewBar, tabLayout === "simple" && styles.previewBarSimple]}>
+            {previewTabs.map((tab) => (
+              <View key={tab.name} style={styles.previewItem}>
+                <tab.Icon
+                  size={22}
+                  color={tab.name === defaultTab ? colors.primary : colors.textSecondary}
+                />
+                {showTabLabels ? (
+                  <Text
+                    style={[
+                      styles.previewLabel,
+                      tab.name === defaultTab && styles.previewLabelActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {tab.title || tab.name}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.restoreButton} onPress={restoreNavigationDefaults}>
+          <View style={styles.restoreRow}>
+            <RotateCcw color={colors.text} size={18} />
+            <Text style={styles.restoreText}>Restore navigation defaults</Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -122,5 +185,54 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     flex: 1,
+  },
+  restoreButton: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  restoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    justifyContent: "center",
+  },
+  restoreText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  previewBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: spacing.md,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    gap: spacing.sm,
+  },
+  previewBarSimple: {
+    justifyContent: "space-around",
+  },
+  previewItem: {
+    flex: 1,
+    alignItems: "center",
+    minWidth: 64,
+  },
+  previewLabel: {
+    marginTop: 4,
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  previewLabelActive: {
+    color: colors.primary,
+    fontWeight: "700",
   },
 });

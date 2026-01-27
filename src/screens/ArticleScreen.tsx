@@ -91,6 +91,7 @@ export const ArticleScreen: React.FC = () => {
     sensitivePromptLevel,
     sensitiveActionPreference,
     sensitiveTone,
+    reduceMotion,
   } = useSettings();
   const insets = useSafeAreaInsets();
   const {
@@ -199,6 +200,9 @@ export const ArticleScreen: React.FC = () => {
     }
     return tonePreset.helper;
   }, [sensitivePromptLevel, sensitiveTone, tonePreset]);
+
+  const baseBodySize = 18 * fontSize;
+  const bodyLineHeight = Math.round(baseBodySize * Math.min(Math.max(lineHeight, 1.35), 1.6));
 
   const showToneLine = sensitivePromptLevel === "full";
 
@@ -340,37 +344,34 @@ export const ArticleScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  const swipeGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      // Only allow swipe from left edge for back navigation
-      if (event.translationX > 0 && event.translationX < 200) {
-        translateX.value = event.translationX;
-      }
-      // Swipe right from anywhere to save/unsave
-      else if (event.translationX < 0 && event.translationX > -200) {
-        translateX.value = event.translationX;
-      }
-    })
-    .onEnd((event) => {
-      const threshold = 100;
-      const velocity = event.velocityX;
+  const swipeGesture = React.useMemo(() => {
+    if (reduceMotion) {
+      return Gesture.Pan().enabled(false);
+    }
 
-      // Swipe right from left edge = go back
-      if (event.translationX > threshold || velocity > 800) {
-        translateX.value = withSpring(400, { damping: 20, stiffness: 300 });
-        runOnJS(handleGoBack)();
-      }
-      // Swipe left = save/unsave
-      else if (event.translationX < -threshold || velocity < -800) {
-        runOnJS(handleSave)();
-        translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
-        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
-      }
-      // Reset
-      else {
-        translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
-      }
-    });
+    return Gesture.Pan()
+      .onUpdate((event) => {
+        const touchX = (event as any).absoluteX ?? event.x ?? 0;
+        const isEdgeSwipe = touchX <= 32;
+
+        // Only allow back navigation from the leading screen edge
+        if (isEdgeSwipe && event.translationX > 0 && event.translationX < 200) {
+          translateX.value = event.translationX;
+        }
+      })
+      .onEnd((event) => {
+        const threshold = 100;
+        const velocity = event.velocityX;
+
+        // Swipe right from left edge = go back
+        if (event.translationX > threshold || velocity > 800) {
+          translateX.value = withSpring(400, { damping: 20, stiffness: 300 });
+          runOnJS(handleGoBack)();
+        } else {
+          translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
+        }
+      });
+  }, [handleGoBack, reduceMotion, translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -532,6 +533,7 @@ export const ArticleScreen: React.FC = () => {
                   16,
             },
           ]}
+          contentInsetAdjustmentBehavior="automatic"
           onContentSizeChange={() => {
             if (pendingRestoreOffset != null && !initialScrollRestored) {
               requestAnimationFrame(() => {
@@ -700,7 +702,7 @@ export const ArticleScreen: React.FC = () => {
                   key={index}
                   style={[
                     styles.paragraph,
-                    { fontSize: 18 * fontSize, lineHeight: 18 * fontSize * lineHeight },
+                    { fontSize: baseBodySize, lineHeight: bodyLineHeight },
                   ]}
                   allowFontScaling
                 >
@@ -781,6 +783,7 @@ export const ArticleScreen: React.FC = () => {
             {article.link && (
               <ScaleButton
                 style={styles.sourceButton}
+                accessibilityLabel="Read full story in browser"
                 onPress={async () => {
                   try {
                     await Haptics.selectionAsync();
@@ -848,7 +851,7 @@ export const ArticleScreen: React.FC = () => {
 };
 
 const createStyles = (colors: Colors, fontScale: number) => {
-  const scale = (size: number) => size * Math.min(fontScale || 1, 1.3);
+  const scale = (size: number) => size * Math.min(fontScale || 1, 1.6);
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -922,7 +925,7 @@ const createStyles = (colors: Colors, fontScale: number) => {
       fontFamily: typography.fontFamily.serif,
       fontSize: scale(18),
       lineHeight: scale(30),
-      color: "#2c2c2c",
+      color: colors.text,
       marginBottom: spacing.lg,
     },
     imageContainer: {
