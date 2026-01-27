@@ -2,132 +2,74 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "dev: Expo (iOS Simulator)",
-            "type": "node",
+            "name": "dev: Expo start (JS Debug Terminal)",
+            "type": "node-terminal",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--ios"],
+            "command": "npm start",
             "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 1,
-                "group": "development"
-            }
+            "presentation": { "order": 1, "group": "development" }
         },
         {
-            "name": "dev: Expo (iOS Simulator, clear cache)",
-            "type": "node",
+            "name": "dev: Expo start (clear cache)",
+            "type": "node-terminal",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--ios", "--clear"],
+            "command": "npx expo start --clear",
             "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 2,
-                "group": "development"
-            }
+            "presentation": { "order": 2, "group": "development" }
         },
         {
-            "name": "dev: Expo (Android Emulator)",
-            "type": "node",
+            "name": "dev: Expo start (web)",
+            "type": "node-terminal",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--android"],
+            "command": "npx expo start --web",
             "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 3,
-                "group": "development"
-            }
+            "presentation": { "order": 3, "group": "development" }
         },
         {
-            "name": "dev: Expo (Android Emulator, clear cache)",
-            "type": "node",
+            "name": "dev: Expo run:ios (native build)",
+            "type": "node-terminal",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--android", "--clear"],
+            "command": "npx expo run:ios",
             "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 4,
-                "group": "development"
-            }
+            "presentation": { "order": 4, "group": "development" }
         },
         {
-            "name": "dev: Expo (Web)",
-            "type": "node",
+            "name": "dev: Expo run:android (native build)",
+            "type": "node-terminal",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--web"],
+            "command": "npx expo run:android",
             "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 5,
-                "group": "development"
-            }
+            "presentation": { "order": 5, "group": "development" }
         },
         {
-            "name": "dev: Expo (Web, clear cache)",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--web", "--clear"],
-            "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 6,
-                "group": "development"
-            }
-        },
-        {
-            "name": "dev: Expo (start only, LAN)",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/node_modules/.bin/expo",
-            "args": ["start", "--lan"],
-            "cwd": "${workspaceFolder}",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "presentation": {
-                "order": 7,
-                "group": "development"
-            }
-        },
-        {
-            "name": "dev: Attach to Expo Packager",
-            "type": "node",
+            "name": "attach: Metro (Hermes)",
+            "type": "pwa-node",
             "request": "attach",
             "port": 19000,
             "cwd": "${workspaceFolder}",
             "sourceMaps": true,
-            "presentation": {
-                "order": 8,
-                "group": "development"
-            }
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "presentation": { "order": 6, "group": "debugging" }
         },
         {
             "name": "debug: Chrome Remote JS",
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "attach",
             "port": 9222,
             "urlFilter": "*localhost:8081*",
-            "presentation": {
-                "order": 9,
-                "group": "debugging"
-            }
+            "presentation": { "order": 7, "group": "debugging" }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Expo: start + attach",
+            "configurations": [
+                "dev: Expo start (JS Debug Terminal)",
+                "attach: Metro (Hermes)"
+            ]
         }
     ]
 }

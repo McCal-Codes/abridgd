@@ -241,7 +241,7 @@ export const HomeScreen: React.FC = () => {
               <ArticleCardSkeleton key={`skeleton-${index}`} />
             ))}
           </View>
-          <View style={styles.centerContent}>
+          <View style={styles.loadingOverlay} pointerEvents="none">
             <FunLoadingIndicator message="Fetching top stories…" />
           </View>
         </View>
@@ -385,6 +385,7 @@ const styles = StyleSheet.create({
   },
   flexContent: {
     flex: 1,
+    position: "relative",
   },
   listContent: {
     paddingBottom: spacing.lg,
@@ -399,6 +400,12 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.gutter,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.gutter,

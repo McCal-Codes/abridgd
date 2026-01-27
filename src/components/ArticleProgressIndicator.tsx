@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
-import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
+import { useTheme, Colors } from "../theme/ThemeContext";
 
 interface ArticleProgressIndicatorProps {
   articleId: string;
@@ -15,6 +15,8 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
   size = "small",
   showLabel = false,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { getProgress } = useReadingProgressOptional();
   const progress = getProgress(articleId);
 
@@ -45,7 +47,7 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
     if (progressLevel === "50%") return colors.tint;
     if (progressLevel === "20%") return `${colors.tint}AA`;
     return colors.border;
-  }, [progressLevel]);
+  }, [colors.border, colors.tint, progressLevel]);
 
   // Don't show indicator for unread articles (unless explicitly requested via showLabel)
   if (progressLevel === "unread" && !showLabel) {
@@ -97,6 +99,7 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
               color: progressColor,
             },
           ]}
+          allowFontScaling
         >
           {progressLevel === "completed" ? "✓" : progressLevel}
         </Text>
@@ -105,24 +108,25 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  progressBarContainer: {
-    flex: 1,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    borderRadius: 2,
-  },
-  label: {
-    fontWeight: "600",
-    minWidth: 24,
-    textAlign: "center",
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    progressBarContainer: {
+      flex: 1,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      overflow: "hidden",
+    },
+    progressBarFill: {
+      borderRadius: 2,
+    },
+    label: {
+      fontWeight: "600",
+      minWidth: 24,
+      textAlign: "center",
+    },
+  });

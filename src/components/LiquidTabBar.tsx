@@ -14,9 +14,10 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSettings } from "../context/SettingsContext";
 import { useSavedArticles } from "../context/SavedArticlesContext";
-import { colors, isDarkMode } from "../theme/colors";
+import { useTheme, Colors } from "../theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollContext } from "../context/ScrollContext";
+import { AccessibilityInfo } from "react-native";
 
 let BlurView: any = null;
 try {
@@ -32,6 +33,21 @@ const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
 export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   const insets = useSafeAreaInsets();
   const { scrollY } = React.useContext(ScrollContext);
+  const { colors, isDark } = useTheme();
+  const [reduceMotion, setReduceMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => mounted && setReduceMotion(value));
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", (value) => {
+      setReduceMotion(value);
+    });
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
+
   const {
     tabBarBlur,
     tabBarStyle,
@@ -160,6 +176,9 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
             tabIconSize={tabIconSize}
             tabIndicatorStyle={tabIndicatorStyle}
             resolveBadge={resolveBadge}
+            reduceMotion={reduceMotion}
+            colors={colors}
+            isDark={isDark}
           />
         </Animated.View>
       </AnimatedBlur>
@@ -265,6 +284,9 @@ type IndicatorProps = {
   tabIconSize: number;
   tabIndicatorStyle: "underline" | "bubble" | "none";
   resolveBadge: (routeName: string) => BadgeConfig | null;
+  reduceMotion: boolean;
+  colors: Colors;
+  isDark: boolean;
 };
 
 const AnimatedIndicator: React.FC<IndicatorProps> = ({
@@ -276,6 +298,9 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   tabIconSize,
   tabIndicatorStyle,
   resolveBadge,
+  reduceMotion = false,
+  colors,
+  isDark,
 }) => {
   const routes = state.routes;
   const indicatorX = React.useRef(new Animated.Value(0)).current;
@@ -287,29 +312,6 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   const indicatorOpacity = React.useRef(new Animated.Value(0)).current;
   const [indicatorRadius, setIndicatorRadius] = React.useState(16);
   const [tabLayouts, setTabLayouts] = React.useState<Record<string, LayoutRectangle>>({});
-
-  const handleTabLayout = React.useCallback(
-    (routeKey: string, layout: LayoutRectangle) => {
-      setTabLayouts((prev) => {
-        const existing = prev[routeKey];
-        if (
-          existing &&
-          Math.abs(existing.width - layout.width) < 1 &&
-          Math.abs(existing.height - layout.height) < 1 &&
-          Math.abs(existing.x - layout.x) < 1 &&
-          Math.abs(existing.y - layout.y) < 1
-        ) {
-          return prev;
-        }
-        return { ...prev, [routeKey]: layout };
-      });
-      const activeRouteKey = routes[state.index]?.key;
-      if (activeRouteKey === routeKey) {
-        requestAnimationFrame(() => animateToRoute(state.index));
-      }
-    },
-    [animateToRoute, routes, state.index],
-  );
 
   const animateToRoute = React.useCallback(
     (index: number) => {
@@ -338,6 +340,15 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
           : layout.y + layout.height - targetHeight - 4;
 
       setIndicatorRadius(tabIndicatorStyle === "bubble" ? targetHeight / 2 : 2);
+
+      if (reduceMotion) {
+        indicatorX.setValue(targetX);
+        indicatorY.setValue(targetY);
+        indicatorWidth.setValue(targetWidth);
+        indicatorHeight.setValue(targetHeight);
+        indicatorOpacity.setValue(1);
+        return;
+      }
 
       indicatorOpacity.setValue(0);
 
@@ -386,19 +397,43 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
       indicatorX,
       indicatorY,
       indicatorOpacity,
+      reduceMotion,
     ],
+  );
+
+  const handleTabLayout = React.useCallback(
+    (routeKey: string, layout: LayoutRectangle) => {
+      setTabLayouts((prev) => {
+        const existing = prev[routeKey];
+        if (
+          existing &&
+          Math.abs(existing.width - layout.width) < 1 &&
+          Math.abs(existing.height - layout.height) < 1 &&
+          Math.abs(existing.x - layout.x) < 1 &&
+          Math.abs(existing.y - layout.y) < 1
+        ) {
+          return prev;
+        }
+        return { ...prev, [routeKey]: layout };
+      });
+      const activeRouteKey = routes[state.index]?.key;
+      if (activeRouteKey === routeKey) {
+        requestAnimationFrame(() => animateToRoute(state.index));
+      }
+    },
+    [animateToRoute, routes, state.index],
   );
 
   React.useEffect(() => {
     animateToRoute(state.index);
-  }, [state.index, tabIndicatorStyle, tabLayouts, animateToRoute]);
+  }, [state.index, tabIndicatorStyle, tabLayouts, animateToRoute, reduceMotion]);
 
   const iconSize = tabIconSize || 25;
   const activeRouteKey = routes[state.index]?.key;
   const hasLayout = !!(activeRouteKey && tabLayouts[activeRouteKey]);
   const shouldRenderIndicator = tabIndicatorStyle !== "none" && hasLayout;
   const indicatorColor = colors.tint;
-  const bubbleColor = isDarkMode ? "rgba(0,188,212,0.2)" : "rgba(0,151,167,0.12)";
+  const bubbleColor = isDark ? "rgba(0,188,212,0.2)" : "rgba(0,151,167,0.12)";
 
   return (
     <View style={{ width: "100%" }}>
@@ -429,14 +464,21 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
           const IconRenderer = (descriptor.options.tabBarIcon as any) || null;
           const label = descriptor.options.title ?? route.name;
           const badge = resolveBadge(route.name);
+          const baseA11yLabel =
+            descriptor.options.tabBarAccessibilityLabel || descriptor.options.title || route.name;
+          const accessibilityLabel = badge
+            ? `${baseA11yLabel}, ${badge.type === "count" ? `${badge.value} items` : "new items"}`
+            : baseA11yLabel;
 
           return (
             <AnimatedTouchable
               key={route.key}
               onPress={async () => {
-                try {
-                  await Haptics.selectionAsync();
-                } catch {}
+                if (!reduceMotion) {
+                  try {
+                    await Haptics.selectionAsync();
+                  } catch {}
+                }
                 navigation.navigate(route.name);
               }}
               style={styles.tabButton}
@@ -444,6 +486,9 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                 handleTabLayout(route.key, event.nativeEvent.layout)
               }
               activeOpacity={0.75}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={accessibilityLabel}
             >
               <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
                 {IconRenderer ? IconRenderer({ color, size: iconSize, focused }) : null}

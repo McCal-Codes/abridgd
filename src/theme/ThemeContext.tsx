@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Appearance, ColorSchemeName } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Semantic color system following iOS naming conventions
 const light = {
@@ -59,20 +60,34 @@ const dark = {
   error: "#FF453A",
 };
 
-type Colors = typeof light;
+export type Colors = typeof light;
 
 interface ThemeContextType {
   colors: Colors;
+  theme: Colors;
   isDark: boolean;
   colorScheme: ColorSchemeName;
+  setColorSchemeOverride: (scheme: ColorSchemeName | null) => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const THEME_OVERRIDE_KEY = "themeOverride";
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [colorScheme, setColorScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme()
   );
+  const [overrideScheme, setOverrideScheme] = useState<ColorSchemeName | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_OVERRIDE_KEY)
+      .then((value) => {
+        if (value === "light" || value === "dark") {
+          setOverrideScheme(value);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
@@ -82,11 +97,21 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return () => subscription.remove();
   }, []);
 
-  const isDark = colorScheme === 'dark';
+  const effectiveScheme = overrideScheme || colorScheme;
+  const isDark = effectiveScheme === 'dark';
   const colors = isDark ? dark : light;
 
+  const setColorSchemeOverride = async (scheme: ColorSchemeName | null) => {
+    setOverrideScheme(scheme);
+    if (scheme) {
+      await AsyncStorage.setItem(THEME_OVERRIDE_KEY, scheme);
+    } else {
+      await AsyncStorage.removeItem(THEME_OVERRIDE_KEY);
+    }
+  };
+
   return (
-    <ThemeContext.Provider value={{ colors, isDark, colorScheme }}>
+    <ThemeContext.Provider value={{ colors, theme: colors, isDark, colorScheme: effectiveScheme, setColorSchemeOverride }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -94,8 +119,19 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+  if (context) {
+    return context;
   }
-  return context;
+
+  // Fallback for cases where a component renders outside of ThemeProvider (tests, storybooks)
+  const fallbackScheme = Appearance.getColorScheme();
+  const fallbackColors = fallbackScheme === "dark" ? dark : light;
+
+  return {
+    colors: fallbackColors,
+    theme: fallbackColors,
+    isDark: fallbackScheme === "dark",
+    colorScheme: fallbackScheme,
+    setColorSchemeOverride: async () => {},
+  };
 };

@@ -42,8 +42,10 @@ import {
   Search,
   Star,
   User,
+  Settings as SettingsIcon,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
+import { TabLayoutMode } from "./tabs";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -57,9 +59,14 @@ type TabConfig = {
   params?: Record<string, any>;
 };
 
-export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string, TabConfig> =>
-  ({
-    minimal: {
+export const getTabConfig = (layout: TabLayoutMode): Record<string, TabConfig> => {
+  const map: Record<TabLayoutMode, Record<string, TabConfig>> = {
+    simple: {
+      home: { name: "Home", component: HomeScreen, Icon: Home },
+      settings: { name: "Settings", component: SettingsScreen, Icon: SettingsIcon },
+      profile: { name: "Profile", component: ProfileScreen, Icon: User },
+    },
+    standard: {
       home: { name: "Home", component: HomeScreen, Icon: Home },
       discover: {
         name: "Discover",
@@ -71,7 +78,7 @@ export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string
       digest: { name: "Digest", component: DigestScreen, Icon: Star },
       profile: { name: "Profile", component: ProfileScreen, Icon: User },
     },
-    comprehensive: {
+    power: {
       top: { name: "Top", component: HomeScreen, Icon: Flame },
       local: {
         name: "Local",
@@ -83,7 +90,10 @@ export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string
       saved: { name: "Saved", component: SavedScreen, Icon: Bookmark },
       profile: { name: "Profile", component: ProfileScreen, Icon: User },
     },
-  })[layout];
+  };
+
+  return map[layout] ?? map.standard;
+};
 
 // Tab Navigator component
 const TabNavigatorScreen = ({ navigation }: any) => {

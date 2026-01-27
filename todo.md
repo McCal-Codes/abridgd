@@ -105,6 +105,8 @@
 
 ## Phase 2: Empty, Error, Loading States 🎨
 
+- [x] TODO-028 | Phase 2: Empty, Error, Loading States | Add profile onboarding, single-line headers, cached story hydration, and fun loading/error surfaces for feeds.
+
 ### Network Error State
 - [ ] Offline-friendly error UI (“Can’t connect” + last successful update)
 - [ ] Retry with loading state
@@ -607,4 +609,3 @@ Monthly:
 - [ ] Review GitHub Actions permissions & environments
 - [ ] Audit access tokens and remove unused ones
 - [ ] Quick dependency “health” audit (maintained? trusted? necessary?)
-    - Beta tester spotlights

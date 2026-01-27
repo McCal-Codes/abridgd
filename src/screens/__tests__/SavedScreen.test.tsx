@@ -85,14 +85,14 @@ const baseSettings: {
   tabBarStyle: "standard";
   tabBarDockedHeight: number;
   tabBarFloatingHeight: number;
-  tabLayout: "minimal" | "comprehensive";
+  tabLayout: "simple" | "standard" | "power";
 } = {
   tabBarHeight: 92,
   allowContentUnderTabBar: false,
   tabBarStyle: "standard" as const,
   tabBarDockedHeight: 92,
   tabBarFloatingHeight: 64,
-  tabLayout: "minimal" as const,
+  tabLayout: "standard" as const,
 };
 
 const resetSettings = (overrides: Partial<typeof baseSettings> = {}) => {
@@ -176,7 +176,7 @@ const renderWithProviders = (ui: React.ReactNode) => render(ui);
     jest.useRealTimers();
   });
 
-  it("CTA navigates to Home tab for minimal layout", () => {
+  it("CTA navigates to Home tab for standard layout", () => {
     const { getByText } = renderWithProviders(<SavedScreen />);
 
     fireEvent.press(getByText("Explore Top Stories"));
@@ -184,8 +184,8 @@ const renderWithProviders = (ui: React.ReactNode) => render(ui);
     expect(mockParentNavigate).toHaveBeenCalledWith("Home");
   });
 
-  it("CTA navigates to Top tab for comprehensive layout", () => {
-    resetSettings({ tabLayout: "comprehensive" });
+  it("CTA navigates to Top tab for power layout", () => {
+    resetSettings({ tabLayout: "power" });
     const { getByText } = renderWithProviders(<SavedScreen />);
 
     fireEvent.press(getByText("Explore Top Stories"));

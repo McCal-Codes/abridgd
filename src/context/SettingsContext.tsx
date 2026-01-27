@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "../theme/colors";
 import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
 import { APP_VERSION } from "../config/appInfo";
-import { allowedTabs, defaultTabs } from "../navigation/tabs";
+import { allowedTabs, defaultTabs, TabLayoutMode } from "../navigation/tabs";
 
 export type AnchorStrategy = "early" | "standard" | "center";
 export type DigestSummaryMode = "fact-based" | "ai-summary" | "headline-only";
@@ -59,8 +59,8 @@ interface SettingsContextType {
   setDefaultTab: (tab: string) => Promise<void>;
   activeTabs: string[]; // Array of active tab IDs
   setActiveTabs: (tabs: string[]) => Promise<void>;
-  tabLayout: "minimal" | "comprehensive"; // Tab layout style
-  setTabLayout: (layout: "minimal" | "comprehensive") => Promise<void>;
+  tabLayout: TabLayoutMode; // Tab layout style
+  setTabLayout: (layout: TabLayoutMode) => Promise<void>;
   // Tab bar appearance
   tabBarStyle: "floating" | "standard" | "compact";
   setTabBarStyle: (style: "floating" | "standard" | "compact") => Promise<void>;
@@ -139,6 +139,15 @@ interface SettingsContextType {
 // Provide a safe default context so components can render in tests without a provider
 const noopAsync = async () => {};
 
+const normalizeTabLayout = (value?: string | null): TabLayoutMode => {
+  if (value === "simple" || value === "standard" || value === "power") {
+    return value;
+  }
+  if (value === "minimal") return "standard";
+  if (value === "comprehensive") return "power";
+  return "standard";
+};
+
 const defaultSettingsContext: SettingsContextType = {
   hasCompletedOnboarding: false,
   completeOnboarding: async () => {},
@@ -184,8 +193,8 @@ const defaultSettingsContext: SettingsContextType = {
   setDefaultTab: async (_t: string) => {},
   activeTabs: ["home", "discover", "saved", "digest", "profile"],
   setActiveTabs: async (_t: string[]) => {},
-  tabLayout: "minimal",
-  setTabLayout: async (_l: "minimal" | "comprehensive") => {},
+  tabLayout: "standard",
+  setTabLayout: async (_l: TabLayoutMode) => {},
   tabBarStyle: "floating",
   setTabBarStyle: async (_s: "floating" | "standard" | "compact") => {},
   showTabLabels: true,
@@ -256,14 +265,15 @@ const defaultSettingsContext: SettingsContextType = {
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
 
-export const sanitizeTabs = (tabs: string[], layout: "minimal" | "comprehensive") => {
-  const allowed = allowedTabs[layout];
+export const sanitizeTabs = (tabs: string[], layout: TabLayoutMode) => {
+  const allowed = allowedTabs[layout] ?? allowedTabs.standard;
   const unique = tabs.filter((t, index) => allowed.includes(t) && tabs.indexOf(t) === index);
   let normalized = unique.slice(0, 5);
-  if (normalized.length < 3) {
-    normalized = layout === "minimal" ? ["home", "discover", "saved"] : ["top", "local", "digest"];
+  const minimumCount = layout === "simple" ? 2 : 3;
+  if (normalized.length < minimumCount) {
+    normalized = [...(defaultTabs[layout] ?? defaultTabs.standard)].slice(0, 5);
   }
-  if (!normalized.includes("profile")) {
+  if (!normalized.includes("profile") && allowed.includes("profile")) {
     if (normalized.length < 5) {
       normalized.push("profile");
     } else {
@@ -296,9 +306,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [autoSaveOnComplete, setAutoSaveOnCompleteState] = useState(false); // Don't auto-save by default
   const [defaultTab, setDefaultTabState] = useState("home"); // Home tab as default landing
   const [activeTabs, setActiveTabsState] = useState<string[]>(
-    sanitizeTabs([...defaultTabs.minimal], "minimal"),
-  ); // NYT-style minimal tabs with profile
-  const [tabLayout, setTabLayoutState] = useState<"minimal" | "comprehensive">("minimal"); // Default to minimal
+    sanitizeTabs([...defaultTabs.standard], "standard"),
+  ); // Balanced everyday tabs with profile access
+  const [tabLayout, setTabLayoutState] = useState<TabLayoutMode>("standard"); // Default to balanced standard
   // Tab bar appearance defaults
   const [tabBarStyle, setTabBarStyleState] = useState<"floating" | "standard" | "compact">(
     "floating",
@@ -466,15 +476,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedAutoSave !== null) {
         setAutoSaveOnCompleteState(savedAutoSave === "true");
       }
-      let resolvedTabLayout: "minimal" | "comprehensive" = tabLayout;
-      if (savedTabLayout && ["minimal", "comprehensive"].includes(savedTabLayout)) {
-        resolvedTabLayout = savedTabLayout as "minimal" | "comprehensive";
-        setTabLayoutState(resolvedTabLayout);
-      }
+      const resolvedTabLayout = normalizeTabLayout(savedTabLayout);
+      setTabLayoutState(resolvedTabLayout);
       if (savedDefaultTab) {
         const allowed = allowedTabs[resolvedTabLayout];
         const resolved = allowed.includes(savedDefaultTab) ? savedDefaultTab : allowed[0];
         setDefaultTabState(resolved);
+      } else {
+        const allowed = allowedTabs[resolvedTabLayout];
+        setDefaultTabState(allowed[0]);
+        await AsyncStorage.setItem("defaultTab", allowed[0]);
       }
       if (savedActiveTabs) {
         try {
@@ -487,6 +498,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         } catch (e) {
           console.error("Failed to parse active tabs", e);
         }
+      } else {
+        const normalized = sanitizeTabs([...defaultTabs[resolvedTabLayout]], resolvedTabLayout);
+        setActiveTabsState(normalized);
+        await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
       }
 
       if (savedTabBarStyle && ["floating", "standard", "compact"].includes(savedTabBarStyle)) {
@@ -964,16 +979,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const setTabLayout = async (layout: "minimal" | "comprehensive") => {
+  const setTabLayout = async (layout: TabLayoutMode) => {
     try {
       await AsyncStorage.setItem("tabLayout", layout);
       setTabLayoutState(layout);
       // Reset active tabs to defaults for the new layout
-      const defaultTabsForLayout =
-        layout === "minimal" ? [...defaultTabs.minimal] : [...defaultTabs.comprehensive];
+      const defaultTabsForLayout = [...defaultTabs[layout]];
       const normalized = sanitizeTabs(defaultTabsForLayout, layout);
       setActiveTabsState(normalized);
       await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
+      // Ensure default tab remains valid after layout change
+      const allowed = allowedTabs[layout];
+      const resolvedDefault = allowed.includes(defaultTab) ? defaultTab : allowed[0];
+      setDefaultTabState(resolvedDefault);
+      await AsyncStorage.setItem("defaultTab", resolvedDefault);
     } catch (e) {
       console.error("Failed to save tab layout", e);
     }

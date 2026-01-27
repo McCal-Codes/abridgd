@@ -3,9 +3,14 @@ import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { useProfilesOptional } from "../context/ProfileContext";
-import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
+import { ArticleCard } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
-import { fetchArticlesByCategory, getLastFetchedAt } from "../services/RssService";
+import { ScaleButton } from "../components/ScaleButton";
+import {
+  fetchArticlesByCategory,
+  getCachedArticles,
+  getLastFetchedAt,
+} from "../services/RssService";
 import { colors } from "../theme/colors";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -44,6 +49,56 @@ export const SectionScreen: React.FC = () => {
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const profileContext = useProfilesOptional?.();
+  const recordLastFetchedRef = React.useRef(profileContext?.recordLastFetchedArticles);
+  const fetchTokenRef = React.useRef(0);
+
+  React.useEffect(() => {
+    recordLastFetchedRef.current = profileContext?.recordLastFetchedArticles;
+  }, [profileContext?.recordLastFetchedArticles]);
+
+  const loadArticles = React.useCallback(
+    async (options?: { forceRefresh?: boolean; showLoader?: boolean }) => {
+      const token = ++fetchTokenRef.current;
+      if (options?.showLoader) {
+        setLoading(true);
+      }
+      if (options?.forceRefresh) {
+        setRefreshing(true);
+      }
+      setError(null);
+      try {
+        const data = await fetchArticlesByCategory(category, {
+          forceRefresh: options?.forceRefresh,
+        });
+        if (fetchTokenRef.current !== token) {
+          return;
+        }
+        setArticles(data);
+        recordLastFetchedRef.current?.(data.map((a) => a.id));
+        const fetchedAt = getLastFetchedAt(category);
+        setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
+      } catch (err: any) {
+        if (fetchTokenRef.current !== token) {
+          return;
+        }
+        setError(err?.message || `Could not load ${category} stories.`);
+      } finally {
+        if (fetchTokenRef.current !== token) {
+          return;
+        }
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [category],
+  );
+
+  const handleRetry = React.useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setRefreshing(true);
+    void loadArticles({ forceRefresh: true, showLoader: true });
+  }, [loadArticles]);
   const insets = useSafeAreaInsets();
   const {
     tabBarHeight,
@@ -55,23 +110,22 @@ export const SectionScreen: React.FC = () => {
   } = useSettings();
 
   React.useEffect(() => {
-    setLoading(true);
-    const load = async () => {
-      try {
-        setError(null);
-        const data = await fetchArticlesByCategory(category);
-        setArticles(data);
-        profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
-        const fetchedAt = getLastFetchedAt(category);
-        setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-      } catch (e: any) {
-        setError(e?.message || "Failed to load articles.");
-      } finally {
-        setLoading(false);
-      }
+    const cached = getCachedArticles(category);
+    if (cached?.length) {
+      setArticles(cached);
+      const fetchedAt = getLastFetchedAt(category);
+      setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
+      setLoading(false);
+      setRefreshing(true);
+      void loadArticles();
+    } else {
+      setLoading(true);
+      void loadArticles({ showLoader: true });
+    }
+    return () => {
+      fetchTokenRef.current += 1;
     };
-    load();
-  }, [category]);
+  }, [category, loadArticles]);
 
   if (!loading && articles.length === 0) {
     return (
@@ -85,44 +139,40 @@ export const SectionScreen: React.FC = () => {
 
   const showSkeleton = loading && articles.length === 0;
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
+  const renderHeroHeader = React.useCallback(() => {
+    const updatedAgo = formatUpdatedAgo(lastUpdated);
+    return (
+      <View style={styles.header}>
+        <HeroHeader
+          title={category}
+          subtitle={updatedAgo || "Warming up your feed"}
+          subtitleTestID="section-updated"
+          Icon={headerIcon}
+        />
+      </View>
+    );
+  }, [category, headerIcon, lastUpdated]);
 
   return (
     <View style={styles.container}>
       {showSkeleton ? (
-        <FlatList
-          data={Array.from({ length: 6 })}
-          keyExtractor={(_, idx) => `skeleton-${idx}`}
-          renderItem={() => <ArticleCardSkeleton />}
-          contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
-        />
-      ) : showErrorState ? (
-        <View style={[styles.center, { flex: 1 }]}>
-          <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
-            <Text style={{ color: colors.systemRed, marginBottom: 8 }}>Network error</Text>
-            <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>{error}</Text>
-            <Text
-              onPress={() => {
-                setLoading(true);
-                setError(null);
-                fetchArticlesByCategory(category)
-                  .then((data) => {
-                    setArticles(data);
-                    profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
-                    const fetchedAt = getLastFetchedAt(category);
-                    setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-                    setLoading(false);
-                  })
-                  .catch((e) => {
-                    setError(e?.message || "Failed to load articles.");
-                    setLoading(false);
-                  });
-              }}
-              style={{ color: colors.tint }}
-            >
-              Retry
-            </Text>
+        <>
+          {renderHeroHeader()}
+          <View style={styles.loadingContainer}>
+            <FunLoadingIndicator message={`Gathering ${category} stories…`} />
           </View>
-        </View>
+        </>
+      ) : showErrorState ? (
+        <>
+          {renderHeroHeader()}
+          <View style={[styles.center, { flex: 1, paddingHorizontal: spacing.gutter }]}>
+            <Text style={styles.errorTitle}>Can’t reach {category} news</Text>
+            <Text style={styles.errorMessage}>{error || "Please try again shortly."}</Text>
+            <ScaleButton style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </ScaleButton>
+          </View>
+        </>
       ) : (
         <FlatList
           testID="section-list"
@@ -152,16 +202,7 @@ export const SectionScreen: React.FC = () => {
                   16,
             },
           ]}
-          ListHeaderComponent={
-            <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
-              <HeroHeader
-                title={category}
-                subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
-                subtitleTestID="section-updated"
-                Icon={headerIcon}
-              />
-            </View>
-          }
+          ListHeaderComponent={renderHeroHeader}
           refreshing={refreshing}
           onRefresh={async () => {
             try {
@@ -169,19 +210,9 @@ export const SectionScreen: React.FC = () => {
             } catch {
               // noop if haptics unavailable
             }
-            setRefreshing(true);
             setError(null);
-            try {
-              const data = await fetchArticlesByCategory(category, { forceRefresh: true });
-              setArticles(data);
-              profileContext?.recordLastFetchedArticles?.(data.map((a) => a.id));
-              const fetchedAt = getLastFetchedAt(category);
-              setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-            } catch (e: any) {
-              setError(e?.message || "Failed to refresh.");
-            } finally {
-              setRefreshing(false);
-            }
+            setRefreshing(true);
+            await loadArticles({ forceRefresh: true, showLoader: false });
           }}
         />
       )}
@@ -201,6 +232,38 @@ const styles = StyleSheet.create({
   center: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: spacing.xl,
+  },
+  errorTitle: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.lg,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  errorMessage: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.md,
+  },
+  retryButton: {
+    marginTop: spacing.sm,
+    width: 160,
+    alignSelf: "center",
+  },
+  retryButtonText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    fontWeight: "600",
+    color: colors.background,
   },
   listContent: {
     paddingBottom: spacing.lg,

@@ -68,6 +68,42 @@ export const updateSourceEnabled = async (
   return next;
 };
 
+export const clearOverridesForCategory = async (
+  category: ArticleCategory,
+): Promise<SourcePreferences> => {
+  const current = await loadSourcePreferences();
+  const prefix = `${category}::`;
+  const overrides = Object.fromEntries(
+    Object.entries(current.overrides).filter(([key]) => !key.startsWith(prefix)),
+  );
+  const next = { ...current, overrides };
+  await persistPreferences(next);
+  return next;
+};
+
+export const setCategoryEnabled = async (
+  category: ArticleCategory,
+  sourceNames: string[],
+  enabled: boolean,
+  defaultEnabled = true,
+  customFeedNames: string[] = [],
+): Promise<SourcePreferences> => {
+  const current = await loadSourcePreferences();
+  const overrides: SourceOverrideMap = { ...current.overrides };
+  const apply = (name: string) => {
+    const key = getSourceKey(category, name);
+    if (enabled === defaultEnabled) delete overrides[key];
+    else overrides[key] = enabled;
+  };
+
+  sourceNames.forEach(apply);
+  customFeedNames.forEach(apply);
+
+  const next = { ...current, overrides };
+  await persistPreferences(next);
+  return next;
+};
+
 export const saveSourceOverrides = async (overrides: SourceOverrideMap) => {
   const current = await loadSourcePreferences();
   const next = { ...current, overrides };

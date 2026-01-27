@@ -6,10 +6,32 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- Onboarding now includes Simple, Standard, and Power layout choices with live tab previews that apply the matching navigation preset immediately.
+- Simple preset now uses just News and Settings tabs to keep the starter experience minimal and Apple-friendly.
+
 ### Changed
+- Profile screen now keeps profile headers to a single line, adds icons for codename and email lines, and introduces a once-per-version primer plus a fun loading bar while stats warm up.
+- Section feeds now hydrate from cached articles before hitting the network, show the FunLoadingIndicator while refreshing, and fall back to a friendlier retry card when a fetch fails.
 - Daily digest now pulls live feed data (no mock articles) and falls back gracefully if the last visit was more than 2 hours ago, while recording the last fetched article IDs per profile for better recency tracking.
 - Profile screen polish: clearer stat pills, personalization status chip, last-read and karma tier details, and corrected quick action icons.
 - Profile screen fine-tuning: added Dynamic Type-friendly stat values and a karma unlock progress bar for personalization gating.
+- Onboarding grounding slide now reflows on compact screens, keeps the selector scrollable, and saves grounding style changes immediately.
+- Profile onboarding welcome now has a dismissible backdrop and a wheel-style codename spinner that respects Reduce Motion.
+- Profile personalization card cleaned up into a single panel with clearer badges/progress and no duplicate Apple tile.
+- Grounding onboarding selector now shows quick pills plus peeking cards so all three styles are discoverable.
+- Profile sync/profile-settings cards are now behind a Debug toggle to keep production profile clean.
+- Profile avatars now always show an animal icon via a deterministic fallback when codenames lack a matching asset.
+- Section screen crash fixed by restoring the Hero header helper in SectionScreen.
+- Section screen no longer re-fetches in a loop; last-fetched recording uses a stable dependency.
+- Stabilized SectionScreen fetches by storing profile callbacks in a ref, preventing repeated network spam on feed failures.
+- Onboarding grounding slide restyled to match RSVP standards with compact copy and contained breath preview.
+- Profile codename animation now cycles through all preview names in succession and eases to the final codename (no wheel spin).
+- Home loading indicator now centers over content during initial fetches for better perception of progress.
+- Top Stories pulls additional national sources (AP, Reuters, NPR) to reduce empty sections when local feeds are quiet.
+- Profile stats are driven by tracked reading progress with roomier pill grid and compact personalization preview.
+- Settings now surfaces “News Sources” as the first item and moves the Sources card to the top of Reading Settings for faster access.
+- Added BBC World, PA Capital-Star, Morning Brew, and ESPN Pittsburgh as optional feeds; disabled Reuters Top News by default due to 403/DataDome blocks and kept broken locals default-off.
 
 ### Fixed
 - Onboarding “Give Your Eyes a Break” slide no longer clips the RSVP reader demo on compact screens, preserving the card’s rounded corners.

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 jest.mock("../../services/RssService", () => ({
   fetchArticlesByCategory: jest.fn(),
   getLastFetchedAt: jest.fn(() => Date.now()),
+  getCachedArticles: jest.fn(() => []),
 }));
 
 jest.mock("@react-navigation/native", () => {

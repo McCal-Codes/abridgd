@@ -11,8 +11,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
+import { AccessibilityInfo } from "react-native";
 
 interface ScaleButtonProps extends Omit<PressableProps, "style" | "children" | "onPress"> {
   onPress: NonNullable<PressableProps["onPress"]>;
@@ -32,6 +32,22 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
 }) => {
   const isTestEnv = typeof process !== "undefined" && !!process.env.JEST_WORKER_ID;
   const scale = useSharedValue(1);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => mounted && setReduceMotionEnabled(value));
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", (value) => {
+      setReduceMotionEnabled(value);
+      if (value) {
+        scale.value = 1;
+      }
+    });
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, [scale]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -41,6 +57,10 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
 
   const handlePressIn = (event: GestureResponderEvent) => {
     onPressIn?.(event);
+    if (reduceMotionEnabled) {
+      scale.value = 1;
+      return;
+    }
     scale.value = withSpring(scaleTo, {
       damping: 10,
       stiffness: 100,
@@ -49,6 +69,10 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
 
   const handlePressOut = (event: GestureResponderEvent) => {
     onPressOut?.(event);
+    if (reduceMotionEnabled) {
+      scale.value = 1;
+      return;
+    }
     scale.value = withSpring(1, {
       damping: 10,
       stiffness: 100,

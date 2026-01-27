@@ -25,6 +25,8 @@ import {
   addCustomFeed,
   removeCustomFeed,
   CustomFeed,
+  clearOverridesForCategory,
+  setCategoryEnabled,
 } from "../utils/sourcePreferences";
 import { FEED_TEMPLATES } from "../data/feedTemplates";
 import { validateFeedSource, FeedValidationResult } from "../services/RssService";
@@ -39,6 +41,7 @@ export const SourcesSettingsScreen: React.FC = () => {
   const [validationResult, setValidationResult] = useState<FeedValidationResult | null>(null);
   const [validatingFeed, setValidatingFeed] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [filterQuery, setFilterQuery] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -157,6 +160,35 @@ export const SourcesSettingsScreen: React.FC = () => {
 
   const categories: ArticleCategory[] = ["Top", "Local", "Business", "Sports", "Culture"];
 
+  const filterSources = (category: ArticleCategory) => {
+    const query = filterQuery.trim().toLowerCase();
+    const sources = RSS_FEEDS[category];
+    if (!query) return sources;
+    return sources.filter(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        s.url.toLowerCase().includes(query) ||
+        category.toLowerCase().includes(query),
+    );
+  };
+
+  const getCounts = (category: ArticleCategory) => {
+    const baseSources = RSS_FEEDS[category];
+    const customCategoryFeeds = customFeeds.filter((f) => f.category === category);
+    const total = baseSources.length + customCategoryFeeds.length;
+
+    let enabled = 0;
+    baseSources.forEach((source) => {
+      const defaultEnabled = source.defaultEnabled ?? true;
+      if (isSourceEnabled(overrides, category, source.name, defaultEnabled)) enabled += 1;
+    });
+    customCategoryFeeds.forEach((feed) => {
+      if (isSourceEnabled(overrides, feed.category, feed.name, true)) enabled += 1;
+    });
+
+    return { enabled, total };
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -165,19 +197,88 @@ export const SourcesSettingsScreen: React.FC = () => {
           Choose which RSS feeds to include in your news. Disable sources you don't want to see.
         </Text>
 
+        <TextInput
+          style={styles.input}
+          placeholder="Filter by name or URL"
+          placeholderTextColor={colors.textSecondary}
+          value={filterQuery}
+          onChangeText={setFilterQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel="Filter sources"
+        />
+
         {loadingPrefs ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator color={colors.primary} />
             <Text style={styles.loadingText}>Loading your source preferences…</Text>
           </View>
         ) : (
-          categories.map((category) => (
-            <View key={category} style={styles.categorySection}>
-              <Text style={styles.categoryTitle}>{category}</Text>
-              {RSS_FEEDS[category].map((source) => {
-                const sourceKey = getSourceKey(category, source.name);
-                const defaultEnabled = source.defaultEnabled ?? true;
-                const isEnabled = isSourceEnabled(overrides, category, source.name, defaultEnabled);
+          categories.map((category) => {
+            const baseSources = RSS_FEEDS[category];
+            const customNames = customFeeds.filter((f) => f.category === category).map((f) => f.name);
+            const visibleSources = filterSources(category);
+            const counts = getCounts(category);
+
+            return (
+              <View key={category} style={styles.categorySection}>
+                <View style={styles.categoryHeader}>
+                  <Text style={styles.categoryTitle}>{category}</Text>
+                  <View style={styles.categoryMeta}>
+                    <Text style={styles.countBadge}>{`${counts.enabled}/${counts.total} on`}</Text>
+                  </View>
+                  <View style={styles.categoryActions}>
+                    <TouchableOpacity
+                      style={styles.categoryChip}
+                      onPress={async () => {
+                        const prefs = await setCategoryEnabled(
+                          category,
+                          baseSources.map((s) => s.name),
+                          true,
+                          true,
+                          customNames,
+                        );
+                        setOverrides(prefs.overrides);
+                        setCustomFeeds(prefs.customFeeds || []);
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.categoryChipText}>Enable all</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.categoryChip}
+                      onPress={async () => {
+                        const prefs = await setCategoryEnabled(
+                          category,
+                          baseSources.map((s) => s.name),
+                          false,
+                          true,
+                          customNames,
+                        );
+                        setOverrides(prefs.overrides);
+                        setCustomFeeds(prefs.customFeeds || []);
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.categoryChipText}>Disable all</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        const prefs = await clearOverridesForCategory(category);
+                        setOverrides(prefs.overrides);
+                        setCustomFeeds(prefs.customFeeds || []);
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.restoreLink}>Defaults</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {visibleSources.map((source) => {
+                  const sourceKey = getSourceKey(category, source.name);
+                  const defaultEnabled = source.defaultEnabled ?? true;
+                  const isEnabled = isSourceEnabled(overrides, category, source.name, defaultEnabled);
 
                 return (
                   <View key={sourceKey} style={styles.sourceRow}>
@@ -202,9 +303,10 @@ export const SourcesSettingsScreen: React.FC = () => {
                     />
                   </View>
                 );
-              })}
-            </View>
-          ))
+                })}
+              </View>
+            );
+          })
         )}
 
         <View style={styles.section}>
@@ -415,12 +517,51 @@ const styles = StyleSheet.create({
   categorySection: {
     marginBottom: spacing.xl,
   },
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
   categoryTitle: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 18,
     fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.md,
+  },
+  categoryMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  countBadge: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  categoryActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  categoryChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+  },
+  categoryChipText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    color: colors.text,
+  },
+  restoreLink: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 14,
+    color: colors.primary,
   },
   sourceRow: {
     flexDirection: "row",

@@ -96,22 +96,23 @@ const fetchViaRss2Json = async (url: string) => {
   try {
     const response = await fetchWithTimeout(`${RSS2JSON_ENDPOINT}${encodeURIComponent(url)}`);
     if (!response.ok) {
-      console.warn(`rss2json non-OK ${response.status} for ${url}`);
+      console.warn(`rss2json nonOK ${response.status} for ${url} - RssService.ts:99`);
       return null;
     }
 
     const json = await response.json();
     if (json.status !== "ok" || !json.items) {
-      console.warn(`rss2json missing items for ${url}`);
+      console.warn(`rss2json missing items for ${url} - RssService.ts:105`);
       return null;
     }
 
     return json.items.map(normalizeRss2JsonItem);
   } catch (error) {
-    console.warn(`rss2json fallback failed for ${url}`, error);
+    console.warn(`rss2json fallback failed for ${url} - RssService.ts:111`, error);
     return null;
   }
 };
+
 
 const normalizeUrl = (url: string) => url.trim();
 
@@ -318,7 +319,7 @@ const fetchFullArticleBody = async (link?: string): Promise<string | null> => {
     const text = extractParagraphsFromHtml(bodyHtml);
     return text && text.length > 300 ? text : null;
   } catch (error) {
-    console.warn("Failed to fetch full article body", error);
+    console.warn("Failed to fetch full article body - RssService.ts:321", error);
     return null;
   }
 };
@@ -456,7 +457,7 @@ export const fetchArticlesByCategory = async (
   const feedSources: FeedSource[] = [...baseSources, ...customSources];
 
   if (!feedSources || feedSources.length === 0) {
-    console.warn(`No feed found for category: ${category} - RssService.ts:126`);
+    console.warn(`No feed found for category: ${category} - RssService.ts:459`);
     return [];
   }
 
@@ -464,7 +465,7 @@ export const fetchArticlesByCategory = async (
   // Now accepts the whole FeedSource object
   const fetchSingleFeed = async (source: FeedSource) => {
     try {
-      console.log(`Fetching ${source.name} (${source.url})... - RssService.ts:134`);
+      console.log(`Fetching ${source.name} (${source.url})... - RssService.ts:467`);
       const sourceName = source.name;
       const proxyAllOrigins = "https://api.allorigins.win/raw?url=";
       const proxyCorsProxy = "https://corsproxy.io/?";
@@ -483,20 +484,20 @@ export const fetchArticlesByCategory = async (
         try {
           response = await fetchWithTimeout(url);
           if (response.ok) break;
-          console.warn(`Non-OK response ${response.status} for ${url}`);
+          console.warn(`NonOK response ${response.status} for ${url} - RssService.ts:486`);
         } catch (err) {
-          console.warn(`Fetch attempt failed for ${url} - RssService.ts:143`, err);
+          console.warn(`Fetch attempt failed for ${url} - RssService.ts:488`, err);
         }
       }
 
       if (!response || !response.ok) {
-        console.warn(`All fetch attempts failed for ${sourceName} (${source.url})`);
+        console.warn(
+          `All fetch attempts failed for ${sourceName} (${source.url}) - RssService.ts:493`,
+        );
 
         const rssJsonItems = await fetchViaRss2Json(source.url);
         if (rssJsonItems?.length) {
-          console.log(
-            `Fetched ${rssJsonItems.length} items via rss2json for ${sourceName} - RssService.ts:150`,
-          );
+          console.log(`Fetched ${rssJsonItems.length} items via rss2json for ${sourceName}`);
           return rssJsonItems.map((item: any) => mapRssItemToArticle(item, category, sourceName));
         }
 
@@ -506,20 +507,26 @@ export const fetchArticlesByCategory = async (
       const text = await response.text();
       const result = parser.parse(text);
 
-      let channel = result.rss ? result.rss.channel : result.feed;
-      let items = channel?.item || channel?.entry || [];
-      let itemsArray = Array.isArray(items) ? items : items ? [items] : [];
+      const channel = result.rss ? result.rss.channel : result.feed;
+      const items = channel?.item || channel?.entry || [];
+      const itemsArray = Array.isArray(items) ? items : items ? [items] : [];
 
       // Some sources (e.g., WTAE via certain proxies) return HTML with status 200.
-      // If we parsed zero items, fall back to rss2json to avoid silently dropping the source.
-      if (!channel || itemsArray.length === 0) {
+      // If parsing fails entirely (no channel), fall back to rss2json to avoid silently dropping the source.
+      if (channel === undefined || channel === null) {
         const rssJsonItems = await fetchViaRss2Json(source.url);
         if (rssJsonItems?.length) {
           console.warn(
-            `Primary parse empty for ${sourceName}; recovered ${rssJsonItems.length} via rss2json - RssService.ts:155`,
+            `Primary parse empty for ${sourceName}; recovered ${rssJsonItems.length} via rss2json`,
           );
           return rssJsonItems.map((item: any) => mapRssItemToArticle(item, category, sourceName));
         }
+        return [];
+      }
+
+      // For valid feeds that legitimately have no items, return early without invoking rss2json
+      // to avoid extra network calls (helps tests enforce cache behavior for empty feeds).
+      if (itemsArray.length === 0) {
         return [];
       }
 
@@ -535,7 +542,7 @@ export const fetchArticlesByCategory = async (
       }
 
       // Use the configured name, ignore the XML title which can be messy
-      console.log(`Fetched ${itemsArray.length} items from ${sourceName} - RssService.ts:154`);
+      console.log(`Fetched ${itemsArray.length} items from ${sourceName} - RssService.ts:538`);
 
       // Map and optionally enrich (e.g., WTAE often ships summaries only)
       const mapped = await Promise.all(
@@ -544,7 +551,7 @@ export const fetchArticlesByCategory = async (
             // Keep feed fetch fast; do not fetch full bodies here (handled in ArticleScreen)
             return mapRssItemToArticle(item, category, sourceName);
           } catch (err) {
-            console.warn("Failed to map article", err);
+            console.warn("Failed to map article - RssService.ts:547", err);
             return mapRssItemToArticle(item, category, sourceName);
           }
         }),
@@ -552,7 +559,7 @@ export const fetchArticlesByCategory = async (
 
       return mapped;
     } catch (error) {
-      console.error(`Error fetching/parsing ${source.url}: - RssService.ts:158`, error);
+      console.error(`Error fetching/parsing ${source.url}: - RssService.ts:555`, error);
       return [];
     }
   };
@@ -573,7 +580,9 @@ export const fetchArticlesByCategory = async (
     );
 
     if (defaultEnabledSources.length === 0) {
-      console.warn(`No default-enabled sources available for ${category}; returning empty list.`);
+      console.warn(
+        `No defaultenabled sources available for ${category}; returning empty list. - RssService.ts:576`,
+      );
       return [];
     }
 

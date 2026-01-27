@@ -16,6 +16,7 @@ import {
   Bug,
   ChevronRight,
   Zap,
+  ListChecks,
 } from "lucide-react-native";
 
 type SettingsNavigationProp = NativeStackNavigationProp<any>;
@@ -33,8 +34,14 @@ export const SettingsScreen: React.FC = () => {
 
   const menuItems: SettingsMenuItem[] = [
     {
+      title: "News Sources",
+      description: "Enable/disable feeds, add custom RSS",
+      icon: <ListChecks size={24} color={colors.primary} />,
+      screen: "SourcesSettings",
+    },
+    {
       title: "Reading Experience",
-      description: "RSVP, font, speed, focus, sources",
+      description: "RSVP, font, speed, focus",
       icon: <BookOpen size={24} color={colors.primary} />,
       screen: "ReadingSettings",
     },

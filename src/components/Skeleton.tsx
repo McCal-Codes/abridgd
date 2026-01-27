@@ -1,6 +1,6 @@
 import React from "react";
 import { Animated, StyleProp, ViewStyle } from "react-native";
-import { colors } from "../theme/colors";
+import { useTheme } from "../theme/ThemeContext";
 
 interface SkeletonProps {
   width?: number | string;
@@ -18,6 +18,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   borderRadius = 8,
   style,
 }) => {
+  const { colors } = useTheme();
   const opacity = React.useRef(new Animated.Value(0.6)).current;
 
   React.useEffect(() => {

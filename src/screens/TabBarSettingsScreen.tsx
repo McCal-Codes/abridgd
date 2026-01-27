@@ -16,7 +16,7 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { GlassButton } from "../components/GlassButton";
-import { allowedTabs } from "../navigation/tabs";
+import { allowedTabs, TabLayoutMode } from "../navigation/tabs";
 import {
   GripVertical,
   Check,
@@ -33,6 +33,7 @@ import {
   Star as Sparkles,
   Minimize2,
   Square,
+  Settings as SettingsIcon,
 } from "lucide-react-native";
 import { Switch } from "react-native";
 import { ArticleCategory } from "../types/Article";
@@ -46,9 +47,10 @@ interface TabOption {
   category?: ArticleCategory;
 }
 
-const getAvailableTabs = (layout: "minimal" | "comprehensive"): TabOption[] => {
+const getAvailableTabs = (layout: TabLayoutMode): TabOption[] => {
   const mapping: Record<string, TabOption> = {
     home: { id: "home", label: "Home", Icon: Home },
+    settings: { id: "settings", label: "Settings", Icon: SettingsIcon },
     discover: { id: "discover", label: "Discover", Icon: Search },
     saved: { id: "saved", label: "Saved", Icon: Bookmark },
     digest: { id: "digest", label: "Digest", Icon: Star },
@@ -499,53 +501,81 @@ export const TabBarSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tab Style</Text>
           <Text style={styles.sectionDesc}>
-            Choose between a clean, minimal layout or comprehensive category tabs
+            Choose between a calming two-tap flow, a balanced everyday set, or the full Top/Local
+            power layout.
           </Text>
 
           <View style={styles.layoutOptions}>
             <TouchableOpacity
-              style={[styles.layoutOption, tabLayout === "minimal" && styles.layoutOptionSelected]}
-              onPress={() => setTabLayout("minimal")}
+              style={[styles.layoutOption, tabLayout === "simple" && styles.layoutOptionSelected]}
+              onPress={() => setTabLayout("simple")}
             >
               <View style={styles.layoutIconContainer}>
-                <Layers
+                <Minimize2
                   size={20}
-                  color={tabLayout === "minimal" ? colors.primary : colors.textSecondary}
+                  color={tabLayout === "simple" ? colors.primary : colors.textSecondary}
                 />
               </View>
               <Text
                 style={[
                   styles.layoutOptionText,
-                  tabLayout === "minimal" && styles.layoutOptionTextSelected,
+                  tabLayout === "simple" && styles.layoutOptionTextSelected,
                 ]}
               >
-                Minimal
+                Simple
               </Text>
-              <Text style={styles.layoutOptionDesc}>Clean, NYT-style with 4 essential tabs</Text>
+              <Text style={styles.layoutOptionDesc}>
+                Just News and Settings for the cleanest flow.
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.layoutOption,
-                tabLayout === "comprehensive" && styles.layoutOptionSelected,
+                tabLayout === "standard" && styles.layoutOptionSelected,
               ]}
-              onPress={() => setTabLayout("comprehensive")}
+              onPress={() => setTabLayout("standard")}
             >
               <View style={styles.layoutIconContainer}>
-                <Smartphone
+                <Layers
                   size={20}
-                  color={tabLayout === "comprehensive" ? colors.primary : colors.textSecondary}
+                  color={tabLayout === "standard" ? colors.primary : colors.textSecondary}
                 />
               </View>
               <Text
                 style={[
                   styles.layoutOptionText,
-                  tabLayout === "comprehensive" && styles.layoutOptionTextSelected,
+                  tabLayout === "standard" && styles.layoutOptionTextSelected,
                 ]}
               >
-                Comprehensive
+                Standard
               </Text>
-              <Text style={styles.layoutOptionDesc}>Full category coverage with 7 tabs</Text>
+              <Text style={styles.layoutOptionDesc}>
+                Everyday mix: Home, Discover, Saved, Digest, Profile.
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.layoutOption, tabLayout === "power" && styles.layoutOptionSelected]}
+              onPress={() => setTabLayout("power")}
+            >
+              <View style={styles.layoutIconContainer}>
+                <Smartphone
+                  size={20}
+                  color={tabLayout === "power" ? colors.primary : colors.textSecondary}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.layoutOptionText,
+                  tabLayout === "power" && styles.layoutOptionTextSelected,
+                ]}
+              >
+                Power
+              </Text>
+              <Text style={styles.layoutOptionDesc}>
+                Top + Local + Digest with quick saves and Profile.
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

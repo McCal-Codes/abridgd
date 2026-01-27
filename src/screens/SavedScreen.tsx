@@ -61,7 +61,7 @@ export const SavedScreen: React.FC = () => {
   } = useSettings();
 
   const handleExplore = React.useCallback(() => {
-    const targetTab = tabLayout === "comprehensive" ? "Top" : "Home";
+    const targetTab = tabLayout === "power" ? "Top" : "Home";
     // Prefer switching tabs directly if available
     const parentNav = navigation.getParent?.();
     if (parentNav && parentNav.navigate) {

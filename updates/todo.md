@@ -184,6 +184,14 @@ Last Updated: January 16, 2026 — **This file is now historical.**
 
 ---
 
+### 🛠️ v1.4.1 (UX & Stability)
+
+- [x] **TODO-028** | **v1.4.1** | Surface profile onboarding, single-line headers, caching, and friendly loaders/errors
+  - **Status**: ✅ Completed
+  - **Description**: Added a once-per-release profile primer with animated codename, constrained profile text, and a fun loading bar, and SectionScreen now hydrates from cached stories, shows the FunLoadingIndicator while refreshing, and offers a friendlier error/retry experience.
+  - **Effort**: 2 hours
+  - **Dependencies**: ProfileContext, RssService, SectionScreen
+
 ### 💬 Advanced Features & Community (Backlog)
 
 - [ ] **TODO-026** | **v1.4.0+** | Add note-taking on articles

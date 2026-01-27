@@ -4,11 +4,13 @@
  * Profile management with reading stats, achievements, and subscription gating preview.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Easing,
   Linking,
+  Modal,
   PanResponder,
   GestureResponderEvent,
   PanResponderGestureState,
@@ -21,9 +23,8 @@ import {
   Image,
   View,
 } from "react-native";
-import * as Haptics from "expo-haptics";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
   BookOpen,
   Flame,
@@ -45,6 +46,7 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { HeroHeader } from "../components/HeroHeader";
+import { ScaleButton } from "../components/ScaleButton";
 import {
   APP_BUILD,
   APP_NAME,
@@ -55,6 +57,9 @@ import {
 } from "../config/appInfo";
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
 import { useSettings } from "../context/SettingsContext";
+import { useReadingProgressOptional } from "../context/ReadingProgressContext";
+import { triggerHaptic } from "../shared/haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const KARMA_TIERS = [
   { label: "Fresh", min: 0 },
@@ -120,6 +125,7 @@ const ANIMAL_ICON_MAP = {
   whale: require("../../assets/icons/Profile Icons/Animal Icons/icons8-whale-100.png"),
   wolf: require("../../assets/icons/Profile Icons/Animal Icons/icons8-wolf-100.png"),
 } as const;
+const ANIMAL_ICON_KEYS = Object.keys(ANIMAL_ICON_MAP) as Array<keyof typeof ANIMAL_ICON_MAP>;
 
 const sanitizeAnimalKey = (value?: string) => value?.toLowerCase().replace(/[^a-z]/g, "") ?? null;
 
@@ -132,10 +138,16 @@ const extractAnimalKey = (codename?: string) => {
 
 const getAnimalIconSource = (codename?: string) => {
   const key = extractAnimalKey(codename);
-  if (!key) return null;
-  const directMatch = (ANIMAL_ICON_MAP as Record<string, unknown>)[key];
-  if (directMatch) return directMatch;
-  return null;
+  if (key) {
+    const directMatch = (ANIMAL_ICON_MAP as Record<string, unknown>)[key];
+    if (directMatch) return directMatch;
+  }
+
+  // Always return a deterministic fallback icon so the avatar never disappears
+  const seed = (key || codename || "reader").toLowerCase();
+  const hash = seed.split("").reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 9973, 7);
+  const fallbackKey = ANIMAL_ICON_KEYS[hash % ANIMAL_ICON_KEYS.length];
+  return ANIMAL_ICON_MAP[fallbackKey];
 };
 
 const getCurrentKarmaTier = (score: number) => {
@@ -173,28 +185,15 @@ const formatRelativeDate = (timestamp?: number | null) => {
   return target.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
-const triggerHaptic = async (
-  type: "success" | "warning",
-  hapticIntensity: ReturnType<typeof useSettings>["hapticIntensity"],
-  reduceMotion: boolean,
-) => {
-  if (reduceMotion || hapticIntensity === "off") return;
-  try {
-    if (type === "warning") {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } else {
-      const style =
-        hapticIntensity === "strong"
-          ? Haptics.ImpactFeedbackStyle.Heavy
-          : hapticIntensity === "subtle"
-            ? Haptics.ImpactFeedbackStyle.Light
-            : Haptics.ImpactFeedbackStyle.Medium;
-      await Haptics.impactAsync(style);
-    }
-  } catch {
-    // noop if haptics unavailable
-  }
-};
+const PROFILE_ONBOARDING_KEY = "profileOnboardingVersion";
+const PROFILE_ONBOARDING_PREVIEWS = [
+  "Gliding Otter",
+  "Curious Falcon",
+  "Steady Fox",
+  "Calm Panda",
+  "Bright Heron",
+  "Quiet Lynx",
+];
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -215,6 +214,7 @@ const ProfileScreen: React.FC = () => {
     devProfileSyncCardEnabled,
     devDataControlsEnabled,
   } = useSettings();
+  const { readingStats, refreshStats } = useReadingProgressOptional();
 
   const [settingsTagInput, setSettingsTagInput] = useState(activeProfile?.settingsTag || "");
   const [importCode, setImportCode] = useState("");
@@ -226,10 +226,16 @@ const ProfileScreen: React.FC = () => {
     "locked" | "karma-unlocked" | "preview"
   >("locked");
   const profileReady = Boolean(activeProfile);
+  const [showProfileOnboarding, setShowProfileOnboarding] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshStats();
+    }, [refreshStats]),
+  );
 
   const sheetAnim = useRef(new Animated.Value(0)).current; // 0 hidden, 1 shown
   const featureProgressAnim = useRef(new Animated.Value(0)).current;
-  const skeletonPulse = useRef(new Animated.Value(0.5)).current;
 
   const achievementStatuses = useMemo(
     () => getAchievementStatuses(activeProfile || undefined),
@@ -237,14 +243,21 @@ const ProfileScreen: React.FC = () => {
   );
   const achievementsUnlocked = achievementStatuses.filter((a) => a.earned).length;
   const achievementCopy = `${achievementsUnlocked}/${achievementStatuses.length}`;
-
-  const articlesRead = activeProfile?.stats?.articlesRead || 0;
+  const profileArticlesRead = activeProfile?.stats?.articlesRead || 0;
   const savedActions = activeProfile?.stats?.savedActions || 0;
   const savedCount = activeProfile?.savedArticles?.length || 0;
-  const articlesReadDisplay = profileReady ? `${articlesRead}` : "—";
+  const trackedReads = readingStats?.totalArticlesRead ?? 0;
+  const articlesInProgress = readingStats?.articlesInProgress ?? 0;
+  const totalMinutesRead = Math.round((readingStats?.totalReadTimeSeconds ?? 0) / 60);
+  const averageCompletion = Math.round(readingStats?.averageCompletionPercentage ?? 0);
+  const derivedArticlesRead = Math.max(profileArticlesRead, trackedReads);
+  const articlesReadDisplay = profileReady ? `${derivedArticlesRead}` : "—";
+  const inProgressDisplay = profileReady ? `${articlesInProgress}` : "—";
+  const readTimeDisplay = profileReady ? `${totalMinutesRead} min` : "—";
+  const completionDisplay = profileReady ? `${averageCompletion}%` : "—";
   const savedCountDisplay = profileReady ? `${savedCount}` : "—";
   const achievementsDisplay = profileReady ? achievementCopy : "—/—";
-  const karma = articlesRead * 10 + savedActions * 5 + savedCount * 2;
+  const karma = derivedArticlesRead * 10 + savedActions * 5 + savedCount * 2;
   const nextTier = KARMA_TIERS.find((tier) => tier.min > karma);
   const karmaProgress = nextTier ? Math.min(1, (karma - (nextTier.min - 50)) / 50) : 1;
   const karmaUnlockProgress = Math.min(1, karma / PERSONALIZATION_UNLOCK_KARMA);
@@ -355,6 +368,24 @@ const ProfileScreen: React.FC = () => {
   }, [navigation, sheetVisible]);
 
   useEffect(() => {
+    let cancelled = false;
+    const loadOnboardingState = async () => {
+      try {
+        const seenVersion = await AsyncStorage.getItem(PROFILE_ONBOARDING_KEY);
+        if (!cancelled && seenVersion !== APP_VERSION) {
+          setShowProfileOnboarding(true);
+        }
+      } catch (error) {
+        console.error("Failed to read profile onboarding state", error);
+      }
+    };
+    loadOnboardingState();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (reduceMotion) {
       featureProgressAnim.setValue(karmaUnlockProgress);
       return;
@@ -366,31 +397,17 @@ const ProfileScreen: React.FC = () => {
     }).start();
   }, [featureProgressAnim, karmaUnlockProgress, reduceMotion]);
 
-  useEffect(() => {
-    if (!profileReady) {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(skeletonPulse, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(skeletonPulse, {
-            toValue: 0.5,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      pulse.start();
-      return () => pulse.stop();
-    }
-    skeletonPulse.setValue(0.5);
-  }, [profileReady, skeletonPulse]);
-
-  const skeletonStyle = { opacity: skeletonPulse } as const;
-
   const handleSettings = () => navigation.navigate("Settings" as never);
+
+  const handleProfileOnboardingDismiss = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(PROFILE_ONBOARDING_KEY, APP_VERSION);
+    } catch (error) {
+      console.error("Failed to persist profile onboarding state", error);
+    } finally {
+      setShowProfileOnboarding(false);
+    }
+  }, []);
 
   const handleShare = async () => {
     try {
@@ -489,13 +506,29 @@ const ProfileScreen: React.FC = () => {
               )}
             </View>
             <View style={styles.profileTextBlock}>
-              <Text style={styles.profileName}>{activeProfile?.name || "Anonymous Reader"}</Text>
-              <Text style={styles.profileSubtext}>
-                Codename: {activeProfile?.codename || "Generating…"}
+              <Text style={styles.profileName} numberOfLines={1} ellipsizeMode="tail">
+                {activeProfile?.name || "Anonymous Reader"}
               </Text>
-              <Text style={styles.profileSubtext}>
-                {activeProfile?.email || "Signed out"} · Sync coming soon
-              </Text>
+              <View style={styles.codenameRow}>
+                <Sparkles size={14} color={colors.textSecondary} />
+                <Text
+                  style={[styles.profileSubtext, styles.codenameText]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Codename: {activeProfile?.codename || "Generating…"}
+                </Text>
+              </View>
+              <View style={styles.codenameRow}>
+                <Mail size={14} color={colors.textSecondary} />
+                <Text
+                  style={[styles.profileSubtext, styles.codenameText]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {activeProfile?.email || "Signed out"} · Sync coming soon
+                </Text>
+              </View>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>
                   {activeProfile?.settingsTag || "Local profile"}
@@ -508,7 +541,7 @@ const ProfileScreen: React.FC = () => {
                   accessibilityRole="text"
                 >
                   <Text style={[styles.badgeText, styles.karmaBadgeText]}>
-                    {profileReady ? karma : "…"} karma
+                    {profileReady ? `${karma} karma` : "…"}
                   </Text>
                 </View>
                 <View style={styles.badge}>
@@ -521,33 +554,38 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
 
-          <View style={styles.profilePillsRow}>
+          <View style={styles.profilePillsGrid}>
             <ProfilePill
-              label="Reads"
+              label="Reads tracked"
               value={articlesReadDisplay}
-              accessibilityLabel={`Articles read ${articlesReadDisplay}`}
+              accessibilityLabel={`Reads completed ${articlesReadDisplay}`}
+              style={styles.profilePillHalf}
+            />
+            <ProfilePill
+              label="In progress"
+              value={inProgressDisplay}
+              accessibilityLabel={`Articles in progress ${inProgressDisplay}`}
+              style={styles.profilePillHalf}
             />
             <ProfilePill
               label="Saved"
               value={savedCountDisplay}
               accessibilityLabel={`Saved articles ${savedCountDisplay}`}
+              style={styles.profilePillHalf}
             />
             <ProfilePill
-              label="Achievements"
-              value={achievementsDisplay}
-              accessibilityLabel={`Achievements ${achievementsDisplay}`}
+              label="Avg completion"
+              value={completionDisplay}
+              accessibilityLabel={`Average completion ${completionDisplay}`}
+              style={styles.profilePillHalf}
             />
           </View>
 
           {!profileReady ? (
-            <Animated.View
-              style={[styles.skeletonBar, skeletonStyle, { width: "65%", marginTop: spacing.sm }]}
-              accessibilityLabel="Loading profile stats"
-              accessible
-            />
+            <ProfileLoadingBar />
           ) : (
             <Text style={styles.noteText}>
-              Stats and saved articles stay on this device until sync launches.
+              Reading stats come from tracked sessions and stay on this device until sync launches.
             </Text>
           )}
 
@@ -601,9 +639,20 @@ const ProfileScreen: React.FC = () => {
 
           <View style={styles.statGroup}>
             <StatRow
-              label="Articles read"
+              label="Tracked reads"
               value={articlesReadDisplay}
-              hint="All-time reads on this device"
+              hint="Completed articles from the reading tracker"
+            />
+            <StatRow
+              label="In-progress articles"
+              value={inProgressDisplay}
+              hint="Currently being read"
+            />
+            <StatRow label="Reading time" value={readTimeDisplay} hint="Time spent in articles" />
+            <StatRow
+              label="Average completion"
+              value={completionDisplay}
+              hint="Across all tracked reads"
             />
             <StatRow
               label="Saved articles"
@@ -615,12 +664,12 @@ const ProfileScreen: React.FC = () => {
               value={profileReady ? `${savedActions}` : "—"}
               hint="Times you saved from feed or article"
             />
+            <StatRow label="Last read" value={lastReadDisplay} hint="Relative to today" />
             <StatRow
               label="Last saved"
               value={lastSavedDisplay}
               hint="Most recent save or sync write"
             />
-            <StatRow label="Last read" value={lastReadDisplay} hint="Relative to today" />
             <StatRow
               label="Karma tier"
               value={karmaTierLabel}
@@ -647,11 +696,12 @@ const ProfileScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Personalization & advanced features" />
-          <Text style={styles.sectionDesc}>
-            Capability layer for readers who want extra control. Earn enough karma to unlock it now;
-            purchases will come later.
-          </Text>
+        <SectionHeader title="Personalization & advanced features" />
+        <Text style={styles.sectionDesc}>
+          Capability layer for readers who want extra control. Earn enough karma to unlock it now;
+          purchases will come later.
+        </Text>
+        <View style={styles.featurePanel}>
           <View
             style={styles.featureStatusChip}
             accessible
@@ -659,9 +709,15 @@ const ProfileScreen: React.FC = () => {
             accessibilityLabel={`${featureStatusLabel}. ${featureLockCopy}`}
           >
             <Sparkles size={16} color={colors.textSecondary} />
-            <Text style={styles.featureStatusText}>{featureStatusLabel}</Text>
-            <Text style={styles.featureStatusHint}>{featureLockCopy}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.featureStatusText}>{featureStatusLabel}</Text>
+              <Text style={styles.featureStatusHint}>{featureLockCopy}</Text>
+            </View>
+            <View style={styles.featureBadge}>
+              <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
+            </View>
           </View>
+
           <View
             style={styles.featureProgress}
             accessible
@@ -686,62 +742,19 @@ const ProfileScreen: React.FC = () => {
               {hasKarmaUnlock ? "Unlocked with karma" : `Keep reading to unlock personalization`}
             </Text>
           </View>
-          <View style={styles.card}>
-            <TouchableOpacity style={styles.featureRow} accessible>
-              <View style={styles.card}>
-                <Text style={styles.sectionDesc}>
-                  Sign in with Apple syncs preferences, history, and saved articles across devices.
-                  Data stays on-device until you opt in.
-                </Text>
-                <View style={styles.connectedRow}>
-                  <View style={styles.connectedIcon}>
-                    <Shield size={18} color={colors.textSecondary} />
-                  </View>
-                  <View style={styles.connectedTextBlock}>
-                    <Text style={styles.connectedTitle}>Apple Account</Text>
-                    <Text style={styles.connectedDesc}>{appleStatusLine}</Text>
-                  </View>
-                  <View style={styles.connectedBadge}>
-                    <Text style={styles.connectedBadgeText}>{appleBadgeText}</Text>
-                  </View>
-                </View>
-                <SignInWithApple
-                  onSuccess={(user) => {
-                    const profile = signInWithAppleProfile({
-                      id: user.id,
-                      email: user.email,
-                      displayName: user.displayName,
-                    });
-                    Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
-                  }}
-                  onError={(error) => {
-                    console.error("Sign in error:", error);
-                  }}
-                />
-                <View style={styles.noticeRow}>
-                  <Shield size={18} color={colors.textSecondary} />
-                  <Text style={styles.noticeText}>
-                    No tracking. Data stays on-device until you opt in.
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.featureBadge}>
-                <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.featureRow, styles.featureRowLast]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Focus and grounding modes. ${featureStatusLabel}. ${featureLockCopy}`}
-              accessibilityHint="Opens subscription sheet for focus & grounding"
-              onPress={() => openSubscriptionSheet("Focus & grounding modes")}
-              activeOpacity={0.75}
-            >
-              <View style={styles.featureIcon}>
-                <Flame size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.featureTextBlock}>
+
+          <TouchableOpacity
+            style={[styles.featureTile, styles.featureTileButton]}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`Focus and grounding modes. ${featureStatusLabel}. ${featureLockCopy}`}
+            accessibilityHint="Opens subscription sheet for focus & grounding"
+            onPress={() => openSubscriptionSheet("Focus & grounding modes")}
+            activeOpacity={0.85}
+          >
+            <View style={styles.featureTileHeader}>
+              <Flame size={18} color={colors.textSecondary} />
+              <View style={styles.featureTileText}>
                 <Text style={styles.featureTitle}>Focus & grounding modes</Text>
                 <Text style={styles.featureDesc}>
                   Quiet delivery, pacing, and mode presets. {featureLockCopy}
@@ -750,116 +763,128 @@ const ProfileScreen: React.FC = () => {
               <View style={styles.featureBadge}>
                 <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
               </View>
-            </TouchableOpacity>
-          </View>
+            </View>
+          </TouchableOpacity>
         </View>
+      </View>
 
         <View style={styles.section}>
           <SectionHeader title="Sync & privacy" />
-          <View style={styles.card}>
-            <Text style={styles.sectionDesc}>
-              Sign in with Apple syncs preferences, history, and saved articles across devices. Your
-              data stays on-device until you choose to sign in.
-            </Text>
-            <View style={styles.connectedRow}>
-              <View style={styles.connectedIcon}>
-                <Shield size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.connectedTextBlock}>
-                <Text style={styles.connectedTitle}>Apple Account</Text>
-                <Text style={styles.connectedDesc}>{appleStatusLine}</Text>
-              </View>
-              <View style={styles.connectedBadge}>
-                <Text style={styles.connectedBadgeText}>{appleBadgeText}</Text>
-              </View>
-            </View>
-            <SignInWithApple
-              onSuccess={(user) => {
-                const profile = signInWithAppleProfile({
-                  id: user.id,
-                  email: user.email,
-                  displayName: user.displayName,
-                });
-                Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
-              }}
-              onError={(error) => {
-                console.error("Sign in error:", error);
-              }}
-            />
-            <View style={styles.noticeRow}>
-              <Shield size={18} color={colors.textSecondary} />
-              <Text style={styles.noticeText}>
-                No tracking. Data stays on-device until you opt in.
+          {devProfileSyncCardEnabled ? (
+            <View style={styles.card}>
+              <Text style={styles.sectionDesc}>
+                Sign in with Apple will sync preferences, history, and saved articles when it
+                launches.
               </Text>
-            </View>
-          </View>
-
-          <View style={[styles.card, styles.transferCard]}>
-            <SectionHeader title="Profile settings" compact />
-            <Text style={styles.sectionDesc}>
-              Add a short tag so you recognize this local profile’s preferences.
-            </Text>
-            <TextInput
-              value={settingsTagInput}
-              onChangeText={setSettingsTagInput}
-              onBlur={handleSettingsTagBlur}
-              placeholder="e.g., iPhone main settings"
-              style={styles.textInput}
-              accessibilityLabel="Profile settings tag"
-              accessibilityHint="Identifies this profile when exporting or importing."
-              placeholderTextColor={colors.textSecondary}
-              returnKeyType="done"
-            />
-
-            <SectionHeader title="Backup & transfer" compact style={{ marginTop: spacing.lg }} />
-            <Text style={styles.sectionDesc}>
-              Use the profile key to move your settings, achievements, and saved items to another
-              device.
-            </Text>
-
-            <View style={styles.transferRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.transferLabel}>Profile key</Text>
-                <Text style={styles.transferCode} selectable>
-                  {activeProfile?.transferKey || "Unavailable"}
+              <View style={styles.connectedRow}>
+                <View style={styles.connectedIcon}>
+                  <Shield size={18} color={colors.textSecondary} />
+                </View>
+                <View style={styles.connectedTextBlock}>
+                  <Text style={styles.connectedTitle}>Apple Account</Text>
+                  <Text style={styles.connectedDesc}>{appleStatusLine}</Text>
+                </View>
+                <View style={styles.connectedBadge}>
+                  <Text style={styles.connectedBadgeText}>{appleBadgeText}</Text>
+                </View>
+              </View>
+              <SignInWithApple
+                onSuccess={(user) => {
+                  const profile = signInWithAppleProfile({
+                    id: user.id,
+                    email: user.email,
+                    displayName: user.displayName,
+                  });
+                  Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
+                }}
+                onError={(error) => {
+                  console.error("Sign in error:", error);
+                }}
+              />
+              <View style={styles.noticeRow}>
+                <Shield size={18} color={colors.textSecondary} />
+                <Text style={styles.noticeText}>
+                  No tracking. Data stays on-device until you opt in.
                 </Text>
               </View>
-              <GlassButton
-                label="Share code"
-                prominence="standard"
-                onPress={handleExportProfile}
-                accessibilityLabel="Share profile code"
-                accessibilityHint="Opens the share sheet with your profile code."
-                style={styles.transferButton}
-                icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
-              />
             </View>
+          ) : (
+            <ComingSoon
+              variant="inline"
+              title="Sync & profile export"
+              description="Dev toggle only. Enable in Debug → Profile dev toggles."
+              icon="lock"
+            />
+          )}
 
-            <TextInput
-              value={importCode}
-              onChangeText={setImportCode}
-              placeholder="Paste profile code to import"
-              style={[styles.textInput, { marginTop: spacing.sm }]}
-              accessibilityLabel="Import profile code"
-              accessibilityHint="Paste a code to import settings and achievements."
-              placeholderTextColor={colors.textSecondary}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-            />
-            <GlassButton
-              label="Import profile"
-              prominence="standard"
-              onPress={handleImportProfile}
-              accessibilityLabel="Import profile"
-              accessibilityHint="Imports the profile using the provided code."
-              style={styles.transferButton}
-              icon={<Download size={16} color={colors.text} strokeWidth={2} />}
-            />
-            <Text style={styles.transferHint}>
-              Keep this code private. It includes your settings, achievements, and saved items.
-            </Text>
-          </View>
+          {devProfileSyncCardEnabled ? (
+            <View style={[styles.card, styles.transferCard]}>
+              <SectionHeader title="Profile settings" compact />
+              <Text style={styles.sectionDesc}>
+                Add a short tag so you recognize this local profile’s preferences.
+              </Text>
+              <TextInput
+                value={settingsTagInput}
+                onChangeText={setSettingsTagInput}
+                onBlur={handleSettingsTagBlur}
+                placeholder="e.g., iPhone main settings"
+                style={styles.textInput}
+                accessibilityLabel="Profile settings tag"
+                accessibilityHint="Identifies this profile when exporting or importing."
+                placeholderTextColor={colors.textSecondary}
+                returnKeyType="done"
+              />
+
+              <SectionHeader title="Backup & transfer" compact style={{ marginTop: spacing.lg }} />
+              <Text style={styles.sectionDesc}>
+                Use the profile key to move your settings, achievements, and saved items to another
+                device.
+              </Text>
+
+              <View style={styles.transferRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.transferLabel}>Profile key</Text>
+                  <Text style={styles.transferCode} selectable>
+                    {activeProfile?.transferKey || "Unavailable"}
+                  </Text>
+                </View>
+                <GlassButton
+                  label="Share code"
+                  prominence="standard"
+                  onPress={handleExportProfile}
+                  accessibilityLabel="Share profile code"
+                  accessibilityHint="Opens the share sheet with your profile code."
+                  style={styles.transferButton}
+                  icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
+                />
+              </View>
+
+              <TextInput
+                value={importCode}
+                onChangeText={setImportCode}
+                placeholder="Paste profile code to import"
+                style={[styles.textInput, { marginTop: spacing.sm }]}
+                accessibilityLabel="Import profile code"
+                accessibilityHint="Paste a code to import settings and achievements."
+                placeholderTextColor={colors.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+              />
+              <GlassButton
+                label="Import profile"
+                prominence="standard"
+                onPress={handleImportProfile}
+                accessibilityLabel="Import profile"
+                accessibilityHint="Imports the profile using the provided code."
+                style={styles.transferButton}
+                icon={<Download size={16} color={colors.text} strokeWidth={2} />}
+              />
+              <Text style={styles.transferHint}>
+                Keep this code private. It includes your settings, achievements, and saved items.
+              </Text>
+            </View>
+          ) : null}
 
           <View style={[styles.card, { marginTop: spacing.md }]}>
             <SectionHeader title="Data controls" compact />
@@ -1000,6 +1025,12 @@ const ProfileScreen: React.FC = () => {
           </Animated.View>
         </View>
       )}
+      <ProfileOnboardingModal
+        visible={showProfileOnboarding}
+        codename={activeProfile?.codename}
+        reduceMotion={reduceMotion}
+        onClose={handleProfileOnboardingDismiss}
+      />
     </SafeAreaView>
   );
 };
@@ -1034,8 +1065,14 @@ const StatRow = ({
     accessibilityLabel={`${label}, ${value}${hint ? `. ${hint}` : ""}`}
   >
     <View style={styles.statRowText}>
-      <Text style={styles.statRowLabel}>{label}</Text>
-      {hint ? <Text style={styles.statRowHint}>{hint}</Text> : null}
+      <Text style={styles.statRowLabel} numberOfLines={1} ellipsizeMode="tail">
+        {label}
+      </Text>
+      {hint ? (
+        <Text style={styles.statRowHint} numberOfLines={1} ellipsizeMode="tail">
+          {hint}
+        </Text>
+      ) : null}
     </View>
     <Text style={styles.statRowValue} adjustsFontSizeToFit minimumFontScale={0.8}>
       {value}
@@ -1073,13 +1110,15 @@ const ProfilePill = ({
   label,
   value,
   accessibilityLabel,
+  style,
 }: {
   label: string;
   value: string;
   accessibilityLabel?: string;
+  style?: any;
 }) => (
   <View
-    style={styles.profilePill}
+    style={[styles.profilePill, style]}
     accessible
     accessibilityRole="text"
     accessibilityLabel={accessibilityLabel || `${label}: ${value}`}
@@ -1090,6 +1129,183 @@ const ProfilePill = ({
     </Text>
   </View>
 );
+
+const ProfileLoadingBar: React.FC = () => {
+  const progress = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    const sequence = Animated.loop(
+      Animated.sequence([
+        Animated.timing(progress, {
+          toValue: 1,
+          duration: 1700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(progress, {
+          toValue: 0.2,
+          duration: 400,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+    sequence.start();
+    return () => sequence.stop();
+  }, [progress]);
+
+  const width = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["10%", "94%"],
+  });
+
+  return (
+    <View style={styles.profileLoadingContainer}>
+      <Text style={styles.profileLoadingLabel}>Tuning your profile...</Text>
+      <View style={styles.profileLoadingTrack}>
+        <Animated.View style={[styles.profileLoadingFill, { width }]} />
+      </View>
+    </View>
+  );
+};
+
+const ProfileOnboardingModal: React.FC<{
+  visible: boolean;
+  codename?: string;
+  reduceMotion: boolean;
+  onClose: () => void;
+}> = ({ visible, codename, reduceMotion, onClose }) => {
+  const [displayName, setDisplayName] = React.useState("Generating your codename…");
+  const scaleAnim = React.useRef(new Animated.Value(0.98)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const timersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  React.useEffect(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    if (!visible) return;
+    let active = true;
+    const pool = [...PROFILE_ONBOARDING_PREVIEWS];
+    const finalName = codename || "Reader";
+    if (!pool.includes(finalName)) pool.push(finalName);
+
+    setDisplayName("Generating your codename…");
+
+    if (reduceMotion) {
+      const t = setTimeout(() => active && setDisplayName(finalName), 400);
+      timersRef.current.push(t);
+      return;
+    }
+
+    // Sequential shuffle: race through the list a few times, then ease to the final name.
+    const passes = 3;
+    const steps = pool.length * passes;
+    const baseDelay = 55;
+    const ramp = 18; // slows down over time
+    for (let i = 0; i < steps; i++) {
+      const delay = baseDelay + i * ramp;
+      const name = pool[i % pool.length];
+      const timer = setTimeout(() => {
+        if (active) setDisplayName(name);
+      }, delay);
+      timersRef.current.push(timer);
+    }
+
+    const finalDelay = baseDelay + steps * ramp + 260;
+    const finalTimer = setTimeout(() => {
+      if (active) setDisplayName(finalName);
+    }, finalDelay);
+    timersRef.current.push(finalTimer);
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.04,
+          duration: reduceMotion ? 0 : 420,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.98,
+          duration: reduceMotion ? 0 : 420,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    if (!reduceMotion) {
+      pulse.start();
+    } else {
+      scaleAnim.setValue(1);
+    }
+
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 340,
+      useNativeDriver: true,
+    }).start();
+
+    return () => {
+      active = false;
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      pulse.stop();
+    };
+  }, [visible, codename, reduceMotion, scaleAnim, fadeAnim]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.onboardingOverlay}>
+        <TouchableOpacity
+          style={styles.onboardingBackdrop}
+          activeOpacity={0.9}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss profile welcome"
+        />
+        <View style={styles.onboardingCardWrapper} pointerEvents="box-none">
+          <View style={styles.onboardingCard} accessibilityViewIsModal>
+            <TouchableOpacity
+              style={styles.onboardingDismissButton}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Skip profile welcome"
+            >
+              <Text style={styles.onboardingDismissText}>Skip</Text>
+            </TouchableOpacity>
+            <View style={styles.onboardingHeader}>
+              <Sparkles size={22} color={colors.primary} strokeWidth={1.2} />
+              <Text style={styles.onboardingTitle}>Profile primer</Text>
+            </View>
+            <Animated.Text
+              style={[
+                styles.onboardingName,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+            >
+              {displayName}
+            </Animated.Text>
+            <Text style={styles.onboardingDescription}>
+              Every profile ships with a locally stored codename, stats, and achievements. This card
+              is just for you and only shows once per release, so you can revisit stats with ease.
+            </Text>
+            <Text style={styles.onboardingWheelHint}>
+              Spinning codenames while the profile warms up — tap Skip or the backdrop to dismiss.
+            </Text>
+            <ScaleButton style={styles.onboardingButton} onPress={onClose}>
+              <Text style={styles.onboardingButtonText}>Got it</Text>
+            </ScaleButton>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -1104,10 +1320,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.gutter,
     paddingBottom: spacing.xxl + spacing.lg,
   },
-  skeletonBar: {
-    height: 12,
+  profileLoadingContainer: {
+    marginTop: spacing.sm,
+  },
+  profileLoadingLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  profileLoadingTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 999,
     backgroundColor: colors.border,
-    borderRadius: 6,
+    overflow: "hidden",
+  },
+  profileLoadingFill: {
+    height: "100%",
+    backgroundColor: colors.tint,
   },
   settingsButton: {
     alignSelf: "flex-start",
@@ -1177,6 +1408,16 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 14,
     color: colors.textSecondary,
+    flexShrink: 1,
+  },
+  codenameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.xs / 2,
+  },
+  codenameText: {
+    flex: 1,
   },
   badge: {
     alignSelf: "flex-start",
@@ -1469,6 +1710,41 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
+  featurePanel: {
+    marginTop: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.secondaryBackground,
+    gap: spacing.md,
+  },
+  featureTile: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  featureTileButton: {
+    borderStyle: "solid",
+  },
+  featureTileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  featureTileText: {
+    flex: 1,
+    gap: 2,
+  },
+  featureTileBody: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
   featureProgress: {
     height: 8,
     borderRadius: 999,
@@ -1557,14 +1833,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  profilePillsRow: {
+  profilePillsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: spacing.lg,
+    flexWrap: "wrap",
     gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  profilePillHalf: {
+    flexBasis: "48%",
   },
   profilePill: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: colors.secondaryBackground,
     borderRadius: 12,
     borderWidth: 1,
@@ -1608,6 +1887,92 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  onboardingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(6, 6, 6, 0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.gutter,
+  },
+  onboardingBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  onboardingCardWrapper: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  onboardingCard: {
+    width: "100%",
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.lg,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  onboardingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  onboardingDismissButton: {
+    position: "absolute",
+    right: spacing.sm,
+    top: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  onboardingDismissText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+  },
+  onboardingTitle: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  onboardingName: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.lg * 1.6,
+    color: colors.text,
+    textAlign: "center",
+  },
+  onboardingDescription: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  onboardingWheelHint: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.xs,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 18,
+    marginTop: -spacing.xs,
+  },
+  onboardingButton: {
+    marginTop: spacing.sm,
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  onboardingButtonText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.md,
+    fontWeight: "600",
+    color: colors.background,
   },
 });
 

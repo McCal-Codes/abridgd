@@ -10,6 +10,17 @@ export type FeedSource = {
 export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
   Top: [
     { name: "WTAE", url: "https://www.wtae.com/topstories-rss" },
+    { name: "AP Top Stories", url: "https://apnews.com/apf-topnews?output=atom" },
+    {
+      name: "Reuters Top News",
+      url: "https://feeds.reuters.com/reuters/topNews",
+      defaultEnabled: false, // DataDome now blocks anonymous requests (403 as of Jan 26, 2026)
+    },
+    {
+      name: "BBC World",
+      url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    },
+    { name: "NPR News", url: "https://feeds.npr.org/1001/rss.xml" },
     {
       name: "CBS Pittsburgh",
       url: "https://www.cbsnews.com/latest/rss/pittsburgh",
@@ -44,6 +55,10 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
       defaultEnabled: false,
     },
     {
+      name: "PA Capital-Star",
+      url: "https://penncapital-star.com/feed/",
+    },
+    {
       name: "The Incline",
       url: "https://theincline.com/feed/",
       defaultEnabled: false, // domain expired/parking page as of Jan 26, 2026
@@ -68,6 +83,11 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
       url: "https://pghtech.org/feed/",
       defaultEnabled: false,
     },
+    {
+      name: "Morning Brew",
+      url: "https://www.morningbrew.com/feed",
+      defaultEnabled: false, // optional national business context; enable manually
+    },
   ],
   Sports: [
     { name: "Steelers.com", url: "https://www.steelers.com/rss/news" },
@@ -87,6 +107,11 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
       name: "Pitt Panthers",
       url: "https://pittsburghpanthers.com/rss.aspx?path=general",
       defaultEnabled: false, // intermittently 500/blocked; keep optional
+    },
+    {
+      name: "ESPN Pittsburgh",
+      url: "https://www.espn.com/espn/rss/pgh/news",
+      defaultEnabled: false, // ESPN geo feeds can redirect; enable if stable for user
     },
   ],
   Culture: [

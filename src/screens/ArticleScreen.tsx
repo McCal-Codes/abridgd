@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   Linking,
+  useWindowDimensions,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -23,7 +24,6 @@ import { RootStackParamList } from "../navigation/types";
 import { fetchFullArticleBody } from "../services/FullStoryService";
 import { summarizeArticle } from "../services/AiService";
 // MOCK_ARTICLES import removed
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
@@ -42,6 +42,7 @@ import {
 } from "../utils/sensitivity";
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
+import { useTheme, Colors } from "../theme/ThemeContext";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
 
@@ -49,6 +50,9 @@ export const ArticleScreen: React.FC = () => {
   const route = useRoute<ArticleScreenRouteProp>();
   const navigation = useNavigation();
   const { article } = route.params;
+  const { colors } = useTheme();
+  const { fontScale } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(colors, fontScale), [colors, fontScale]);
   const { saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
   // Use optional hook in case tests render ArticleScreen without provider
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -431,6 +435,7 @@ export const ArticleScreen: React.FC = () => {
               styles.groundButtonText,
               sensitiveActionPreference === "ground-first" && styles.groundButtonTextHero,
             ]}
+            allowFontScaling
           >
             Take a breath first
           </Text>
@@ -468,6 +473,7 @@ export const ArticleScreen: React.FC = () => {
               styles.warningButtonText,
               sensitiveActionPreference === "continue" && styles.warningButtonTextHero,
             ]}
+            allowFontScaling
           >
             Continue without grounding
           </Text>
@@ -478,9 +484,15 @@ export const ArticleScreen: React.FC = () => {
     return (
       <View style={styles.warningContainer}>
         <View style={styles.warningContent}>
-          <Text style={styles.warningTitle}>{tonePreset.heading}</Text>
-          <Text style={styles.warningText}>{warningSummaryCopy}</Text>
-          <Text style={styles.warningHelper}>{helperCopy}</Text>
+          <Text style={styles.warningTitle} allowFontScaling>
+            {tonePreset.heading}
+          </Text>
+          <Text style={styles.warningText} allowFontScaling>
+            {warningSummaryCopy}
+          </Text>
+          <Text style={styles.warningHelper} allowFontScaling>
+            {helperCopy}
+          </Text>
         </View>
 
         <View style={styles.warningActions}>
@@ -585,12 +597,20 @@ export const ArticleScreen: React.FC = () => {
             </ScaleButton>
           </View>
 
-          <Text style={styles.headline}>{article.headline}</Text>
+          <Text style={styles.headline} allowFontScaling>
+            {article.headline}
+          </Text>
 
           <View style={styles.metaRow}>
-            <Text style={styles.source}>{article.source}</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.timestamp}>{article.timestamp}</Text>
+            <Text style={styles.source} allowFontScaling>
+              {article.source}
+            </Text>
+            <Text style={styles.dot} allowFontScaling>
+              •
+            </Text>
+            <Text style={styles.timestamp} allowFontScaling>
+              {article.timestamp}
+            </Text>
           </View>
 
           <View style={styles.divider} />
@@ -604,7 +624,9 @@ export const ArticleScreen: React.FC = () => {
 
           {isSummarizationEnabled && (summary || isLoadingSummary) && (
             <View style={styles.summarySection}>
-              <Text style={styles.sectionHeader}>AI Summary</Text>
+              <Text style={styles.sectionHeader} allowFontScaling>
+                AI Summary
+              </Text>
               {isLoadingSummary ? (
                 <ActivityIndicator
                   size="small"
@@ -612,7 +634,9 @@ export const ArticleScreen: React.FC = () => {
                   style={{ alignSelf: "flex-start" }}
                 />
               ) : (
-                <Text style={styles.summaryText}>{summary}</Text>
+                <Text style={styles.summaryText} allowFontScaling>
+                  {summary}
+                </Text>
               )}
             </View>
           )}
@@ -665,7 +689,7 @@ export const ArticleScreen: React.FC = () => {
 
               if (isCredit) {
                 return (
-                  <Text key={index} style={styles.credit}>
+                  <Text key={index} style={styles.credit} allowFontScaling>
                     {node.text}
                   </Text>
                 );
@@ -678,6 +702,7 @@ export const ArticleScreen: React.FC = () => {
                     styles.paragraph,
                     { fontSize: 18 * fontSize, lineHeight: 18 * fontSize * lineHeight },
                   ]}
+                  allowFontScaling
                 >
                   {node.text}
                 </Text>
@@ -698,7 +723,11 @@ export const ArticleScreen: React.FC = () => {
                     ]}
                     resizeMode={imageLoadingMode === "compressed" ? "center" : "cover"}
                   />
-                  {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
+                  {node.caption && (
+                    <Text style={styles.caption} allowFontScaling>
+                      {node.caption}
+                    </Text>
+                  )}
                 </View>
               );
             } else if (node.type === "video" && node.src) {
@@ -717,11 +746,15 @@ export const ArticleScreen: React.FC = () => {
                       isLooping={false}
                     />
                   ) : (
-                    <Text style={styles.caption}>
+                    <Text style={styles.caption} allowFontScaling>
                       Inline video not available in this build. Open in browser instead.
                     </Text>
                   )}
-                  {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
+                  {node.caption && (
+                    <Text style={styles.caption} allowFontScaling>
+                      {node.caption}
+                    </Text>
+                  )}
                   <ScaleButton style={styles.videoOpenButton} onPress={() => Linking.openURL(uri)}>
                     <Text style={styles.videoOpenText}>Open video in browser</Text>
                   </ScaleButton>
@@ -735,6 +768,7 @@ export const ArticleScreen: React.FC = () => {
                     styles.subhead,
                     { fontSize: 22 * fontSize, lineHeight: 22 * fontSize * lineHeight },
                   ]}
+                  allowFontScaling
                 >
                   {node.text}
                 </Text>
@@ -754,7 +788,9 @@ export const ArticleScreen: React.FC = () => {
                   Linking.openURL(article.link!);
                 }}
               >
-                <Text style={styles.sourceButtonText}>Read Full Story on Web</Text>
+                <Text style={styles.sourceButtonText} allowFontScaling>
+                  Read Full Story on Web
+                </Text>
               </ScaleButton>
             )}
 
@@ -776,7 +812,10 @@ export const ArticleScreen: React.FC = () => {
               }}
             >
               <Bookmark size={18} color={isSaved ? colors.surface : colors.primary} />
-              <Text style={[styles.actionButtonText, isSaved && styles.actionButtonTextSaved]}>
+              <Text
+                style={[styles.actionButtonText, isSaved && styles.actionButtonTextSaved]}
+                allowFontScaling
+              >
                 {isSaved ? "Saved" : "Save for Later"}
               </Text>
             </ScaleButton>
@@ -808,426 +847,429 @@ export const ArticleScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  topActions: {
-    width: "100%",
-    alignItems: "flex-end",
-    marginBottom: spacing.sm,
-  },
-  iconButton: {
-    backgroundColor: colors.surface,
-    padding: spacing.sm,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  iconButtonSaved: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  content: {
-    flexGrow: 1,
-    padding: spacing.gutter,
-    paddingBottom: spacing.xxl,
-    maxWidth: 800, // Limit width for readability on large screens
-    width: "100%",
-    alignSelf: "center",
-  },
-  headline: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: 32, // Larger, more newspaper-like
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: spacing.md,
-    lineHeight: 42,
-    letterSpacing: -0.5,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xl,
-    marginTop: spacing.xs,
-  },
-  source: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    fontWeight: "700",
-    color: colors.primary, // Pop color
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  dot: {
-    marginHorizontal: spacing.sm, // More space
-    color: colors.border,
-    fontSize: 10,
-  },
-  timestamp: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    fontWeight: "500",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginBottom: spacing.xl, // More space before content
-    opacity: 0.5,
-  },
-  paragraph: {
-    fontFamily: typography.fontFamily.serif, // "Georgia" or similar
-    fontSize: 18, // Comfortable reading size
-    lineHeight: 30, // 1.6 ratio often ideal
-    color: "#2c2c2c", // Slightly softer text
-    marginBottom: spacing.lg,
-  },
-  imageContainer: {
-    marginVertical: spacing.lg,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    overflow: "hidden", // Clip caption if needed, mainly for shadow
-  },
-  image: {
-    width: "100%",
-    height: 300, // Taller default
-    borderRadius: 12,
-    backgroundColor: colors.border,
-  },
-  imageCompressed: {
-    height: 200, // Reduce height for compressed mode to save data
-    opacity: 0.85, // Subtle visual feedback that image is compressed
-  },
-  caption: {
-    marginTop: spacing.sm,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontStyle: "italic",
-    textAlign: "center",
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm, // Space inside container
-  },
-  videoContainer: {
-    marginVertical: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  video: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    backgroundColor: "#000",
-  },
-  videoOpenButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  videoOpenText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  credit: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 10,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: -spacing.md, // Pull up closer to image if it follows immediately
-  },
-  subhead: {
-    fontFamily: typography.fontFamily.sans, // Contrast with body
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: spacing.md,
-    marginTop: spacing.xl,
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  sectionHeader: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-  },
-  abridgedSection: {
-    marginBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingBottom: spacing.lg,
-  },
-  summarySection: {
-    backgroundColor: "#F7F7F0",
-    padding: spacing.md,
-    borderRadius: 8,
-    marginBottom: spacing.xl,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  summaryText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    lineHeight: 22,
-    color: colors.text,
-    fontStyle: "italic",
-  },
-  abridgedToggleButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 50,
-    alignItems: "center",
-    alignSelf: "flex-start",
-    marginBottom: spacing.md,
-  },
-  abridgedActiveButton: {
-    backgroundColor: colors.primary,
-  },
-  abridgedToggleButtonText: {
-    color: colors.primary,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  abridgedActiveButtonText: {
-    color: colors.surface,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  actionButtons: {
-    marginTop: spacing.xl,
-    gap: spacing.md,
-  },
-  abridgedButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    borderRadius: 4,
-    alignItems: "center",
-    marginBottom: spacing.md,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+const createStyles = (colors: Colors, fontScale: number) => {
+  const scale = (size: number) => size * Math.min(fontScale || 1, 1.3);
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  abridgedButtonText: {
-    color: colors.surface,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.md,
-    fontWeight: "600",
-  },
-  warningContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-    flexDirection: "column",
-  },
-  warningContent: {
-    alignItems: "center",
-    gap: 0,
-    marginBottom: spacing.xl,
-  },
-  warningTitle: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: spacing.lg,
-    textAlign: "center",
-    letterSpacing: 0.5,
-  },
-  warningText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 18,
-    lineHeight: 28,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-    maxWidth: 320,
-  },
-  warningList: {
-    width: "100%",
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
-    alignItems: "center",
-  },
-  warningListItem: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.text,
-    textAlign: "center",
-    opacity: 0.85,
-    maxWidth: 320,
-  },
-  warningHelper: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    textAlign: "center",
-    maxWidth: 320,
-  },
-  warningTone: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    fontWeight: "600",
-    color: colors.primary,
-    textAlign: "center",
-    letterSpacing: 0.5,
-    maxWidth: 320,
-  },
-  warningActions: {
-    width: "100%",
-    gap: spacing.md,
-    alignSelf: "center",
-    marginTop: spacing.md,
-  },
-  warningActionContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  warningButton: {
-    backgroundColor: "rgba(15, 23, 42, 0.08)",
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 16,
-    width: "100%",
-    alignItems: "center",
-  },
-  warningButtonHero: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
-  },
-  warningButtonText: {
-    color: colors.text,
-    fontFamily: typography.fontFamily.sans,
-    fontWeight: "600",
-    fontSize: typography.size.lg,
-  },
-  warningButtonTextHero: {
-    color: colors.surface,
-  },
-  groundButton: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 20,
-    width: "100%",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  groundButtonHero: {
-    backgroundColor: colors.primary,
-  },
-  groundButtonText: {
-    color: colors.primary,
-    fontFamily: typography.fontFamily.sans,
-    fontWeight: "600",
-    fontSize: typography.size.lg,
-  },
-  groundButtonTextHero: {
-    color: colors.surface,
-  },
-  loadingContainer: {
-    position: "absolute",
-    top: "40%",
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-    backgroundColor: "rgba(249, 249, 247, 0.8)", // Match background with opacity
-    marginHorizontal: spacing.gutter,
-    borderRadius: 12,
-  },
-  loadingText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: colors.primary,
-    fontWeight: "600",
-  },
-  sourceButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 8,
-    marginTop: spacing.lg,
-    alignItems: "center",
-  },
-  sourceButtonText: {
-    color: colors.surface,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.md,
-    fontWeight: "600",
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 8,
-    marginTop: spacing.sm,
-  },
-  actionButtonSaved: {
-    backgroundColor: colors.primary,
-  },
-  actionButtonText: {
-    color: colors.primary,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.md,
-    fontWeight: "600",
-  },
-  actionButtonTextSaved: {
-    color: colors.surface,
-  },
-});
+    topActions: {
+      width: "100%",
+      alignItems: "flex-end",
+      marginBottom: spacing.sm,
+    },
+    iconButton: {
+      backgroundColor: colors.surface,
+      padding: spacing.sm,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    iconButtonSaved: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    content: {
+      flexGrow: 1,
+      padding: spacing.gutter,
+      paddingBottom: spacing.xxl,
+      maxWidth: 800,
+      width: "100%",
+      alignSelf: "center",
+    },
+    headline: {
+      fontFamily: typography.fontFamily.serif,
+      fontSize: scale(32),
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: spacing.md,
+      lineHeight: scale(42),
+      letterSpacing: -0.5,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: spacing.xl,
+      marginTop: spacing.xs,
+    },
+    source: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.sm),
+      fontWeight: "700",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    dot: {
+      marginHorizontal: spacing.sm,
+      color: colors.border,
+      fontSize: scale(10),
+    },
+    timestamp: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.sm),
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginBottom: spacing.xl,
+      opacity: 0.5,
+    },
+    paragraph: {
+      fontFamily: typography.fontFamily.serif,
+      fontSize: scale(18),
+      lineHeight: scale(30),
+      color: "#2c2c2c",
+      marginBottom: spacing.lg,
+    },
+    imageContainer: {
+      marginVertical: spacing.lg,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 5,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      overflow: "hidden",
+    },
+    image: {
+      width: "100%",
+      height: 300,
+      borderRadius: 12,
+      backgroundColor: colors.border,
+    },
+    imageCompressed: {
+      height: 200,
+      opacity: 0.85,
+    },
+    caption: {
+      marginTop: spacing.sm,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(13),
+      color: colors.textSecondary,
+      fontStyle: "italic",
+      textAlign: "center",
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    videoContainer: {
+      marginVertical: spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    video: {
+      width: "100%",
+      aspectRatio: 16 / 9,
+      backgroundColor: "#000",
+    },
+    videoOpenButton: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      alignItems: "center",
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    videoOpenText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(14),
+      fontWeight: "600",
+      color: colors.primary,
+    },
+    credit: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(10),
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: spacing.lg,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginTop: -spacing.md,
+    },
+    subhead: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(22),
+      fontWeight: "700",
+      marginBottom: spacing.md,
+      marginTop: spacing.xl,
+      color: colors.text,
+      letterSpacing: -0.3,
+    },
+    sectionHeader: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(14),
+      fontWeight: "700",
+      color: colors.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      marginBottom: spacing.sm,
+    },
+    abridgedSection: {
+      marginBottom: spacing.xl,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: spacing.lg,
+    },
+    summarySection: {
+      backgroundColor: colors.secondaryBackground,
+      padding: spacing.md,
+      borderRadius: 8,
+      marginBottom: spacing.xl,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primary,
+    },
+    summaryText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(14),
+      lineHeight: scale(22),
+      color: colors.text,
+      fontStyle: "italic",
+    },
+    abridgedToggleButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: 50,
+      alignItems: "center",
+      alignSelf: "flex-start",
+      marginBottom: spacing.md,
+    },
+    abridgedActiveButton: {
+      backgroundColor: colors.primary,
+    },
+    abridgedToggleButtonText: {
+      color: colors.primary,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(14),
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    abridgedActiveButtonText: {
+      color: colors.surface,
+    },
+    buttonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    actionButtons: {
+      marginTop: spacing.xl,
+      gap: spacing.md,
+    },
+    abridgedButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: spacing.md,
+      borderRadius: 4,
+      alignItems: "center",
+      marginBottom: spacing.md,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    abridgedButtonText: {
+      color: colors.surface,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.md),
+      fontWeight: "600",
+    },
+    warningContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.lg,
+      flexDirection: "column",
+    },
+    warningContent: {
+      alignItems: "center",
+      gap: 0,
+      marginBottom: spacing.xl,
+    },
+    warningTitle: {
+      fontFamily: typography.fontFamily.serif,
+      fontSize: scale(32),
+      lineHeight: scale(40),
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: spacing.lg,
+      textAlign: "center",
+      letterSpacing: 0.5,
+    },
+    warningText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(18),
+      lineHeight: scale(28),
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: spacing.lg,
+      maxWidth: 320,
+    },
+    warningList: {
+      width: "100%",
+      marginBottom: spacing.sm,
+      gap: spacing.xs,
+      alignItems: "center",
+    },
+    warningListItem: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(14),
+      lineHeight: scale(20),
+      color: colors.text,
+      textAlign: "center",
+      opacity: 0.85,
+      maxWidth: 320,
+    },
+    warningHelper: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(16),
+      color: colors.textSecondary,
+      marginBottom: spacing.md,
+      textAlign: "center",
+      maxWidth: 320,
+    },
+    warningTone: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.sm),
+      fontWeight: "600",
+      color: colors.primary,
+      textAlign: "center",
+      letterSpacing: 0.5,
+      maxWidth: 320,
+    },
+    warningActions: {
+      width: "100%",
+      gap: spacing.md,
+      alignSelf: "center",
+      marginTop: spacing.md,
+    },
+    warningActionContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    warningButton: {
+      backgroundColor: "rgba(15, 23, 42, 0.08)",
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xl,
+      borderRadius: 16,
+      width: "100%",
+      alignItems: "center",
+    },
+    warningButtonHero: {
+      backgroundColor: colors.text,
+      borderColor: colors.text,
+    },
+    warningButtonText: {
+      color: colors.text,
+      fontFamily: typography.fontFamily.sans,
+      fontWeight: "600",
+      fontSize: scale(typography.size.lg),
+    },
+    warningButtonTextHero: {
+      color: colors.surface,
+    },
+    groundButton: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.xl,
+      borderRadius: 20,
+      width: "100%",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+    },
+    groundButtonHero: {
+      backgroundColor: colors.primary,
+    },
+    groundButtonText: {
+      color: colors.primary,
+      fontFamily: typography.fontFamily.sans,
+      fontWeight: "600",
+      fontSize: scale(typography.size.lg),
+    },
+    groundButtonTextHero: {
+      color: colors.surface,
+    },
+    loadingContainer: {
+      position: "absolute",
+      top: "40%",
+      left: 0,
+      right: 0,
+      zIndex: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+      backgroundColor: "rgba(249, 249, 247, 0.8)",
+      marginHorizontal: spacing.gutter,
+      borderRadius: 12,
+    },
+    loadingText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.sm),
+      color: colors.primary,
+      fontWeight: "600",
+    },
+    sourceButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      borderRadius: 8,
+      marginTop: spacing.lg,
+      alignItems: "center",
+    },
+    sourceButtonText: {
+      color: colors.surface,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.md),
+      fontWeight: "600",
+    },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      borderRadius: 8,
+      marginTop: spacing.sm,
+    },
+    actionButtonSaved: {
+      backgroundColor: colors.primary,
+    },
+    actionButtonText: {
+      color: colors.primary,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: scale(typography.size.md),
+      fontWeight: "600",
+    },
+    actionButtonTextSaved: {
+      color: colors.surface,
+    },
+  });
+};

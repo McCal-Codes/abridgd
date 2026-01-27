@@ -81,18 +81,30 @@ const extractAnimalKey = (codename?: string) => {
   return sanitizeAnimalKey(last);
 };
 
-const ANIMAL_KEYS_WITH_ICONS = new Set(
-  ANIMALS.map((animal) => sanitizeAnimalKey(animal)).filter(Boolean) as string[],
-);
+const buildAnimalKeysWithIcons = () =>
+  new Set(ANIMALS.map((animal) => sanitizeAnimalKey(animal)).filter(Boolean) as string[]);
 
-const ANIMALS_WITH_ICONS = ANIMALS.filter((animal) =>
-  ANIMAL_KEYS_WITH_ICONS.has(sanitizeAnimalKey(animal) || ""),
-);
+let animalKeysWithIconsCache: Set<string> | null = null;
+const getAnimalKeysWithIcons = () => {
+  if (!animalKeysWithIconsCache) {
+    animalKeysWithIconsCache = buildAnimalKeysWithIcons();
+  }
+  return animalKeysWithIconsCache;
+};
+
+let animalsWithIconsCache: string[] | null = null;
+const getAnimalsWithIcons = () => {
+  if (!animalsWithIconsCache) {
+    const keys = getAnimalKeysWithIcons();
+    animalsWithIconsCache = ANIMALS.filter((animal) => keys.has(sanitizeAnimalKey(animal) || ""));
+  }
+  return animalsWithIconsCache;
+};
 
 const codenameHasIcon = (codename?: string) => {
   const key = extractAnimalKey(codename);
   if (!key) return false;
-  return ANIMAL_KEYS_WITH_ICONS.has(key);
+  return getAnimalKeysWithIcons().has(key);
 };
 
 const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
@@ -127,7 +139,8 @@ const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 const generateCodename = (used: Set<string> = new Set()) => {
-  const animalPool = ANIMALS_WITH_ICONS.length > 0 ? ANIMALS_WITH_ICONS : ANIMALS;
+  const animalsWithIcons = getAnimalsWithIcons();
+  const animalPool = animalsWithIcons.length > 0 ? animalsWithIcons : ANIMALS;
   const maxAttempts = VERBS_OR_ADJECTIVES.length * animalPool.length;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const verb = VERBS_OR_ADJECTIVES[Math.floor(Math.random() * VERBS_OR_ADJECTIVES.length)];

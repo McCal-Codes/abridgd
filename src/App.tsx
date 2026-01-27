@@ -1,7 +1,6 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootNavigator } from "./navigation/RootNavigator";
 import { SettingsProvider } from "./context/SettingsContext";
@@ -11,11 +10,12 @@ import { ThemeProvider } from "./theme/ThemeContext";
 import { ReadingProgressProvider } from "./context/ReadingProgressContext";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { StatusBar } from "expo-status-bar";
+import { useTheme } from "./theme/ThemeContext";
 
 // Crash reporting (Sentry)
 import * as Sentry from "@sentry/react-native";
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
-import { isDarkMode, colors } from "./theme/colors";
 if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
@@ -23,6 +23,11 @@ if (SENTRY_DSN) {
     tracesSampleRate: 0.2,
   });
 }
+
+const ThemedStatusBar = () => {
+  const { isDark, colors } = useTheme();
+  return <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.background} />;
+};
 
 export default function App() {
   return (
@@ -36,10 +41,7 @@ export default function App() {
                   <ReadingProgressProvider>
                     <SettingsProvider>
                       <RootNavigator />
-                      <StatusBar
-                        style={isDarkMode ? "light" : "dark"}
-                        backgroundColor={colors.background}
-                      />
+                      <ThemedStatusBar />
                     </SettingsProvider>
                   </ReadingProgressProvider>
                 </SavedArticlesProvider>

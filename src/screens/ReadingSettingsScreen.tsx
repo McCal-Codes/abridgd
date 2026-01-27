@@ -5,7 +5,6 @@ import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings, AnchorStrategy } from "../context/SettingsContext";
-import { Sliders } from "lucide-react-native";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { useNavigation } from "@react-navigation/native";
 
@@ -54,8 +53,29 @@ export const ReadingSettingsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.header}>Reading Experience</Text>
         <Text style={styles.description}>
-          Everything about how you read — RSVP, speed, focus, and sources.
+          Everything about how you read — RSVP, speed, and focus.
         </Text>
+
+        <View style={[styles.section, styles.cardGrid]}>
+          <TouchableOpacity
+            style={[styles.navCard, styles.accentCard]}
+            onPress={() => (navigation as any).navigate("SourcesSettings")}
+            accessibilityRole="button"
+            accessibilityLabel="News sources"
+            accessibilityHint="Manage which feeds are included"
+          >
+            <Text style={styles.navCardTitle}>News Sources</Text>
+            <Text style={styles.navCardDesc}>Enable/disable feeds, add custom RSS.</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navCard}
+            onPress={() => (navigation as any).navigate("DigestSettings")}
+            accessibilityRole="button"
+          >
+            <Text style={styles.navCardTitle}>Digest & Launch</Text>
+            <Text style={styles.navCardDesc}>Summary style, welcome-back behavior.</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.section}>
           <View style={styles.toggleRow}>
@@ -252,17 +272,6 @@ export const ReadingSettingsScreen: React.FC = () => {
           <Text style={styles.subsectionLabel}>Abridged Reader Preview</Text>
           <AbridgedReader content="I hope you are having a wonderful day, and by the way, I truly believe that almost anything tastes better when it is served as chicken on a stick." />
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sources</Text>
-          <Text style={styles.sectionDesc}>Manage feeds used by the reader.</Text>
-          <TouchableOpacity
-            style={styles.linkCard}
-            onPress={() => (navigation as any).navigate("SourcesSettings")}
-          >
-            <Text style={styles.linkCardText}>Open News Sources</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -294,6 +303,36 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: spacing.xxl,
+  },
+  cardGrid: {
+    flexDirection: "row",
+    gap: spacing.md,
+    flexWrap: "wrap",
+  },
+  navCard: {
+    flex: 1,
+    minWidth: "48%",
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  accentCard: {
+    borderColor: colors.primary,
+  },
+  navCardTitle: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  navCardDesc: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
   sectionTitle: {
     fontFamily: typography.fontFamily.sans,

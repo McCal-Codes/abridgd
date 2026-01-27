@@ -14,6 +14,14 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# App-specific names (match Xcode workspace/scheme)
+APP_NAME="Abridgd"
+WORKSPACE="$APP_NAME.xcworkspace"
+PROJECT="$APP_NAME.xcodeproj"
+SCHEME="$APP_NAME"
+ARCHIVE_PATH="$APP_NAME.xcarchive"
+IPA_PATH="$APP_NAME.ipa"
+
 # Function to print colored output
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -42,8 +50,8 @@ check_prerequisites() {
     fi
 
     # Check if we're in the ios directory
-    if [[ ! -f "abridged.xcodeproj/project.pbxproj" ]]; then
-        print_error "Not in the ios directory. Please run this script from the ios/ directory."
+    if [[ ! -f "$PROJECT/project.pbxproj" ]]; then
+        print_error "Not in the ios directory (expected $PROJECT). Please run this script from the ios/ directory."
         exit 1
     fi
 
@@ -93,11 +101,11 @@ clean_build() {
     print_status "Cleaning previous builds..."
 
     # Remove old archive and IPA
-    rm -rf abridged.xcarchive
-    rm -f abridged.ipa
+    rm -rf "$ARCHIVE_PATH"
+    rm -f "$IPA_PATH"
 
     # Clean Xcode build
-    xcodebuild clean -workspace abridged.xcworkspace -scheme abridged
+    xcodebuild clean -workspace "$WORKSPACE" -scheme "$SCHEME"
 
     print_success "Clean completed!"
 }
@@ -106,15 +114,15 @@ clean_build() {
 create_archive() {
     print_status "Creating archive..."
 
-    xcodebuild -workspace abridged.xcworkspace \
-        -scheme abridged \
+    xcodebuild -workspace "$WORKSPACE" \
+        -scheme "$SCHEME" \
         -configuration Release \
         -sdk iphoneos \
         archive \
-        -archivePath abridged.xcarchive \
+        -archivePath "$ARCHIVE_PATH" \
         -allowProvisioningUpdates
 
-    if [[ -d "abridged.xcarchive" ]]; then
+    if [[ -d "$ARCHIVE_PATH" ]]; then
         print_success "Archive created successfully!"
     else
         print_error "Archive creation failed!"
@@ -127,14 +135,14 @@ export_ipa() {
     print_status "Exporting IPA..."
 
     xcodebuild -exportArchive \
-        -archivePath abridged.xcarchive \
+        -archivePath "$ARCHIVE_PATH" \
         -exportPath . \
         -exportOptionsPlist ExportOptions.plist
 
-    if [[ -f "abridged.ipa" ]]; then
+    if [[ -f "$IPA_PATH" ]]; then
         print_success "IPA exported successfully!"
-        print_success "IPA location: $(pwd)/abridged.ipa"
-        ls -la abridged.ipa
+        print_success "IPA location: $(pwd)/$IPA_PATH"
+        ls -la "$IPA_PATH"
     else
         print_error "IPA export failed!"
         exit 1
@@ -154,7 +162,7 @@ main() {
 
     echo ""
     print_success "🎉 Workflow completed successfully!"
-    print_success "Your IPA file is ready at: $(pwd)/abridged.ipa"
+    print_success "Your IPA file is ready at: $(pwd)/$IPA_PATH"
     echo ""
     print_status "You can now install this IPA on your registered iOS devices."
 }

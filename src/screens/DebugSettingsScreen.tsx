@@ -239,8 +239,8 @@ export const DebugSettingsScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Profile dev toggles</Text>
           <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.actionTitle}>Show Apple account card</Text>
-              <Text style={styles.actionDesc}>Enable sync card on Profile for QA</Text>
+              <Text style={styles.actionTitle}>Profile sync & settings</Text>
+              <Text style={styles.actionDesc}>Enable sync + profile settings cards on Profile</Text>
             </View>
             <Switch
               value={devProfileSyncCardEnabled}
@@ -553,12 +553,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    toggleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: spacing.sm,
-    },
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
   },
   dangerButton: {
     borderColor: "#FFCDD2",

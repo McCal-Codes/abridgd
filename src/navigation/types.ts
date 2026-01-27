@@ -23,6 +23,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
+  Settings?: undefined;
   Discover: { category: string };
   Saved: undefined;
   Digest: undefined;
