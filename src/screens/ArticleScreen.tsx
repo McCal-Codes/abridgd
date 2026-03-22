@@ -23,7 +23,6 @@ import { RootStackParamList } from "../navigation/types";
 import { fetchFullArticleBody } from "../services/FullStoryService";
 import { summarizeArticle } from "../services/AiService";
 // MOCK_ARTICLES import removed
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
@@ -42,10 +41,14 @@ import {
 } from "../utils/sensitivity";
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
 
 export const ArticleScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const route = useRoute<ArticleScreenRouteProp>();
   const navigation = useNavigation();
   const { article } = route.params;
@@ -792,7 +795,8 @@ export const ArticleScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -849,7 +853,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.serif, // "Georgia" or similar
     fontSize: 18, // Comfortable reading size
     lineHeight: 30, // 1.6 ratio often ideal
-    color: "#2c2c2c", // Slightly softer text
+    color: colors.text,
     marginBottom: spacing.lg,
   },
   imageContainer: {
@@ -945,10 +949,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   summarySection: {
-    backgroundColor: "#F7F7F0",
+    backgroundColor: colors.secondaryBackground,
     padding: spacing.md,
     borderRadius: 8,
     marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderLeftWidth: 4,
     borderLeftColor: colors.primary,
   },
@@ -1093,7 +1099,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   warningButton: {
-    backgroundColor: "rgba(15, 23, 42, 0.08)",
+    backgroundColor: colors.secondaryBackground,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     borderRadius: 16,
@@ -1149,7 +1157,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: spacing.md,
     gap: spacing.sm,
-    backgroundColor: "rgba(249, 249, 247, 0.8)", // Match background with opacity
+    backgroundColor: isDark ? "rgba(12,12,12,0.8)" : "rgba(249,249,247,0.8)",
     marginHorizontal: spacing.gutter,
     borderRadius: 12,
   },
@@ -1198,4 +1206,4 @@ const styles = StyleSheet.create({
   actionButtonTextSaved: {
     color: colors.surface,
   },
-});
+  });

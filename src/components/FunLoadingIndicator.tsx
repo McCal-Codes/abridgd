@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
+import { useThemedStyles } from '../theme/useThemedStyles';
 
 // Fun facts about news, journalism, and Pittsburgh
 const FUN_FACTS = [
@@ -43,6 +44,7 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
   size = 'large',
   message = 'Loading fresh news...'
 }) => {
+  const styles = useThemedStyles(createStyles);
   const [currentFact, setCurrentFact] = React.useState(0);
   const spinValue = React.useRef(new Animated.Value(0)).current;
   const fadeValue = React.useRef(new Animated.Value(0)).current;
@@ -128,7 +130,8 @@ export const FunLoadingIndicator: React.FC<FunLoadingIndicatorProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -170,4 +173,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-});
+  });

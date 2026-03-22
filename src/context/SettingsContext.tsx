@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { colors } from "../theme/colors";
 import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
 import { APP_VERSION } from "../config/appInfo";
 import { allowedTabs, defaultTabs } from "../navigation/tabs";

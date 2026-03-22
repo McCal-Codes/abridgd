@@ -2,12 +2,14 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { Trophy, Target, Medal, Sparkles, Flame } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 const AchievementIcon = ({ icon, earned }: { icon?: string; earned?: boolean }) => {
+  const { colors } = useThemeOptional();
   const color = earned ? colors.tint : colors.textSecondary;
   switch (icon) {
     case "trophy":
@@ -23,6 +25,8 @@ const AchievementIcon = ({ icon, earned }: { icon?: string; earned?: boolean }) 
 };
 
 export const AchievementsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const { activeProfile } = useProfiles();
   const achievementStatuses = useMemo(
     () => getAchievementStatuses(activeProfile || undefined),
@@ -102,7 +106,8 @@ export const AchievementsScreen: React.FC = () => {
 
 export default AchievementsScreen;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -139,7 +144,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: `${colors.tint}15`,
+    backgroundColor: colors.tintTransparent,
     borderWidth: 1,
     borderColor: colors.border,
     justifyContent: "center",
@@ -214,7 +219,7 @@ const styles = StyleSheet.create({
   },
   itemEarned: {
     borderColor: colors.tint,
-    backgroundColor: `${colors.tint}10`,
+    backgroundColor: colors.tintTransparent,
   },
   iconWrap: {
     width: 44,
@@ -228,7 +233,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   iconWrapEarned: {
-    backgroundColor: `${colors.tint}18`,
+    backgroundColor: colors.tintTransparent,
     borderColor: colors.tint,
   },
   itemTextBlock: {
@@ -286,4 +291,4 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: colors.tint,
   },
-});
+  });

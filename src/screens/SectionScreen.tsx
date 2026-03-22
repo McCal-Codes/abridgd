@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
 import { fetchArticlesByCategory, getCachedArticles, getLastFetchedAt } from "../services/RssService";
-import { colors } from "../theme/colors";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList, TabParamList } from "../navigation/types";
@@ -14,6 +13,8 @@ import { typography } from "../theme/typography";
 import * as Haptics from "expo-haptics";
 import { HeroHeader } from "../components/HeroHeader";
 import { MapPin, Newspaper } from "lucide-react-native";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SectionRouteProp = RouteProp<TabParamList, "Discover">;
@@ -31,16 +32,22 @@ const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
   return `Updated ${diffDays}d ago`;
 };
 
-const FeedStatusBanner = ({ message }: { message: string }) => (
-  <View style={styles.statusBanner} testID="section-feed-status">
-    <Text style={styles.statusBannerText}>{message}</Text>
-  </View>
-);
+const FeedStatusBanner = ({ message }: { message: string }) => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.statusBanner} testID="section-feed-status">
+      <Text style={styles.statusBannerText}>{message}</Text>
+    </View>
+  );
+};
 
 export const SectionScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SectionRouteProp>();
   const category = route.params?.category as ArticleCategory;
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
 
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -196,7 +203,8 @@ export const SectionScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -231,4 +239,4 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     color: colors.textSecondary,
   },
-});
+  });

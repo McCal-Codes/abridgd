@@ -7,10 +7,11 @@
 
 import React, { useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ErrorCode, ErrorHandler } from "../utils/errorCodes";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 interface SignInWithAppleProps {
   onSuccess?: (user: any) => void;
@@ -33,6 +34,9 @@ interface SignInWithAppleProps {
  * TODO: Add Apple Sign In capability in Xcode project
  */
 export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError }) => {
+  const { colors, isDark } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
+
   const handleComingSoon = useCallback(() => {
     const error = ErrorHandler.createError(
       ErrorCode.FEATURE_NOT_IMPLEMENTED,
@@ -50,14 +54,20 @@ export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError }) => 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.button, styles.buttonDisabled]}
+        style={[
+          styles.button,
+          styles.buttonDisabled,
+          { backgroundColor: isDark ? colors.surface : "#000" },
+        ]}
         onPress={handleComingSoon}
         activeOpacity={0.75}
         accessibilityRole="button"
         accessibilityLabel="Sign in with Apple coming soon"
         accessibilityHint="Feature is temporarily disabled; your local profile remains active."
       >
-        <Text style={styles.buttonText}>Sign in with Apple</Text>
+        <Text style={[styles.buttonText, { color: isDark ? colors.text : "#FFF" }]}>
+          Sign in with Apple
+        </Text>
         <View style={styles.tag}>
           <Text style={styles.tagText}>Coming soon</Text>
         </View>
@@ -71,7 +81,8 @@ export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError }) => 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     width: "100%",
     alignItems: "center",
@@ -80,7 +91,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#000",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     borderRadius: 8,
@@ -94,7 +104,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFF",
   },
   disclaimer: {
     fontFamily: typography.fontFamily.sans,
@@ -120,4 +129,4 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-});
+  });

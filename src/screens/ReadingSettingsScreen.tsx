@@ -1,15 +1,18 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings, AnchorStrategy } from "../context/SettingsContext";
 import { Sliders } from "lucide-react-native";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { useNavigation } from "@react-navigation/native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const ReadingSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
   const {
     isReaderEnabled,
@@ -268,7 +271,8 @@ export const ReadingSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
   },
   selectedSpeed: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   speedText: {
     fontSize: 14,
@@ -376,7 +380,7 @@ const styles = StyleSheet.create({
   },
   selectedFont: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   fontText: {
     fontSize: 14,
@@ -410,7 +414,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F2F7FB",
+    backgroundColor: colors.tintTransparent,
   },
   chipLabel: {
     fontFamily: typography.fontFamily.sans,
@@ -496,7 +500,7 @@ const styles = StyleSheet.create({
   },
   selectedLineHeight: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   lineHeightText: {
     fontSize: 16,
@@ -518,4 +522,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
-});
+  });

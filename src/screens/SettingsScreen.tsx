@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-nati
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 import {
   BookOpen,
   Newspaper,
@@ -30,6 +31,8 @@ interface SettingsMenuItem {
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsNavigationProp>();
   const insets = useSafeAreaInsets();
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
 
   const menuItems: SettingsMenuItem[] = [
     {
@@ -119,7 +122,8 @@ export const SettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -186,4 +190,4 @@ const styles = StyleSheet.create({
   section: {
     marginTop: spacing.lg,
   },
-});
+  });

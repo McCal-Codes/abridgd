@@ -2,11 +2,12 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Appearance, ColorSchemeName } from 'react-native';
 
 // Semantic color system following iOS naming conventions
-const light = {
+export const lightColors = {
   // Backgrounds
   background: "#F9F9F7",
   secondaryBackground: "#FFFFFF",
   surface: "#FFFFFF",
+  groupedBackground: "#FFFFFF",
   tintTransparent: "rgba(0,151,167,0.12)",
 
   // Labels (Text)
@@ -33,10 +34,11 @@ const light = {
   error: "#D32F2F",
 };
 
-const dark = {
+export const darkColors = {
   background: "#0C0C0C",
   secondaryBackground: "#121212",
   surface: "#1A1A1A",
+  groupedBackground: "#121212",
   tintTransparent: "rgba(0,188,212,0.12)",
 
   label: "#F5F5F7",
@@ -59,15 +61,18 @@ const dark = {
   error: "#FF453A",
 };
 
-type Colors = typeof light;
+export type ThemeColors = typeof lightColors;
 
 interface ThemeContextType {
-  colors: Colors;
+  colors: ThemeColors;
   isDark: boolean;
   colorScheme: ColorSchemeName;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const getColorsForScheme = (colorScheme: ColorSchemeName): ThemeColors => {
+  return colorScheme === 'dark' ? darkColors : lightColors;
+};
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [colorScheme, setColorScheme] = useState<ColorSchemeName>(
@@ -83,7 +88,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const isDark = colorScheme === 'dark';
-  const colors = isDark ? dark : light;
+  const colors = getColorsForScheme(colorScheme);
 
   return (
     <ThemeContext.Provider value={{ colors, isDark, colorScheme }}>
@@ -98,4 +103,18 @@ export const useTheme = (): ThemeContextType => {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
+};
+
+export const useThemeOptional = (): ThemeContextType => {
+  const context = useContext(ThemeContext);
+  if (context) {
+    return context;
+  }
+
+  const colorScheme = Appearance.getColorScheme();
+  return {
+    colors: getColorsForScheme(colorScheme),
+    isDark: colorScheme === 'dark',
+    colorScheme,
+  };
 };

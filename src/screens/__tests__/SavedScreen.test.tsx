@@ -1,28 +1,35 @@
 import React from "react";
 import { act, fireEvent, render } from "@testing-library/react-native";
+const mockTheme = {
+  colors: {
+    background: "#fff",
+    secondaryBackground: "#fff",
+    surface: "#fff",
+    groupedBackground: "#fff",
+    label: "#000",
+    secondaryLabel: "#666",
+    tertiaryLabel: "#999",
+    text: "#000",
+    textSecondary: "#666",
+    textTertiary: "#999",
+    separator: "#eee",
+    border: "#eee",
+    tint: "#0097A7",
+    tintTransparent: "rgba(0,151,167,0.12)",
+    accent: "#8B2E2E",
+    primary: "#0097A7",
+    systemRed: "#D32F2F",
+    systemBlue: "#007AFF",
+    error: "#D32F2F",
+  },
+  isDark: false,
+  colorScheme: "light" as const,
+};
+
 jest.mock("../../theme/ThemeContext", () => ({
   ThemeProvider: ({ children }: any) => children,
-  useTheme: () => ({
-    colors: {
-      background: "#fff",
-      secondaryBackground: "#fff",
-      surface: "#fff",
-      text: "#000",
-      textSecondary: "#666",
-      textTertiary: "#999",
-      separator: "#eee",
-      border: "#eee",
-      tint: "#0097A7",
-      tintTransparent: "rgba(0,151,167,0.12)",
-      accent: "#8B2E2E",
-      primary: "#0097A7",
-      systemRed: "#D32F2F",
-      systemBlue: "#007AFF",
-      error: "#D32F2F",
-    },
-    isDark: false,
-    colorScheme: "light",
-  }),
+  useTheme: () => mockTheme,
+  useThemeOptional: () => mockTheme,
 }));
 const { ThemeProvider } = jest.requireMock("../../theme/ThemeContext");
 

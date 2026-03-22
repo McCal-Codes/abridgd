@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
-import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 interface ArticleProgressIndicatorProps {
   articleId: string;
@@ -16,6 +17,8 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
   showLabel = false,
 }) => {
   const { getProgress } = useReadingProgressOptional();
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const progress = getProgress(articleId);
 
   const completionPercentage = progress?.completionPercentage ?? 0;
@@ -105,7 +108,8 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
@@ -125,4 +129,4 @@ const styles = StyleSheet.create({
     minWidth: 24,
     textAlign: "center",
   },
-});
+  });

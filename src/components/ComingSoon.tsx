@@ -7,9 +7,10 @@
 
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle } from "react-native";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
+import { useThemedStyles } from "../theme/useThemedStyles";
 import { Star as Sparkles, Clock, Rocket } from "lucide-react-native";
 
 interface ComingSoonProps {
@@ -27,6 +28,8 @@ export const ComingSoon: React.FC<ComingSoonProps> = ({
   icon = "sparkles",
   style,
 }) => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const IconComponent = icon === "clock" ? Clock : icon === "rocket" ? Rocket : Sparkles;
 
   const containerStyle = [
@@ -57,7 +60,8 @@ export const ComingSoon: React.FC<ComingSoonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
@@ -117,4 +121,4 @@ const styles = StyleSheet.create({
     textAlign: "left",
     maxWidth: "100%",
   },
-});
+  });

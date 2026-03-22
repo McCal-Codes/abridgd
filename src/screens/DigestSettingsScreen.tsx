@@ -1,10 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings, DigestSummaryMode } from "../context/SettingsContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 const DIGEST_MODES: { label: string; value: DigestSummaryMode; description: string }[] = [
   {
@@ -17,6 +18,8 @@ const DIGEST_MODES: { label: string; value: DigestSummaryMode; description: stri
 ];
 
 export const DigestSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const {
     isWelcomeBackEnabled,
     setIsWelcomeBackEnabled,
@@ -79,7 +82,8 @@ export const DigestSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
   },
   selectedStrategy: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   strategyLabel: {
     fontSize: 16,
@@ -170,4 +174,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
-});
+  });

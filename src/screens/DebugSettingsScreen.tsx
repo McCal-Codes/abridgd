@@ -16,14 +16,17 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Trash2, RefreshCw, Database, FileText, Check, Star, Activity } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const DebugSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const settings = useSettings();
   const insets = useSafeAreaInsets();
@@ -272,7 +275,7 @@ export const DebugSettingsScreen: React.FC = () => {
             onPress={clearAllData}
           >
             <View style={[styles.actionIconContainer, styles.dangerIconContainer]}>
-              <Trash2 size={20} color="#D32F2F" />
+              <Trash2 size={20} color={colors.error} />
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={[styles.actionTitle, styles.dangerText]}>Clear All Data</Text>
@@ -464,7 +467,8 @@ export const DebugSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -515,20 +519,20 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   dangerButton: {
-    borderColor: "#FFCDD2",
-    backgroundColor: "#FFEBEE",
+    borderColor: `${colors.error}30`,
+    backgroundColor: `${colors.error}12`,
   },
   actionIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
   },
   dangerIconContainer: {
-    backgroundColor: "#FFCDD2",
+    backgroundColor: `${colors.error}20`,
   },
   actionTextContainer: {
     flex: 1,
@@ -541,7 +545,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   dangerText: {
-    color: "#D32F2F",
+    color: colors.error,
   },
   actionDesc: {
     fontFamily: typography.fontFamily.sans,
@@ -614,4 +618,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-});
+  });

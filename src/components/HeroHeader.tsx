@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 import type { LucideIcon } from "lucide-react-native";
 
 interface HeroHeaderProps {
@@ -18,6 +19,9 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
   subtitleTestID,
   Icon,
 }) => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.container}>
       <View style={styles.row}>
@@ -33,7 +37,8 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
@@ -57,4 +62,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.sm,
   },
-});
+  });

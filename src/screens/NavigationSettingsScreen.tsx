@@ -1,13 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronRight, Layout, Compass } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const NavigationSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
 
   return (
@@ -54,7 +57,8 @@ export const NavigationSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 150 },
   header: {
@@ -98,7 +102,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
@@ -123,4 +127,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     flex: 1,
   },
-});
+  });

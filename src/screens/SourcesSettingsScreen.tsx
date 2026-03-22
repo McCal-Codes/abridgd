@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { RSS_FEEDS } from "../data/feedConfig";
@@ -14,8 +14,11 @@ import {
   getSourceKey,
   SourceOverrideMap,
 } from "../utils/sourcePreferences";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const SourcesSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const [overrides, setOverrides] = useState<SourceOverrideMap>({});
   const [loadingPrefs, setLoadingPrefs] = useState(true);
 
@@ -136,7 +139,8 @@ export const SourcesSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
   infoBox: {
     marginTop: spacing.xl,
     padding: spacing.md,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
     borderRadius: 8,
     borderLeftWidth: 4,
     borderLeftColor: colors.primary,
@@ -324,4 +328,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-});
+  });

@@ -28,8 +28,8 @@ import { useSettings, sanitizeTabs } from "../context/SettingsContext";
 import { View, ActivityIndicator } from "react-native";
 import { ScrollProvider } from "../context/ScrollContext";
 import LiquidTabBar from "../components/LiquidTabBar";
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
+import { useThemeOptional } from "../theme/ThemeContext";
 import {
   Flame,
   MapPin,
@@ -88,6 +88,7 @@ export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string
 // Tab Navigator component
 const TabNavigatorScreen = ({ navigation }: any) => {
   const { activeTabs, tabLayout, defaultTab, showTabLabels, tabIconSize } = useSettings();
+  const { colors, isDark } = useThemeOptional();
   const TAB_CONFIG = getTabConfig(tabLayout);
   const insets = useSafeAreaInsets();
   const bottomInset = insets.bottom ?? 0;
@@ -122,7 +123,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
         headerShown: false,
         tabBarStyle: {
           // More Apple-like floating capsule (translucent by default; LiquidTabBar will respect blur setting)
-          backgroundColor: "rgba(255,255,255,0.82)",
+          backgroundColor: isDark ? "rgba(12,12,12,0.82)" : "rgba(255,255,255,0.82)",
           borderTopWidth: 0,
           height: 49,
           paddingBottom: internalPaddingBottom,
@@ -187,6 +188,7 @@ const TabNavigatorScreen = ({ navigation }: any) => {
 
 export const RootNavigator = () => {
   const { hasCompletedOnboarding, isLoadingSettings, shouldShowWhatsNew } = useSettings();
+  const { colors } = useThemeOptional();
 
   if (isLoadingSettings) {
     return (

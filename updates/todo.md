@@ -51,12 +51,13 @@ Last Updated: March 22, 2026
   - **Dependencies**: SettingsContext, OnboardingScreen, RootNavigator
   - **Completed**: March 22, 2026
 
-- [ ] **TODO-036** | **v1.3.1** | Complete dark-mode/theme migration
-  - **Status**: 🔜 Not Started
+- [x] **TODO-036** | **v1.3.1** | Complete dark-mode/theme migration
+  - **Status**: Completed
   - **Description**: Replace static `theme/colors` imports on primary screens/components with reactive theme access, then close the known dark-mode drift in navigation, article, and saved surfaces.
   - **Effort**: 5 hours
   - **Definition of Done**: Theme changes propagate without reload, StatusBar tracks the active theme, and dark-mode spot checks pass on Home, Article, Saved, and Settings.
   - **Dependencies**: ThemeContext, App.tsx, RootNavigator, core screens/components
+  - **Completed**: March 22, 2026
 
 - [ ] **TODO-037** | **v1.3.1** | Patch production dependency vulnerabilities in feed/network stack
   - **Status**: 🔜 Not Started
@@ -354,3 +355,5 @@ Example:
 - Auto-shows WhatsNewScreen on version mismatch
 - Closes TODO-005 for v1.2.0
 ```
+
+

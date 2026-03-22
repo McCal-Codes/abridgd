@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { Sparkles, ArrowRight, Zap, Palette, BookOpen } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 type WhatsNewScreenProps = {
   navigation: {
@@ -53,6 +53,8 @@ const FEATURES = [
 ];
 
 export function WhatsNewScreen({ navigation }: WhatsNewScreenProps) {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [dismissedFeatures, setDismissedFeatures] = useState<Set<string>>(new Set());
 
@@ -166,7 +168,8 @@ export function WhatsNewScreen({ navigation }: WhatsNewScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -310,4 +313,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.background,
   },
-});
+  });

@@ -11,7 +11,6 @@ import {
   getCachedArticles,
 } from "../services/RssService";
 import { Article } from "../types/Article";
-import { colors } from "../theme/colors";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
@@ -25,6 +24,8 @@ import { ReadingProgress } from "../types/ReadingProgress";
 import * as Haptics from "expo-haptics";
 import { HeroHeader } from "../components/HeroHeader";
 import { Home as HomeIcon } from "lucide-react-native";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 type ContinueReadingItem = {
   article: Article;
@@ -53,11 +54,15 @@ const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
   return `Updated ${diffDays}d ago`;
 };
 
-const FeedStatusBanner = ({ message }: { message: string }) => (
-  <View style={styles.statusBanner} testID="home-feed-status">
-    <Text style={styles.statusBannerText}>{message}</Text>
-  </View>
-);
+const FeedStatusBanner = ({ message }: { message: string }) => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.statusBanner} testID="home-feed-status">
+      <Text style={styles.statusBannerText}>{message}</Text>
+    </View>
+  );
+};
 
 const ContinueReadingSection = ({
   items,
@@ -72,6 +77,8 @@ const ContinueReadingSection = ({
   onToggleShowAll: () => void;
   lastUpdated: Date | null;
 }) => {
+  const styles = useThemedStyles(createStyles);
+
   if (!items.length) return null;
 
   const visibleItems = showAll ? items : items.slice(0, 3);
@@ -125,6 +132,8 @@ const ContinueReadingSection = ({
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors, isDark } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
 
   const [articles, setArticles] = React.useState<Article[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -225,7 +234,10 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={colors.background}
+      />
       {showSkeleton ? (
         <View style={styles.flexContent}>
           {renderHeroHeader()}
@@ -345,7 +357,8 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -476,4 +489,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
   },
-});
+  });

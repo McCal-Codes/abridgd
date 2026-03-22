@@ -14,9 +14,9 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSettings } from "../context/SettingsContext";
 import { useSavedArticles } from "../context/SavedArticlesContext";
-import { colors, isDarkMode } from "../theme/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollContext } from "../context/ScrollContext";
+import { useThemeOptional } from "../theme/ThemeContext";
 
 let BlurView: any = null;
 try {
@@ -30,6 +30,7 @@ try {
 const AnimatedBlur: any = Animated.createAnimatedComponent(BlurView || View);
 
 export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
+  const { colors, isDark } = useThemeOptional();
   const insets = useSafeAreaInsets();
   const { scrollY } = React.useContext(ScrollContext);
   const {
@@ -113,23 +114,38 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
             borderRadius: isStandard ? 0 : 32,
             opacity: typeof blurOpacity === "number" ? blurOpacity : blurOpacity,
             backgroundColor: experimentalIOS26NavBar
-              ? "rgba(255, 255, 255, 0.95)"
+              ? isDark
+                ? "rgba(18, 18, 18, 0.95)"
+                : "rgba(255, 255, 255, 0.95)"
               : isStandard
-                ? "rgba(255, 255, 255, 0.85)"
-                : "rgba(255, 255, 255, 0.75)",
+                ? isDark
+                  ? "rgba(18, 18, 18, 0.88)"
+                  : "rgba(255, 255, 255, 0.85)"
+                : isDark
+                  ? "rgba(26, 26, 26, 0.8)"
+                  : "rgba(255, 255, 255, 0.75)",
           },
         ]}
         // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
-        tint={Platform.OS === "ios" ? "light" : "light"}
+        tint={Platform.OS === "ios" ? (isDark ? "dark" : "light") : "light"}
       >
         {/* Glass morphism background with subtle gradient */}
         <View style={styles.gradientWrapper} pointerEvents="none">
           <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
             <Defs>
               <LinearGradient id="tabGrad" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
-                <Stop offset="50%" stopColor="rgba(245,245,247,0.6)" />
-                <Stop offset="100%" stopColor="rgba(250,250,252,0.5)" />
+                <Stop
+                  offset="0%"
+                  stopColor={isDark ? "rgba(40,40,42,0.6)" : "rgba(255,255,255,0.5)"}
+                />
+                <Stop
+                  offset="50%"
+                  stopColor={isDark ? "rgba(28,28,30,0.7)" : "rgba(245,245,247,0.6)"}
+                />
+                <Stop
+                  offset="100%"
+                  stopColor={isDark ? "rgba(18,18,20,0.65)" : "rgba(250,250,252,0.5)"}
+                />
               </LinearGradient>
             </Defs>
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#tabGrad)" />
@@ -277,6 +293,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   tabIndicatorStyle,
   resolveBadge,
 }) => {
+  const { colors, isDark } = useThemeOptional();
   const routes = state.routes;
   const indicatorX = React.useRef(new Animated.Value(0)).current;
   const indicatorY = React.useRef(new Animated.Value(0)).current;
@@ -398,7 +415,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   const hasLayout = !!(activeRouteKey && tabLayouts[activeRouteKey]);
   const shouldRenderIndicator = tabIndicatorStyle !== "none" && hasLayout;
   const indicatorColor = colors.tint;
-  const bubbleColor = isDarkMode ? "rgba(0,188,212,0.2)" : "rgba(0,151,167,0.12)";
+  const bubbleColor = isDark ? "rgba(0,188,212,0.2)" : "rgba(0,151,167,0.12)";
 
   return (
     <View style={{ width: "100%" }}>
@@ -424,7 +441,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
           const descriptor = descriptors[route.key];
           const focused = state.index === idx;
           const activeTint = descriptor.options.tabBarActiveTintColor || colors.primary;
-          const inactiveTint = descriptor.options.tabBarInactiveTintColor || "#8e8e93";
+          const inactiveTint = descriptor.options.tabBarInactiveTintColor || colors.secondaryLabel;
           const color = focused ? activeTint : inactiveTint;
           const IconRenderer = (descriptor.options.tabBarIcon as any) || null;
           const label = descriptor.options.title ?? route.name;

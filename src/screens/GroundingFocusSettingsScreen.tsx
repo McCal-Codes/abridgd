@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import {
@@ -11,6 +11,7 @@ import {
   SensitiveActionPreference,
   SensitiveTone,
 } from "../context/SettingsContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 const GROUNDING_COLORS = ["#A8C3B3", "#D8BFD8", "#B0C4DE", "#F5DEB3", "#D3D3D3"];
 
@@ -21,6 +22,8 @@ const ANIMATION_STYLES: { label: string; value: GroundingAnimationStyle; descrip
 ];
 
 export const GroundingFocusSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const {
     isGroundingEnabled,
     setIsGroundingEnabled,
@@ -275,7 +278,8 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -372,7 +376,7 @@ const styles = StyleSheet.create({
   },
   pillSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   pillText: {
     fontFamily: typography.fontFamily.sans,
@@ -400,7 +404,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F2F7FB",
+    backgroundColor: colors.tintTransparent,
   },
   chipLabel: {
     fontFamily: typography.fontFamily.sans,
@@ -436,7 +440,7 @@ const styles = StyleSheet.create({
   },
   cardSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F2F7FB",
+    backgroundColor: colors.tintTransparent,
   },
   cardLabel: {
     fontFamily: typography.fontFamily.sans,
@@ -469,4 +473,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: spacing.md,
   },
-});
+  });

@@ -1,13 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import { HardDrive, Zap, Wifi } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const DataPerformanceSettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const { imageLoadingMode, setImageLoadingMode, dataSaverMode, setDataSaverMode } = useSettings();
 
   const handleClearCache = () => {
@@ -183,7 +186,8 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -264,7 +268,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   optionIcon: {
     marginBottom: spacing.md,
@@ -323,15 +327,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#D32F2F",
-    backgroundColor: "rgba(211, 47, 47, 0.05)",
+    borderColor: colors.error,
+    backgroundColor: `${colors.error}12`,
     alignItems: "center",
   },
   actionButtonText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
     fontWeight: "600",
-    color: "#D32F2F",
+    color: colors.error,
   },
   tipCard: {
     padding: spacing.lg,
@@ -354,4 +358,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 20,
   },
-});
+  });

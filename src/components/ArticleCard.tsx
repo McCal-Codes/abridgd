@@ -1,11 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { Article } from "../types/Article";
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ArticleProgressIndicator } from "./ArticleProgressIndicator";
 import { Skeleton } from "./Skeleton";
+import { ThemeColors } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 interface ArticleCardProps {
   article: Article;
@@ -16,6 +17,8 @@ import { ScaleButton } from "./ScaleButton";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) => {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
       <ScaleButton style={styles.card} onPress={() => onPress(article)}>
@@ -45,6 +48,8 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) =>
 };
 
 export const ArticleCardSkeleton: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.card}>
       <View style={styles.cardContent}>
@@ -60,7 +65,8 @@ export const ArticleCardSkeleton: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
@@ -120,4 +126,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     fontWeight: "500",
   },
-});
+  });

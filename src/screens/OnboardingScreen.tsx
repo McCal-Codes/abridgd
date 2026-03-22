@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ScaleButton } from "../components/ScaleButton";
@@ -14,6 +14,7 @@ import { RootStackParamList } from "../navigation/types";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { BookOpen, PauseCircle, Wind, Sliders, CheckCircle } from "lucide-react-native";
 import { GroundingAnimationStyle } from "../context/SettingsContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -87,6 +88,7 @@ const GroundingPreviewCard: React.FC<{
   isCompactHeight: boolean;
   currentStyle: GroundingAnimationStyle;
 }> = ({ isCompactHeight, currentStyle }) => {
+  const styles = useThemedStyles(createStyles);
   const pulseSize = isCompactHeight ? 74 : 94;
   const cardPadding = isCompactHeight ? spacing.sm : spacing.md;
   const labelSize = isCompactHeight ? 17 : 20;
@@ -137,6 +139,7 @@ const GroundingStyleSelector: React.FC<{
   onChange: (style: GroundingAnimationStyle) => void;
   isCompactHeight: boolean;
 }> = ({ value, onChange, isCompactHeight }) => {
+  const styles = useThemedStyles(createStyles);
   const { width: screenWidth } = useWindowDimensions();
   const horizontalPadding = isCompactHeight ? spacing.md : spacing.lg;
   const listPadding = spacing.xs;
@@ -198,6 +201,8 @@ const GroundingStyleSelector: React.FC<{
   );
 };
 export const OnboardingScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<any>();
   const { completeOnboarding, groundingAnimationStyle, setGroundingAnimationStyle } = useSettings();
@@ -376,7 +381,8 @@ export const OnboardingScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -488,11 +494,11 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#E6F4F4",
+    backgroundColor: colors.tintTransparent,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#C8E1E0",
+    borderColor: colors.border,
   },
   groundingPulseText: {
     fontFamily: typography.fontFamily.serif,
@@ -796,4 +802,4 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontWeight: "600",
   },
-});
+  });

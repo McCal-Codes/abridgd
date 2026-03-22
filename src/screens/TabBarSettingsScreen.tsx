@@ -12,7 +12,7 @@ import {
   ActionSheetIOS,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { GlassButton } from "../components/GlassButton";
@@ -38,6 +38,7 @@ import { Switch } from "react-native";
 import { ArticleCategory } from "../types/Article";
 import { useSettings } from "../context/SettingsContext";
 import type { LucideIcon } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 interface TabOption {
   id: string;
@@ -60,6 +61,8 @@ const getAvailableTabs = (layout: "minimal" | "comprehensive"): TabOption[] => {
 };
 
 export const TabBarSettingsScreen: React.FC = () => {
+  const { colors, isDark } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const {
     activeTabs,
     setActiveTabs,
@@ -385,7 +388,7 @@ export const TabBarSettingsScreen: React.FC = () => {
           title: "Reorder Tab",
           options,
           cancelButtonIndex,
-          userInterfaceStyle: "light",
+          userInterfaceStyle: isDark ? "dark" : "light",
         },
         (buttonIndex) => {
           if (hasUp && buttonIndex === 0) return handleMoveUp();
@@ -1078,7 +1081,8 @@ export const TabBarSettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -1168,7 +1172,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 14,
     fontWeight: "600",
-    color: "#D32F2F",
+    color: colors.error,
   },
   availableGrid: {
     flexDirection: "row",
@@ -1196,7 +1200,7 @@ const styles = StyleSheet.create({
   infoBox: {
     marginTop: spacing.lg,
     padding: spacing.md,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
     borderRadius: 8,
     borderLeftWidth: 4,
     borderLeftColor: colors.primary,
@@ -1223,7 +1227,7 @@ const styles = StyleSheet.create({
   },
   layoutOptionSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary + "10", // 10% opacity
+    backgroundColor: colors.tintTransparent,
   },
   layoutIconContainer: {
     marginBottom: spacing.xs,
@@ -1260,7 +1264,7 @@ const styles = StyleSheet.create({
   },
   pillSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F2F7FB",
+    backgroundColor: colors.tintTransparent,
   },
   pillText: {
     fontFamily: typography.fontFamily.sans,
@@ -1286,8 +1290,8 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.sans,
     fontSize: 11,
     fontWeight: "700",
-    color: "#FF6B6B",
-    backgroundColor: "#FFE0E0",
+    color: colors.error,
+    backgroundColor: `${colors.error}18`,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 3,
@@ -1380,7 +1384,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   previewIcon: {
-    backgroundColor: "#f2f4f7",
+    backgroundColor: colors.secondaryBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1394,12 +1398,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 6,
     right: -6,
-    backgroundColor: "#ff3b30",
+    backgroundColor: colors.error,
     borderRadius: 8,
     paddingHorizontal: 5,
   },
   previewBadgeText: {
-    color: "#fff",
+    color: colors.surface,
     fontSize: 10,
   },
   previewIndicator: {
@@ -1449,10 +1453,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   previewIndicatorUnderline: {
-    backgroundColor: "#0a84ff",
+    backgroundColor: colors.systemBlue,
   },
   previewIndicatorBubble: {
-    backgroundColor: "#e6f0ff",
+    backgroundColor: colors.tintTransparent,
   },
   modalOverlay: {
     flex: 1,
@@ -1503,7 +1507,7 @@ const styles = StyleSheet.create({
   modalOption: {
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.06)",
+    borderBottomColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1537,4 +1541,4 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: "700",
   },
-});
+  });

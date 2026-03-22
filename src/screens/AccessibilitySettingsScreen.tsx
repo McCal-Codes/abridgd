@@ -1,13 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import { Clock, Volume2 } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const AccessibilitySettingsScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const {
     animationsEnabled,
     setAnimationsEnabled,
@@ -151,7 +154,8 @@ export const AccessibilitySettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -232,7 +236,7 @@ const styles = StyleSheet.create({
   },
   pillSelected: {
     borderColor: colors.primary,
-    backgroundColor: "#F0F4F8",
+    backgroundColor: colors.tintTransparent,
   },
   pillText: {
     fontFamily: typography.fontFamily.sans,
@@ -280,4 +284,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontStyle: "italic",
   },
-});
+  });

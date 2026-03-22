@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { fetchDailyDigest, DigestItem } from "../services/AiService";
@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { HeroHeader } from "../components/HeroHeader";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 interface DigestScreenProps {
   isWelcomeBack?: boolean;
@@ -20,6 +21,8 @@ interface DigestScreenProps {
 }
 
 export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onContinue }) => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { lastAppVisit, updateLastAppVisit, digestSummaryMode } = useSettings();
   const [digest, setDigest] = useState<DigestItem[]>([]);
@@ -177,7 +180,8 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -286,4 +290,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
   },
-});
+  });

@@ -3,7 +3,6 @@ import { View, FlatList, StyleSheet, Text, TextInput, Pressable, Animated } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ArticleCard } from "../components/ArticleCard";
-import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
@@ -17,6 +16,8 @@ import * as Haptics from "expo-haptics";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { ArticleCategory } from "../types/Article";
 import { HeroHeader } from "../components/HeroHeader";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>,
@@ -25,6 +26,8 @@ type NavigationProp = CompositeNavigationProp<
 
 export const SavedScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const { savedArticles } = useSavedArticles();
   const [refreshing, setRefreshing] = React.useState(false);
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(new Date());
@@ -646,7 +649,8 @@ export const SavedScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -949,4 +953,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 20,
   },
-});
+  });

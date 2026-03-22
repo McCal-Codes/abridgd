@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useNavigation } from "@react-navigation/native";
@@ -16,8 +16,11 @@ import {
   TERMS_URL,
 } from "../config/appInfo";
 import { ChevronRight, Mail, Star } from "lucide-react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 export const AppInfoScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
   const { resetOnboarding } = useSettings();
 
@@ -46,7 +49,7 @@ export const AppInfoScreen: React.FC = () => {
             onPress={() => (navigation as any).navigate("Onboarding", { startSlideId: "whats-new-profile" })}
           >
             <View style={styles.inline}>
-              <View style={[styles.iconContainer, { backgroundColor: "#F9F1FF" }]}>
+              <View style={styles.iconContainer}>
                 <Star size={18} color={colors.primary} />
               </View>
               <Text style={[styles.actionText, { marginLeft: spacing.md }]}>What's New: Profile tab</Text>
@@ -88,7 +91,7 @@ export const AppInfoScreen: React.FC = () => {
             }}
           >
             <View style={styles.inline}>
-              <View style={[styles.iconContainer, { backgroundColor: "#EEF6FF" }]}>
+              <View style={styles.iconContainer}>
                 <Mail size={18} color={colors.primary} />
               </View>
               <Text style={[styles.actionText, { marginLeft: spacing.md }]}>Send Feedback / Report a Bug</Text>
@@ -135,7 +138,8 @@ export const AppInfoScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -186,7 +190,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
+    backgroundColor: colors.tintTransparent,
     alignItems: "center",
     justifyContent: "center",
   },
-});
+  });

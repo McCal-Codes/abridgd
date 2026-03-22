@@ -36,7 +36,7 @@ import {
 import { GlassButton } from "../components/GlassButton";
 import { SignInWithApple } from "../components/SignInWithApple";
 import { ComingSoon } from "../components/ComingSoon";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { HeroHeader } from "../components/HeroHeader";
@@ -50,6 +50,7 @@ import {
 } from "../config/appInfo";
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
 import { useSettings } from "../context/SettingsContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 const KARMA_TIERS = [
   { label: "Fresh", min: 0 },
@@ -59,6 +60,8 @@ const KARMA_TIERS = [
 ];
 
 const ProfileScreen: React.FC = () => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
@@ -716,9 +719,14 @@ const SectionHeader = ({
   title: string;
   compact?: boolean;
   style?: any;
-}) => (
-  <Text style={[styles.sectionTitle, compact && { marginBottom: spacing.sm }, style]}>{title}</Text>
-);
+}) => {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <Text style={[styles.sectionTitle, compact && { marginBottom: spacing.sm }, style]}>
+      {title}
+    </Text>
+  );
+};
 
 const StatRow = ({
   label,
@@ -730,20 +738,23 @@ const StatRow = ({
   value: string;
   hint?: string;
   isLast?: boolean;
-}) => (
-  <View
-    style={[styles.statRow, isLast && styles.statRowLast]}
-    accessible
-    accessibilityRole="text"
-    accessibilityLabel={`${label}, ${value}${hint ? `. ${hint}` : ""}`}
-  >
-    <View style={styles.statRowText}>
-      <Text style={styles.statRowLabel}>{label}</Text>
-      {hint ? <Text style={styles.statRowHint}>{hint}</Text> : null}
+}) => {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <View
+      style={[styles.statRow, isLast && styles.statRowLast]}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={`${label}, ${value}${hint ? `. ${hint}` : ""}`}
+    >
+      <View style={styles.statRowText}>
+        <Text style={styles.statRowLabel}>{label}</Text>
+        {hint ? <Text style={styles.statRowHint}>{hint}</Text> : null}
+      </View>
+      <Text style={styles.statRowValue}>{value}</Text>
     </View>
-    <Text style={styles.statRowValue}>{value}</Text>
-  </View>
-);
+  );
+};
 
 const ActionButton = ({
   label,
@@ -759,19 +770,24 @@ const ActionButton = ({
   accessibilityLabel: string;
   prominence?: "standard" | "filled" | "tinted";
   accessibilityHint?: string;
-}) => (
-  <GlassButton
-    label={label}
-    prominence={prominence}
-    onPress={onPress}
-    accessibilityLabel={accessibilityLabel}
-    accessibilityHint={accessibilityHint}
-    style={styles.actionButton}
-    icon={<Icon size={18} color={colors.text} strokeWidth={2} />}
-  />
-);
+}) => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
+  return (
+    <GlassButton
+      label={label}
+      prominence={prominence}
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      style={styles.actionButton}
+      icon={<Icon size={18} color={colors.text} strokeWidth={2} />}
+    />
+  );
+};
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -1216,6 +1232,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: 2,
   },
-});
+  });
 
 export default ProfileScreen;

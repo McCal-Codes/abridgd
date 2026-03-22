@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { RotateCcw, Undo2 } from "lucide-react-native";
 import { parse } from "node-html-parser";
-import { colors } from "../theme/colors";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import { useSettings } from "../context/SettingsContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 
 interface AbridgedReaderProps {
   content?: string;
@@ -15,6 +16,8 @@ interface AbridgedReaderProps {
 }
 
 export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", onComplete }) => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
   const { rsvpHighlightColor, rsvpAnchorStrategy } = useSettings();
   const [words, setWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -219,7 +222,8 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     padding: spacing.lg,
     alignItems: "center",
@@ -354,4 +358,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
-});
+  });
