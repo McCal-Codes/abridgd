@@ -599,8 +599,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const completeOnboarding = async () => {
     try {
-      await AsyncStorage.setItem("hasCompletedOnboarding", "true");
+      await AsyncStorage.multiSet([
+        ["hasCompletedOnboarding", "true"],
+        ["lastSeenVersion", APP_VERSION],
+      ]);
       setHasCompletedOnboarding(true);
+      setLastSeenVersion(APP_VERSION);
     } catch (e) {
       console.error("Failed to save onboarding", e);
     }

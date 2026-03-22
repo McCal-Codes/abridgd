@@ -43,12 +43,13 @@ Last Updated: March 22, 2026
   - **Dependencies**: ProfileContext, SavedArticlesContext, ReadingProgressContext
   - **Completed**: March 22, 2026
 
-- [ ] **TODO-035** | **v1.3.1** | Fix What's New/version-seen loop
-  - **Status**: 🔜 Not Started
+- [x] **TODO-035** | **v1.3.1** | Fix What's New/version-seen loop
+  - **Status**: ✅ Completed
   - **Description**: Mark the current app version as seen when the post-update onboarding flow completes so returning users do not keep re-entering the onboarding stack.
   - **Effort**: 1 hour
   - **Definition of Done**: After completing the What's New/onboarding flow once for a version, app relaunch opens Main instead of reopening onboarding.
   - **Dependencies**: SettingsContext, OnboardingScreen, RootNavigator
+  - **Completed**: March 22, 2026
 
 - [ ] **TODO-036** | **v1.3.1** | Complete dark-mode/theme migration
   - **Status**: 🔜 Not Started
@@ -302,9 +303,8 @@ Last Updated: March 22, 2026
 
 ### Active Tasks
 
-1. **TODO-035** — Fix What's New/version-seen loop
-2. **TODO-036** — Complete dark-mode/theme migration
-3. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
+1. **TODO-036** — Complete dark-mode/theme migration
+2. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
 
 ### Definition of Done (Audit Fixes)
 

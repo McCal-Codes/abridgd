@@ -67,7 +67,7 @@
 - [x] Audit fix: RSS feed resilience (real error states, retry/cached-state UI, timestamp sort by `publishedAt`)
 - [x] Audit fix: reading progress architecture (in-memory source of truth, batched persistence, profile-scoped keys)
 - [x] Audit fix: persist active profile selection and isolate profile-specific state consistently
-- [ ] Audit fix: What's New/version gating (mark seen state so post-onboarding flow does not loop)
+- [x] Audit fix: What's New/version gating (mark seen state so post-onboarding flow does not loop)
 - [ ] Audit fix: theme migration completion (replace static `theme/colors` imports with reactive theme tokens)
 - [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
 - [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
