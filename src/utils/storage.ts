@@ -51,14 +51,18 @@ export const serializeArticles = (articles: Article[]): string => {
  */
 export const deserializeArticles = (data: string): Article[] => {
   try {
-    const schema = JSON.parse(data) as StorageSchemaV1 | StorageSchemaV2;
+    const schema = JSON.parse(data) as
+      | (StorageSchemaV1 & { version: 1 })
+      | (StorageSchemaV2 & { version: 2 })
+      | { version?: number };
+    const version = schema.version;
 
     // Backwards compatibility: handle legacy version 1
-    if (schema.version === 1) {
+    if (version === 1) {
       return (schema as StorageSchemaV1).articles || [];
     }
 
-    if (schema.version === 2) {
+    if (version === 2) {
       const v2Schema = schema as StorageSchemaV2;
       const payloadString = v2Schema.compressed
         ? (decompressFromUTF16(v2Schema.payload) ?? "")
@@ -74,7 +78,7 @@ export const deserializeArticles = (data: string): Article[] => {
     }
 
     console.warn(
-      `Schema version mismatch: expected 1 or ${STORAGE_SCHEMA_VERSION}, got ${schema.version}`,
+      `Schema version mismatch: expected 1 or ${STORAGE_SCHEMA_VERSION}, got ${String(version)}`,
     );
     return [];
   } catch (error) {

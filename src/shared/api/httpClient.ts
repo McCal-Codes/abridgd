@@ -60,8 +60,6 @@ export async function request<T = unknown>(
 
   try {
     const res = await fetch(url, fetchOptions);
-    clearTimeout(id);
-
     const text = await res.text();
     const contentType = res.headers.get("content-type") || "";
     const parsed = contentType.includes("application/json") && text ? JSON.parse(text) : text;
@@ -77,5 +75,7 @@ export async function request<T = unknown>(
     }
     if (err instanceof HttpError) throw err;
     throw new HttpError(err.message || "Network error");
+  } finally {
+    clearTimeout(id);
   }
 }

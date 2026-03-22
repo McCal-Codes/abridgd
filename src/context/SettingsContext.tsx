@@ -249,7 +249,7 @@ const defaultSettingsContext: SettingsContextType = {
 const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
 
 export const sanitizeTabs = (tabs: string[], layout: "minimal" | "comprehensive") => {
-  const allowed = allowedTabs[layout];
+  const allowed = allowedTabs[layout] as readonly string[];
   const unique = tabs.filter((t, index) => allowed.includes(t) && tabs.indexOf(t) === index);
   let normalized = unique.slice(0, 5);
   if (normalized.length < 3) {
@@ -454,7 +454,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setAutoSaveOnCompleteState(savedAutoSave === "true");
       }
       if (savedDefaultTab) {
-        const allowed = allowedTabs[tabLayout];
+        const allowed = allowedTabs[tabLayout] as readonly string[];
         const resolved = allowed.includes(savedDefaultTab) ? savedDefaultTab : allowed[0];
         setDefaultTabState(resolved);
       }
@@ -780,7 +780,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setDefaultTab = async (tab: string) => {
     try {
-      const allowed = allowedTabs[tabLayout];
+      const allowed = allowedTabs[tabLayout] as readonly string[];
       const resolved = allowed.includes(tab) ? tab : allowed[0];
       await AsyncStorage.setItem("defaultTab", resolved);
       setDefaultTabState(resolved);

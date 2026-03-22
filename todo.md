@@ -63,6 +63,12 @@
 ### Priority Fixes & Stability — Do These First
 
 - [x] Stabilize auth/settings (backported & released in v1.3.6 — see PR #2)
+- [x] Audit fix: restore real engineering gates (TypeScript clean, Jest green, Sentry/Jest ESM config)
+- [ ] Audit fix: RSS feed resilience (real error states, retry/cached-state UI, timestamp sort by `publishedAt`)
+- [ ] Audit fix: reading progress architecture (in-memory source of truth, batched persistence, profile-scoped keys)
+- [ ] Audit fix: persist active profile selection and isolate profile-specific state consistently
+- [ ] Audit fix: What's New/version gating (mark seen state so post-onboarding flow does not loop)
+- [ ] Audit fix: theme migration completion (replace static `theme/colors` imports with reactive theme tokens)
 - [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
 - [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
 - [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)

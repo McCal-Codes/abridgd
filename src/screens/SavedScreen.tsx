@@ -14,7 +14,6 @@ import { useSavedArticles } from "../context/SavedArticlesContext";
 import { ScaleButton } from "../components/ScaleButton";
 import { Bookmark, Star as Sparkles, Search, SlidersHorizontal, X } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "../theme/ThemeContext";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { ArticleCategory } from "../types/Article";
 import { HeroHeader } from "../components/HeroHeader";
@@ -49,7 +48,6 @@ export const SavedScreen: React.FC = () => {
   >("newest");
   const { top: insetTop } = useSafeAreaInsets();
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
   const { getProgress } = useReadingProgressOptional();
   const {
     tabBarHeight,
@@ -87,8 +85,8 @@ export const SavedScreen: React.FC = () => {
     }, 400);
   }, []);
 
-  const formatUpdatedAgo = React.useCallback((updated: Date | null) => {
-    if (!updated) return null;
+  const formatUpdatedAgo = React.useCallback((updated: Date | null): string | undefined => {
+    if (!updated) return undefined;
     const diffMs = Date.now() - updated.getTime();
     const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
     if (diffSeconds < 60) return "Updated just now";

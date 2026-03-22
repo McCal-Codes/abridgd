@@ -5,11 +5,11 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Buffer } from "buffer";
+
 // Ensure Buffer exists in React Native runtime
-// @ts-expect-error - global may not have Buffer
-if (!(global as any).Buffer) {
-  // @ts-expect-error
-  (global as any).Buffer = Buffer;
+const globalWithBuffer = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
+if (!globalWithBuffer.Buffer) {
+  globalWithBuffer.Buffer = Buffer;
 }
 
 interface ProfileContextType {
@@ -295,9 +295,19 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
   const updateActiveProfileStats = (changes: Partial<Profile["stats"]>) => {
     if (!activeProfile) return;
+    const nextChanges = changes || {};
+    const currentStats = activeProfile.stats || {
+      articlesRead: 0,
+      savedActions: 0,
+      lastReadAt: null,
+    };
     const updated: Profile = applyAchievements({
       ...activeProfile,
-      stats: { ...activeProfile.stats, ...changes },
+      stats: {
+        articlesRead: nextChanges.articlesRead ?? currentStats.articlesRead,
+        savedActions: nextChanges.savedActions ?? currentStats.savedActions,
+        lastReadAt: nextChanges.lastReadAt ?? currentStats.lastReadAt ?? null,
+      },
     });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
     setActiveProfile(updated);

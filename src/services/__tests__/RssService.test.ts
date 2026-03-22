@@ -11,8 +11,8 @@ jest.mock("../../data/feedConfig", () => ({
 }));
 
 jest.mock("../../utils/sourcePreferences", () => ({
-  loadSourcePreferences: (...args: unknown[]) => mockLoadSourcePrefs(...args),
-  isSourceEnabled: (...args: unknown[]) => mockIsSourceEnabled(...args),
+  loadSourcePreferences: () => mockLoadSourcePrefs(),
+  isSourceEnabled: () => mockIsSourceEnabled(),
 }));
 
 // Helper to import a fresh module instance (categoryCache lives at module scope)
@@ -44,8 +44,7 @@ describe("RssService cache and storage", () => {
 
   it("reuses cached articles when TTL is valid", async () => {
     const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    // @ts-expect-error allow global assignment for test
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as typeof fetch;
 
     const { fetchArticlesByCategory } = await importService();
 
@@ -60,8 +59,7 @@ describe("RssService cache and storage", () => {
 
   it("ignores cache when forceRefresh is true", async () => {
     const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    // @ts-expect-error allow global assignment for test
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as typeof fetch;
 
     const { fetchArticlesByCategory } = await importService();
 
@@ -73,8 +71,7 @@ describe("RssService cache and storage", () => {
 
   it("does not cache empty results", async () => {
     const mockFetch = jest.fn().mockResolvedValue(buildResponse(EMPTY_FEED));
-    // @ts-expect-error allow global assignment for test
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as typeof fetch;
 
     const { fetchArticlesByCategory } = await importService();
 
@@ -89,8 +86,7 @@ describe("RssService cache and storage", () => {
 
   it("exposes cached articles via getCachedArticles", async () => {
     const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    // @ts-expect-error allow global assignment for test
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as typeof fetch;
 
     const { fetchArticlesByCategory, getCachedArticles } = await importService();
 
@@ -103,8 +99,7 @@ describe("RssService cache and storage", () => {
 
   it("falls back to default-on sources if overrides disable all sources", async () => {
     const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    // @ts-expect-error allow global assignment for test
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as typeof fetch;
 
     mockLoadSourcePrefs.mockResolvedValueOnce({
       overrides: { ...DISABLED_OVERRIDES },

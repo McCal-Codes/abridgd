@@ -288,29 +288,6 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   const [indicatorRadius, setIndicatorRadius] = React.useState(16);
   const [tabLayouts, setTabLayouts] = React.useState<Record<string, LayoutRectangle>>({});
 
-  const handleTabLayout = React.useCallback(
-    (routeKey: string, layout: LayoutRectangle) => {
-      setTabLayouts((prev) => {
-        const existing = prev[routeKey];
-        if (
-          existing &&
-          Math.abs(existing.width - layout.width) < 1 &&
-          Math.abs(existing.height - layout.height) < 1 &&
-          Math.abs(existing.x - layout.x) < 1 &&
-          Math.abs(existing.y - layout.y) < 1
-        ) {
-          return prev;
-        }
-        return { ...prev, [routeKey]: layout };
-      });
-      const activeRouteKey = routes[state.index]?.key;
-      if (activeRouteKey === routeKey) {
-        requestAnimationFrame(() => animateToRoute(state.index));
-      }
-    },
-    [animateToRoute, routes, state.index],
-  );
-
   const animateToRoute = React.useCallback(
     (index: number) => {
       if (tabIndicatorStyle === "none") {
@@ -387,6 +364,29 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
       indicatorY,
       indicatorOpacity,
     ],
+  );
+
+  const handleTabLayout = React.useCallback(
+    (routeKey: string, layout: LayoutRectangle) => {
+      setTabLayouts((prev) => {
+        const existing = prev[routeKey];
+        if (
+          existing &&
+          Math.abs(existing.width - layout.width) < 1 &&
+          Math.abs(existing.height - layout.height) < 1 &&
+          Math.abs(existing.x - layout.x) < 1 &&
+          Math.abs(existing.y - layout.y) < 1
+        ) {
+          return prev;
+        }
+        return { ...prev, [routeKey]: layout };
+      });
+      const activeRouteKey = routes[state.index]?.key;
+      if (activeRouteKey === routeKey) {
+        requestAnimationFrame(() => animateToRoute(state.index));
+      }
+    },
+    [animateToRoute, routes, state.index],
   );
 
   React.useEffect(() => {

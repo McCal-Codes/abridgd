@@ -208,7 +208,7 @@ const mapRssItemToArticle = (item: any, category: ArticleCategory, sourceName: s
   const headline = sanitizeText(item.title?.trim() || "Untitled"); // Sanitize headline too!
 
   // Extract image from enclosure or media:content or itunes:image
-  let imageUrl = undefined;
+  let imageUrl: string | undefined;
   const mediaImages = new Set<string>();
   const mediaVideos = new Set<string>();
   if (item.enclosure && item.enclosure["@_url"]) {

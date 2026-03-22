@@ -40,8 +40,8 @@ const AnimatedFlatList: typeof FlatList =
     : FlatList) ||
   FlatList;
 
-const formatUpdatedAgo = (lastUpdated: Date | null) => {
-  if (!lastUpdated) return null;
+const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
+  if (!lastUpdated) return undefined;
   const diffMs = Date.now() - lastUpdated.getTime();
   const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
   if (diffSeconds < 60) return "Updated just now";

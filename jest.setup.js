@@ -3,6 +3,13 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 
+jest.mock("@sentry/react-native", () => ({
+  init: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+}));
+
 // Mock SafeAreaContext
 jest.mock("react-native-safe-area-context", () => {
   const React = require("react");

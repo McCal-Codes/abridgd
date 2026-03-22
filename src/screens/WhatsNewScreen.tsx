@@ -13,10 +13,12 @@ import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { Sparkles, ArrowRight, Zap, Palette, BookOpen } from "lucide-react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/types";
 
-type WhatsNewScreenProps = NativeStackScreenProps<RootStackParamList, "WhatsNew">;
+type WhatsNewScreenProps = {
+  navigation: {
+    goBack: () => void;
+  };
+};
 
 const FEATURES = [
   {

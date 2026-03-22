@@ -606,6 +606,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     marginRight: spacing.sm,
   },
+  smallOptionDisabled: {
+    opacity: 0.5,
+  },
   smallOptionText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 14,

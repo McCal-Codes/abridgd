@@ -113,7 +113,7 @@ describe("SavedScreen", () => {
     mockParentNavigate.mockClear();
   });
 
-const renderWithProviders = (ui: React.ReactNode) => render(ui);
+  const renderWithProviders = (ui: React.ReactElement) => render(ui);
 
   it("renders empty state when no saved articles", () => {
     const { getByText, getByTestId } = renderWithProviders(<SavedScreen />);
@@ -146,7 +146,7 @@ const renderWithProviders = (ui: React.ReactNode) => render(ui);
     expect(getByText("Saved Story")).toBeTruthy();
   });
 
-  it("pull-to-refresh shows updated timestamp", () => {
+  it("pull-to-refresh shows updated timestamp", async () => {
     jest.useFakeTimers();
     mockSavedArticlesState = createSavedArticlesState([
       {
@@ -167,8 +167,8 @@ const renderWithProviders = (ui: React.ReactNode) => render(ui);
     const list = getByTestId("saved-list");
     expect(getByTestId("saved-updated")).toBeTruthy();
 
-    act(() => {
-      list.props.onRefresh();
+    await act(async () => {
+      await list.props.onRefresh();
       jest.runAllTimers();
     });
 

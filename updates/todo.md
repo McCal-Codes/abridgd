@@ -1,11 +1,65 @@
 # Active To-Do List
 
-Last Updated: January 16, 2026
+Last Updated: March 22, 2026
 
 **Quick Reference:**
 - See [completed.md](./completed.md) for all finished tasks
 - Reference standards: [docs/standards/](../docs/standards/)
 - Agent instructions: [.agentinstructions.md](../.agentinstructions.md)
+
+---
+
+## Audit Priority Queue (March 22, 2026)
+
+- [x] **TODO-031** | **v1.3.1** | Restore engineering gates: TypeScript + Jest
+  - **Status**: ✅ Completed
+  - **Description**: Fix current `npx tsc --noEmit` failures, repair Jest config for `@sentry/react-native` ESM, and reconcile broken Home/Saved test expectations with the actual UI.
+  - **Effort**: 4 hours
+  - **Definition of Done**: `npm test -- --runInBand` passes locally, `npx tsc --noEmit` passes locally, and test output is free of avoidable act/config failures.
+  - **Completed**: March 22, 2026
+  - **Dependencies**: None
+
+- [ ] **TODO-032** | **v1.3.1** | Fix RSS ordering + honest network error handling
+  - **Status**: 🔜 Not Started
+  - **Description**: Sort feeds by `publishedAt` instead of display timestamps, propagate hard feed failures to screen-level error states, and distinguish empty feeds from offline/fetch failures.
+  - **Effort**: 3 hours
+  - **Definition of Done**: New stories appear in correct order, failed feed loads show retry/cached-state UI, and empty-state copy is only shown for true empty results.
+  - **Dependencies**: RssService, HomeScreen, SectionScreen
+
+- [ ] **TODO-033** | **v1.3.1** | Refactor reading progress persistence for performance + profile safety
+  - **Status**: 🔜 Not Started
+  - **Description**: Stop reading/writing AsyncStorage on every scroll tick, batch writes from context state, guard zero-height scroll math, and namespace progress data by active profile.
+  - **Effort**: 5 hours
+  - **Definition of Done**: Article scrolling no longer triggers storage churn per frame, progress is preserved correctly, and switching profiles does not leak reading state across users.
+  - **Dependencies**: ReadingProgressContext, readingProgressStorage, ArticleScreen, ProfileContext
+
+- [ ] **TODO-034** | **v1.3.1** | Persist active profile selection across relaunch
+  - **Status**: 🔜 Not Started
+  - **Description**: Save the active profile id, restore it on launch, and ensure profile switching updates all profile-scoped storage consistently.
+  - **Effort**: 2 hours
+  - **Definition of Done**: Relaunch returns to the last active profile instead of defaulting to the first stored profile, with saved articles and progress aligned to that profile.
+  - **Dependencies**: ProfileContext, SavedArticlesContext, ReadingProgressContext
+
+- [ ] **TODO-035** | **v1.3.1** | Fix What's New/version-seen loop
+  - **Status**: 🔜 Not Started
+  - **Description**: Mark the current app version as seen when the post-update onboarding flow completes so returning users do not keep re-entering the onboarding stack.
+  - **Effort**: 1 hour
+  - **Definition of Done**: After completing the What's New/onboarding flow once for a version, app relaunch opens Main instead of reopening onboarding.
+  - **Dependencies**: SettingsContext, OnboardingScreen, RootNavigator
+
+- [ ] **TODO-036** | **v1.3.1** | Complete dark-mode/theme migration
+  - **Status**: 🔜 Not Started
+  - **Description**: Replace static `theme/colors` imports on primary screens/components with reactive theme access, then close the known dark-mode drift in navigation, article, and saved surfaces.
+  - **Effort**: 5 hours
+  - **Definition of Done**: Theme changes propagate without reload, StatusBar tracks the active theme, and dark-mode spot checks pass on Home, Article, Saved, and Settings.
+  - **Dependencies**: ThemeContext, App.tsx, RootNavigator, core screens/components
+
+- [ ] **TODO-037** | **v1.3.1** | Patch production dependency vulnerabilities in feed/network stack
+  - **Status**: 🔜 Not Started
+  - **Description**: Upgrade or mitigate current production `npm audit --omit=dev` findings, prioritizing `fast-xml-parser` and other high/critical runtime packages used by feed loading.
+  - **Effort**: 2.5 hours
+  - **Definition of Done**: High/critical prod vulnerabilities are removed or explicitly mitigated and documented, with feed parsing regression-tested.
+  - **Dependencies**: package.json, package-lock.json, RssService tests
 
 ---
 
@@ -241,20 +295,21 @@ Last Updated: January 16, 2026
 
 ---
 
-## 🎯 Current Focus (v1.2.0)
+## 🎯 Current Focus (v1.3.1)
 
 ### Active Tasks
 
-1. **TODO-005** — Version tracking for auto-show What's New
-2. **TODO-006** — Article sharing functionality
-3. **TODO-007** — Search/filtering improvements
-4. **TODO-008** — Offline reading support
+1. **TODO-032** — Fix RSS ordering + honest network error handling
+2. **TODO-033** — Refactor reading progress persistence for performance + profile safety
+3. **TODO-034** — Persist active profile selection across relaunch
+4. **TODO-035** — Fix What's New/version-seen loop
+5. **TODO-036** — Complete dark-mode/theme migration
 
-### Definition of Done (All v1.2.0 Tasks)
+### Definition of Done (Audit Fixes)
 
 This sprint is considered complete only when:
-- [ ] All 4 tasks have passing tests
-- [ ] No console errors in dev or production builds
+- [ ] All audit branches land with passing tests and type-checks
+- [ ] Feed failures surface honest error states instead of silent empty success
 - [ ] Features validated on iOS and Android
 - [ ] CHANGELOG updated with all v1.2.0 entries
 - [ ] ACHIEVED.md documents completion

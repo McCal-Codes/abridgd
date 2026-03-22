@@ -19,8 +19,8 @@ import { MapPin, Newspaper } from "lucide-react-native";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SectionRouteProp = RouteProp<TabParamList, "Discover">;
 
-const formatUpdatedAgo = (lastUpdated: Date | null) => {
-  if (!lastUpdated) return null;
+const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
+  if (!lastUpdated) return undefined;
   const diffMs = Date.now() - lastUpdated.getTime();
   const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
   if (diffSeconds < 60) return "Updated just now";

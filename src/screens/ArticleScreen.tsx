@@ -216,11 +216,11 @@ export const ArticleScreen: React.FC = () => {
 
     const extraVideos = (article.mediaVideos || [])
       .filter((src) => src && !existingSources.has(src))
-      .map((src) => ({ type: "video" as const, src }));
+      .map((src) => ({ type: "video" as const, src, caption: undefined }));
 
     const extraImages = (article.mediaImages || [])
       .filter((src) => src && !existingSources.has(src))
-      .map((src) => ({ type: "image" as const, src }));
+      .map((src) => ({ type: "image" as const, src, caption: undefined }));
 
     return [...nodes, ...extraVideos, ...extraImages];
   }, [article.mediaImages, article.mediaVideos, bodyContent]);

@@ -39,7 +39,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
 
     const load = async () => {
       try {
-        const data = await fetchDailyDigest(digestSummaryMode);
+        const data = await fetchDailyDigest(lastAppVisit, digestSummaryMode);
         if (mounted) {
           setDigest(data);
         }
@@ -66,7 +66,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- updateLastAppVisit is stable enough
-  }, [digestSummaryMode]);
+  }, [digestSummaryMode, lastAppVisit, updateLastAppVisit]);
 
   const handleReadMore = (item: DigestItem) => {
     if (item.article) {

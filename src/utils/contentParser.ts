@@ -58,7 +58,7 @@ export const parseHtmlContent = (html: string): ContentNode[] => {
         }
       }
     } else if (["h1", "h2", "h3", "h4"].includes(tag)) {
-      const text = node.text || node.childNodes.map((torc: any) => c.text).join("");
+      const text = node.text || node.childNodes.map((child: any) => child.text).join("");
       if (text && text.trim()) {
         nodes.push({ type: "header", text: text.trim(), level: tag });
       }

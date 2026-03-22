@@ -238,8 +238,8 @@ export const ReadingSettingsScreen: React.FC = () => {
             ))}
           </View>
           {/* Preview */}
-          <View style={[styles.lineHeightPreview, { lineHeight }]}>
-            <Text style={styles.previewText}>
+          <View style={styles.lineHeightPreview}>
+            <Text style={[styles.previewText, { lineHeight: 16 * lineHeight }]}>
               This is how your articles will look with the selected line spacing. More space makes
               reading easier on the eyes.
             </Text>

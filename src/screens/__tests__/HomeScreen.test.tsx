@@ -115,6 +115,12 @@ describe("HomeScreen", () => {
       </ScrollContext.Provider>,
     );
 
+  const settleVirtualizedList = async () => {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     resetSettings();
@@ -146,9 +152,14 @@ describe("HomeScreen", () => {
     };
   });
 
-  it("renders loading skeletons initially", () => {
-    const { getAllByTestId } = renderScreen();
-    expect(getAllByTestId("article-card-skeleton").length).toBeGreaterThan(0);
+  afterEach(async () => {
+    await settleVirtualizedList();
+  });
+
+  it("renders loading indicator initially", () => {
+    (fetchArticlesByCategory as jest.Mock).mockImplementationOnce(() => new Promise(() => {}));
+    const { getByText } = renderScreen();
+    expect(getByText("Fetching top stories…")).toBeTruthy();
   });
 
   it("displays fetched headlines", async () => {
@@ -169,6 +180,7 @@ describe("HomeScreen", () => {
     const { findByText } = renderScreen();
 
     expect(await findByText("First")).toBeTruthy();
+    await settleVirtualizedList();
   });
 
   it("shows error state when fetch fails", async () => {
@@ -178,6 +190,7 @@ describe("HomeScreen", () => {
 
     expect(await findByText(/Network error/i)).toBeTruthy();
     expect(await findByText(/Boom/i)).toBeTruthy();
+    await settleVirtualizedList();
   });
 
   it("refreshes the feed via pull-to-refresh", async () => {
@@ -216,13 +229,14 @@ describe("HomeScreen", () => {
 
     (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce(secondArticles);
 
-    act(() => {
+    await act(async () => {
       const list = getByTestId("home-list");
-      list.props.onRefresh();
+      await list.props.onRefresh();
     });
 
     expect(await findByText("Second")).toBeTruthy();
     expect(fetchArticlesByCategory).toHaveBeenCalledTimes(2);
+    await settleVirtualizedList();
   });
 
   it("shows continue reading items and toggles Show all", async () => {
@@ -249,6 +263,7 @@ describe("HomeScreen", () => {
       totalReadTimeSeconds: 60,
       status: "in-progress",
     }));
+    (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce([inProgress[0]]);
 
     const { findByTestId, findByText, getByText } = renderScreen();
 
@@ -260,5 +275,6 @@ describe("HomeScreen", () => {
     });
 
     await waitFor(() => expect(getByText(/Hide/i)).toBeTruthy());
+    await settleVirtualizedList();
   });
 });

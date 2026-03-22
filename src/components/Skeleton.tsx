@@ -3,7 +3,7 @@ import { Animated, StyleProp, ViewStyle } from "react-native";
 import { colors } from "../theme/colors";
 
 interface SkeletonProps {
-  width?: number | string;
+  width?: ViewStyle["width"];
   height?: number;
   borderRadius?: number;
   style?: StyleProp<ViewStyle>;
@@ -47,8 +47,8 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           height,
           borderRadius,
           backgroundColor: colors.secondaryBackground,
-          opacity,
         },
+        { opacity },
         style,
       ]}
     />

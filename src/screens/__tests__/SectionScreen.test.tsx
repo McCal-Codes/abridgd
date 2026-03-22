@@ -60,6 +60,12 @@ let mockInsets = { top: 0, bottom: 0, left: 0, right: 0 };
 });
 
 describe("SectionScreen", () => {
+  const settleVirtualizedList = async () => {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     (fetchArticlesByCategory as jest.Mock).mockResolvedValue([
@@ -81,6 +87,7 @@ describe("SectionScreen", () => {
     const { findByTestId } = render(<SectionScreen />);
     const updated = await findByTestId("section-updated");
     expect(updated).toBeTruthy();
+    await settleVirtualizedList();
   });
 
   it("refresh sets updated timestamp", async () => {
@@ -107,5 +114,6 @@ describe("SectionScreen", () => {
     });
 
     expect(await findByText("Refreshed Story")).toBeTruthy();
+    await settleVirtualizedList();
   });
 });

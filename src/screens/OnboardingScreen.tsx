@@ -666,6 +666,18 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  groundingStyleLabel: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  groundingStyleDescription: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 16,
+  },
   groundingStyleMiniBar: {
     width: "100%",
     height: 6,
