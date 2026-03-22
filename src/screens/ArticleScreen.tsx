@@ -67,6 +67,12 @@ export const ArticleScreen: React.FC = () => {
   // Reading progress state
   const [readStartTime] = useState(Date.now());
   const readingTimeIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastProgressSyncRef = React.useRef({
+    completionPercentage: -1,
+    scrollPixels: 0,
+    lastSyncedAt: 0,
+    completed: false,
+  });
 
   // Use local state for body so we can update it
   const [bodyContent, setBodyContent] = useState(article.body);
@@ -286,7 +292,7 @@ export const ArticleScreen: React.FC = () => {
         await updateProgress(article.id, {
           totalReadTimeSeconds,
           lastReadAt: Date.now(),
-          status: "in-progress",
+          status: progress?.status === "completed" ? "completed" : "in-progress",
         });
       } catch (error) {
         console.error("Failed to update reading time:", error);
@@ -512,27 +518,52 @@ export const ArticleScreen: React.FC = () => {
             const contentHeight = event.nativeEvent.contentSize.height;
             const scrollPosition = event.nativeEvent.contentOffset.y;
             const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
-
-            // Calculate scroll percentage and update progress
+            const maxScrollableDistance = Math.max(contentHeight - scrollViewHeight, 0);
             const scrollPercentage =
-              contentHeight > 0 ? scrollPosition / (contentHeight - scrollViewHeight) : 0;
+              maxScrollableDistance > 0 ? scrollPosition / maxScrollableDistance : 0;
             const completionPercentage = Math.min(100, Math.round(scrollPercentage * 100));
+            const now = Date.now();
+            const lastSync = lastProgressSyncRef.current;
+            const shouldSyncProgress =
+              Math.abs(completionPercentage - lastSync.completionPercentage) >= 1 ||
+              Math.abs(scrollPosition - lastSync.scrollPixels) >= 48 ||
+              now - lastSync.lastSyncedAt >= 1000;
 
-            // Update reading progress
-            updateProgress(article.id, {
-              scrollPosition: scrollPercentage,
-              scrollPixels: scrollPosition,
-              completionPercentage,
-              lastReadAt: Date.now(),
-            }).catch((error) => console.error("Failed to update scroll progress:", error));
+            if (shouldSyncProgress) {
+              lastProgressSyncRef.current = {
+                ...lastSync,
+                completionPercentage,
+                scrollPixels: scrollPosition,
+                lastSyncedAt: now,
+              };
+
+              updateProgress(article.id, {
+                scrollPosition: scrollPercentage,
+                scrollPixels: scrollPosition,
+                completionPercentage,
+                lastReadAt: now,
+              }).catch((error) => console.error("Failed to update scroll progress:", error));
+            }
 
             // Mark as finished when user scrolls near the bottom
-            if (scrollPosition + scrollViewHeight >= contentHeight - 100) {
+            if (
+              !lastProgressSyncRef.current.completed &&
+              scrollPosition + scrollViewHeight >= contentHeight - 100
+            ) {
               setFinishedReading(true);
+              lastProgressSyncRef.current = {
+                completionPercentage: 100,
+                scrollPixels: scrollPosition,
+                lastSyncedAt: now,
+                completed: true,
+              };
               // Update status to completed
               updateProgress(article.id, {
                 status: "completed",
+                scrollPixels: scrollPosition,
+                scrollPosition: maxScrollableDistance > 0 ? scrollPercentage : 1,
                 completionPercentage: 100,
+                lastReadAt: now,
               }).catch((error) => console.error("Failed to mark as completed:", error));
             }
           }}

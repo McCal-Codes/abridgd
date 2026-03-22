@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, render, waitFor, act } from "@testing-library/react-native";
 import { ArticleScreen } from "../ArticleScreen";
 import { Article } from "../../types/Article";
+import { ScrollView } from "react-native";
 
 const baseArticle: Article = {
   id: "test-article-1",
@@ -61,6 +62,28 @@ jest.mock("../../context/SavedArticlesContext", () => ({
 
 jest.mock("../../context/SettingsContext", () => ({
   useSettings: () => mockSettings,
+}));
+
+const mockReadingProgressApi = {
+  progressData: {},
+  isLoading: false,
+  error: null,
+  updateProgress: jest.fn(() => Promise.resolve()),
+  getProgress: jest.fn<any, any>(() => undefined),
+  clearProgress: jest.fn(() => Promise.resolve()),
+  inProgressArticles: [],
+  readingStats: {
+    totalArticlesRead: 0,
+    totalReadTimeSeconds: 0,
+    averageCompletionPercentage: 0,
+    articlesInProgress: 0,
+  },
+  refreshStats: jest.fn(() => Promise.resolve()),
+};
+
+jest.mock("../../context/ReadingProgressContext", () => ({
+  useReadingProgress: () => mockReadingProgressApi,
+  useReadingProgressOptional: () => mockReadingProgressApi,
 }));
 
 jest.mock("react-native-gesture-handler", () => {
@@ -143,9 +166,11 @@ jest.mock("expo-haptics", () => ({
 describe("ArticleScreen sensitive gating", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
     mockRouteArticle = { ...baseArticle };
     mockSavedArticlesApi.isArticleSaved.mockReturnValue(false);
     resetSettings();
+    mockReadingProgressApi.getProgress.mockReturnValue(undefined);
   });
 
   it("shows sensitive gating prompt when article triggers grounding", () => {
@@ -189,5 +214,67 @@ describe("ArticleScreen sensitive gating", () => {
     // Wait for the grounding overlay to appear
     const groundingText = await findByText("Grounding overlay active", {}, { timeout: 3000 });
     expect(groundingText).toBeTruthy();
+  });
+
+  it("marks completion safely when the article has no scrollable distance", async () => {
+    const { getByText, findByText, UNSAFE_getByType } = render(<ArticleScreen />);
+
+    await act(async () => {
+      fireEvent.press(getByText("Continue without grounding"));
+    });
+
+    await findByText(mockRouteArticle.headline);
+
+    const scrollView = UNSAFE_getByType(ScrollView);
+
+    act(() => {
+      fireEvent.scroll(scrollView, {
+        nativeEvent: {
+          contentOffset: { y: 0 },
+          contentSize: { height: 600 },
+          layoutMeasurement: { height: 600 },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(mockReadingProgressApi.updateProgress).toHaveBeenCalledWith(
+        mockRouteArticle.id,
+        expect.objectContaining({
+          status: "completed",
+          scrollPosition: 1,
+          completionPercentage: 100,
+        }),
+      );
+    });
+  });
+
+  it("keeps completed articles completed during reading-time sync", async () => {
+    jest.useFakeTimers();
+    mockReadingProgressApi.getProgress.mockReturnValue({
+      articleId: mockRouteArticle.id,
+      scrollPosition: 1,
+      completionPercentage: 100,
+      startedAt: 1,
+      lastReadAt: 2,
+      totalReadTimeSeconds: 20,
+      status: "completed",
+    });
+
+    render(<ArticleScreen />);
+
+    await act(async () => {
+      jest.advanceTimersByTime(10000);
+    });
+
+    await waitFor(() => {
+      expect(mockReadingProgressApi.updateProgress).toHaveBeenCalledWith(
+        mockRouteArticle.id,
+        expect.objectContaining({
+          totalReadTimeSeconds: 30,
+          status: "completed",
+        }),
+      );
+    });
   });
 });

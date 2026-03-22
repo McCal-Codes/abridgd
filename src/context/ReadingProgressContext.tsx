@@ -5,17 +5,20 @@ import React, {
   ReactNode,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import { ReadingProgress, ReadingProgressState } from "../types/ReadingProgress";
 import {
+  clearAllReadingProgress,
+  getInProgressArticlesFromState,
+  getReadingProgressStorageKey,
+  getReadingStatsFromState,
   loadReadingProgress,
+  mergeReadingProgress,
+  removeReadingProgress,
   saveReadingProgress,
-  updateArticleProgress,
-  getInProgressArticles,
-  getReadingStats,
-  clearArticleProgress,
 } from "../utils/readingProgressStorage";
-import { useProfiles } from "./ProfileContext";
+import { useProfilesOptional } from "./ProfileContext";
 
 interface ReadingProgressContextType {
   progressData: ReadingProgressState;
@@ -38,51 +41,78 @@ const ReadingProgressContext = createContext<ReadingProgressContextType | undefi
 
 export const ReadingProgressProvider = ({ children }: { children: ReactNode }) => {
   const [progressData, setProgressData] = useState<ReadingProgressState>({});
-  const [inProgressArticles, setInProgressArticles] = useState<ReadingProgress[]>([]);
-  const [readingStats, setReadingStats] = useState({
-    totalArticlesRead: 0,
-    totalReadTimeSeconds: 0,
-    averageCompletionPercentage: 0,
-    articlesInProgress: 0,
-  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { trackArticleRead } = useProfiles();
+  const [hydratedStorageKey, setHydratedStorageKey] = useState<string | null>(null);
+  const profileContext = useProfilesOptional?.() ?? undefined;
+  const activeProfileId = profileContext?.activeProfile?.id;
+  const trackArticleRead = useMemo(
+    () => profileContext?.trackArticleRead ?? (() => {}),
+    [profileContext?.trackArticleRead],
+  );
+  const storageKey = useMemo(
+    () => getReadingProgressStorageKey(activeProfileId),
+    [activeProfileId],
+  );
 
-  // Initialize: Load reading progress on app start
+  const inProgressArticles = useMemo(
+    () => getInProgressArticlesFromState(progressData),
+    [progressData],
+  );
+  const readingStats = useMemo(() => getReadingStatsFromState(progressData), [progressData]);
+
+  // Initialize: Load reading progress on app start and whenever the active profile changes.
   useEffect(() => {
+    let cancelled = false;
+
     const initializeProgress = async () => {
       try {
         setIsLoading(true);
         setError(null);
+        setHydratedStorageKey(null);
 
-        const data = await loadReadingProgress();
+        let data = await loadReadingProgress(3, 100, storageKey);
+
+        // One-time migration from the old global key to the active profile's key.
+        if (activeProfileId && Object.keys(data).length === 0) {
+          const legacyData = await loadReadingProgress();
+          if (Object.keys(legacyData).length > 0) {
+            data = legacyData;
+            await saveReadingProgress(legacyData, 3, 100, storageKey);
+            await clearAllReadingProgress();
+          }
+        }
+
+        if (cancelled) return;
         setProgressData(data);
-
-        // Load in-progress articles and stats
-        const inProgress = await getInProgressArticles();
-        setInProgressArticles(inProgress);
-
-        const stats = await getReadingStats();
-        setReadingStats(stats);
+        setHydratedStorageKey(storageKey);
       } catch (err) {
+        if (cancelled) return;
         const errorMessage = err instanceof Error ? err.message : "Failed to load reading progress";
         console.error("Reading progress initialization error:", err);
         setError(errorMessage);
+        setProgressData({});
+        setHydratedStorageKey(storageKey);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeProgress();
-  }, []);
 
-  // Auto-save to AsyncStorage whenever progressData changes
+    return () => {
+      cancelled = true;
+    };
+  }, [activeProfileId, storageKey]);
+
+  // Auto-save to AsyncStorage whenever progressData changes.
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && hydratedStorageKey === storageKey) {
       const saveToStorage = async () => {
         try {
-          await saveReadingProgress(progressData);
+          await saveReadingProgress(progressData, 3, 100, storageKey);
           setError(null);
         } catch (err) {
           const errorMessage =
@@ -92,40 +122,25 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
         }
       };
 
-      // Debounce saves to avoid excessive writes
       const timeout = setTimeout(saveToStorage, 500);
       return () => clearTimeout(timeout);
     }
-  }, [progressData, isLoading]);
+  }, [progressData, isLoading, storageKey, hydratedStorageKey]);
 
   const updateProgress = useCallback(
     async (articleId: string, updates: Partial<ReadingProgress>) => {
       try {
-        const updated = await updateArticleProgress(articleId, updates);
         setProgressData((prev) => {
           const previousStatus = prev[articleId]?.status;
-          const next = {
-            ...prev,
-            [articleId]: updated,
-          };
+          const next = mergeReadingProgress(prev, articleId, updates);
+          const updated = next[articleId];
 
           if (updated.status === "completed" && previousStatus !== "completed") {
-            // Defer profile stat update to avoid setState during provider render
             Promise.resolve().then(trackArticleRead);
           }
 
           return next;
         });
-
-        // Refresh stats if status changed
-        if (updates.status) {
-          const stats = await getReadingStats();
-          setReadingStats(stats);
-
-          const inProgress = await getInProgressArticles();
-          setInProgressArticles(inProgress);
-        }
-
         setError(null);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to update progress";
@@ -146,20 +161,7 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
 
   const clearProgress = useCallback(async (articleId: string) => {
     try {
-      await clearArticleProgress(articleId);
-      setProgressData((prev) => {
-        const updated = { ...prev };
-        delete updated[articleId];
-        return updated;
-      });
-
-      // Refresh stats
-      const stats = await getReadingStats();
-      setReadingStats(stats);
-
-      const inProgress = await getInProgressArticles();
-      setInProgressArticles(inProgress);
-
+      setProgressData((prev) => removeReadingProgress(prev, articleId));
       setError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to clear progress";
@@ -170,19 +172,7 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
   }, []);
 
   const refreshStats = useCallback(async () => {
-    try {
-      const stats = await getReadingStats();
-      setReadingStats(stats);
-
-      const inProgress = await getInProgressArticles();
-      setInProgressArticles(inProgress);
-
-      setError(null);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to refresh stats";
-      console.error("Refresh stats error:", err);
-      setError(errorMessage);
-    }
+    setError(null);
   }, []);
 
   return (
@@ -216,7 +206,6 @@ export const useReadingProgress = () => {
 export const useReadingProgressOptional = () => {
   const context = useContext(ReadingProgressContext);
   if (context === undefined) {
-    // Return a no-op implementation matching ReadingProgressContextType
     return {
       progressData: {},
       isLoading: false,

@@ -27,12 +27,13 @@ Last Updated: March 22, 2026
   - **Completed**: March 22, 2026
   - **Dependencies**: RssService, HomeScreen, SectionScreen
 
-- [ ] **TODO-033** | **v1.3.1** | Refactor reading progress persistence for performance + profile safety
-  - **Status**: 🔜 Not Started
+- [x] **TODO-033** | **v1.3.1** | Refactor reading progress persistence for performance + profile safety
+  - **Status**: ✅ Completed
   - **Description**: Stop reading/writing AsyncStorage on every scroll tick, batch writes from context state, guard zero-height scroll math, and namespace progress data by active profile.
   - **Effort**: 5 hours
   - **Definition of Done**: Article scrolling no longer triggers storage churn per frame, progress is preserved correctly, and switching profiles does not leak reading state across users.
   - **Dependencies**: ReadingProgressContext, readingProgressStorage, ArticleScreen, ProfileContext
+  - **Completed**: March 22, 2026
 
 - [ ] **TODO-034** | **v1.3.1** | Persist active profile selection across relaunch
   - **Status**: 🔜 Not Started
@@ -300,11 +301,10 @@ Last Updated: March 22, 2026
 
 ### Active Tasks
 
-1. **TODO-033** — Refactor reading progress persistence for performance + profile safety
-2. **TODO-034** — Persist active profile selection across relaunch
-3. **TODO-035** — Fix What's New/version-seen loop
-4. **TODO-036** — Complete dark-mode/theme migration
-5. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
+1. **TODO-034** — Persist active profile selection across relaunch
+2. **TODO-035** — Fix What's New/version-seen loop
+3. **TODO-036** — Complete dark-mode/theme migration
+4. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
 
 ### Definition of Done (Audit Fixes)
 
