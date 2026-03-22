@@ -193,23 +193,67 @@ const fromBase64 = (input: string) => {
 };
 
 const STORAGE_KEY = "profiles_v1";
+const ACTIVE_PROFILE_STORAGE_KEY = "activeProfileId_v1";
+const LEGACY_ACTIVE_CODENAME_KEY = "activeCodename";
+
+const persistActiveProfileId = async (profileId: string | null) => {
+  try {
+    if (profileId) {
+      await AsyncStorage.setItem(ACTIVE_PROFILE_STORAGE_KEY, profileId);
+      return;
+    }
+
+    await AsyncStorage.removeItem(ACTIVE_PROFILE_STORAGE_KEY);
+  } catch (e) {
+    console.error("Failed to persist active profile", e);
+  }
+};
+
+const resolveActiveProfile = (
+  profiles: Profile[],
+  activeProfileId: string | null,
+  legacyCodename: string | null,
+): Profile | null => {
+  if (!profiles.length) return null;
+
+  if (activeProfileId) {
+    const storedActive = profiles.find((profile) => profile.id === activeProfileId);
+    if (storedActive) return storedActive;
+  }
+
+  if (legacyCodename) {
+    const legacyActive = profiles.find((profile) => profile.codename === legacyCodename);
+    if (legacyActive) return legacyActive;
+  }
+
+  return profiles[0];
+};
+
 const ensureCodename = async () => {
-  const stored = await AsyncStorage.getItem("activeCodename");
+  const stored = await AsyncStorage.getItem(LEGACY_ACTIVE_CODENAME_KEY);
   if (stored) return stored;
   const code = generateCodename();
-  await AsyncStorage.setItem("activeCodename", code);
+  await AsyncStorage.setItem(LEGACY_ACTIVE_CODENAME_KEY, code);
   return code;
 };
 
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
+  const activateProfile = (profile: Profile | null) => {
+    setActiveProfile(profile);
+    void persistActiveProfileId(profile?.id ?? null);
+  };
 
   useEffect(() => {
     (async () => {
       try {
         const storedProfiles = await AsyncStorage.getItem(STORAGE_KEY);
         if (storedProfiles) {
+          const storedActiveProfileId = await AsyncStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY);
+          const legacyActiveCodename = storedActiveProfileId
+            ? null
+            : await AsyncStorage.getItem(LEGACY_ACTIVE_CODENAME_KEY);
           const parsed: Profile[] = JSON.parse(storedProfiles);
           const used = new Set<string>();
           const normalized = parsed.map((p) => {
@@ -217,8 +261,16 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
             if (next.codename) used.add(next.codename);
             return next;
           });
+          const resolvedActiveProfile = resolveActiveProfile(
+            normalized,
+            storedActiveProfileId,
+            legacyActiveCodename,
+          );
           setProfiles(normalized);
-          setActiveProfile(normalized[0] || null);
+          setActiveProfile(resolvedActiveProfile);
+          if ((resolvedActiveProfile?.id ?? null) !== storedActiveProfileId) {
+            await persistActiveProfileId(resolvedActiveProfile?.id ?? null);
+          }
           return;
         }
       } catch (e) {
@@ -235,6 +287,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       setProfiles([defaultProfile]);
       setActiveProfile(defaultProfile);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([defaultProfile]));
+      await persistActiveProfileId(defaultProfile.id);
     })();
   }, []);
 
@@ -259,20 +312,17 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       },
       used,
     );
-    setProfiles((prevProfiles) => {
-      const next = [...prevProfiles, newProfile];
-      persistProfiles(next);
-      return next;
-    });
+    const next = [...profiles, newProfile];
+    persistProfiles(next);
     if (!activeProfile) {
-      setActiveProfile(newProfile);
+      activateProfile(newProfile);
     }
   };
 
   const switchProfile = (profileId: string) => {
     const profile = profiles.find((p) => p.id === profileId);
     if (profile) {
-      setActiveProfile(profile);
+      activateProfile(profile);
     }
   };
 
@@ -280,7 +330,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     if (!activeProfile) return;
     const updated = applyAchievements({ ...activeProfile, name });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    setActiveProfile(updated);
+    activateProfile(updated);
     persistProfiles(next);
   };
 
@@ -289,7 +339,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     const cleaned = tag.trim() || "Local profile";
     const updated = applyAchievements({ ...activeProfile, settingsTag: cleaned });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    setActiveProfile(updated);
+    activateProfile(updated);
     persistProfiles(next);
   };
 
@@ -310,7 +360,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    setActiveProfile(updated);
+    activateProfile(updated);
     persistProfiles(next);
   };
 
@@ -331,15 +381,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       savedArticles: articles,
     });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    setActiveProfile(updated);
+    activateProfile(updated);
     persistProfiles(next);
   };
 
   const signOut = (): Profile => {
     const local = profiles.find((p) => !p.appleUserId) || profiles[0];
     if (local) {
-      setActiveProfile(local);
-      persistProfiles(profiles);
+      activateProfile(local);
       return local;
     }
 
@@ -355,8 +404,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       used,
     );
     const next = [...profiles, fallback];
-    setProfiles(next);
-    setActiveProfile(fallback);
+    activateProfile(fallback);
     persistProfiles(next);
     return fallback;
   };
@@ -369,7 +417,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     // If we already have a profile for this Apple user, switch to it.
     const existing = profiles.find((p) => p.appleUserId === user.id || p.id === user.id);
     if (existing) {
-      setActiveProfile(existing);
+      activateProfile(existing);
       return existing;
     }
 
@@ -393,7 +441,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     );
 
     const next = [...profiles, newProfile];
-    setActiveProfile(newProfile);
+    activateProfile(newProfile);
     persistProfiles(next);
     return newProfile;
   };
@@ -434,7 +482,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       } else {
         next = [...profiles, sanitized];
       }
-      setActiveProfile(sanitized);
+      activateProfile(sanitized);
       persistProfiles(next);
       return true;
     } catch (e) {

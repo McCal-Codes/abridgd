@@ -18,6 +18,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Pinned Reanimated/Worklets versions to the Expo SDK 54 native bundle to stop JS/native mismatch crashes in Expo Go.
 - Feed ordering now follows each story's real `publishedAt` timestamp, and Home/Section screens keep cached stories visible with honest retry messaging when refreshes fail.
 - Reading progress now stays in memory between syncs, saves are batched per active profile, and ArticleScreen safely completes zero-scroll content without corrupting progress state.
+- The last active profile now restores on relaunch, and profile switches immediately update the selection used by saved-article and reading-progress storage.
 
 ### Documentation
 - New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.

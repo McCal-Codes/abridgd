@@ -35,12 +35,13 @@ Last Updated: March 22, 2026
   - **Dependencies**: ReadingProgressContext, readingProgressStorage, ArticleScreen, ProfileContext
   - **Completed**: March 22, 2026
 
-- [ ] **TODO-034** | **v1.3.1** | Persist active profile selection across relaunch
-  - **Status**: 🔜 Not Started
+- [x] **TODO-034** | **v1.3.1** | Persist active profile selection across relaunch
+  - **Status**: ✅ Completed
   - **Description**: Save the active profile id, restore it on launch, and ensure profile switching updates all profile-scoped storage consistently.
   - **Effort**: 2 hours
   - **Definition of Done**: Relaunch returns to the last active profile instead of defaulting to the first stored profile, with saved articles and progress aligned to that profile.
   - **Dependencies**: ProfileContext, SavedArticlesContext, ReadingProgressContext
+  - **Completed**: March 22, 2026
 
 - [ ] **TODO-035** | **v1.3.1** | Fix What's New/version-seen loop
   - **Status**: 🔜 Not Started
@@ -301,10 +302,9 @@ Last Updated: March 22, 2026
 
 ### Active Tasks
 
-1. **TODO-034** — Persist active profile selection across relaunch
-2. **TODO-035** — Fix What's New/version-seen loop
-3. **TODO-036** — Complete dark-mode/theme migration
-4. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
+1. **TODO-035** — Fix What's New/version-seen loop
+2. **TODO-036** — Complete dark-mode/theme migration
+3. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
 
 ### Definition of Done (Audit Fixes)
 
