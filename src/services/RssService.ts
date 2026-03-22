@@ -15,6 +15,18 @@ type CategoryCache = {
   fetchedAt: number;
 };
 
+type FeedFetchFailure = {
+  sourceName: string;
+  code: ErrorCode;
+  message: string;
+};
+
+type SingleFeedResult = {
+  sourceName: string;
+  articles: Article[];
+  failure?: FeedFetchFailure;
+};
+
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const FETCH_TIMEOUT_MS = 7000;
 const categoryCache = new Map<ArticleCategory, CategoryCache>();
@@ -34,6 +46,51 @@ export const getCachedArticles = (category: ArticleCategory): Article[] | null =
   const cached = categoryCache.get(category);
   if (!cached || !cached.articles?.length) return null;
   return cached.articles;
+};
+
+const getFeedErrorCode = (error: unknown, fallbackCode: ErrorCode): ErrorCode => {
+  if (error && typeof error === "object" && "name" in error && error.name === "AbortError") {
+    return ErrorCode.NETWORK_TIMEOUT;
+  }
+
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  if (message.includes("abort") || message.includes("timeout")) {
+    return ErrorCode.NETWORK_TIMEOUT;
+  }
+  if (message.includes("network") || message.includes("fetch")) {
+    return ErrorCode.NETWORK_REQUEST_FAILED;
+  }
+
+  return fallbackCode;
+};
+
+const createFeedLoadError = (category: ArticleCategory, failures: FeedFetchFailure[]) => {
+  const code = failures.some((failure) => failure.code === ErrorCode.NETWORK_TIMEOUT)
+    ? ErrorCode.NETWORK_TIMEOUT
+    : failures.some((failure) => failure.code === ErrorCode.NETWORK_REQUEST_FAILED)
+      ? ErrorCode.NETWORK_REQUEST_FAILED
+      : ErrorCode.RSS_PARSE_FAILED;
+  const details = failures
+    .map((failure) => `${failure.sourceName}: ${failure.message}`)
+    .join("; ");
+  const appError = ErrorHandler.createError(
+    code,
+    `Failed to load ${category} feeds`,
+    details,
+    true,
+  );
+  const error = new Error(appError.userMessage) as Error & {
+    code?: ErrorCode;
+    details?: string;
+    failures?: FeedFetchFailure[];
+    userMessage?: string;
+  };
+  error.name = "FeedLoadError";
+  error.code = appError.code;
+  error.details = details;
+  error.failures = failures;
+  error.userMessage = appError.userMessage;
+  return error;
 };
 
 const fetchWithTimeout = async (url: string): Promise<Response> => {
@@ -332,7 +389,7 @@ export const fetchArticlesByCategory = async (
 
   // Helper to fetch one feed
   // Now accepts the whole FeedSource object
-  const fetchSingleFeed = async (source: FeedSource) => {
+  const fetchSingleFeed = async (source: FeedSource): Promise<SingleFeedResult> => {
     try {
       console.log(`Fetching ${source.name} (${source.url})... - RssService.ts:134`);
       const sourceName = source.name;
@@ -349,13 +406,16 @@ export const fetchArticlesByCategory = async (
       targets.push(proxyAlt + encodeURIComponent(source.url));
 
       let response: Response | null = null;
+      let lastFetchError: unknown = null;
       for (const url of targets) {
         try {
           response = await fetchWithTimeout(url);
           if (response.ok) break;
           console.warn(`Non-OK response ${response.status} for ${url}`);
+          lastFetchError = new Error(`HTTP ${response.status}`);
         } catch (err) {
           console.warn(`Fetch attempt failed for ${url} - RssService.ts:143`, err);
+          lastFetchError = err;
         }
       }
 
@@ -367,27 +427,61 @@ export const fetchArticlesByCategory = async (
           console.log(
             `Fetched ${rssJsonItems.length} items via rss2json for ${sourceName} - RssService.ts:150`,
           );
-          return rssJsonItems.map((item: any) => mapRssItemToArticle(item, category, sourceName));
+          return {
+            sourceName,
+            articles: rssJsonItems.map((item: any) =>
+              mapRssItemToArticle(item, category, sourceName),
+            ),
+          };
         }
 
-        return [];
+        return {
+          sourceName,
+          articles: [],
+          failure: {
+            sourceName,
+            code: getFeedErrorCode(lastFetchError, ErrorCode.NETWORK_REQUEST_FAILED),
+            message:
+              lastFetchError instanceof Error
+                ? lastFetchError.message
+                : "All fetch attempts failed.",
+          },
+        };
       }
 
       const text = await response.text();
       const result = parser.parse(text);
 
-      const channel = result.rss ? result.rss.channel : result.feed;
-      if (!channel) return [];
+      const hasStructuredFeed =
+        result?.rss?.channel !== undefined || result?.feed !== undefined;
+      if (!hasStructuredFeed) {
+        return {
+          sourceName,
+          articles: [],
+          failure: {
+            sourceName,
+            code: ErrorCode.RSS_PARSE_FAILED,
+            message: "Feed response did not contain a readable channel.",
+          },
+        };
+      }
 
-      const items = channel.item || channel.entry || [];
+      const channel = result?.rss?.channel ?? result?.feed ?? {};
+      const channelData = channel && typeof channel === "object" ? channel : {};
+      const items = channelData.item || channelData.entry || [];
       const itemsArray = Array.isArray(items) ? items : [items];
+      const normalizedItems = itemsArray.filter(Boolean);
 
       // Use the configured name, ignore the XML title which can be messy
-      console.log(`Fetched ${itemsArray.length} items from ${sourceName} - RssService.ts:154`);
+      console.log(`Fetched ${normalizedItems.length} items from ${sourceName} - RssService.ts:154`);
+
+      if (normalizedItems.length === 0) {
+        return { sourceName, articles: [] };
+      }
 
       // Map and optionally enrich (e.g., WTAE often ships summaries only)
       const mapped = await Promise.all(
-        itemsArray.map(async (item: any) => {
+        normalizedItems.map(async (item: any) => {
           try {
             // Keep feed fetch fast; do not fetch full bodies here (handled in ArticleScreen)
             return mapRssItemToArticle(item, category, sourceName);
@@ -398,10 +492,18 @@ export const fetchArticlesByCategory = async (
         }),
       );
 
-      return mapped;
+      return { sourceName, articles: mapped };
     } catch (error) {
       console.error(`Error fetching/parsing ${source.url}: - RssService.ts:158`, error);
-      return [];
+      return {
+        sourceName: source.name,
+        articles: [],
+        failure: {
+          sourceName: source.name,
+          code: getFeedErrorCode(error, ErrorCode.RSS_PARSE_FAILED),
+          message: error instanceof Error ? error.message : "Failed to fetch or parse feed.",
+        },
+      };
     }
   };
 
@@ -438,35 +540,34 @@ export const fetchArticlesByCategory = async (
   const results = await Promise.all(sourcesToFetch.map((src) => fetchSingleFeed(src)));
 
   // Flatten and separate into buckets for sorting
-  const flatArticles = results.flat();
+  const flatArticles = results.flatMap((result) => result.articles);
+  const failures = results.flatMap((result) => (result.failure ? [result.failure] : []));
+
+  if (flatArticles.length === 0 && failures.length > 0) {
+    throw createFeedLoadError(category, failures);
+  }
 
   const allArticles = flatArticles.sort((a, b) => {
-    const dateA = new Date(a.timestamp).getTime();
-    const dateB = new Date(b.timestamp).getTime();
-
-    const timeDiff = dateB - dateA; // Positive if B is newer
-
-    // If articles are from "different times" (e.g. > 12 hours apart), strict time sort wins
-    // We want breaking news to always be top.
-    const TWELVE_HOURS = 12 * 60 * 60 * 1000;
-    if (Math.abs(timeDiff) > TWELVE_HOURS) {
-      return timeDiff;
+    const publishedDiff = b.publishedAt - a.publishedAt;
+    if (publishedDiff !== 0) {
+      return publishedDiff;
     }
 
-    // If within the same general news cycle, prefer articles with full content (longer body)
-    const lenA = a.body.length;
-    const lenB = b.body.length;
+    const bodyLengthDiff = b.body.length - a.body.length;
+    if (bodyLengthDiff !== 0) {
+      return bodyLengthDiff;
+    }
 
-    // Define "Full Content" as substantial text (> 1000 chars)
-    const isFullA = lenA > 1000;
-    const isFullB = lenB > 1000;
-
-    if (isFullA && !isFullB) return -1; // A comes first
-    if (!isFullA && isFullB) return 1; // B comes first
-
-    // If both are full or both are summary, stick to time
-    return timeDiff;
+    return a.headline.localeCompare(b.headline);
   });
+
+  if (failures.length > 0) {
+    console.warn(
+      `Partial feed failure for ${category}: ${failures
+        .map((failure) => `${failure.sourceName} (${failure.code})`)
+        .join(", ")}`,
+    );
+  }
 
   // Avoid caching an empty result so the next call can retry other fallbacks
   if (allArticles.length > 0) {

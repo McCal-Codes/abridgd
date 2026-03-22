@@ -53,6 +53,12 @@ const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
   return `Updated ${diffDays}d ago`;
 };
 
+const FeedStatusBanner = ({ message }: { message: string }) => (
+  <View style={styles.statusBanner} testID="home-feed-status">
+    <Text style={styles.statusBannerText}>{message}</Text>
+  </View>
+);
+
 const ContinueReadingSection = ({
   items,
   onPress,
@@ -242,7 +248,7 @@ export const HomeScreen: React.FC = () => {
                 onPress={() => {
                   setLoading(true);
                   setError(null);
-                  fetchArticlesByCategory("Top")
+                  fetchArticlesByCategory("Top", { forceRefresh: true })
                     .then((data) => {
                       setArticles(data);
                       const fetchedAt = getLastFetchedAt("Top");
@@ -265,7 +271,8 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.flexContent}>
           {renderHeroHeader()}
           <View style={styles.centerContent}>
-            <FunLoadingIndicator message="Syncing your feed…" />
+            <Text style={styles.emptyTitle}>No stories available right now.</Text>
+            <Text style={styles.emptySubtitle}>Pull to refresh again in a bit.</Text>
           </View>
         </View>
       ) : (
@@ -282,6 +289,9 @@ export const HomeScreen: React.FC = () => {
           ListHeaderComponent={() => (
             <>
               {renderHeroHeader()}
+              {error && articles.length > 0 && (
+                <FeedStatusBanner message="Couldn't load fresh stories. Showing the last successful update." />
+              )}
               {isContinueReadingEnabled && (
                 <ContinueReadingSection
                   items={continueReadingItems}
@@ -436,5 +446,34 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: colors.background,
     paddingBottom: spacing.xs,
+  },
+  statusBanner: {
+    marginHorizontal: spacing.gutter,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  statusBannerText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+  },
+  emptyTitle: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.xl,
+    color: colors.text,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    marginTop: spacing.xs,
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 });

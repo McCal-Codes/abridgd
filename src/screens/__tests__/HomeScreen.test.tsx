@@ -193,6 +193,30 @@ describe("HomeScreen", () => {
     await settleVirtualizedList();
   });
 
+  it("keeps cached stories visible when refresh fails", async () => {
+    (getCachedArticles as jest.Mock).mockReturnValue([
+      {
+        id: "cached-1",
+        headline: "Cached Story",
+        summary: "",
+        body: "",
+        source: "Cache",
+        timestamp: "",
+        publishedAt: Date.now(),
+        category: "Top",
+        readTimeMinutes: 1,
+      },
+    ]);
+    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+
+    const { findByText, findByTestId, queryByText } = renderScreen();
+
+    expect(await findByText("Cached Story")).toBeTruthy();
+    expect(await findByTestId("home-feed-status")).toBeTruthy();
+    expect(queryByText(/Network error/i)).toBeNull();
+    await settleVirtualizedList();
+  });
+
   it("refreshes the feed via pull-to-refresh", async () => {
     const firstArticles = [
       {

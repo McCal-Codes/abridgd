@@ -34,6 +34,7 @@ const buildResponse = (body: string, ok = true) =>
   }) as Response;
 
 const SAMPLE_FEED = `<?xml version="1.0"?><rss><channel><item><title>A</title><link>https://a</link><description>Body</description><pubDate>Mon, 01 Jan 2026 00:00:00 GMT</pubDate></item></channel></rss>`;
+const SAME_DAY_SORT_FEED = `<?xml version="1.0"?><rss><channel><item><title>Earlier</title><link>https://earlier</link><description>Older body</description><pubDate>Mon, 01 Jan 2026 08:00:00 GMT</pubDate></item><item><title>Later</title><link>https://later</link><description>Newer body</description><pubDate>Mon, 01 Jan 2026 20:00:00 GMT</pubDate></item></channel></rss>`;
 const EMPTY_FEED = `<?xml version="1.0"?><rss><channel></channel></rss>`;
 const DISABLED_OVERRIDES = { "Top::Mock Feed": false } as const;
 
@@ -112,5 +113,30 @@ describe("RssService cache and storage", () => {
 
     expect(articles).toHaveLength(1);
     expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("sorts articles by publishedAt instead of display timestamp strings", async () => {
+    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAME_DAY_SORT_FEED));
+    global.fetch = mockFetch as typeof fetch;
+
+    const { fetchArticlesByCategory } = await importService();
+
+    const articles = await fetchArticlesByCategory("Top" as ArticleCategory);
+
+    expect(articles.map((article: { headline: string }) => article.headline)).toEqual([
+      "Later",
+      "Earlier",
+    ]);
+  });
+
+  it("throws when every source fails instead of returning an empty success", async () => {
+    const mockFetch = jest.fn().mockRejectedValue(new Error("fetch failed"));
+    global.fetch = mockFetch as typeof fetch;
+
+    const { fetchArticlesByCategory } = await importService();
+
+    await expect(fetchArticlesByCategory("Top" as ArticleCategory)).rejects.toMatchObject({
+      name: "FeedLoadError",
+    });
   });
 });

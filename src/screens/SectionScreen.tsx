@@ -3,8 +3,7 @@ import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
-import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
-import { fetchArticlesByCategory, getLastFetchedAt } from "../services/RssService";
+import { fetchArticlesByCategory, getCachedArticles, getLastFetchedAt } from "../services/RssService";
 import { colors } from "../theme/colors";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -32,6 +31,12 @@ const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
   return `Updated ${diffDays}d ago`;
 };
 
+const FeedStatusBanner = ({ message }: { message: string }) => (
+  <View style={styles.statusBanner} testID="section-feed-status">
+    <Text style={styles.statusBannerText}>{message}</Text>
+  </View>
+);
+
 export const SectionScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SectionRouteProp>();
@@ -53,11 +58,10 @@ export const SectionScreen: React.FC = () => {
   } = useSettings();
 
   React.useEffect(() => {
-    setLoading(true);
     const load = async () => {
       try {
         setError(null);
-        const data = await fetchArticlesByCategory(category);
+        const data = await fetchArticlesByCategory(category, { forceRefresh: true });
         setArticles(data);
         const fetchedAt = getLastFetchedAt(category);
         setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
@@ -65,23 +69,27 @@ export const SectionScreen: React.FC = () => {
         setError(e?.message || "Failed to load articles.");
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
+    const cached = getCachedArticles(category);
+    if (cached && cached.length) {
+      setArticles(cached);
+      const fetchedAt = getLastFetchedAt(category);
+      setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
+      setLoading(false);
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     load();
   }, [category]);
-
-  if (!loading && articles.length === 0) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.emptyText}>No articles in {category}</Text>
-      </View>
-    );
-  }
 
   const headerIcon = category === "Local" ? MapPin : Newspaper;
 
   const showSkeleton = loading && articles.length === 0;
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
+  const showEmptyState = !loading && !error && articles.length === 0;
 
   return (
     <View style={styles.container}>
@@ -101,7 +109,7 @@ export const SectionScreen: React.FC = () => {
               onPress={() => {
                 setLoading(true);
                 setError(null);
-                fetchArticlesByCategory(category)
+                fetchArticlesByCategory(category, { forceRefresh: true })
                   .then((data) => {
                     setArticles(data);
                     const fetchedAt = getLastFetchedAt(category);
@@ -118,6 +126,10 @@ export const SectionScreen: React.FC = () => {
               Retry
             </Text>
           </View>
+        </View>
+      ) : showEmptyState ? (
+        <View style={[styles.container, styles.center]}>
+          <Text style={styles.emptyText}>No articles in {category}</Text>
         </View>
       ) : (
         <FlatList
@@ -144,14 +156,19 @@ export const SectionScreen: React.FC = () => {
             },
           ]}
           ListHeaderComponent={
-            <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
-              <HeroHeader
-                title={category}
-                subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
-                subtitleTestID="section-updated"
-                Icon={headerIcon}
-              />
-            </View>
+            <>
+              <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+                <HeroHeader
+                  title={category}
+                  subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+                  subtitleTestID="section-updated"
+                  Icon={headerIcon}
+                />
+              </View>
+              {error && articles.length > 0 && (
+                <FeedStatusBanner message="Couldn't load fresh stories. Showing the last successful update." />
+              )}
+            </>
           }
           refreshing={refreshing}
           onRefresh={async () => {
@@ -187,6 +204,21 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: colors.background,
     paddingBottom: spacing.xs,
+  },
+  statusBanner: {
+    marginHorizontal: spacing.gutter,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  statusBannerText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.sm,
+    color: colors.textSecondary,
   },
   center: {
     justifyContent: "center",

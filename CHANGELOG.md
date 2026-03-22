@@ -16,6 +16,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Fixed
 - Sign in with Apple flow and FullStory instrumentation hardened; Jest setup and shared components updated for more reliable tests and UI interactions.
 - Pinned Reanimated/Worklets versions to the Expo SDK 54 native bundle to stop JS/native mismatch crashes in Expo Go.
+- Feed ordering now follows each story's real `publishedAt` timestamp, and Home/Section screens keep cached stories visible with honest retry messaging when refreshes fail.
 
 ### Documentation
 - New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.

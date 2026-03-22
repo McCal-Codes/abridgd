@@ -19,11 +19,12 @@ Last Updated: March 22, 2026
   - **Completed**: March 22, 2026
   - **Dependencies**: None
 
-- [ ] **TODO-032** | **v1.3.1** | Fix RSS ordering + honest network error handling
-  - **Status**: 🔜 Not Started
+- [x] **TODO-032** | **v1.3.1** | Fix RSS ordering + honest network error handling
+  - **Status**: ✅ Completed
   - **Description**: Sort feeds by `publishedAt` instead of display timestamps, propagate hard feed failures to screen-level error states, and distinguish empty feeds from offline/fetch failures.
   - **Effort**: 3 hours
   - **Definition of Done**: New stories appear in correct order, failed feed loads show retry/cached-state UI, and empty-state copy is only shown for true empty results.
+  - **Completed**: March 22, 2026
   - **Dependencies**: RssService, HomeScreen, SectionScreen
 
 - [ ] **TODO-033** | **v1.3.1** | Refactor reading progress persistence for performance + profile safety
@@ -299,11 +300,11 @@ Last Updated: March 22, 2026
 
 ### Active Tasks
 
-1. **TODO-032** — Fix RSS ordering + honest network error handling
-2. **TODO-033** — Refactor reading progress persistence for performance + profile safety
-3. **TODO-034** — Persist active profile selection across relaunch
-4. **TODO-035** — Fix What's New/version-seen loop
-5. **TODO-036** — Complete dark-mode/theme migration
+1. **TODO-033** — Refactor reading progress persistence for performance + profile safety
+2. **TODO-034** — Persist active profile selection across relaunch
+3. **TODO-035** — Fix What's New/version-seen loop
+4. **TODO-036** — Complete dark-mode/theme migration
+5. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
 
 ### Definition of Done (Audit Fixes)
 

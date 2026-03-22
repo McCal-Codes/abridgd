@@ -1,12 +1,13 @@
 import React from "react";
 import { act, render, waitFor } from "@testing-library/react-native";
 import { SectionScreen } from "../SectionScreen";
-import { fetchArticlesByCategory } from "../../services/RssService";
+import { fetchArticlesByCategory, getCachedArticles } from "../../services/RssService";
 import { useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 jest.mock("../../services/RssService", () => ({
   fetchArticlesByCategory: jest.fn(),
+  getCachedArticles: jest.fn(() => null),
   getLastFetchedAt: jest.fn(() => Date.now()),
 }));
 
@@ -68,6 +69,7 @@ describe("SectionScreen", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (getCachedArticles as jest.Mock).mockReturnValue(null);
     (fetchArticlesByCategory as jest.Mock).mockResolvedValue([
       {
         id: "1",
@@ -114,6 +116,40 @@ describe("SectionScreen", () => {
     });
 
     expect(await findByText("Refreshed Story")).toBeTruthy();
+    await settleVirtualizedList();
+  });
+
+  it("shows an error state when no articles can be loaded", async () => {
+    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+
+    const { findByText } = render(<SectionScreen />);
+
+    expect(await findByText(/Network error/i)).toBeTruthy();
+    expect(await findByText(/Boom/i)).toBeTruthy();
+    await settleVirtualizedList();
+  });
+
+  it("keeps cached articles visible when refresh fails", async () => {
+    (getCachedArticles as jest.Mock).mockReturnValue([
+      {
+        id: "cached-1",
+        headline: "Cached Tech Story",
+        summary: "",
+        body: "",
+        source: "Test",
+        timestamp: "Today",
+        publishedAt: Date.now(),
+        category: "Technology",
+        readTimeMinutes: 1,
+      },
+    ]);
+    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+
+    const { findByText, findByTestId, queryByText } = render(<SectionScreen />);
+
+    expect(await findByText("Cached Tech Story")).toBeTruthy();
+    expect(await findByTestId("section-feed-status")).toBeTruthy();
+    expect(queryByText(/Network error/i)).toBeNull();
     await settleVirtualizedList();
   });
 });
