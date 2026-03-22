@@ -69,6 +69,7 @@
 - [x] Audit fix: persist active profile selection and isolate profile-specific state consistently
 - [x] Audit fix: What's New/version gating (mark seen state so post-onboarding flow does not loop)
 - [x] Audit fix: theme migration completion (replace static `theme/colors` imports with reactive theme tokens)
+- [x] Audit fix: patch production dependency vulnerabilities in the feed/network runtime stack
 - [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
 - [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
 - [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)

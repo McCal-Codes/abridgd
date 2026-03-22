@@ -59,12 +59,13 @@ Last Updated: March 22, 2026
   - **Dependencies**: ThemeContext, App.tsx, RootNavigator, core screens/components
   - **Completed**: March 22, 2026
 
-- [ ] **TODO-037** | **v1.3.1** | Patch production dependency vulnerabilities in feed/network stack
-  - **Status**: 🔜 Not Started
+- [x] **TODO-037** | **v1.3.1** | Patch production dependency vulnerabilities in feed/network stack
+  - **Status**: Completed
   - **Description**: Upgrade or mitigate current production `npm audit --omit=dev` findings, prioritizing `fast-xml-parser` and other high/critical runtime packages used by feed loading.
   - **Effort**: 2.5 hours
   - **Definition of Done**: High/critical prod vulnerabilities are removed or explicitly mitigated and documented, with feed parsing regression-tested.
   - **Dependencies**: package.json, package-lock.json, RssService tests
+  - **Completed**: March 22, 2026
 
 ---
 
@@ -304,8 +305,8 @@ Last Updated: March 22, 2026
 
 ### Active Tasks
 
-1. **TODO-036** — Complete dark-mode/theme migration
-2. **TODO-037** — Patch production dependency vulnerabilities in feed/network stack
+1. Merge the completed audit-fix branches in order
+2. Run iOS and Android smoke validation for the audit fixes
 
 ### Definition of Done (Audit Fixes)
 
