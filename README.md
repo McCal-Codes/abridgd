@@ -1,144 +1,178 @@
-# Abridged
+<p align="center">
+  <img src="assets/icon.png" alt="Abridged app icon" width="128" height="128">
+</p>
 
-A focused, calm, and distraction-free news reader for Pittsburgh.
+<h1 align="center">Abridged</h1>
 
-![Abridged App Concept](https://via.placeholder.com/800x400?text=Abridged+App+Concept)
+<p align="center">
+  A calm, local-first news reader for Pittsburgh.
+</p>
 
-## Overview
+<p align="center">
+  Built to make local news feel finite, readable, and worth returning to.
+</p>
 
-Abridged is a mobile application built with React Native and Expo that aims to rethink how local news is consumed. Instead of infinite feeds and gamified engagement, Abridged offers a finite, daily edition of curated stories.
+<p align="center">
+  <a href="./CHANGELOG.md">Changelog</a> |
+  <a href="./docs/deployment/ios-ipa-testflight.md">IPA + TestFlight Guide</a> |
+  <a href="./docs/deployment/deployment.md">Release Guide</a> |
+  <a href="./docs/README.md">Docs Index</a>
+</p>
 
-It features two distinct reading modes:
-1.  **Classic Mode:** A clean, typography-focused reading experience.
-2.  **Abridged Mode:** An RSVP (Rapid Serial Visual Presentation) reader for high-speed information ingestion.
+## Why Abridged
 
-## Features
+Abridged is an iOS-first reading app that rethinks how local news should feel. Instead of endless feeds, aggressive alerts, and cluttered layouts, it focuses on a quieter experience: trusted local coverage, clear reading surfaces, intentional navigation, and a product that respects the reader's attention.
 
-✨ **iOS 26-Inspired Glass UI** — Modern glass morphism effects with blur and transparency
-📱 **Light & Dark Modes** — Automatic theme switching with colorblind-friendly accent colors
-👆 **Intuitive Gestures** — Swipe right to go back, swipe left to save articles
-⚡ **RSVP Speed Reader** — Read articles faster with Abridged Mode
-🗂️ **Organized Navigation** — Clean tab bar with enhanced blur effects
-📰 **Curated Content** — Daily digest of Pittsburgh news stories
-🔖 **Save for Later** — Bookmark articles with a simple swipe
-♿ **Accessible Design** — Safe area handling and haptic feedback throughout
+The project starts with Pittsburgh. The goal is simple: make it easier to catch up on what matters locally without the mental tax of modern news apps.
+
+## What You Get Today
+
+- Pittsburgh-focused coverage from multiple local news sources
+- A clean home feed, section views, and digest-style reading flows
+- Classic reading plus a faster Abridged reader mode for quick catch-ups
+- Saved articles, continue-reading state, and profile-aware preferences
+- Light and dark themes, reader controls, haptics, and accessibility-minded UI
+- Better resilience around feed errors, cached content, and refresh behavior
 
 ## Tech Stack
 
-*   **Framework:** React Native (Expo SDK 54)
-*   **Language:** TypeScript
-*   **Navigation:** React Navigation
-*   **State:** Context API (ThemeProvider, SettingsProvider, SavedArticlesProvider)
-*   **Animations:** React Native Reanimated with spring physics
-*   **Gestures:** React Native Gesture Handler
-*   **UI Effects:** Expo Blur, Expo Haptics
-*   **Backend:** Mocked Data (RSS feeds coming soon)
+- Expo SDK 54
+- React Native 0.81
+- React 19
+- TypeScript
+- React Navigation 7
+- AsyncStorage for local persistence
+- Jest + React Native Testing Library
 
-## Getting Started
+## Run It Locally
 
 ### Prerequisites
-- Node.js 20.19.4 or higher
-- npm or yarn
-- Expo CLI
-- iOS Simulator (macOS) or Android Studio
-- Xcode (for iOS development)
 
-### Installation
+- Node `20.19.4` (see `.nvmrc`)
+- npm
+- Xcode for local iOS development
+- Android Studio for local Android development
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/McCal-Codes/abridged.git
-    cd abridged
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Start the development server:
-    ```bash
-    npm start
-    ```
-4.  Run on platform:
-    - iOS: Press `i` or `npm run ios`
-    - Android: Press `a` or `npm run android`
-    - Web: Press `w` or `npm run web`
+### Setup
 
-### Available Scripts
+```bash
+git clone https://github.com/McCal-Codes/abridgd.git
+cd abridgd
+npm install
+npm start
+```
 
-- `npm start` — Start Expo development server
-- `npm test` — Run Jest test suite
-- `npm run test:watch` — Run tests in watch mode
-- `npm run test:coverage` — Generate test coverage report
-- `npm run build:ipa` — Build iOS IPA for TestFlight
-- `npm run repo:health` — Run repository health audit
-- `npm run lint:docs` — Validate documentation formatting
+From the Expo prompt:
 
-## Project Structure
+- `i` or `npm run ios` for iOS
+- `a` or `npm run android` for Android
+- `w` or `npm run web` for web
 
-*   `src/`: Main source code.
-    *   `src/App.tsx`: Main application component.
-*   `src/screens/`: Feature screens (Home, Section, Article).
-*   `src/components/`: Reusable UI components.
-*   `src/navigation/`: Navigation configuration.
-*   `src/theme/`: Design tokens (Colors, Typography).
-*   `src/data/`: Mock data sources.
-*   `scripts/`: Active maintenance and testing scripts.
-*   `_archive/`: Deprecated scripts and experiments.
-*   `docs/`: Project documentation and architecture decisions.
+### Useful Scripts
+
+- `npm start` - start the Expo dev server
+- `npm test` - run the Jest test suite
+- `npm run test:coverage` - generate coverage output
+- `npm run repo:health` - run the repository health audit
+- `npm run build:ipa` - create a local iOS IPA
+- `npm run build:ipa:quick` - run the faster local IPA path
+
+## Install a Build
+
+### Install the current beta with TestFlight
+
+This is the recommended path for testers and stakeholders.
+
+1. Install Apple's TestFlight app on your iPhone or iPad.
+2. Accept the latest Abridged invite or public testing link from the team.
+3. Open the TestFlight listing for Abridged and tap `Install`.
+4. Update in place as new builds are published.
+
+### Export an IPA locally
+
+Use this when you need a signed iOS binary for internal distribution or App Store Connect upload.
+
+Requirements:
+
+- macOS
+- Xcode and CocoaPods
+- Apple signing configured for the app's bundle identifier
+- Access to the iOS workspace in `ios/`
+
+Build commands:
+
+```bash
+npm run build:ipa
+```
+
+or
+
+```bash
+npm run build:ipa:quick
+```
+
+The local export produces `ios/abridged.ipa`.
+
+To install that IPA on a device, use your normal Apple deployment path for signed builds:
+
+- Xcode's Devices and Simulators window for direct device installs
+- Apple Configurator for supervised or internal device rollout
+- Transporter or EAS submission when the goal is TestFlight distribution
+
+For the full archive, export, and upload workflow, see [docs/deployment/ios-ipa-testflight.md](./docs/deployment/ios-ipa-testflight.md).
+
+## Release a New Version
+
+The project uses Semantic Versioning for public releases and EAS auto-increments the iOS build number for the `production` profile.
+
+1. Update `CHANGELOG.md` under `[Unreleased]` with the user-facing notes for the release.
+2. Confirm the release version in `package.json` and keep any iOS release metadata aligned.
+3. Run the release checks:
+
+   ```bash
+   npm test
+   npx tsc --noEmit
+   npm run repo:health
+   ```
+
+4. Build and submit the release to TestFlight:
+
+   ```bash
+   npx eas build --platform ios --profile production --auto-submit
+   ```
+
+5. In App Store Connect, verify processing, add release notes, and assign the correct tester groups.
+6. Tag the release as `vMAJOR.MINOR.PATCH`.
+7. Publish the GitHub Release using the notes from `CHANGELOG.md`.
+
+If you need a manual local release path instead of EAS submission, build `ios/abridged.ipa` and upload it with Transporter or your usual App Store Connect tooling.
+
+## Changelog and GitHub Releases
+
+`CHANGELOG.md` is the source of truth for release notes in this repository.
+
+Keep the README high-level. Put version-by-version details in the changelog, then reuse that same copy for:
+
+- GitHub Releases
+- TestFlight release notes
+- internal release summaries
+
+Start here: [CHANGELOG.md](./CHANGELOG.md)
 
 ## Documentation
 
-### Core Documentation
-*   [Vision](./docs/product/vision.md) — Product vision and philosophy
-*   [Architecture](./docs/product/architecture.md) — Technical architecture overview
-*   [Roadmap](./docs/product/roadmap.md) — Feature roadmap and priorities
-*   [Features](./docs/product/FEATURES.md) — Complete feature list
+- [Docs index](./docs/README.md)
+- [Deployment guide](./docs/deployment/deployment.md)
+- [IPA and TestFlight guide](./docs/deployment/ios-ipa-testflight.md)
+- [Engineering standards](./docs/standards/README.md)
+- [Product vision](./docs/product/vision.md)
+- [Feature summary](./docs/product/FEATURES.md)
 
-### Development Guides
-*   [Development Setup](./docs/development/development.md) — Getting started with development
-*   [Debugging Guide](./docs/development/debugging.md) — Debugging tips and tools
-*   [Engineering Standards](./docs/development/engineering-standards.md) — Code quality standards
+## Contributing and Security
 
-### iOS 26 UI Components
-*   [iOS 26 Components](./docs/ios26/ios26-ui-components.md) — Complete technical documentation
-*   [Quick Reference](./docs/ios26/ios26-quick-reference.md) — Code examples and patterns
-*   [Implementation Summary](./docs/ios26/ios26-implementation-summary.md) — Implementation overview
-*   [Installation Guide](./docs/ios26/ios26-installation.md) — Setup instructions
-
-### Deployment
-*   [Deployment Guide](./docs/deployment/deployment.md) — Production deployment process
-*   [EAS Workflows](./docs/deployment/eas-workflows.md) — Expo Application Services setup
-*   [iOS IPA Build](./docs/deployment/ios-ipa-testflight.md) — TestFlight build guide
-*   [TestFlight Testing](./docs/deployment/TESTFLIGHT_TESTING_GUIDE.md) — Beta testing guide
-
-### Research & Standards
-*   [RSVP Research](./docs/research/rsvp-notes.md) — Speed reading research notes
-*   [Standards Directory](./docs/standards/) — Complete standards documentation
-*   [Standards Governance](./docs/development/standards-governance-agent.md) — Standards maintenance process
-
-## Contributing
-
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
-- Development workflow
-- Code standards
-- Pull request process
-- Testing requirements
-
-See also:
-- [Security Policy](SECURITY.md) — Reporting vulnerabilities
-- [Code of Conduct](docs/standards/engineering.md) — Community guidelines
+- [Contributing guide](./CONTRIBUTING.md)
+- [Security policy](./SECURITY.md)
 
 ## License
 
-This project is proprietary software. See beta license agreement in [docs/NDA/](docs/NDA/).
-
-## Support
-
-- **Documentation**: [docs/](docs/)
-- **Issues**: GitHub Issues
-- **Email**: contact@mcc-cal.com
-- **Beta Testing**: TestFlight (invite required)
-
----
-
-Built with ❤️ for Pittsburgh | Version 1.1.0
+This repository is proprietary. See the beta legal documents in [docs/NDA/](./docs/NDA/).

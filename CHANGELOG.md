@@ -24,6 +24,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Production runtime dependencies in the feed/network stack were patched and pinned via direct upgrades and overrides, clearing current `npm audit --omit=dev` findings for `fast-xml-parser` and related transitive packages.
 
 ### Documentation
+- Rewrote the public GitHub README to better explain the app, local setup, IPA/TestFlight installation, versioned releases, and changelog workflow.
 - New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.
 
 ## [1.3.6] - TBD
