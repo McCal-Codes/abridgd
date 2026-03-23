@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
 import { APP_VERSION } from "../config/appInfo";
 import { allowedTabs, defaultTabs } from "../navigation/tabs";
+import { SETTINGS_STORAGE_KEYS } from "../shared/settings/storageKeys";
 
 export type AnchorStrategy = "early" | "standard" | "center";
 export type DigestSummaryMode = "fact-based" | "ai-summary" | "headline-only";
@@ -40,6 +41,8 @@ interface SettingsContextType {
   updateLastAppVisit: () => Promise<void>;
   digestSummaryMode: DigestSummaryMode;
   setDigestSummaryMode: (mode: DigestSummaryMode) => Promise<void>;
+  perplexityApiKey: string;
+  setPerplexityApiKey: (apiKey: string) => Promise<void>;
   groundingBreathDuration: number;
   setGroundingBreathDuration: (duration: number) => Promise<void>;
   groundingCycles: number;
@@ -161,6 +164,8 @@ const defaultSettingsContext: SettingsContextType = {
   updateLastAppVisit: async () => {},
   digestSummaryMode: "fact-based",
   setDigestSummaryMode: async (_m: DigestSummaryMode) => {},
+  perplexityApiKey: "",
+  setPerplexityApiKey: async (_k: string) => {},
   groundingBreathDuration: 4,
   setGroundingBreathDuration: async (_n: number) => {},
   groundingCycles: 5,
@@ -277,6 +282,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [subscriptionFeaturesLocked, setSubscriptionFeaturesLockedState] = useState(false);
   const [lastAppVisit, setLastAppVisit] = useState<number | null>(null);
   const [digestSummaryMode, setDigestSummaryModeState] = useState<DigestSummaryMode>("fact-based");
+  const [perplexityApiKey, setPerplexityApiKeyState] = useState("");
   const [groundingBreathDuration, setGroundingBreathDurationState] = useState(4); // 4 seconds default
   const [groundingCycles, setGroundingCyclesState] = useState(5); // 5 cycles default
   const [groundingAnimationStyle, setGroundingAnimationStyleState] =
@@ -366,6 +372,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const continueReadingEnabled = await AsyncStorage.getItem("isContinueReadingEnabled");
       const lastVisit = await AsyncStorage.getItem("lastAppVisit");
       const savedDigestMode = await AsyncStorage.getItem("digestSummaryMode");
+      const savedPerplexityApiKey = await AsyncStorage.getItem(
+        SETTINGS_STORAGE_KEYS.perplexityApiKey,
+      );
       const savedBreathDuration = await AsyncStorage.getItem("groundingBreathDuration");
       const savedCycles = await AsyncStorage.getItem("groundingCycles");
       const savedAnimationStyle = await AsyncStorage.getItem("groundingAnimationStyle");
@@ -427,6 +436,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ["fact-based", "ai-summary", "headline-only"].includes(savedDigestMode)
       ) {
         setDigestSummaryModeState(savedDigestMode as DigestSummaryMode);
+      }
+      if (savedPerplexityApiKey !== null) {
+        setPerplexityApiKeyState(savedPerplexityApiKey);
       }
       if (savedBreathDuration) {
         setGroundingBreathDurationState(parseInt(savedBreathDuration, 10));
@@ -715,6 +727,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setDigestSummaryModeState(mode);
     } catch (e) {
       console.error("Failed to save digest summary mode", e);
+    }
+  };
+
+  const setPerplexityApiKey = async (apiKey: string) => {
+    const normalized = apiKey.trim();
+
+    try {
+      if (normalized) {
+        await AsyncStorage.setItem(SETTINGS_STORAGE_KEYS.perplexityApiKey, normalized);
+      } else {
+        await AsyncStorage.removeItem(SETTINGS_STORAGE_KEYS.perplexityApiKey);
+      }
+      setPerplexityApiKeyState(normalized);
+    } catch (e) {
+      console.error("Failed to save Perplexity API key", e);
     }
   };
 
@@ -1136,6 +1163,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateLastAppVisit,
         digestSummaryMode,
         setDigestSummaryMode,
+        perplexityApiKey,
+        setPerplexityApiKey,
         groundingBreathDuration,
         setGroundingBreathDuration,
         groundingCycles,

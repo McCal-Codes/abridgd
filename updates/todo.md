@@ -67,6 +67,28 @@ Last Updated: March 22, 2026
   - **Dependencies**: package.json, package-lock.json, RssService tests
   - **Completed**: March 22, 2026
 
+- [x] **TODO-038** | **v1.4.0** | Rebuild digest AI/settings flow on current baseline
+  - **Status**: Completed
+  - **Description**: Remove the embedded Perplexity env dependency, move the optional API key into Settings, replace `MOCK_ARTICLES` in Daily Digest with live feed data, and restore launch controls in Digest & Launch.
+  - **Effort**: 3 hours
+  - **Definition of Done**: Digest uses live feeds, AI keys are stored locally in settings, article/digest summaries fall back extractively when no key is set, and digest failures do not silently advance the user's last-visit timestamp.
+  - **Dependencies**: SettingsContext, DigestSettingsScreen, DigestScreen, AiService
+  - **Completed**: March 22, 2026
+
+- [ ] **TODO-039** | **v1.4.0** | Salvage per-profile feed recency tracking from release branch
+  - **Status**: Not Started
+  - **Description**: Port only the useful parts of `recordLastFetchedArticles` and related profile stats from `release/1.4.0`, then wire them into Home/Section fetches without regressing active-profile persistence.
+  - **Effort**: 2.5 hours
+  - **Definition of Done**: Profile stats can remember the latest fetched article ids/timestamp, and that data is used safely for follow-up digest/feed logic on the current baseline.
+  - **Dependencies**: ProfileContext, HomeScreen, SectionScreen
+
+- [ ] **TODO-040** | **v1.4.0** | Salvage onboarding/profile polish in tested slices
+  - **Status**: Not Started
+  - **Description**: Rebuild the remaining high-value `release/1.4.0` onboarding/profile improvements in small patches instead of merging the branch wholesale.
+  - **Effort**: 4 hours
+  - **Definition of Done**: Any ported onboarding/profile improvements land with tests and without reintroducing the release branch's dependency, RSS, or profile regressions.
+  - **Dependencies**: OnboardingScreen, ProfileScreen, associated tests
+
 ---
 
 ## 📋 Version Roadmap

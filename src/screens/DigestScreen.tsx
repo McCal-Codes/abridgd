@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import { fetchDailyDigest, DigestItem } from "../services/AiService";
+import { DigestItem, fetchDailyDigest } from "../services/AiService";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
 import { ArrowRight, Newspaper } from "lucide-react-native";
 import { ScaleButton } from "../components/ScaleButton";
@@ -27,6 +27,9 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
   const { lastAppVisit, updateLastAppVisit, digestSummaryMode } = useSettings();
   const [digest, setDigest] = useState<DigestItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
+  const sessionLastVisitRef = useRef(lastAppVisit);
   const insets = useSafeAreaInsets();
   const {
     tabBarHeight,
@@ -38,44 +41,41 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
 
-    const load = async () => {
+    const loadDigest = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        const data = await fetchDailyDigest(lastAppVisit, digestSummaryMode);
-        if (mounted) {
-          setDigest(data);
-        }
-      } catch (error) {
-        if (mounted) {
-          setDigest([]);
-        }
+        const sessionLastVisit = sessionLastVisitRef.current;
+        const data = await fetchDailyDigest(sessionLastVisit, digestSummaryMode);
+        if (!mounted) return;
+
+        setDigest(data);
+        await updateLastAppVisit();
+      } catch (loadError: any) {
+        if (!mounted) return;
+        setDigest([]);
+        setError(loadError?.message || "Couldn't build your digest right now.");
       } finally {
         if (mounted) {
           setLoading(false);
         }
-
-        try {
-          await updateLastAppVisit();
-        } catch {
-          // best-effort update; ignore failures
-        }
       }
     };
 
-    load();
+    void loadDigest();
 
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateLastAppVisit is stable enough
-  }, [digestSummaryMode, lastAppVisit, updateLastAppVisit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [digestSummaryMode, retryToken]);
 
   const handleReadMore = (item: DigestItem) => {
-    if (item.article) {
-      if (onContinue) onContinue();
-      navigation.navigate("Article", { article: item.article });
-    }
+    if (!item.article) return;
+    if (onContinue) onContinue();
+    navigation.navigate("Article", { article: item.article });
   };
 
   const subtitleText = useMemo(() => {
@@ -83,20 +83,26 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
       return "Here's what happened while you were gone.";
     }
 
-    if (!lastAppVisit) {
-      return `Your briefing for ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}.`;
+    const sessionLastVisit = sessionLastVisitRef.current;
+
+    if (!sessionLastVisit) {
+      return `Your briefing for ${new Date().toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+      })}.`;
     }
 
-    const hoursSinceLastVisit = Math.floor((Date.now() - lastAppVisit) / (1000 * 60 * 60));
+    const hoursSinceLastVisit = Math.floor((Date.now() - sessionLastVisit) / (1000 * 60 * 60));
     if (hoursSinceLastVisit < 1) {
       return "You're all caught up with the latest news.";
-    } else if (hoursSinceLastVisit < 24) {
-      return `News from the last ${hoursSinceLastVisit} hour${hoursSinceLastVisit > 1 ? "s" : ""}.`;
-    } else {
-      const daysSince = Math.floor(hoursSinceLastVisit / 24);
-      return `News from the last ${daysSince} day${daysSince > 1 ? "s" : ""}.`;
     }
-  }, [isWelcomeBack, lastAppVisit]);
+    if (hoursSinceLastVisit < 24) {
+      return `News from the last ${hoursSinceLastVisit} hour${hoursSinceLastVisit > 1 ? "s" : ""}.`;
+    }
+
+    const daysSince = Math.floor(hoursSinceLastVisit / 24);
+    return `News from the last ${daysSince} day${daysSince > 1 ? "s" : ""}.`;
+  }, [isWelcomeBack]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -127,32 +133,44 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
           <View style={styles.loadingContainer}>
             <FunLoadingIndicator message="Brewing your daily digest..." />
           </View>
+        ) : error ? (
+          <View style={styles.errorState}>
+            <Text style={styles.errorTitle}>Digest unavailable</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setRetryToken((current) => current + 1);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry digest"
+            >
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         ) : digest.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No new articles since your last visit.</Text>
-            <Text style={styles.emptySubtext}>Check back later for updates!</Text>
+            <Text style={styles.emptySubtext}>Check back later for updates.</Text>
           </View>
         ) : (
           <View style={styles.card}>
             {digest.map((item, index) => (
-              <View key={index} style={styles.digestItem}>
+              <View key={`${item.article.id}-${index}`} style={styles.digestItem}>
                 <View style={styles.digestContent}>
                   <View style={styles.bulletRow}>
                     <View style={styles.bullet} />
                     <Text style={styles.digestText}>{item.summary}</Text>
                   </View>
-                  {item.article && (
-                    <TouchableOpacity
-                      style={styles.seeMore}
-                      onPress={() => handleReadMore(item)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Read entire article: ${item.article?.headline ?? "Open article"}`}
-                      accessibilityHint="Opens the full article"
-                    >
-                      <Text style={styles.seeMoreText}>Read Entire Article</Text>
-                      <ArrowRight size={14} color={colors.primary} />
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity
+                    style={styles.seeMore}
+                    onPress={() => handleReadMore(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Read entire article: ${item.article.headline}`}
+                    accessibilityHint="Opens the full article"
+                  >
+                    <Text style={styles.seeMoreText}>Read Entire Article</Text>
+                    <ArrowRight size={14} color={colors.primary} />
+                  </TouchableOpacity>
                 </View>
               </View>
             ))}
@@ -170,11 +188,11 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
           </ScaleButton>
         )}
 
-        {!loading && (
+        {!loading && !error ? (
           <Text style={styles.footer}>
             This digest is automatically generated from top local sources without bias.
           </Text>
-        )}
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -182,112 +200,142 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  headerContainer: {
-    backgroundColor: colors.background,
-    paddingBottom: spacing.xs,
-  },
-  loadingContainer: {
-    paddingVertical: spacing.xl,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  content: {
-    paddingHorizontal: spacing.gutter,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.lg,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  digestItem: {
-    marginBottom: spacing.xl,
-  },
-  digestContent: {
-    gap: spacing.xs,
-  },
-  bulletRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  bullet: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginTop: 6,
-  },
-  digestText: {
-    flex: 1,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.text,
-  },
-  seeMore: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginLeft: 24, // Align with text after bullet
-    marginTop: 4,
-  },
-  seeMoreText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  footer: {
-    marginTop: spacing.xl,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: "center",
-    fontStyle: "italic",
-    paddingBottom: spacing.xxl,
-  },
-  continueButton: {
-    backgroundColor: colors.text,
-    paddingVertical: spacing.md,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: spacing.xl,
-  },
-  continueButtonText: {
-    color: colors.surface,
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  emptyState: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.xxl,
-    alignItems: "center",
-    marginVertical: spacing.lg,
-  },
-  emptyText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.xs,
-  },
-  emptySubtext: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    headerContainer: {
+      backgroundColor: colors.background,
+      paddingBottom: spacing.xs,
+    },
+    loadingContainer: {
+      paddingVertical: spacing.xl,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    content: {
+      paddingHorizontal: spacing.gutter,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: spacing.lg,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    digestItem: {
+      marginBottom: spacing.xl,
+    },
+    digestContent: {
+      gap: spacing.xs,
+    },
+    bulletRow: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    bullet: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+      marginTop: 6,
+    },
+    digestText: {
+      flex: 1,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.text,
+    },
+    seeMore: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      marginLeft: 24,
+      marginTop: 4,
+    },
+    seeMoreText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    footer: {
+      marginTop: spacing.xl,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: "center",
+      fontStyle: "italic",
+      paddingBottom: spacing.xxl,
+    },
+    continueButton: {
+      backgroundColor: colors.text,
+      paddingVertical: spacing.md,
+      borderRadius: 12,
+      alignItems: "center",
+      marginTop: spacing.xl,
+    },
+    continueButtonText: {
+      color: colors.surface,
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    emptyState: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: spacing.xxl,
+      alignItems: "center",
+      marginVertical: spacing.lg,
+    },
+    emptyText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      textAlign: "center",
+      marginBottom: spacing.xs,
+    },
+    emptySubtext: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    errorState: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: spacing.xl,
+      marginTop: spacing.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    errorTitle: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    errorText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      marginBottom: spacing.md,
+    },
+    retryText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
   });

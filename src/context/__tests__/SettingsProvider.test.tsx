@@ -30,6 +30,8 @@ const TestConsumer = () => {
     isLoadingSettings,
     shouldShowWhatsNew,
     lastSeenVersion,
+    perplexityApiKey,
+    setPerplexityApiKey,
   } = useSettings();
 
   return (
@@ -46,8 +48,14 @@ const TestConsumer = () => {
       <View testID="settings-last-seen">
         <Text>{lastSeenVersion ?? "none"}</Text>
       </View>
+      <View testID="settings-api-key">
+        <Text>{perplexityApiKey || "none"}</Text>
+      </View>
       <Pressable testID="settings-complete" onPress={() => void completeOnboarding()}>
         <Text>Complete</Text>
+      </Pressable>
+      <Pressable testID="settings-save-api-key" onPress={() => void setPerplexityApiKey(" pplx-test-key ")}>
+        <Text>Save API Key</Text>
       </Pressable>
     </>
   );
@@ -87,6 +95,29 @@ describe("SettingsProvider", () => {
         ["hasCompletedOnboarding", "true"],
         ["lastSeenVersion", APP_VERSION],
       ]);
+    });
+  });
+
+  it("loads and trims the saved Perplexity API key", async () => {
+    mockStorage({
+      perplexityApiKey: "pplx-existing",
+    });
+
+    render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-api-key")).toHaveTextContent("pplx-existing");
+    });
+
+    fireEvent.press(screen.getByTestId("settings-save-api-key"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-api-key")).toHaveTextContent("pplx-test-key");
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith("perplexityApiKey", "pplx-test-key");
     });
   });
 });

@@ -22,7 +22,6 @@ import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
 import { fetchFullArticleBody } from "../services/FullStoryService";
 import { summarizeArticle } from "../services/AiService";
-// MOCK_ARTICLES import removed
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";

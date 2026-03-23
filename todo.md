@@ -79,6 +79,19 @@
 
 ---
 
+### Release 1.4 Salvage
+
+- [x] Rebuild the digest slice on the current baseline
+  - [x] Remove the embedded Perplexity key from app code
+  - [x] Store the optional Perplexity key in Settings only
+  - [x] Swap Daily Digest off `MOCK_ARTICLES` and onto live feed data
+  - [x] Restore launch controls in Digest & Launch settings
+  - [x] Keep extractive fallbacks and honest digest error states when AI or feed calls fail
+- [ ] Salvage profile-based feed recency tracking from `release/1.4.0` without reintroducing profile persistence regressions
+- [ ] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
+
+---
+
 ### Onboarding & Grounding Polish
 - [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
 - [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.

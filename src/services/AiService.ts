@@ -1,146 +1,245 @@
-
-import { Article } from '../types/Article';
-import { MOCK_ARTICLES } from '../data/mockArticles';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { RSS_FEEDS } from "../data/feedConfig";
+import { SETTINGS_STORAGE_KEYS } from "../shared/settings/storageKeys";
+import { Article, ArticleCategory } from "../types/Article";
+import { fetchArticlesByCategory } from "./RssService";
 
 /**
- * Digest Service with AI Summarization using Perplexity
- * Provides fact-based digest or AI-generated summaries of articles.
+ * Digest Service with optional Perplexity-backed summarization.
+ * Falls back to extractive summaries when no API key is stored.
  */
 
 export interface DigestItem {
-    summary: string;
-    article: Article;
+  summary: string;
+  article: Article;
 }
 
-// Perplexity API configuration
-const PERPLEXITY_API_KEY = process.env.EXPO_PUBLIC_PERPLEXITY_API_KEY || '';
-const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
+export type DigestMode = "fact-based" | "ai-summary" | "headline-only";
 
-/**
- * Generate AI summary using Perplexity
- */
-const generateAISummary = async (article: Article): Promise<string> => {
-    // If no API key, return extractive summary
-    if (!PERPLEXITY_API_KEY) {
-        const firstSentence = article.summary.split('.')[0];
-        return firstSentence.length > 120 ? `${firstSentence.substring(0, 117)}...` : `${firstSentence}.`;
-    }
-
-    try {
-        const response = await fetch(PERPLEXITY_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: 'llama-3.1-sonar-small-128k-online',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a news summarizer. Create a concise, one-sentence summary that captures the key point. Keep it under 100 characters. Be direct and factual.'
-                    },
-                    {
-                        role: 'user',
-                        content: `Summarize this in one sentence (max 100 chars):\n\nHeadline: ${article.headline}\n\n${article.summary}`
-                    }
-                ],
-                max_tokens: 50,
-                temperature: 0.2,
-            }),
-        });
-
-        if (!response.ok) {
-            console.error(`Perplexity API error: ${response.status}`);
-            throw new Error(`API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const aiSummary = data.choices[0]?.message?.content?.trim();
-        
-        if (aiSummary && aiSummary.length > 0) {
-            return aiSummary;
-        }
-        
-        // Fallback to extractive summary
-        const firstSentence = article.summary.split('.')[0];
-        return firstSentence.length > 120 ? `${firstSentence.substring(0, 117)}...` : `${firstSentence}.`;
-        
-    } catch (error) {
-        console.error('AI summarization error:', error);
-        // Fallback to extractive summary (first sentence)
-        const firstSentence = article.summary.split('.')[0];
-        return firstSentence.length > 120 ? `${firstSentence.substring(0, 117)}...` : `${firstSentence}.`;
-    }
+type PerplexityResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
 };
 
-export const summarizeArticle = async (content: string, headline: string): Promise<string | null> => {
-    if (!content || content.length < 200) return null;
+const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";
+const DIGEST_LIMIT = 5;
+const DIGEST_FALLBACK_WINDOW_MS = 2 * 60 * 60 * 1000;
 
-    try {
-        console.log(`Summarizing: ${headline}`);
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        return `[AI Summary]: This article explores ${headline}. It covers the key events and context surrounding the topic, providing a condensed view of the full story.`;
+const normalizeWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
-    } catch (error) {
-        console.error('Error during summarization:', error);
-        return null;
-    }
+const stripHtml = (value: string) =>
+  normalizeWhitespace(value.replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]*>/g, " "));
+
+const clipText = (value: string, maxLength: number) =>
+  value.length > maxLength ? `${value.slice(0, maxLength - 3).trimEnd()}...` : value;
+
+const splitSentences = (value: string) =>
+  normalizeWhitespace(value)
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+const buildExtractiveSummary = (
+  input: string,
+  options: { maxLength: number; maxSentences: number },
+): string | null => {
+  const cleaned = stripHtml(input);
+  if (!cleaned) return null;
+
+  const sentences = splitSentences(cleaned).slice(0, options.maxSentences);
+  if (sentences.length > 0) {
+    return clipText(sentences.join(" "), options.maxLength);
+  }
+
+  return clipText(cleaned, options.maxLength);
 };
 
-/**
- * Fetches digest of articles published since the user's last visit.
- * 
- * @param lastVisitTime - Unix timestamp of when user last opened the app (null if first time)
- * @param digestMode - Type of summary to show: 'fact-based', 'ai-summary', or 'headline-only'
- * @returns Array of digest items with summaries based on selected mode
- */
+const getDigestFallbackSummary = (article: Article) =>
+  buildExtractiveSummary(article.summary || article.body || article.headline, {
+    maxLength: 120,
+    maxSentences: 1,
+  }) || article.headline;
+
+const getArticleFallbackSummary = (content: string, headline: string) =>
+  buildExtractiveSummary(content || headline, {
+    maxLength: 260,
+    maxSentences: 2,
+  });
+
+const getStoredPerplexityApiKey = async (): Promise<string> => {
+  try {
+    return (await AsyncStorage.getItem(SETTINGS_STORAGE_KEYS.perplexityApiKey))?.trim() || "";
+  } catch (error) {
+    console.error("Failed to read Perplexity API key", error);
+    return "";
+  }
+};
+
+const requestPerplexitySummary = async (
+  apiKey: string,
+  prompt: { system: string; user: string; maxTokens: number },
+): Promise<string | null> => {
+  const response = await fetch(PERPLEXITY_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-sonar-small-128k-online",
+      messages: [
+        {
+          role: "system",
+          content: prompt.system,
+        },
+        {
+          role: "user",
+          content: prompt.user,
+        },
+      ],
+      max_tokens: prompt.maxTokens,
+      temperature: 0.2,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Perplexity API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as PerplexityResponse;
+  return normalizeWhitespace(data.choices?.[0]?.message?.content?.trim() || "") || null;
+};
+
+const getPublishedAt = (article: Article) =>
+  Number.isFinite(article.publishedAt) ? article.publishedAt : 0;
+
+const dedupeArticles = (articles: Article[]) => {
+  const seen = new Set<string>();
+
+  return articles.filter((article) => {
+    const key = article.link || `${article.source}:${article.headline}:${getPublishedAt(article)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const fetchDigestArticles = async (): Promise<Article[]> => {
+  const categories = Object.keys(RSS_FEEDS) as ArticleCategory[];
+  const results = await Promise.allSettled(
+    categories.map((category) => fetchArticlesByCategory(category)),
+  );
+
+  const articles = dedupeArticles(
+    results.flatMap((result) => (result.status === "fulfilled" ? result.value : [])),
+  ).sort((a, b) => getPublishedAt(b) - getPublishedAt(a));
+
+  if (articles.length > 0) {
+    return articles;
+  }
+
+  const firstRejected = results.find(
+    (result): result is PromiseRejectedResult => result.status === "rejected",
+  );
+  if (firstRejected) {
+    throw firstRejected.reason;
+  }
+
+  return [];
+};
+
+const selectDigestArticles = (articles: Article[], lastVisitTime: number | null) => {
+  const isFreshVisit =
+    typeof lastVisitTime === "number" &&
+    Number.isFinite(lastVisitTime) &&
+    Date.now() - lastVisitTime <= DIGEST_FALLBACK_WINDOW_MS;
+  const cutoffTime = isFreshVisit ? lastVisitTime : Date.now() - DIGEST_FALLBACK_WINDOW_MS;
+  const recentArticles = articles.filter((article) => getPublishedAt(article) > cutoffTime);
+
+  if (recentArticles.length > 0) {
+    return recentArticles.slice(0, DIGEST_LIMIT);
+  }
+
+  return isFreshVisit ? [] : articles.slice(0, DIGEST_LIMIT);
+};
+
+const generateDigestSummary = async (article: Article, apiKey: string) => {
+  const fallbackSummary = getDigestFallbackSummary(article);
+  if (!apiKey) {
+    return fallbackSummary;
+  }
+
+  try {
+    const aiSummary = await requestPerplexitySummary(apiKey, {
+      system:
+        "You summarize news articles. Return one factual sentence under 100 characters with no hype.",
+      user: `Headline: ${article.headline}\n\nSummary: ${article.summary || fallbackSummary}`,
+      maxTokens: 50,
+    });
+
+    return aiSummary || fallbackSummary;
+  } catch (error) {
+    console.error("Failed to generate digest AI summary", error);
+    return fallbackSummary;
+  }
+};
+
+export const summarizeArticle = async (
+  content: string,
+  headline: string,
+): Promise<string | null> => {
+  const fallbackSummary = getArticleFallbackSummary(content, headline);
+  if (!fallbackSummary) return null;
+
+  const apiKey = await getStoredPerplexityApiKey();
+  if (!apiKey) {
+    return fallbackSummary;
+  }
+
+  try {
+    const aiSummary = await requestPerplexitySummary(apiKey, {
+      system:
+        "You summarize news articles. Write two concise factual sentences under 70 words total.",
+      user: `Headline: ${headline}\n\nArticle:\n${stripHtml(content).slice(0, 6000)}`,
+      maxTokens: 120,
+    });
+
+    return aiSummary || fallbackSummary;
+  } catch (error) {
+    console.error("Error during summarization", error);
+    return fallbackSummary;
+  }
+};
+
 export const fetchDailyDigest = async (
-    lastVisitTime: number | null,
-    digestMode: 'fact-based' | 'ai-summary' | 'headline-only' = 'fact-based'
+  lastVisitTime: number | null,
+  digestMode: DigestMode = "fact-based",
 ): Promise<DigestItem[]> => {
-    console.log('Fetching Daily Digest...');
-    console.log('Last visit time:', lastVisitTime ? new Date(lastVisitTime).toLocaleString() : 'First visit');
-    console.log('Digest mode:', digestMode);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Filter articles published since last visit
-    const cutoffTime = lastVisitTime || (Date.now() - (24 * 60 * 60 * 1000));
-    
-    const recentArticles = MOCK_ARTICLES
-        .filter(article => article.publishedAt > cutoffTime)
-        .sort((a, b) => b.publishedAt - a.publishedAt)
-        .slice(0, 5);
-    
-    console.log(`Found ${recentArticles.length} articles since last visit`);
-    
-    // Convert to digest items based on selected mode
-    if (digestMode === 'headline-only') {
-        return recentArticles.map(article => ({
-            summary: article.headline,
-            article: article
-        }));
-    } else if (digestMode === 'ai-summary') {
-        console.log('Generating AI summaries with Perplexity...');
-        // Generate AI summaries for each article
-        const digestItems = await Promise.all(
-            recentArticles.map(async (article) => {
-                const aiSummary = await generateAISummary(article);
-                return {
-                    summary: aiSummary,
-                    article: article
-                };
-            })
-        );
-        return digestItems;
-    } else {
-        // fact-based: Use actual article summaries
-        return recentArticles.map(article => ({
-            summary: article.summary,
-            article: article
-        }));
-    }
+  const articles = await fetchDigestArticles();
+  const digestArticles = selectDigestArticles(articles, lastVisitTime);
+
+  if (digestMode === "headline-only") {
+    return digestArticles.map((article) => ({
+      summary: article.headline,
+      article,
+    }));
+  }
+
+  if (digestMode === "ai-summary") {
+    const apiKey = await getStoredPerplexityApiKey();
+    return Promise.all(
+      digestArticles.map(async (article) => ({
+        summary: await generateDigestSummary(article, apiKey),
+        article,
+      })),
+    );
+  }
+
+  return digestArticles.map((article) => ({
+    summary: article.summary || getDigestFallbackSummary(article),
+    article,
+  }));
 };

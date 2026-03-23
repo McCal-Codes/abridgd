@@ -9,9 +9,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Added
 - GlassStackHeader and HeroHeader components to expand the iOS 26-inspired UI kit, plus an AchievementsScreen scaffold for future engagement features.
 - Expanded Pittsburgh RSS coverage (WESA, Kidsburgh, Penguins, Pirates, Pitt Panthers, and more) with opt-in defaults for audio/experimental feeds and Settings badges for default-off sources.
+- Digest settings now let users store an optional Perplexity API key locally on-device for digest and article summaries.
 
 ### Changed
 - Navigation, profile, digest, saved, and settings flows refreshed alongside storage/context updates; RSS service and saved-article handling tuned for more resilient data fetch and caching.
+- Daily Digest now pulls from live feed data instead of mock articles, surfaces launch controls directly in Digest & Launch settings, and falls back to extractive summaries when no AI key is saved.
 
 ### Fixed
 - Sign in with Apple flow and FullStory instrumentation hardened; Jest setup and shared components updated for more reliable tests and UI interactions.
@@ -22,6 +24,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Completing onboarding now also marks the current app version as seen, so post-update What's New flows do not reopen on the next launch.
 - Theme changes now propagate across the app shell and primary surfaces without reload, replacing the old frozen `theme/colors` path with reactive tokens in navigation, onboarding, profile, reader, and settings flows.
 - Production runtime dependencies in the feed/network stack were patched and pinned via direct upgrades and overrides, clearing current `npm audit --omit=dev` findings for `fast-xml-parser` and related transitive packages.
+- Removed the build-time Perplexity env dependency from app code, and digest refreshes no longer advance the last-visit timestamp when a digest fetch fails.
 
 ### Documentation
 - Rewrote the public GitHub README to better explain the app, local setup, IPA/TestFlight installation, versioned releases, and changelog workflow.
