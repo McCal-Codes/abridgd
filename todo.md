@@ -89,6 +89,8 @@
   - [x] Keep extractive fallbacks and honest digest error states when AI or feed calls fail
 - [x] Salvage profile-based feed recency tracking from `release/1.4.0` without reintroducing profile persistence regressions
 - [ ] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
+  - [x] Slice 1: Onboarding now has a real Next action, scroll-safe slides, and current tab-layout selection on the clean baseline
+  - [ ] Slice 2: Rebuild the remaining profile polish selectively without pulling over the release branch's asset and gating churn
 
 ---
 
