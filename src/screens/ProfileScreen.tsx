@@ -575,11 +575,6 @@ const createStyles = (colors: ThemeColors) =>
     paddingHorizontal: spacing.gutter,
     paddingBottom: spacing.xxl + spacing.lg,
   },
-  settingsButton: {
-    alignSelf: "flex-start",
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
   section: {
     marginBottom: spacing.xxl,
   },
@@ -649,13 +644,6 @@ const createStyles = (colors: ThemeColors) =>
     borderColor: colors.border,
     marginTop: spacing.xs,
   },
-  badgeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
   badgeText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
@@ -664,20 +652,6 @@ const createStyles = (colors: ThemeColors) =>
   cardAction: {
     alignSelf: "stretch",
     marginTop: spacing.sm,
-  },
-  karmaBadge: {
-    backgroundColor: colors.secondaryBackground,
-    borderColor: colors.border,
-  },
-  karmaBadgeText: {
-    color: colors.textSecondary,
-  },
-  inlineButton: {
-    alignSelf: "flex-start",
-    marginTop: spacing.sm,
-  },
-  destructiveSpacing: {
-    marginTop: spacing.md,
   },
   statGroup: {
     backgroundColor: colors.secondaryBackground,
@@ -721,46 +695,6 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.text,
     marginLeft: spacing.md,
   },
-  karmaRow: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    padding: spacing.lg,
-    backgroundColor: colors.secondaryBackground,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: spacing.md,
-  },
-  karmaLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  karmaValue: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 26,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: 2,
-  },
-  karmaHint: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  progressBar: {
-    width: "100%",
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: colors.border,
-    marginTop: spacing.sm,
-    overflow: "hidden",
-  },
-  progressFillMuted: {
-    height: "100%",
-    backgroundColor: `${colors.tint}70`,
-  },
   actionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -771,18 +705,6 @@ const createStyles = (colors: ThemeColors) =>
     width: "48%",
     marginHorizontal: spacing.xs,
     marginBottom: spacing.sm,
-  },
-  noticeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.md,
-  },
-  noticeText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginLeft: spacing.sm,
-    flex: 1,
   },
   textInput: {
     width: "100%",
@@ -808,12 +730,6 @@ const createStyles = (colors: ThemeColors) =>
   transferCard: {
     // spacing handled per-child to avoid unsupported gap on React Native
   },
-  transferRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.sm,
-    flexWrap: "wrap",
-  },
   transferLabel: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
@@ -829,10 +745,6 @@ const createStyles = (colors: ThemeColors) =>
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  transferButton: {
-    marginTop: spacing.sm,
-    marginLeft: spacing.sm,
   },
   transferHint: {
     fontFamily: typography.fontFamily.sans,
@@ -893,95 +805,6 @@ const createStyles = (colors: ThemeColors) =>
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
     color: colors.textSecondary,
-  },
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  featureRowLast: {
-    borderBottomWidth: 0,
-  },
-  featureIcon: {
-    width: 32,
-    alignItems: "center",
-  },
-  featureTextBlock: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  featureTitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  featureDesc: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  featureBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-    marginLeft: spacing.sm,
-  },
-  featureBadgeText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  sheetOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetContainer: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  sheetHandle: {
-    alignSelf: "center",
-    width: 42,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  sheetTitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  sheetSubtitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    lineHeight: 20,
-  },
-  sheetButton: {
-    marginTop: spacing.sm,
   },
   footerText: {
     fontFamily: typography.fontFamily.sans,

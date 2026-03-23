@@ -88,11 +88,11 @@
   - [x] Restore launch controls in Digest & Launch settings
   - [x] Keep extractive fallbacks and honest digest error states when AI or feed calls fail
 - [x] Salvage profile-based feed recency tracking from `release/1.4.0` without reintroducing profile persistence regressions
-- [ ] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
+- [x] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
   - [x] Slice 1: Onboarding now has a real Next action, scroll-safe slides, and current tab-layout selection on the clean baseline
   - [x] Slice 2: Profile now surfaces tracked reading metrics, relative last-read/save activity, and karma tier status without pulling over the release branch's asset and gating churn
   - [x] Slice 3: Profile is simplified around overview, reading, account, and support, removing duplicate settings paths and preview-only clutter
-  - [ ] Slice 4: Review the remaining release-only onboarding/profile ideas and rebuild only the pieces that still improve the clean baseline
+  - [x] Slice 4: Final review completed; remaining release-only onboarding/profile ideas were intentionally discarded as stale, regressive, or no longer aligned with the cleaned-up baseline
 
 ---
 
