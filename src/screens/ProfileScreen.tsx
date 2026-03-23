@@ -50,6 +50,7 @@ import {
 } from "../config/appInfo";
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
 import { useSettings } from "../context/SettingsContext";
+import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 const KARMA_TIERS = [
@@ -58,6 +59,44 @@ const KARMA_TIERS = [
   { label: "Steady", min: 150 },
   { label: "Glowing", min: 300 },
 ];
+
+const getCurrentKarmaTier = (score: number) => {
+  let currentTier = KARMA_TIERS[0];
+
+  KARMA_TIERS.forEach((tier) => {
+    if (score >= tier.min) {
+      currentTier = tier;
+    }
+  });
+
+  return currentTier;
+};
+
+const formatRelativeDate = (timestamp?: number | null) => {
+  if (!timestamp) return "No reads yet";
+
+  const target = new Date(timestamp);
+  if (Number.isNaN(target.getTime())) return "No reads yet";
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startOfTarget = new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    target.getDate(),
+  ).getTime();
+  const diffDays = Math.floor((startOfToday - startOfTarget) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) {
+    const weeks = Math.round(diffDays / 7);
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+
+  return target.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
 
 const ProfileScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -74,6 +113,7 @@ const ProfileScreen: React.FC = () => {
     updateSettingsTag,
   } = useProfiles();
   const { subscriptionFeaturesLocked, reduceMotion } = useSettings();
+  const { readingStats } = useReadingProgressOptional();
 
   const [settingsTagInput, setSettingsTagInput] = useState(activeProfile?.settingsTag || "");
   const [importCode, setImportCode] = useState("");
@@ -92,15 +132,29 @@ const ProfileScreen: React.FC = () => {
   const achievementsUnlocked = achievementStatuses.filter((a) => a.earned).length;
   const achievementCopy = `${achievementsUnlocked}/${achievementStatuses.length}`;
 
-  const articlesRead = activeProfile?.stats?.articlesRead || 0;
+  const profileArticlesRead = activeProfile?.stats?.articlesRead || 0;
   const savedActions = activeProfile?.stats?.savedActions || 0;
   const savedCount = activeProfile?.savedArticles?.length || 0;
-  const articlesReadDisplay = profileReady ? `${articlesRead}` : "—";
+  const trackedReads = readingStats?.totalArticlesRead ?? 0;
+  const articlesInProgress = readingStats?.articlesInProgress ?? 0;
+  const totalMinutesRead = Math.round((readingStats?.totalReadTimeSeconds ?? 0) / 60);
+  const averageCompletion = Math.round(readingStats?.averageCompletionPercentage ?? 0);
+  const derivedArticlesRead = Math.max(profileArticlesRead, trackedReads);
+  const articlesReadDisplay = profileReady ? `${derivedArticlesRead}` : "—";
+  const inProgressDisplay = profileReady ? `${articlesInProgress}` : "—";
+  const readTimeDisplay = profileReady ? `${totalMinutesRead} min` : "—";
+  const completionDisplay = profileReady ? `${averageCompletion}%` : "—";
   const savedCountDisplay = profileReady ? `${savedCount}` : "—";
   const achievementsDisplay = profileReady ? achievementCopy : "—/—";
-  const karma = articlesRead * 10 + savedActions * 5 + savedCount * 2;
+  const karma = derivedArticlesRead * 10 + savedActions * 5 + savedCount * 2;
   const nextTier = KARMA_TIERS.find((tier) => tier.min > karma);
   const karmaProgress = nextTier ? Math.min(1, (karma - (nextTier.min - 50)) / 50) : 1;
+  const currentTier = getCurrentKarmaTier(karma);
+  const lastReadDisplay = profileReady ? formatRelativeDate(activeProfile?.stats?.lastReadAt) : "—";
+  const lastSavedDisplay = profileReady
+    ? formatRelativeDate(activeProfile?.stats?.lastSavedAt)
+    : "—";
+  const karmaTierLabel = profileReady ? `${currentTier.label} tier` : "—";
 
   const featureBadgeText = subscriptionFeaturesLocked ? "Locked" : "Preview";
   const featureLockCopy = subscriptionFeaturesLocked
@@ -264,45 +318,45 @@ const ProfileScreen: React.FC = () => {
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{achievementsDisplay} achievements</Text>
                 </View>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{karmaTierLabel}</Text>
+                </View>
               </View>
             </View>
           </View>
 
-          <View style={styles.profilePillsRow}>
-            <View style={styles.profilePill}>
-              <Text style={styles.profilePillLabel}>Reads</Text>
-              <Text
-                style={styles.profilePillValue}
-                accessibilityLabel={`Articles read ${articlesReadDisplay}`}
-              >
-                {articlesReadDisplay}
-              </Text>
-            </View>
-            <View style={styles.profilePill}>
-              <Text style={styles.profilePillLabel}>Saved</Text>
-              <Text
-                style={styles.profilePillValue}
-                accessibilityLabel={`Saved articles ${savedCountDisplay}`}
-              >
-                {savedCountDisplay}
-              </Text>
-            </View>
-            <View style={styles.profilePill}>
-              <Text style={styles.profilePillLabel}>Achievements</Text>
-              <Text
-                style={styles.profilePillValue}
-                accessibilityLabel={`Achievements ${achievementsDisplay}`}
-              >
-                {achievementsDisplay}
-              </Text>
-            </View>
+          <View style={styles.profilePillsGrid}>
+            <ProfilePill
+              label="Reads tracked"
+              value={articlesReadDisplay}
+              accessibilityLabel={`Reads tracked ${articlesReadDisplay}`}
+              style={styles.profilePillHalf}
+            />
+            <ProfilePill
+              label="In progress"
+              value={inProgressDisplay}
+              accessibilityLabel={`Articles in progress ${inProgressDisplay}`}
+              style={styles.profilePillHalf}
+            />
+            <ProfilePill
+              label="Saved"
+              value={savedCountDisplay}
+              accessibilityLabel={`Saved articles ${savedCountDisplay}`}
+              style={styles.profilePillHalf}
+            />
+            <ProfilePill
+              label="Avg completion"
+              value={completionDisplay}
+              accessibilityLabel={`Average completion ${completionDisplay}`}
+              style={styles.profilePillHalf}
+            />
           </View>
 
           {!profileReady ? (
             <Text style={styles.noteText}>Loading your profile…</Text>
           ) : (
             <Text style={styles.noteText}>
-              Stats and saved articles stay on this device until sync launches.
+              Reading stats come from tracked sessions and stay on this device until sync launches.
             </Text>
           )}
 
@@ -361,19 +415,25 @@ const ProfileScreen: React.FC = () => {
               hint="All-time reads on this device"
             />
             <StatRow
-              label="Saved articles"
-              value={savedCountDisplay}
-              hint="Stays on this device until sync launches"
+              label="Read time"
+              value={readTimeDisplay}
+              hint="Tracked reading minutes on this device"
             />
             <StatRow
               label="Saves performed"
               value={profileReady ? `${savedActions}` : "—"}
               hint="Times you saved from feed or article"
             />
+            <StatRow label="Last read" value={lastReadDisplay} hint="Relative to today" />
             <StatRow
-              label="Reading streak"
-              value="0 days"
-              hint="Read today to start your streak"
+              label="Last saved"
+              value={lastSavedDisplay}
+              hint="Most recent save action"
+            />
+            <StatRow
+              label="Karma tier"
+              value={karmaTierLabel}
+              hint={nextTier ? `${nextTier.label} up next` : "Top tier reached"}
               isLast
             />
           </View>
@@ -748,10 +808,46 @@ const StatRow = ({
       accessibilityLabel={`${label}, ${value}${hint ? `. ${hint}` : ""}`}
     >
       <View style={styles.statRowText}>
-        <Text style={styles.statRowLabel}>{label}</Text>
-        {hint ? <Text style={styles.statRowHint}>{hint}</Text> : null}
+        <Text style={styles.statRowLabel} numberOfLines={1} ellipsizeMode="tail">
+          {label}
+        </Text>
+        {hint ? (
+          <Text style={styles.statRowHint} numberOfLines={1} ellipsizeMode="tail">
+            {hint}
+          </Text>
+        ) : null}
       </View>
-      <Text style={styles.statRowValue}>{value}</Text>
+      <Text style={styles.statRowValue} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {value}
+      </Text>
+    </View>
+  );
+};
+
+const ProfilePill = ({
+  label,
+  value,
+  accessibilityLabel,
+  style,
+}: {
+  label: string;
+  value: string;
+  accessibilityLabel?: string;
+  style?: any;
+}) => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View
+      style={[styles.profilePill, style]}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={accessibilityLabel || `${label}: ${value}`}
+    >
+      <Text style={styles.profilePillLabel}>{label}</Text>
+      <Text style={styles.profilePillValue} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {value}
+      </Text>
     </View>
   );
 };
@@ -1207,18 +1303,25 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  profilePillsRow: {
+  profilePillsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: spacing.lg,
+    flexWrap: "wrap",
     gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  profilePillHalf: {
+    flexBasis: "48%",
   },
   profilePill: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: spacing.xs,
+    flexGrow: 1,
+    backgroundColor: colors.secondaryBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 64,
+    justifyContent: "center",
   },
   profilePillLabel: {
     fontFamily: typography.fontFamily.sans,
@@ -1227,10 +1330,10 @@ const createStyles = (colors: ThemeColors) =>
   },
   profilePillValue: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.text,
-    marginTop: 2,
+    marginTop: 4,
   },
   });
 

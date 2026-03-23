@@ -16,6 +16,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Daily Digest now pulls from live feed data instead of mock articles, surfaces launch controls directly in Digest & Launch settings, and falls back to extractive summaries when no AI key is saved.
 - Daily Digest now uses profile-scoped feed recency metadata from Home and Section fetches, so it avoids resurfacing stories the active profile already pulled into the feed moments earlier.
 - Onboarding now uses scroll-safe slides, a real Next action, accessible progress feedback, and current `minimal`/`comprehensive` tab-layout selection instead of a dead CTA.
+- Profile now surfaces tracked reading metrics, relative last-read/save activity, and karma tier status from current device data instead of placeholder streak copy.
 
 ### Fixed
 - Sign in with Apple flow and FullStory instrumentation hardened; Jest setup and shared components updated for more reliable tests and UI interactions.

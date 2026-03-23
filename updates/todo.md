@@ -86,7 +86,7 @@ Last Updated: March 22, 2026
 - [ ] **TODO-040** | **v1.4.0** | Salvage onboarding/profile polish in tested slices
   - **Status**: In Progress
   - **Description**: Rebuild the remaining high-value `release/1.4.0` onboarding/profile improvements in small patches instead of merging the branch wholesale.
-  - **Progress**: Slice 1 landed. Onboarding now has a real Next action, scroll-safe slides, accessible progress, and current `minimal`/`comprehensive` layout selection on the clean baseline.
+  - **Progress**: Slice 1 landed. Onboarding now has a real Next action, scroll-safe slides, accessible progress, and current `minimal`/`comprehensive` layout selection on the clean baseline. Slice 2 landed. Profile now shows tracked reading metrics, relative last-read/save activity, and karma tier status from current device data instead of placeholder streak copy.
   - **Effort**: 4 hours
   - **Definition of Done**: Any ported onboarding/profile improvements land with tests and without reintroducing the release branch's dependency, RSS, or profile regressions.
   - **Dependencies**: OnboardingScreen, ProfileScreen, associated tests
