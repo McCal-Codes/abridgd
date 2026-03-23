@@ -1,41 +1,33 @@
 /**
  * Profile Screen
  *
- * Profile management with reading stats, achievements, and subscription gating preview.
+ * Profile management with reading stats and account tools.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
-  Animated,
   Linking,
-  PanResponder,
-  GestureResponderEvent,
-  PanResponderGestureState,
   ScrollView,
   Share as NativeShare,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import {
   BookOpen,
-  Flame,
   Mail,
   Shield,
   Sparkles,
-  Target,
   UploadCloud,
   Download,
   User,
 } from "lucide-react-native";
 import { GlassButton } from "../components/GlassButton";
 import { SignInWithApple } from "../components/SignInWithApple";
-import { ComingSoon } from "../components/ComingSoon";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -49,7 +41,6 @@ import {
   CONTACT_EMAIL,
 } from "../config/appInfo";
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
-import { useSettings } from "../context/SettingsContext";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
@@ -102,7 +93,6 @@ const ProfileScreen: React.FC = () => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
 
   const {
     activeProfile,
@@ -112,18 +102,11 @@ const ProfileScreen: React.FC = () => {
     importProfileKey,
     updateSettingsTag,
   } = useProfiles();
-  const { subscriptionFeaturesLocked, reduceMotion } = useSettings();
   const { readingStats } = useReadingProgressOptional();
 
   const [settingsTagInput, setSettingsTagInput] = useState(activeProfile?.settingsTag || "");
   const [importCode, setImportCode] = useState("");
-
-  const [sheetVisible, setSheetVisible] = useState(false);
-  const [sheetFeature, setSheetFeature] = useState<string | null>(null);
-  const [sheetLocked, setSheetLocked] = useState(true);
   const profileReady = Boolean(activeProfile);
-
-  const sheetAnim = useRef(new Animated.Value(0)).current; // 0 hidden, 1 shown
 
   const achievementStatuses = useMemo(
     () => getAchievementStatuses(activeProfile || undefined),
@@ -145,10 +128,8 @@ const ProfileScreen: React.FC = () => {
   const readTimeDisplay = profileReady ? `${totalMinutesRead} min` : "—";
   const completionDisplay = profileReady ? `${averageCompletion}%` : "—";
   const savedCountDisplay = profileReady ? `${savedCount}` : "—";
-  const achievementsDisplay = profileReady ? achievementCopy : "—/—";
   const karma = derivedArticlesRead * 10 + savedActions * 5 + savedCount * 2;
   const nextTier = KARMA_TIERS.find((tier) => tier.min > karma);
-  const karmaProgress = nextTier ? Math.min(1, (karma - (nextTier.min - 50)) / 50) : 1;
   const currentTier = getCurrentKarmaTier(karma);
   const lastReadDisplay = profileReady ? formatRelativeDate(activeProfile?.stats?.lastReadAt) : "—";
   const lastSavedDisplay = profileReady
@@ -156,65 +137,9 @@ const ProfileScreen: React.FC = () => {
     : "—";
   const karmaTierLabel = profileReady ? `${currentTier.label} tier` : "—";
 
-  const featureBadgeText = subscriptionFeaturesLocked ? "Locked" : "Preview";
-  const featureLockCopy = subscriptionFeaturesLocked
-    ? "Locked until subscriptions launch."
-    : "Temporarily unlocked for testing.";
-  const featureStatusLabel = subscriptionFeaturesLocked ? "Locked" : "Unlocked for testing";
-
-  const sheetPanResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_evt, gestureState) => Math.abs(gestureState.dy) > 6,
-      onPanResponderMove: (_evt: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-        const next = Math.max(0, gestureState.dy * -1);
-        sheetAnim.setValue(Math.min(next, 400));
-      },
-      onPanResponderRelease: (_evt, gestureState) => {
-        if (gestureState.dy > 40) {
-          closeSubscriptionSheet();
-          return;
-        }
-        animateSheet(true);
-      },
-    }),
-  ).current;
-
-  const animateSheet = (show: boolean) => {
-    const toValue = show ? 1 : 0;
-    const duration = reduceMotion ? 120 : 260;
-    Animated.timing(sheetAnim, {
-      toValue,
-      duration,
-      useNativeDriver: true,
-    }).start(() => {
-      setSheetVisible(show);
-      if (!show) {
-        setSheetFeature(null);
-      }
-    });
-  };
-
-  const openSubscriptionSheet = (feature: string, locked: boolean) => {
-    setSheetVisible(true);
-    setSheetFeature(feature);
-    setSheetLocked(locked);
-    animateSheet(true);
-  };
-
-  const closeSubscriptionSheet = () => {
-    animateSheet(false);
-    setSheetVisible(false);
-  };
-
   useEffect(() => {
     setSettingsTagInput(activeProfile?.settingsTag || "");
   }, [activeProfile?.settingsTag]);
-
-  useEffect(() => {
-    const parent = navigation.getParent?.();
-    if (!parent) return;
-    parent.setOptions({ tabBarStyle: sheetVisible ? { display: "none" } : undefined });
-  }, [navigation, sheetVisible]);
 
   const handleSettings = () => navigation.navigate("Settings" as never);
 
@@ -274,17 +199,11 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  const sheetTranslate = sheetAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [360, 0],
-    extrapolate: "clamp",
-  });
-
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.headerContainer, { paddingTop: spacing.md }]}>
-          <HeroHeader title="Profile" subtitle="Your calm hub for stats and settings" Icon={User} />
+          <HeroHeader title="Profile" subtitle="Reading and account basics" Icon={User} />
         </View>
 
         <View style={styles.card}>
@@ -305,23 +224,6 @@ const ProfileScreen: React.FC = () => {
                   {activeProfile?.settingsTag || "Local profile"}
                 </Text>
               </View>
-              <View style={styles.badgeRow}>
-                <View
-                  style={[styles.badge, styles.karmaBadge]}
-                  accessibilityLabel={`${karma} karma points`}
-                  accessibilityRole="text"
-                >
-                  <Text style={[styles.badgeText, styles.karmaBadgeText]}>
-                    {profileReady ? karma : "…"} karma
-                  </Text>
-                </View>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{achievementsDisplay} achievements</Text>
-                </View>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{karmaTierLabel}</Text>
-                </View>
-              </View>
             </View>
           </View>
 
@@ -333,21 +235,9 @@ const ProfileScreen: React.FC = () => {
               style={styles.profilePillHalf}
             />
             <ProfilePill
-              label="In progress"
-              value={inProgressDisplay}
-              accessibilityLabel={`Articles in progress ${inProgressDisplay}`}
-              style={styles.profilePillHalf}
-            />
-            <ProfilePill
               label="Saved"
               value={savedCountDisplay}
               accessibilityLabel={`Saved articles ${savedCountDisplay}`}
-              style={styles.profilePillHalf}
-            />
-            <ProfilePill
-              label="Avg completion"
-              value={completionDisplay}
-              accessibilityLabel={`Average completion ${completionDisplay}`}
               style={styles.profilePillHalf}
             />
           </View>
@@ -360,6 +250,22 @@ const ProfileScreen: React.FC = () => {
             </Text>
           )}
 
+          <GlassButton
+            label="Open settings"
+            prominence="standard"
+            onPress={handleSettings}
+            accessibilityLabel="Open settings"
+            style={styles.cardAction}
+          />
+          <GlassButton
+            label={`View achievements (${achievementCopy})`}
+            prominence="tinted"
+            onPress={() => navigation.navigate("Achievements" as never)}
+            accessibilityLabel="View achievements"
+            accessibilityHint="Opens the achievements screen"
+            style={styles.cardAction}
+            icon={<BookOpen size={16} color={colors.text} strokeWidth={2} />}
+          />
           {activeProfile?.appleUserId ? (
             <GlassButton
               label="Sign out"
@@ -369,45 +275,13 @@ const ProfileScreen: React.FC = () => {
                 Alert.alert("Signed out", `Switched to ${profile.name}.`);
               }}
               accessibilityLabel="Sign out of Apple account"
-              style={[styles.inlineButton, { marginTop: spacing.md }]}
+              style={styles.cardAction}
             />
           ) : null}
         </View>
 
-        <GlassButton
-          label="Settings"
-          prominence="standard"
-          onPress={handleSettings}
-          accessibilityLabel="Open settings"
-          style={[styles.inlineButton, styles.settingsButton]}
-        />
-
         <View style={styles.section}>
-          <SectionHeader title="Activity" />
-
-          <View style={styles.karmaRow}>
-            <Text style={styles.karmaLabel}>Reading karma</Text>
-            <Text style={styles.karmaValue}>{karma}</Text>
-            <Text style={styles.karmaHint}>
-              {nextTier
-                ? `${nextTier.label} in ${Math.max(0, nextTier.min - karma)} points`
-                : "Max tier unlocked"}
-            </Text>
-            <View
-              style={styles.progressBar}
-              accessibilityRole="progressbar"
-              accessibilityLabel="Karma progress"
-              accessibilityValue={{
-                min: 0,
-                max: 100,
-                now: Math.round(Math.max(0, Math.min(1, karmaProgress)) * 100),
-                text: `${Math.round(karmaProgress * 100)}% toward next tier`,
-              }}
-            >
-              <View style={[styles.progressFillMuted, { width: `${karmaProgress * 100}%` }]} />
-            </View>
-          </View>
-
+          <SectionHeader title="Reading" />
           <View style={styles.statGroup}>
             <StatRow
               label="Articles read"
@@ -415,14 +289,19 @@ const ProfileScreen: React.FC = () => {
               hint="All-time reads on this device"
             />
             <StatRow
+              label="In progress"
+              value={inProgressDisplay}
+              hint="Articles with saved reading progress"
+            />
+            <StatRow
               label="Read time"
               value={readTimeDisplay}
               hint="Tracked reading minutes on this device"
             />
             <StatRow
-              label="Saves performed"
-              value={profileReady ? `${savedActions}` : "—"}
-              hint="Times you saved from feed or article"
+              label="Average completion"
+              value={completionDisplay}
+              hint="Average completion across tracked reads"
             />
             <StatRow label="Last read" value={lastReadDisplay} hint="Relative to today" />
             <StatRow
@@ -440,118 +319,20 @@ const ProfileScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Achievements" />
-          <Text style={styles.sectionDesc}>
-            Achievements track quietly in the background. Open the list when you want a progress
-            check.
-          </Text>
-          <GlassButton
-            label={`View achievements (${achievementCopy})`}
-            prominence="tinted"
-            onPress={() => navigation.navigate("Achievements" as never)}
-            accessibilityLabel="View achievements"
-            accessibilityHint="Opens the achievements screen"
-            style={styles.inlineButton}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Personalization & advanced features" />
-          <Text style={styles.sectionDesc}>
-            Capability layer for readers who want extra control. These stay off until subscriptions
-            launch.
-          </Text>
-          <View style={styles.card}>
-            <TouchableOpacity
-              style={styles.featureRow}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Reading pace and presentation. ${featureStatusLabel}. ${featureLockCopy}`}
-              accessibilityHint="Opens subscription sheet for pacing controls"
-              onPress={() =>
-                openSubscriptionSheet("Reading pace & presentation", subscriptionFeaturesLocked)
-              }
-              activeOpacity={0.75}
-            >
-              <View style={styles.featureIcon}>
-                <Sparkles size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.featureTextBlock}>
-                <Text style={styles.featureTitle}>Reading pace & presentation</Text>
-                <Text style={styles.featureDesc}>
-                  Adjust pacing, typography, and density. {featureLockCopy}
-                </Text>
-              </View>
-              <View style={styles.featureBadge}>
-                <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.featureRow}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Digest tuning. ${featureStatusLabel}. ${featureLockCopy}`}
-              accessibilityHint="Opens subscription sheet for digest tuning"
-              onPress={() => openSubscriptionSheet("Digest tuning", subscriptionFeaturesLocked)}
-              activeOpacity={0.75}
-            >
-              <View style={styles.featureIcon}>
-                <Target size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.featureTextBlock}>
-                <Text style={styles.featureTitle}>Digest tuning</Text>
-                <Text style={styles.featureDesc}>
-                  Control cadence, sections, and signal. {featureLockCopy}
-                </Text>
-              </View>
-              <View style={styles.featureBadge}>
-                <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.featureRow, styles.featureRowLast]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`Focus and grounding modes. ${featureStatusLabel}. ${featureLockCopy}`}
-              accessibilityHint="Opens subscription sheet for focus & grounding"
-              onPress={() =>
-                openSubscriptionSheet("Focus & grounding modes", subscriptionFeaturesLocked)
-              }
-              activeOpacity={0.75}
-            >
-              <View style={styles.featureIcon}>
-                <Flame size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.featureTextBlock}>
-                <Text style={styles.featureTitle}>Focus & grounding modes</Text>
-                <Text style={styles.featureDesc}>
-                  Quiet delivery, pacing, and mode presets. {featureLockCopy}
-                </Text>
-              </View>
-              <View style={styles.featureBadge}>
-                <Text style={styles.featureBadgeText}>{featureBadgeText}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Sync & privacy" />
-          <View style={styles.card}>
-            <Text style={styles.sectionDesc}>
-              Sign in with Apple will sync preferences, history, and saved articles when it
-              launches.
-            </Text>
+          <SectionHeader title="Account & backup" />
+          <View style={[styles.card, styles.transferCard]}>
             <View style={styles.connectedRow}>
               <View style={styles.connectedIcon}>
                 <Shield size={18} color={colors.textSecondary} />
               </View>
               <View style={styles.connectedTextBlock}>
                 <Text style={styles.connectedTitle}>Apple Account</Text>
-                <Text style={styles.connectedDesc}>Temporarily disabled — coming soon</Text>
+                <Text style={styles.connectedDesc}>
+                  Sync is not live yet. Data stays local until you opt in.
+                </Text>
               </View>
               <View style={styles.connectedBadge}>
-                <Text style={styles.connectedBadgeText}>Offline</Text>
+                <Text style={styles.connectedBadgeText}>Local only</Text>
               </View>
             </View>
             <SignInWithApple
@@ -567,19 +348,12 @@ const ProfileScreen: React.FC = () => {
                 console.error("Sign in error:", error);
               }}
             />
-            <View style={styles.noticeRow}>
-              <Shield size={18} color={colors.textSecondary} />
-              <Text style={styles.noticeText}>
-                No tracking. Data stays on-device until you opt in.
-              </Text>
-            </View>
-          </View>
-
-          <View style={[styles.card, styles.transferCard]}>
-            <SectionHeader title="Profile settings" compact />
             <Text style={styles.sectionDesc}>
-              Add a short tag so you recognize this local profile’s preferences.
+              Keep this screen focused on the basics: label this device, keep a backup code handy,
+              and import a profile when you need to move settings later.
             </Text>
+
+            <Text style={styles.transferLabel}>Profile label</Text>
             <TextInput
               value={settingsTagInput}
               onChangeText={setSettingsTagInput}
@@ -592,35 +366,27 @@ const ProfileScreen: React.FC = () => {
               returnKeyType="done"
             />
 
-            <SectionHeader title="Backup & transfer" compact style={{ marginTop: spacing.lg }} />
-            <Text style={styles.sectionDesc}>
-              Use the profile key to move your settings, achievements, and saved items to another
-              device.
-            </Text>
+            <View style={styles.cardDivider} />
 
-            <View style={styles.transferRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.transferLabel}>Profile key</Text>
-                <Text style={styles.transferCode} selectable>
-                  {activeProfile?.transferKey || "Unavailable"}
-                </Text>
-              </View>
-              <GlassButton
-                label="Share code"
-                prominence="standard"
-                onPress={handleExportProfile}
-                accessibilityLabel="Share profile code"
-                accessibilityHint="Opens the share sheet with your profile code."
-                style={styles.transferButton}
-                icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
-              />
-            </View>
+            <Text style={styles.transferLabel}>Profile key</Text>
+            <Text style={styles.transferCode} selectable>
+              {activeProfile?.transferKey || "Unavailable"}
+            </Text>
+            <GlassButton
+              label="Share code"
+              prominence="standard"
+              onPress={handleExportProfile}
+              accessibilityLabel="Share profile code"
+              accessibilityHint="Opens the share sheet with your profile code."
+              style={styles.cardAction}
+              icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
+            />
 
             <TextInput
               value={importCode}
               onChangeText={setImportCode}
               placeholder="Paste profile code to import"
-              style={[styles.textInput, { marginTop: spacing.sm }]}
+              style={[styles.textInput, styles.secondaryFieldSpacing]}
               accessibilityLabel="Import profile code"
               accessibilityHint="Paste a code to import settings and achievements."
               placeholderTextColor={colors.textSecondary}
@@ -634,28 +400,8 @@ const ProfileScreen: React.FC = () => {
               onPress={handleImportProfile}
               accessibilityLabel="Import profile"
               accessibilityHint="Imports the profile using the provided code."
-              style={styles.transferButton}
+              style={styles.cardAction}
               icon={<Download size={16} color={colors.text} strokeWidth={2} />}
-            />
-            <Text style={styles.transferHint}>
-              Keep this code private. It includes your settings, achievements, and saved items.
-            </Text>
-          </View>
-
-          <View style={[styles.card, { marginTop: spacing.md }]}>
-            <SectionHeader title="Data controls" compact />
-            <Text style={styles.sectionDesc}>
-              Manage your data on this device. Full export/delete and consent controls will ship
-              with sync.
-            </Text>
-            <GlassButton
-              label="Export profile key"
-              prominence="standard"
-              onPress={handleExportProfile}
-              accessibilityLabel="Export profile key"
-              accessibilityHint="Generates and shares your profile key for backup."
-              style={styles.inlineButton}
-              icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
             />
             <GlassButton
               label="Delete local data"
@@ -663,29 +409,17 @@ const ProfileScreen: React.FC = () => {
               onPress={() => Alert.alert("Coming soon", "Local data deletion will ship with sync.")}
               accessibilityLabel="Delete local data"
               accessibilityHint="Future control to remove local profile data."
-              style={[styles.inlineButton, styles.destructiveSpacing]}
+              style={styles.cardAction}
             />
-            <ComingSoon
-              variant="inline"
-              title="Data consent"
-              description="Granular consent and deletion controls arrive with sync."
-              icon="clock"
-              style={{ marginTop: spacing.md }}
-            />
+            <Text style={styles.transferHint}>
+              Keep this code private. Data consent and granular deletion ship with sync.
+            </Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Quick actions" />
+          <SectionHeader title="Support" />
           <View style={styles.actionsRow}>
-            <ActionButton
-              label="Settings"
-              Icon={Mail}
-              onPress={handleSettings}
-              accessibilityLabel="Open settings"
-              accessibilityHint="Opens app settings including reading and customization options."
-              prominence="filled"
-            />
             <ActionButton
               label="Send feedback"
               Icon={Mail}
@@ -712,61 +446,6 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.footerTextSecondary}>Support uses this for troubleshooting.</Text>
         </View>
       </ScrollView>
-      {sheetVisible && (
-        <View style={styles.sheetOverlay} accessibilityViewIsModal importantForAccessibility="yes">
-          <TouchableOpacity
-            style={styles.sheetBackdrop}
-            activeOpacity={1}
-            onPress={closeSubscriptionSheet}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss subscription sheet"
-            accessibilityHint="Closes the subscription notice and returns to profile"
-          />
-          <Animated.View
-            accessible
-            accessibilityLabel="Subscription options"
-            style={[
-              styles.sheetContainer,
-              {
-                transform: [{ translateY: sheetTranslate }],
-                paddingBottom: spacing.xl + Math.max(insets.bottom, spacing.md),
-              },
-            ]}
-            {...sheetPanResponder.panHandlers}
-          >
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>
-              {sheetLocked ? "Subscription required" : "Debug: unlocked"}
-            </Text>
-            <Text style={styles.sheetSubtitle}>
-              {sheetFeature || "This control"} is{" "}
-              {sheetLocked
-                ? "part of our upcoming subscription."
-                : "currently unlocked for debugging."}{" "}
-              Toggle gating in Debug → Force subscription gating to simulate the paywall.
-            </Text>
-            <GlassButton
-              label="Maybe later"
-              prominence="standard"
-              onPress={closeSubscriptionSheet}
-              accessibilityLabel="Dismiss subscription sheet"
-              style={styles.sheetButton}
-            />
-            <GlassButton
-              label={sheetLocked ? "See plans" : "Close"}
-              prominence={sheetLocked ? "tinted" : "standard"}
-              onPress={() => {
-                closeSubscriptionSheet();
-                if (sheetLocked) {
-                  Alert.alert("Coming soon", "Plans and pricing will appear here soon.");
-                }
-              }}
-              accessibilityLabel={sheetLocked ? "See subscription plans" : "Close sheet"}
-              style={styles.sheetButton}
-            />
-          </Animated.View>
-        </View>
-      )}
     </SafeAreaView>
   );
 };
@@ -982,6 +661,10 @@ const createStyles = (colors: ThemeColors) =>
     fontSize: 12,
     color: colors.textSecondary,
   },
+  cardAction: {
+    alignSelf: "stretch",
+    marginTop: spacing.sm,
+  },
   karmaBadge: {
     backgroundColor: colors.secondaryBackground,
     borderColor: colors.border,
@@ -1113,6 +796,14 @@ const createStyles = (colors: ThemeColors) =>
     fontFamily: typography.fontFamily.sans,
     fontSize: 14,
     color: colors.text,
+  },
+  secondaryFieldSpacing: {
+    marginTop: spacing.md,
+  },
+  cardDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginVertical: spacing.lg,
   },
   transferCard: {
     // spacing handled per-child to avoid unsupported gap on React Native

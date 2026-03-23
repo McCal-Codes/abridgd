@@ -91,7 +91,8 @@
 - [ ] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
   - [x] Slice 1: Onboarding now has a real Next action, scroll-safe slides, and current tab-layout selection on the clean baseline
   - [x] Slice 2: Profile now surfaces tracked reading metrics, relative last-read/save activity, and karma tier status without pulling over the release branch's asset and gating churn
-  - [ ] Slice 3: Review the remaining release-only onboarding/profile ideas and rebuild only the pieces that still improve the clean baseline
+  - [x] Slice 3: Profile is simplified around overview, reading, account, and support, removing duplicate settings paths and preview-only clutter
+  - [ ] Slice 4: Review the remaining release-only onboarding/profile ideas and rebuild only the pieces that still improve the clean baseline
 
 ---
 

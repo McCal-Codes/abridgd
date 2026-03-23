@@ -166,17 +166,24 @@ describe("ProfileScreen", () => {
     const { getByLabelText, getByText, queryByText } = render(<ProfileScreen />);
 
     expect(getByLabelText("Reads tracked 5")).toBeTruthy();
-    expect(getByLabelText("Articles in progress 2")).toBeTruthy();
     expect(getByLabelText("Saved articles 4")).toBeTruthy();
-    expect(getByLabelText("Average completion 68%")).toBeTruthy();
+    expect(getByLabelText("In progress, 2. Articles with saved reading progress")).toBeTruthy();
+    expect(
+      getByLabelText("Average completion, 68%. Average completion across tracked reads"),
+    ).toBeTruthy();
     expect(getByText("Read time")).toBeTruthy();
     expect(getByText("10 min")).toBeTruthy();
     expect(getByLabelText("Last read, 2 days ago. Relative to today")).toBeTruthy();
     expect(getByLabelText("Last saved, Today. Most recent save action")).toBeTruthy();
     expect(getByLabelText("Karma tier, Warm tier. Steady up next")).toBeTruthy();
+    expect(getByText("Account & backup")).toBeTruthy();
+    expect(getByText("Support")).toBeTruthy();
+    expect(getByText("View achievements (1/3)")).toBeTruthy();
     expect(
       getByText("Reading stats come from tracked sessions and stay on this device until sync launches."),
     ).toBeTruthy();
+    expect(queryByText("Personalization & advanced features")).toBeNull();
+    expect(queryByText("Sync & privacy")).toBeNull();
     expect(queryByText("Reading streak")).toBeNull();
   });
 });
