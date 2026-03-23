@@ -137,7 +137,7 @@ The project uses Semantic Versioning for public releases and EAS auto-increments
    npx eas build --platform ios --profile production --auto-submit
    ```
 
-   The workflow expects an `EXPO_TOKEN` repository secret and can optionally auto-submit the build to TestFlight.
+   The workflow expects an `EXPO_TOKEN` repository secret, can optionally auto-submit the build to TestFlight, and can attach the finished IPA to an existing GitHub release tag.
 
 5. In App Store Connect, verify processing, add release notes, and assign the correct tester groups.
 6. Tag the release as `vMAJOR.MINOR.PATCH`.

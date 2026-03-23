@@ -21,17 +21,65 @@ on:
         required: true
         default: true
         type: boolean
+      attach_to_release:
+        description: Download the finished IPA and attach it to a GitHub release
+        required: true
+        default: false
+        type: boolean
+      release_tag:
+        description: Existing release tag to attach the IPA to, for example v1.4.0
+        required: false
+        type: string
+  release:
+    types:
+      - published
 
 jobs:
   ios-build:
     name: EAS iOS Build
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     permissions:
-      contents: read
+      contents: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
     steps:
+      - name: Resolve build settings
+        id: settings
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "checkout_ref=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+            echo "profile=production" >> "$GITHUB_OUTPUT"
+            echo "auto_submit=false" >> "$GITHUB_OUTPUT"
+            echo "wait_for_build=true" >> "$GITHUB_OUTPUT"
+            echo "attach_to_release=true" >> "$GITHUB_OUTPUT"
+            echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          profile="${{ inputs.profile }}"
+          auto_submit="${{ inputs.auto_submit }}"
+          wait_for_build="${{ inputs.wait_for_build }}"
+          attach_to_release="${{ inputs.attach_to_release }}"
+          release_tag="${{ inputs.release_tag }}"
+
+          if [ "$attach_to_release" = "true" ] && [ -z "$release_tag" ]; then
+            echo "release_tag is required when attach_to_release is true."
+            exit 1
+          fi
+
+          checkout_ref="${release_tag:-${GITHUB_REF_NAME}}"
+
+          echo "checkout_ref=$checkout_ref" >> "$GITHUB_OUTPUT"
+          echo "profile=$profile" >> "$GITHUB_OUTPUT"
+          echo "auto_submit=$auto_submit" >> "$GITHUB_OUTPUT"
+          echo "wait_for_build=$wait_for_build" >> "$GITHUB_OUTPUT"
+          echo "attach_to_release=$attach_to_release" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+
       - name: Validate Expo token
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
@@ -41,6 +89,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.settings.outputs.checkout_ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -53,23 +103,44 @@ jobs:
 
       - name: Print release metadata
         run: |
+          set -euo pipefail
+          release_tag="${{ steps.settings.outputs.release_tag }}"
+          if [ -z "$release_tag" ]; then
+            release_tag="n/a"
+          fi
+
           echo "Package version: $(node -p "require('./package.json').version")"
-          echo "Requested profile: ${{ inputs.profile }}"
-          echo "Auto-submit: ${{ inputs.auto_submit }}"
-          echo "Wait for build: ${{ inputs.wait_for_build }}"
+          echo "Checkout ref: ${{ steps.settings.outputs.checkout_ref }}"
+          echo "Requested profile: ${{ steps.settings.outputs.profile }}"
+          echo "Auto-submit: ${{ steps.settings.outputs.auto_submit }}"
+          echo "Wait for build: ${{ steps.settings.outputs.wait_for_build }}"
+          echo "Attach to release: ${{ steps.settings.outputs.attach_to_release }}"
+          echo "Release tag: $release_tag"
+
+      - name: Validate GitHub release
+        if: steps.settings.outputs.attach_to_release == 'true'
+        run: gh release view "${{ steps.settings.outputs.release_tag }}"
 
       - name: Run EAS iOS build
+        id: eas_build
         run: |
           set -euo pipefail
 
-          cmd=(npx eas build --platform ios --profile "${{ inputs.profile }}" --non-interactive)
+          wait_for_build="${{ steps.settings.outputs.wait_for_build }}"
+          attach_to_release="${{ steps.settings.outputs.attach_to_release }}"
 
-          if [ "${{ inputs.wait_for_build }}" = "true" ]; then
+          if [ "$attach_to_release" = "true" ]; then
+            wait_for_build="true"
+          fi
+
+          cmd=(npx eas build --platform ios --profile "${{ steps.settings.outputs.profile }}" --non-interactive --json)
+
+          if [ "$wait_for_build" = "true" ]; then
             cmd+=(--wait)
           fi
 
-          if [ "${{ inputs.auto_submit }}" = "true" ]; then
-            if [ "${{ inputs.profile }}" != "production" ]; then
+          if [ "${{ steps.settings.outputs.auto_submit }}" = "true" ]; then
+            if [ "${{ steps.settings.outputs.profile }}" != "production" ]; then
               echo "auto_submit can only be used with the production profile."
               exit 1
             fi
@@ -79,4 +150,65 @@ jobs:
 
           printf 'Running: %q ' "${cmd[@]}"
           echo
-          "${cmd[@]}"
+
+          build_json="$("${cmd[@]}")"
+          printf '%s\n' "$build_json" > eas-build.json
+
+          node <<'EOF' > eas-build-outputs.txt
+const fs = require('fs');
+
+const raw = fs.readFileSync('eas-build.json', 'utf8');
+const data = JSON.parse(raw);
+const build = Array.isArray(data) ? data[0] : data;
+const buildId = build?.id || '';
+const buildUrl = build?.artifacts?.buildUrl || '';
+const archiveUrl = build?.artifacts?.applicationArchiveUrl || '';
+
+if (!buildId) {
+  console.error('Missing build id in EAS JSON output.');
+  process.exit(1);
+}
+
+process.stdout.write(`build_id=${buildId}\n`);
+
+if (buildUrl) {
+  process.stdout.write(`build_url=${buildUrl}\n`);
+}
+
+if (archiveUrl) {
+  process.stdout.write(`archive_url=${archiveUrl}\n`);
+}
+EOF
+
+          cat eas-build-outputs.txt >> "$GITHUB_OUTPUT"
+
+          if [ "$attach_to_release" = "true" ]; then
+            archive_url="$(grep '^archive_url=' eas-build-outputs.txt | cut -d= -f2-)"
+            if [ -z "$archive_url" ]; then
+              echo "Build completed, but no applicationArchiveUrl was returned."
+              exit 1
+            fi
+          fi
+
+      - name: Download IPA
+        if: steps.settings.outputs.attach_to_release == 'true'
+        id: ipa
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ipa_path="dist/abridgd-${{ steps.settings.outputs.release_tag }}.ipa"
+          curl --fail --show-error --location "${{ steps.eas_build.outputs.archive_url }}" --output "$ipa_path"
+          ls -lh "$ipa_path"
+          echo "ipa_path=$ipa_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload IPA as workflow artifact
+        if: steps.settings.outputs.attach_to_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: abridgd-ios-${{ steps.settings.outputs.release_tag }}
+          path: ${{ steps.ipa.outputs.ipa_path }}
+
+      - name: Upload IPA to GitHub release
+        if: steps.settings.outputs.attach_to_release == 'true'
+        run: |
+          gh release upload "${{ steps.settings.outputs.release_tag }}" "${{ steps.ipa.outputs.ipa_path }}#Abridgd iOS IPA" --clobber

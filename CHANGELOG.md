@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Documentation
+- Release iOS Build can now download the finished iOS archive and attach the IPA directly to a tagged GitHub release.
+
 ## [1.4.0] - 2026-03-22
 
 ### Added

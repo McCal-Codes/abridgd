@@ -13,6 +13,8 @@ Inputs:
 - `profile`: `production` for TestFlight-ready builds, `preview` for internal smoke builds
 - `auto_submit`: when enabled with `production`, EAS will submit the finished build to App Store Connect
 - `wait_for_build`: keeps the workflow open until the cloud build finishes
+- `attach_to_release`: downloads the finished IPA and uploads it to the matching GitHub release
+- `release_tag`: required when `attach_to_release=true` in a manual run
 
 Requirements:
 

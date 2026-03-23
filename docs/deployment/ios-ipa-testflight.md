@@ -19,6 +19,8 @@ Run it from the Actions tab with:
 - `profile=production` for a release/TestFlight build
 - `profile=preview` for an internal smoke build
 - `auto_submit=true` only when you want App Store Connect submission
+- `attach_to_release=true` when the GitHub release should include the built IPA asset
+- `release_tag=vX.Y.Z` when you are backfilling or manually attaching the IPA to an existing release
 
 Required secrets and setup:
 
