@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-22
+
 ### Added
 - GlassStackHeader and HeroHeader components to expand the iOS 26-inspired UI kit, plus an AchievementsScreen scaffold for future engagement features.
 - Expanded Pittsburgh RSS coverage (WESA, Kidsburgh, Penguins, Pirates, Pitt Panthers, and more) with opt-in defaults for audio/experimental feeds and Settings badges for default-off sources.
@@ -34,6 +36,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Documentation
 - Rewrote the public GitHub README to better explain the app, local setup, IPA/TestFlight installation, versioned releases, and changelog workflow.
 - New and updated guides: EAS hosting, backend learning notes, navigation iOS26 patterns, onboarding/What’s New templates, RSS feed templates, and refreshed standards/deployment docs.
+- Added a GitHub Actions iOS release workflow and updated the release docs around the EAS-first IPA/TestFlight path.
 
 ## [1.3.6] - TBD
 

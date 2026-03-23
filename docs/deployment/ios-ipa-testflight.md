@@ -1,168 +1,87 @@
 # Building IPAs and Uploading to TestFlight
 
-Last Updated: 2026-01-16
+Last Updated: 2026-03-22
 
-This guide shows how to build an IPA locally (Xcode) and upload to TestFlight, plus how to use the project's helper script and EAS Build. It also covers upload options, common issues, and tips.
+For Abridged, the normal IPA path is an EAS cloud build. That keeps releases working even though the repository does not depend on a checked-in native `ios/` folder for day-to-day development.
 
-## Quick options overview
+## Recommended options
 
-- Local Xcode Archive -> Export IPA -> Upload to App Store Connect (Transporter / altool)
-- Use the repository script: `scripts/build/build-ipa.sh` (runs archive + export locally)
-- Cloud builds & submissions: `eas build --platform ios --profile production --auto-submit`
+- GitHub Actions: run `Release iOS Build`
+- Local CLI: `npm run build:ipa` or `npm run build:ipa:submit`
+- Manual native archive: only if you have generated or maintain a local `ios/` project yourself
 
-Notes: this project includes `ios/ExportOptions.plist` and `scripts/build/build-ipa.sh` to help with local builds.
+## 1) EAS build from GitHub Actions
 
----
+The repository now includes `.github/workflows/release-ios.yml`.
 
-## 1) Prerequisites
+Run it from the Actions tab with:
 
-- macOS with Xcode installed (Xcode 13+ recommended).
-- An Apple Developer Program account (paid) for App Store / TestFlight distribution.
-- App Store Connect access for the app's bundle identifier.
-- Proper code signing credentials (developer/distribution certs and provisioning profiles) or allow Xcode/EAS to manage them.
-- Optional: `eas` CLI (for cloud builds), `Transporter` app or Apple `altool`/`xcrun` for uploads.
+- `profile=production` for a release/TestFlight build
+- `profile=preview` for an internal smoke build
+- `auto_submit=true` only when you want App Store Connect submission
 
----
+Required secrets and setup:
 
-## 2) Local Xcode Archive + Export (manual)
+- `EXPO_TOKEN` repository secret
+- Expo project access for that token
+- Apple credentials configured in EAS for `com.mccalmedia.abridged`
 
-1. Open the project in Xcode (recommended): `ios/abridged.xcworkspace`.
-2. Select the `abridged` scheme and set a Release build configuration.
-3. Bump the build number and version in Xcode (or via `agvtool`) so App Store Connect accepts the upload.
-
-Archive:
-
-```bash
-# from repository root, change to ios/
-cd ios
-xcodebuild -workspace abridged.xcworkspace \
-  -scheme abridged \
-  -configuration Release \
-  -sdk iphoneos \
-  archive \
-  -archivePath abridged.xcarchive \
-  -allowProvisioningUpdates
-```
-
-Export to IPA (uses `ExportOptions.plist` in `ios/` — edit if you need a different `method`):
-
-```bash
-xcodebuild -exportArchive \
-  -archivePath abridged.xcarchive \
-  -exportPath . \
-  -exportOptionsPlist ExportOptions.plist
-```
-
-This should produce `abridged.ipa` in `ios/`.
-
----
-
-## 3) Use the included helper script
-
-The repo includes `scripts/build/build-ipa.sh`. From the `ios/` directory you can run the same workflow (it wraps `pod install`, `xcodebuild archive`, and `xcodebuild -exportArchive`).
-
-Examples (from repo root):
-
-```bash
-# Full workflow (clean, archive, export)
-./scripts/build/build-ipa.sh
-
-# Create archive only
-./scripts/build/build-ipa.sh archive
-
-# Export IPA from existing archive
-./scripts/build/build-ipa.sh export
-
-# Clean artifacts
-./scripts/build/build-ipa.sh clean
-```
-
-Notes:
-- The script will create an `ExportOptions.plist` if none exists; it defaults to a `development` method — change to `app-store` or `ad-hoc` depending on your distribution needs.
-- The script expects to be run from the `ios/` directory (it checks for the Xcode project files). You can run it from repo root but ensure the working directory is `ios/`.
-
----
-
-## 4) Uploading the IPA to App Store Connect / TestFlight
-
-Options:
-
-- EAS Build + auto-submit: `npx eas build --platform ios --profile production --auto-submit` will build and submit to App Store Connect automatically.
-
-- Transporter (GUI): open Apple Transporter (Mac App Store), sign in, drag the `.ipa` and upload.
-
-- altool / xcrun (CLI): requires an app-specific password or API key. Example using an app-specific password:
-
-```bash
-xcrun altool --upload-app -f abridged.ipa -t ios -u "apple-id@example.com" -p "APP_SPECIFIC_PASSWORD"
-```
-
-(If you prefer the newer App Store Connect API key upload flow, use `altool` with the API key or `notarytool` where appropriate; consult Apple docs for the latest recommended CLI.)
-
----
-
-## 5) TestFlight workflow basics
-
-- After upload, open App Store Connect -> My Apps -> Your App -> TestFlight.
-- For internal testers (members of your App Store Connect team), builds usually become available quickly.
-- For external testers, Apple requires a beta app review — this can take hours to a day.
-- Create TestFlight groups and add testers by email.
-- Provide release notes for each build.
-
----
-
-## 6) Using EAS Build / Submit
-
-Expo's EAS Build can manage signing and submission for you. Example:
+## 2) EAS build from your machine
 
 ```bash
 npx eas login
-npx eas build --platform ios --profile production --auto-submit
+npm ci
+npm run build:ipa
 ```
 
-EAS can manage credentials automatically or use your uploaded provisioning and certs. See Expo docs for `eas.json` profiles and credential handling.
+For a direct TestFlight submission:
 
----
+```bash
+npm run build:ipa:submit
+```
 
-## 7) Common problems and fixes
+For a quicker internal build:
 
-- Code signing errors:
-  - Ensure the bundle identifier in `app.json` matches the App Store Connect app.
-  - If Xcode cannot find provisioning profiles, allow automatic management or create provisioning profiles in Apple Developer portal and install them.
+```bash
+npm run build:ipa:quick
+```
 
-- Upload / validation errors:
-  - Increment the build number (Version + Build) before uploading.
-  - Check that required app icons and launch screen assets are present.
-  - If you use capabilities (Push Notifications, Keychain, etc.) ensure entitlements and provisioning profiles include them.
+## 3) After the build finishes
 
-- Missing entitlements / Capabilities warnings:
-  - Open Xcode → Targets → Signing & Capabilities and enable the required capabilities.
+- Open App Store Connect -> TestFlight
+- Wait for Apple processing to finish
+- Add release notes from `CHANGELOG.md`
+- Assign internal or external tester groups
 
-- Rejected by App Review (for TestFlight external):
-  - Review the rejection reason in App Store Connect and address privacy / functionality issues, then re-upload.
+If you did not use `--auto-submit`, download or locate the finished IPA from EAS and submit it through your normal App Store Connect path.
 
----
+## 4) Manual native archive fallback
 
-## 8) Security & automation tips
+Use this only when you intentionally want an Xcode-driven local archive.
 
-- For automated uploads, create an App Store Connect API key (recommended) and store it in CI secrets rather than using Apple ID + app-specific passwords.
-- Use CI to build and submit (EAS or Fastlane) to avoid manual uploads.
-- Maintain an `ExportOptions.plist` per distribution method (`development`, `ad-hoc`, `enterprise`, `app-store`) and commit them to the repo or keep templates.
+Requirements:
 
----
+- macOS with Xcode and CocoaPods
+- A generated or maintained native `ios/` project
+- Apple signing access for the bundle identifier
 
-## 9) References
+The legacy helper scripts still exist in `scripts/build/`, but they only work when a matching native iOS project is present locally.
 
-- Apple: Archive and distribute an app
-- Apple: App Store Connect Help — TestFlight
-- Expo: EAS Build docs
+Typical flow:
 
+```bash
+cd ios
+../scripts/build/build-ipa.sh
+```
 
----
+## 5) Common problems
 
-If you'd like, I can also:
+- Missing `EXPO_TOKEN`: GitHub Actions and non-interactive EAS builds will fail immediately.
+- Apple credential errors: refresh the credentials in Expo before retrying `production`.
+- Bundle identifier mismatch: keep `com.mccalmedia.abridged` aligned in Expo and App Store Connect.
+- Stale release notes: update `CHANGELOG.md` before you trigger the release build.
 
-- Add UI in `docs/TabBarSettingsScreen.tsx` to tweak the docked/hidden heights (next task for tab-bar settings).
-- Create CI examples (GitHub Actions) to build and submit using EAS or Fastlane with App Store Connect API keys.
+## 6) References
 
-Which of the above would you like next?
+- Expo: EAS Build
+- Apple: App Store Connect TestFlight

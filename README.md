@@ -74,8 +74,9 @@ From the Expo prompt:
 - `npm test` - run the Jest test suite
 - `npm run test:coverage` - generate coverage output
 - `npm run repo:health` - run the repository health audit
-- `npm run build:ipa` - create a local iOS IPA
-- `npm run build:ipa:quick` - run the faster local IPA path
+- `npm run build:ipa` - start a production EAS iOS build
+- `npm run build:ipa:quick` - start a preview EAS iOS build
+- `npm run build:ipa:submit` - start a production EAS iOS build and auto-submit it to TestFlight
 
 ## Install a Build
 
@@ -88,16 +89,15 @@ This is the recommended path for testers and stakeholders.
 3. Open the TestFlight listing for Abridged and tap `Install`.
 4. Update in place as new builds are published.
 
-### Export an IPA locally
+### Build an IPA with EAS
 
-Use this when you need a signed iOS binary for internal distribution or App Store Connect upload.
+This is the default release path for the repo. EAS builds the IPA in the cloud and can submit it to App Store Connect without a checked-in `ios/` directory.
 
 Requirements:
 
-- macOS
-- Xcode and CocoaPods
-- Apple signing configured for the app's bundle identifier
-- Access to the iOS workspace in `ios/`
+- Expo account access with permission to this project
+- An `EXPO_TOKEN` or local `npx eas login` session
+- Apple signing configured in EAS for the app's bundle identifier
 
 Build commands:
 
@@ -108,18 +108,14 @@ npm run build:ipa
 or
 
 ```bash
-npm run build:ipa:quick
+npm run build:ipa:submit
 ```
 
-The local export produces `ios/abridged.ipa`.
+Use `npm run build:ipa:quick` when you want a faster preview/internal build instead of the production profile.
 
-To install that IPA on a device, use your normal Apple deployment path for signed builds:
+If you need a manual local Xcode archive path instead, generate or maintain a native `ios/` project first and then follow the advanced guide below.
 
-- Xcode's Devices and Simulators window for direct device installs
-- Apple Configurator for supervised or internal device rollout
-- Transporter or EAS submission when the goal is TestFlight distribution
-
-For the full archive, export, and upload workflow, see [docs/deployment/ios-ipa-testflight.md](./docs/deployment/ios-ipa-testflight.md).
+For the full build, submit, and fallback archive workflow, see [docs/deployment/ios-ipa-testflight.md](./docs/deployment/ios-ipa-testflight.md).
 
 ## Release a New Version
 
@@ -135,17 +131,19 @@ The project uses Semantic Versioning for public releases and EAS auto-increments
    npm run repo:health
    ```
 
-4. Build and submit the release to TestFlight:
+4. Trigger the preferred GitHub Actions workflow from `Actions -> Release iOS Build`, or run the CLI fallback:
 
    ```bash
    npx eas build --platform ios --profile production --auto-submit
    ```
 
+   The workflow expects an `EXPO_TOKEN` repository secret and can optionally auto-submit the build to TestFlight.
+
 5. In App Store Connect, verify processing, add release notes, and assign the correct tester groups.
 6. Tag the release as `vMAJOR.MINOR.PATCH`.
 7. Publish the GitHub Release using the notes from `CHANGELOG.md`.
 
-If you need a manual local release path instead of EAS submission, build `ios/abridged.ipa` and upload it with Transporter or your usual App Store Connect tooling.
+If you need a manual native archive instead of EAS submission, use the fallback guide in [docs/deployment/ios-ipa-testflight.md](./docs/deployment/ios-ipa-testflight.md).
 
 ## Changelog and GitHub Releases
 

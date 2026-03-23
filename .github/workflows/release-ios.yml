@@ -1,0 +1,82 @@
+name: Release iOS Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile to use
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - preview
+      auto_submit:
+        description: Submit finished production builds to App Store Connect
+        required: true
+        default: false
+        type: boolean
+      wait_for_build:
+        description: Wait for the EAS cloud build to finish before the workflow exits
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  ios-build:
+    name: EAS iOS Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Validate Expo token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Missing EXPO_TOKEN repository secret."
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Print release metadata
+        run: |
+          echo "Package version: $(node -p "require('./package.json').version")"
+          echo "Requested profile: ${{ inputs.profile }}"
+          echo "Auto-submit: ${{ inputs.auto_submit }}"
+          echo "Wait for build: ${{ inputs.wait_for_build }}"
+
+      - name: Run EAS iOS build
+        run: |
+          set -euo pipefail
+
+          cmd=(npx eas build --platform ios --profile "${{ inputs.profile }}" --non-interactive)
+
+          if [ "${{ inputs.wait_for_build }}" = "true" ]; then
+            cmd+=(--wait)
+          fi
+
+          if [ "${{ inputs.auto_submit }}" = "true" ]; then
+            if [ "${{ inputs.profile }}" != "production" ]; then
+              echo "auto_submit can only be used with the production profile."
+              exit 1
+            fi
+
+            cmd+=(--auto-submit)
+          fi
+
+          printf 'Running: %q ' "${cmd[@]}"
+          echo
+          "${cmd[@]}"
