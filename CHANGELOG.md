@@ -14,6 +14,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Changed
 - Navigation, profile, digest, saved, and settings flows refreshed alongside storage/context updates; RSS service and saved-article handling tuned for more resilient data fetch and caching.
 - Daily Digest now pulls from live feed data instead of mock articles, surfaces launch controls directly in Digest & Launch settings, and falls back to extractive summaries when no AI key is saved.
+- Daily Digest now uses profile-scoped feed recency metadata from Home and Section fetches, so it avoids resurfacing stories the active profile already pulled into the feed moments earlier.
 
 ### Fixed
 - Sign in with Apple flow and FullStory instrumentation hardened; Jest setup and shared components updated for more reliable tests and UI interactions.
@@ -25,6 +26,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Theme changes now propagate across the app shell and primary surfaces without reload, replacing the old frozen `theme/colors` path with reactive tokens in navigation, onboarding, profile, reader, and settings flows.
 - Production runtime dependencies in the feed/network stack were patched and pinned via direct upgrades and overrides, clearing current `npm audit --omit=dev` findings for `fast-xml-parser` and related transitive packages.
 - Removed the build-time Perplexity env dependency from app code, and digest refreshes no longer advance the last-visit timestamp when a digest fetch fails.
+- Profile stats now retain recent fetched article ids/timestamps, and feed refreshes record them without regressing active-profile persistence.
 
 ### Documentation
 - Rewrote the public GitHub README to better explain the app, local setup, IPA/TestFlight installation, versioned releases, and changelog workflow.

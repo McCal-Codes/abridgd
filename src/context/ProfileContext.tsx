@@ -23,6 +23,7 @@ interface ProfileContextType {
   signOut: () => Profile;
   trackArticleRead: () => void;
   trackSavedAction: () => void;
+  recordLastFetchedArticles: (articleIds: string[]) => void;
   exportProfileKey: () => string | null;
   importProfileKey: (key: string) => boolean;
   updateSavedArticles: (articles: Article[]) => void;
@@ -156,8 +157,20 @@ const applyAchievements = (profile: Profile): Profile => {
   };
 };
 
+const mergeRecentArticleIds = (existingIds: string[] = [], nextIds: string[] = []) => {
+  const merged = [...nextIds, ...existingIds].filter(Boolean);
+  return merged.filter((id, index) => merged.indexOf(id) === index).slice(0, 50);
+};
+
 const withProfileDefaults = (profile: Profile, usedCodenames: Set<string> = new Set()): Profile => {
-  const stats = profile.stats || { articlesRead: 0, savedActions: 0, lastReadAt: null };
+  const stats = {
+    articlesRead: profile.stats?.articlesRead ?? 0,
+    savedActions: profile.stats?.savedActions ?? 0,
+    lastReadAt: profile.stats?.lastReadAt ?? null,
+    lastSavedAt: profile.stats?.lastSavedAt ?? null,
+    lastFetchedArticleIds: profile.stats?.lastFetchedArticleIds ?? [],
+    lastFetchedAt: profile.stats?.lastFetchedAt ?? null,
+  };
   const achievements = profile.achievements || { earnedIds: [], earnedAt: {}, version: 1 };
   const chosenCodename =
     profile.codename && !usedCodenames.has(profile.codename)
@@ -282,7 +295,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         name: "Reader",
         codename: fallbackCodename,
         savedArticles: [],
-        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        stats: {
+          articlesRead: 0,
+          savedActions: 0,
+          lastReadAt: null,
+          lastSavedAt: null,
+          lastFetchedArticleIds: [],
+          lastFetchedAt: null,
+        },
       });
       setProfiles([defaultProfile]);
       setActiveProfile(defaultProfile);
@@ -307,7 +327,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         id: uuidv4(),
         name,
         codename: generateCodename(used),
-        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        stats: {
+          articlesRead: 0,
+          savedActions: 0,
+          lastReadAt: null,
+          lastSavedAt: null,
+          lastFetchedArticleIds: [],
+          lastFetchedAt: null,
+        },
         savedArticles: [],
       },
       used,
@@ -350,14 +377,13 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       articlesRead: 0,
       savedActions: 0,
       lastReadAt: null,
+      lastSavedAt: null,
+      lastFetchedArticleIds: [],
+      lastFetchedAt: null,
     };
     const updated: Profile = applyAchievements({
       ...activeProfile,
-      stats: {
-        articlesRead: nextChanges.articlesRead ?? currentStats.articlesRead,
-        savedActions: nextChanges.savedActions ?? currentStats.savedActions,
-        lastReadAt: nextChanges.lastReadAt ?? currentStats.lastReadAt ?? null,
-      },
+      stats: { ...currentStats, ...nextChanges },
     });
     const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
     activateProfile(updated);
@@ -371,7 +397,25 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
   const trackSavedAction = () => {
     const current = activeProfile?.stats?.savedActions || 0;
-    updateActiveProfileStats({ savedActions: current + 1 });
+    updateActiveProfileStats({ savedActions: current + 1, lastSavedAt: Date.now() });
+  };
+
+  const recordLastFetchedArticles = (articleIds: string[]) => {
+    if (!activeProfile || !articleIds.length) return;
+
+    const currentStats = activeProfile.stats || {
+      articlesRead: 0,
+      savedActions: 0,
+      lastReadAt: null,
+      lastSavedAt: null,
+      lastFetchedArticleIds: [],
+      lastFetchedAt: null,
+    };
+
+    updateActiveProfileStats({
+      lastFetchedArticleIds: mergeRecentArticleIds(currentStats.lastFetchedArticleIds, articleIds),
+      lastFetchedAt: Date.now(),
+    });
   };
 
   const updateSavedArticles = (articles: Article[]) => {
@@ -398,7 +442,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         id: "anonymous",
         name: "Reader",
         codename: generateCodename(used),
-        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        stats: {
+          articlesRead: 0,
+          savedActions: 0,
+          lastReadAt: null,
+          lastSavedAt: null,
+          lastFetchedArticleIds: [],
+          lastFetchedAt: null,
+        },
         savedArticles: [],
       },
       used,
@@ -434,7 +485,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         displayName: user.displayName,
         name: derivedName,
         codename: generateCodename(used),
-        stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        stats: {
+          articlesRead: 0,
+          savedActions: 0,
+          lastReadAt: null,
+          lastSavedAt: null,
+          lastFetchedArticleIds: [],
+          lastFetchedAt: null,
+        },
         savedArticles: [],
       },
       used,
@@ -467,7 +525,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       const sanitized = withProfileDefaults(
         {
           ...parsed,
-          stats: parsed.stats || { articlesRead: 0, savedActions: 0, lastReadAt: null },
+          stats: parsed.stats || {
+            articlesRead: 0,
+            savedActions: 0,
+            lastReadAt: null,
+            lastSavedAt: null,
+            lastFetchedArticleIds: [],
+            lastFetchedAt: null,
+          },
           savedArticles: parsed.savedArticles || [],
         },
         used,
@@ -504,6 +569,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         signOut,
         trackArticleRead,
         trackSavedAction,
+        recordLastFetchedArticles,
         exportProfileKey,
         importProfileKey,
         updateSavedArticles,

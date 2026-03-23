@@ -2,6 +2,7 @@ import React from "react";
 import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
+import { useProfilesOptional } from "../context/ProfileContext";
 import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
 import { fetchArticlesByCategory, getCachedArticles, getLastFetchedAt } from "../services/RssService";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -54,6 +55,8 @@ export const SectionScreen: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  const profileContext = useProfilesOptional();
+  const recordLastFetchedRef = React.useRef(profileContext?.recordLastFetchedArticles);
   const insets = useSafeAreaInsets();
   const {
     tabBarHeight,
@@ -65,11 +68,16 @@ export const SectionScreen: React.FC = () => {
   } = useSettings();
 
   React.useEffect(() => {
+    recordLastFetchedRef.current = profileContext?.recordLastFetchedArticles;
+  }, [profileContext?.recordLastFetchedArticles]);
+
+  React.useEffect(() => {
     const load = async () => {
       try {
         setError(null);
         const data = await fetchArticlesByCategory(category, { forceRefresh: true });
         setArticles(data);
+        recordLastFetchedRef.current?.(data.map((article) => article.id));
         const fetchedAt = getLastFetchedAt(category);
         setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
       } catch (e: any) {
@@ -82,6 +90,7 @@ export const SectionScreen: React.FC = () => {
     const cached = getCachedArticles(category);
     if (cached && cached.length) {
       setArticles(cached);
+      recordLastFetchedRef.current?.(cached.map((article) => article.id));
       const fetchedAt = getLastFetchedAt(category);
       setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
       setLoading(false);
@@ -119,6 +128,7 @@ export const SectionScreen: React.FC = () => {
                 fetchArticlesByCategory(category, { forceRefresh: true })
                   .then((data) => {
                     setArticles(data);
+                    recordLastFetchedRef.current?.(data.map((article) => article.id));
                     const fetchedAt = getLastFetchedAt(category);
                     setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
                     setLoading(false);
@@ -189,6 +199,7 @@ export const SectionScreen: React.FC = () => {
             try {
               const data = await fetchArticlesByCategory(category, { forceRefresh: true });
               setArticles(data);
+              recordLastFetchedRef.current?.(data.map((article) => article.id));
               const fetchedAt = getLastFetchedAt(category);
               setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
             } catch (e: any) {

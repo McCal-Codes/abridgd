@@ -2,6 +2,7 @@ import React from "react";
 import { View, FlatList, StyleSheet, StatusBar, Animated, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
+import { useProfilesOptional } from "../context/ProfileContext";
 import { ScrollContext } from "../context/ScrollContext";
 import { ArticleCard } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
@@ -143,6 +144,8 @@ export const HomeScreen: React.FC = () => {
   const [showAllContinue, setShowAllContinue] = React.useState(false);
   const { inProgressArticles } = useReadingProgressOptional();
   const { savedArticles } = useSavedArticles();
+  const profileContext = useProfilesOptional();
+  const recordLastFetchedRef = React.useRef(profileContext?.recordLastFetchedArticles);
 
   const { scrollY } = React.useContext(ScrollContext);
   const insets = useSafeAreaInsets();
@@ -163,11 +166,16 @@ export const HomeScreen: React.FC = () => {
   );
 
   React.useEffect(() => {
+    recordLastFetchedRef.current = profileContext?.recordLastFetchedArticles;
+  }, [profileContext?.recordLastFetchedArticles]);
+
+  React.useEffect(() => {
     const load = async () => {
       try {
         setError(null);
         const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
         setArticles(data);
+        recordLastFetchedRef.current?.(data.map((article) => article.id));
         const fetchedAt = getLastFetchedAt("Top");
         setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
       } catch (e: any) {
@@ -180,6 +188,7 @@ export const HomeScreen: React.FC = () => {
     const cached = getCachedArticles("Top");
     if (cached && cached.length) {
       setArticles(cached);
+      recordLastFetchedRef.current?.(cached.map((article) => article.id));
       const fetchedAt = getLastFetchedAt("Top");
       setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
       setLoading(false);
@@ -263,6 +272,7 @@ export const HomeScreen: React.FC = () => {
                   fetchArticlesByCategory("Top", { forceRefresh: true })
                     .then((data) => {
                       setArticles(data);
+                      recordLastFetchedRef.current?.(data.map((article) => article.id));
                       const fetchedAt = getLastFetchedAt("Top");
                       setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
                       setLoading(false);
@@ -343,6 +353,7 @@ export const HomeScreen: React.FC = () => {
             try {
               const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
               setArticles(data);
+              recordLastFetchedRef.current?.(data.map((article) => article.id));
               const fetchedAt = getLastFetchedAt("Top");
               setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
             } catch (e: any) {

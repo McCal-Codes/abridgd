@@ -41,7 +41,7 @@ const mockStorage = (entries: Record<string, string | null>) => {
 };
 
 const TestConsumer = () => {
-  const { activeProfile, profiles, switchProfile } = useProfiles();
+  const { activeProfile, profiles, switchProfile, recordLastFetchedArticles } = useProfiles();
 
   return (
     <>
@@ -51,8 +51,17 @@ const TestConsumer = () => {
       <View testID="profile-count">
         <Text>{profiles.length}</Text>
       </View>
+      <View testID="last-fetched-count">
+        <Text>{activeProfile?.stats?.lastFetchedArticleIds?.length ?? 0}</Text>
+      </View>
       <Pressable testID="switch-profile-2" onPress={() => switchProfile("profile-2")}>
         <Text>Switch</Text>
+      </Pressable>
+      <Pressable
+        testID="record-fetched"
+        onPress={() => recordLastFetchedArticles(["story-1", "story-2", "story-1"])}
+      >
+        <Text>Record</Text>
       </Pressable>
     </>
   );
@@ -123,6 +132,33 @@ describe("ProfileContext", () => {
     await waitFor(() => {
       expect(screen.getByTestId("active-profile")).toHaveTextContent("profile-2");
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(ACTIVE_PROFILE_STORAGE_KEY, "profile-2");
+    });
+  });
+
+  it("records recently fetched article ids on the active profile", async () => {
+    mockStorage({
+      [PROFILES_STORAGE_KEY]: JSON.stringify(storedProfiles),
+      [ACTIVE_PROFILE_STORAGE_KEY]: "profile-1",
+    });
+
+    render(
+      <ProfileProvider>
+        <TestConsumer />
+      </ProfileProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("active-profile")).toHaveTextContent("profile-1");
+    });
+
+    fireEvent.press(screen.getByTestId("record-fetched"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("last-fetched-count")).toHaveTextContent("2");
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        PROFILES_STORAGE_KEY,
+        expect.stringContaining('"lastFetchedArticleIds":["story-1","story-2"]'),
+      );
     });
   });
 });

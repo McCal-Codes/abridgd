@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
+import { useProfilesOptional } from "../context/ProfileContext";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -25,11 +26,16 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { lastAppVisit, updateLastAppVisit, digestSummaryMode } = useSettings();
+  const activeProfile = useProfilesOptional()?.activeProfile;
   const [digest, setDigest] = useState<DigestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
-  const sessionLastVisitRef = useRef(lastAppVisit);
+  const sessionLastFetchedAtRef = useRef(activeProfile?.stats?.lastFetchedAt ?? null);
+  const sessionLastVisitRef = useRef(
+    Math.max(lastAppVisit ?? 0, activeProfile?.stats?.lastFetchedAt ?? 0) || null,
+  );
+  const sessionSeenArticleIdsRef = useRef(activeProfile?.stats?.lastFetchedArticleIds ?? []);
   const insets = useSafeAreaInsets();
   const {
     tabBarHeight,
@@ -48,7 +54,10 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
 
       try {
         const sessionLastVisit = sessionLastVisitRef.current;
-        const data = await fetchDailyDigest(sessionLastVisit, digestSummaryMode);
+        const data = await fetchDailyDigest(sessionLastVisit, digestSummaryMode, {
+          excludeArticleIds: sessionSeenArticleIdsRef.current,
+          lastFetchedAt: sessionLastFetchedAtRef.current,
+        });
         if (!mounted) return;
 
         setDigest(data);

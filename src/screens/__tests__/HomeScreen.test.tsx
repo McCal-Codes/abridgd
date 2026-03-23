@@ -19,6 +19,15 @@ jest.mock("../../context/ReadingProgressContext", () => ({
   useReadingProgressOptional: () => mockReadingProgressContext,
 }));
 
+let mockProfileContext: any = {
+  activeProfile: null,
+  recordLastFetchedArticles: jest.fn(),
+};
+
+jest.mock("../../context/ProfileContext", () => ({
+  useProfilesOptional: () => mockProfileContext,
+}));
+
 jest.mock("expo-haptics", () => ({
   selectionAsync: jest.fn(),
   impactAsync: jest.fn(),
@@ -150,6 +159,10 @@ describe("HomeScreen", () => {
       },
       refreshStats: jest.fn(),
     };
+    mockProfileContext = {
+      activeProfile: null,
+      recordLastFetchedArticles: jest.fn(),
+    };
   });
 
   afterEach(async () => {
@@ -180,6 +193,7 @@ describe("HomeScreen", () => {
     const { findByText } = renderScreen();
 
     expect(await findByText("First")).toBeTruthy();
+    expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["1"]);
     await settleVirtualizedList();
   });
 
@@ -214,6 +228,7 @@ describe("HomeScreen", () => {
     expect(await findByText("Cached Story")).toBeTruthy();
     expect(await findByTestId("home-feed-status")).toBeTruthy();
     expect(queryByText(/Network error/i)).toBeNull();
+    expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["cached-1"]);
     await settleVirtualizedList();
   });
 

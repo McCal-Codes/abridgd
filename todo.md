@@ -87,7 +87,7 @@
   - [x] Swap Daily Digest off `MOCK_ARTICLES` and onto live feed data
   - [x] Restore launch controls in Digest & Launch settings
   - [x] Keep extractive fallbacks and honest digest error states when AI or feed calls fail
-- [ ] Salvage profile-based feed recency tracking from `release/1.4.0` without reintroducing profile persistence regressions
+- [x] Salvage profile-based feed recency tracking from `release/1.4.0` without reintroducing profile persistence regressions
 - [ ] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
 
 ---

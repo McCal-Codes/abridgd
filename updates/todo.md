@@ -75,12 +75,13 @@ Last Updated: March 22, 2026
   - **Dependencies**: SettingsContext, DigestSettingsScreen, DigestScreen, AiService
   - **Completed**: March 22, 2026
 
-- [ ] **TODO-039** | **v1.4.0** | Salvage per-profile feed recency tracking from release branch
-  - **Status**: Not Started
-  - **Description**: Port only the useful parts of `recordLastFetchedArticles` and related profile stats from `release/1.4.0`, then wire them into Home/Section fetches without regressing active-profile persistence.
+- [x] **TODO-039** | **v1.4.0** | Salvage per-profile feed recency tracking from release branch
+  - **Status**: Completed
+  - **Description**: Port only the useful parts of `recordLastFetchedArticles` and related profile stats from `release/1.4.0`, wire them into Home/Section fetches, and use that metadata to keep Daily Digest from resurfacing already-fetched stories for the active profile.
   - **Effort**: 2.5 hours
-  - **Definition of Done**: Profile stats can remember the latest fetched article ids/timestamp, and that data is used safely for follow-up digest/feed logic on the current baseline.
-  - **Dependencies**: ProfileContext, HomeScreen, SectionScreen
+  - **Definition of Done**: Profile stats remember the latest fetched article ids/timestamp, feed refreshes update them safely per active profile, and digest generation respects that recency metadata on the current baseline.
+  - **Dependencies**: ProfileContext, HomeScreen, SectionScreen, DigestScreen, AiService
+  - **Completed**: March 22, 2026
 
 - [ ] **TODO-040** | **v1.4.0** | Salvage onboarding/profile polish in tested slices
   - **Status**: Not Started

@@ -16,6 +16,11 @@ export interface DigestItem {
 
 export type DigestMode = "fact-based" | "ai-summary" | "headline-only";
 
+export interface DigestFetchOptions {
+  excludeArticleIds?: string[];
+  lastFetchedAt?: number | null;
+}
+
 type PerplexityResponse = {
   choices?: Array<{
     message?: {
@@ -151,19 +156,44 @@ const fetchDigestArticles = async (): Promise<Article[]> => {
   return [];
 };
 
-const selectDigestArticles = (articles: Article[], lastVisitTime: number | null) => {
+const getMostRecentSeenAt = (
+  lastVisitTime: number | null,
+  lastFetchedAt: number | null | undefined,
+) => {
+  const visitTime = typeof lastVisitTime === "number" && Number.isFinite(lastVisitTime) ? lastVisitTime : 0;
+  const fetchedTime =
+    typeof lastFetchedAt === "number" && Number.isFinite(lastFetchedAt) ? lastFetchedAt : 0;
+  const mostRecentSeenAt = Math.max(visitTime, fetchedTime);
+  return mostRecentSeenAt > 0 ? mostRecentSeenAt : null;
+};
+
+const selectDigestArticles = (
+  articles: Article[],
+  lastVisitTime: number | null,
+  options?: DigestFetchOptions,
+) => {
+  const mostRecentSeenAt = getMostRecentSeenAt(lastVisitTime, options?.lastFetchedAt);
+  const excludedArticleIds = new Set(options?.excludeArticleIds?.filter(Boolean) || []);
   const isFreshVisit =
-    typeof lastVisitTime === "number" &&
-    Number.isFinite(lastVisitTime) &&
-    Date.now() - lastVisitTime <= DIGEST_FALLBACK_WINDOW_MS;
-  const cutoffTime = isFreshVisit ? lastVisitTime : Date.now() - DIGEST_FALLBACK_WINDOW_MS;
-  const recentArticles = articles.filter((article) => getPublishedAt(article) > cutoffTime);
+    typeof mostRecentSeenAt === "number" &&
+    Date.now() - mostRecentSeenAt <= DIGEST_FALLBACK_WINDOW_MS;
+  const cutoffTime = isFreshVisit ? mostRecentSeenAt : Date.now() - DIGEST_FALLBACK_WINDOW_MS;
+  const recentArticles = articles.filter(
+    (article) =>
+      getPublishedAt(article) > cutoffTime && !excludedArticleIds.has(article.id),
+  );
 
   if (recentArticles.length > 0) {
     return recentArticles.slice(0, DIGEST_LIMIT);
   }
 
-  return isFreshVisit ? [] : articles.slice(0, DIGEST_LIMIT);
+  if (isFreshVisit) {
+    return [];
+  }
+
+  return articles
+    .filter((article) => !excludedArticleIds.has(article.id))
+    .slice(0, DIGEST_LIMIT);
 };
 
 const generateDigestSummary = async (article: Article, apiKey: string) => {
@@ -217,9 +247,10 @@ export const summarizeArticle = async (
 export const fetchDailyDigest = async (
   lastVisitTime: number | null,
   digestMode: DigestMode = "fact-based",
+  options?: DigestFetchOptions,
 ): Promise<DigestItem[]> => {
   const articles = await fetchDigestArticles();
-  const digestArticles = selectDigestArticles(articles, lastVisitTime);
+  const digestArticles = selectDigestArticles(articles, lastVisitTime, options);
 
   if (digestMode === "headline-only") {
     return digestArticles.map((article) => ({

@@ -24,6 +24,15 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: jest.fn(),
 }));
 
+let mockProfileContext: any = {
+  activeProfile: null,
+  recordLastFetchedArticles: jest.fn(),
+};
+
+jest.mock("../../context/ProfileContext", () => ({
+  useProfilesOptional: () => mockProfileContext,
+}));
+
 jest.mock("../../components/ArticleCard", () => {
   const React = require("react");
   const { Text, Pressable } = require("react-native");
@@ -69,6 +78,10 @@ describe("SectionScreen", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockProfileContext = {
+      activeProfile: null,
+      recordLastFetchedArticles: jest.fn(),
+    };
     (getCachedArticles as jest.Mock).mockReturnValue(null);
     (fetchArticlesByCategory as jest.Mock).mockResolvedValue([
       {
@@ -89,6 +102,7 @@ describe("SectionScreen", () => {
     const { findByTestId } = render(<SectionScreen />);
     const updated = await findByTestId("section-updated");
     expect(updated).toBeTruthy();
+    expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["1"]);
     await settleVirtualizedList();
   });
 
@@ -150,6 +164,7 @@ describe("SectionScreen", () => {
     expect(await findByText("Cached Tech Story")).toBeTruthy();
     expect(await findByTestId("section-feed-status")).toBeTruthy();
     expect(queryByText(/Network error/i)).toBeNull();
+    expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["cached-1"]);
     await settleVirtualizedList();
   });
 });

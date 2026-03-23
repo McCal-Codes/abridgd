@@ -110,4 +110,33 @@ describe("AiService", () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(summary).toBe("A concise AI summary.");
   });
+
+  it("excludes articles already fetched by the active profile when building the digest", async () => {
+    mockFetchArticlesByCategory.mockImplementation(async (category) => {
+      if (category === "Top") {
+        return [
+          buildArticle({
+            id: "top-seen",
+            headline: "Seen Story",
+            publishedAt: Date.now() - 30 * 60 * 1000,
+          }),
+          buildArticle({
+            id: "top-fresh",
+            headline: "Fresh Story",
+            publishedAt: Date.now() - 20 * 60 * 1000,
+          }),
+        ];
+      }
+
+      return [];
+    });
+
+    const digest = await fetchDailyDigest(null, "fact-based", {
+      excludeArticleIds: ["top-seen"],
+      lastFetchedAt: Date.now() - 60 * 60 * 1000,
+    });
+
+    expect(digest).toHaveLength(1);
+    expect(digest[0].article.id).toBe("top-fresh");
+  });
 });
