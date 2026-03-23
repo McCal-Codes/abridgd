@@ -29,7 +29,6 @@ on:
       release_tag:
         description: Existing release tag to attach the IPA to, for example v1.4.0
         required: false
-        type: string
   release:
     types:
       - published
