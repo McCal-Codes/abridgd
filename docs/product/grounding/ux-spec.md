@@ -1,5 +1,7 @@
 # Grounding UX Spec — One Pager
 
+Last Updated: 2026-06-10
+
 **Goal**
 Provide a calm, optional regulation layer that respects reading flow. Grounding is never prescriptive; it simply offers a rounded, breathing surface the reader can enter and exit at will.
 

@@ -1,5 +1,7 @@
 # Push & Pull Request Policy
 
+Last Updated: 2026-06-10
+
 Purpose
 
 This document defines when to create a pull request (PR) vs push directly to `master`, branching and naming conventions, and the emergency hotfix process. It is the single-source policy used by contributors and any automation/agent working on this repository.

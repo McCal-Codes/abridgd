@@ -1,5 +1,7 @@
 # API Client — Advanced Usage & Best Practices
 
+Last Updated: 2026-06-10
+
 This document details usage patterns, instrumentation points, testing recommendations, and migration options for the `ApiClient` PoC.
 
 ## Core features (recap)

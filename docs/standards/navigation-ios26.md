@@ -1,4 +1,6 @@
 # iOS 26 Navigation Patterns — Abridged App
+
+Last Updated: 2026-06-10
 Version 1.0 · January 20, 2026
 
 ## Why this exists

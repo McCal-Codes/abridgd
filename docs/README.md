@@ -1,5 +1,7 @@
 # Abridged Documentation
 
+Last Updated: 2026-06-10
+
 Complete documentation for the Abridged news reader application.
 
 ## Quick Links

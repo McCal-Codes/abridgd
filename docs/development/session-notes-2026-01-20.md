@@ -1,5 +1,7 @@
 # Development Session Notes — January 20, 2026
 
+Last Updated: 2026-06-10
+
 ## Preflight (scope-first)
 - [x] What am I changing? Add a "Continue Reading" section on HomeScreen that surfaces in-progress articles using stored reading progress and shows progress indicators.
 - [x] Why am I changing it? Users need an easy way to resume partially read articles; this delivers the backlog item from todo.md and makes reading progress actionable.

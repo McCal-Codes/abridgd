@@ -1,5 +1,7 @@
 # Dependency Evaluation Checklist
 
+Last Updated: 2026-06-10
+
 Use this checklist before adding a new third-party dependency.
 
 1. Purpose & Scope

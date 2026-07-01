@@ -1,4 +1,6 @@
-## Abridged v1.0.0 — Beta Testing
+# Abridged v1.0.0 — Beta Testing
+
+Last Updated: 2026-06-10
 
 Thank you for joining the Abridged beta! This release includes our new iOS 26-inspired glass morphism UI.
 

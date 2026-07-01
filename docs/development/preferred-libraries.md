@@ -1,5 +1,7 @@
 # Preferred Libraries — Abridged
 
+Last Updated: 2026-06-10
+
 This file lists recommended libraries for common concerns when building Abridged. These are our go-to, well-maintained choices that align with Expo 54 / React Native 0.81 / TypeScript and our engineering standards.
 
 Principles

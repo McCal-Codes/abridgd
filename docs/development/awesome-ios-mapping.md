@@ -1,5 +1,7 @@
 # awesome-ios → Abridged (React Native/Expo) mapping
 
+Last Updated: 2026-06-10
+
 A quick reference that translates themes from the `awesome-ios` list into equivalents that fit our stack (Expo 54, React Native 0.81, React 19, TypeScript). Use it as inspiration, not as a dependency source.
 
 ## Guiding principles

@@ -1,5 +1,7 @@
 # Development Session Notes — January 19, 2026
 
+Last Updated: 2026-06-10
+
 ## Summary
 Completed comprehensive infrastructure work on multiple fronts: repository organization, reading progress tracking, sensitive content handling, source preferences, and iOS 26-inspired UI components. This session focused on scaffolding and architecture over incremental feature addition.
 

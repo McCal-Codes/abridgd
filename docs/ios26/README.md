@@ -1,5 +1,7 @@
 # iOS 26 UI Component System
 
+Last Updated: 2026-06-10
+
 Modern glass morphism UI components inspired by iOS 26 SwiftUI enhancements.
 
 ## Overview

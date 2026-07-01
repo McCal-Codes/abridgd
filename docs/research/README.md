@@ -1,5 +1,7 @@
 # Research Documentation
 
+Last Updated: 2026-06-10
+
 Research notes, technical investigations, and reference materials.
 
 ## Documents

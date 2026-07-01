@@ -12,6 +12,7 @@
 - [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
 - [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.
 - [x] Centered, margin-aware pagination and action buttons with breathable padding.
+- [x] Reader-first onboarding pass: five-slide welcome flow, app-like previews, one optional grounding choice, and wrap-safe actions for small screens.
 - [ ] Capture updated screenshots for docs and App Store metadata.
 
 ### Phase 1: Core Data & Persistence 🗄️
@@ -70,8 +71,11 @@
 - [x] Audit fix: What's New/version gating (mark seen state so post-onboarding flow does not loop)
 - [x] Audit fix: theme migration completion (replace static `theme/colors` imports with reactive theme tokens)
 - [x] Audit fix: patch production dependency vulnerabilities in the feed/network runtime stack
+- [x] Quality sweep: restore TypeScript/Jest/docs lint gates on the current SDK 54 baseline
+- [x] Quality sweep: rename Home around a finite Morning Brief with cached-state and retry copy
+- [x] Quality sweep: simplify onboarding to a five-slide reader-first welcome with one reversible choice and overflow-safe previews/actions
 - [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
-- [ ] Network/Feed error states (offline-friendly, retries, last-updated labeling)
+- [x] Network/Feed error states (offline-friendly cached messaging, retries, last-updated labeling)
 - [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)
 - [ ] Offline indicator + queued actions (save/unsave) until reconnected
 - [ ] Accessibility audit (VoiceOver, Dynamic Type, contrast)
@@ -89,7 +93,7 @@
   - [x] Keep extractive fallbacks and honest digest error states when AI or feed calls fail
 - [x] Salvage profile-based feed recency tracking from `release/1.4.0` without reintroducing profile persistence regressions
 - [x] Salvage remaining onboarding/profile polish from `release/1.4.0` in small tested slices instead of merging the branch wholesale
-  - [x] Slice 1: Onboarding now has a real Next action, scroll-safe slides, and current tab-layout selection on the clean baseline
+  - [x] Slice 1: Onboarding now has a real Next action, scroll-safe slides, and was later simplified to one optional grounding choice instead of tab-layout setup
   - [x] Slice 2: Profile now surfaces tracked reading metrics, relative last-read/save activity, and karma tier status without pulling over the release branch's asset and gating churn
   - [x] Slice 3: Profile is simplified around overview, reading, account, and support, removing duplicate settings paths and preview-only clutter
   - [x] Slice 4: Final review completed; remaining release-only onboarding/profile ideas were intentionally discarded as stale, regressive, or no longer aligned with the cleaned-up baseline
@@ -100,6 +104,7 @@
 - [x] Prevent overflow on grounding slide; keep breath bar and copy fully inside the card.
 - [x] Full-width grounding style selector cards with visual previews and generous vertical spacing.
 - [x] Centered, margin-aware pagination and action buttons with breathable padding.
+- [x] Reader-first onboarding pass: five-slide welcome flow, app-like previews, one optional grounding choice, and wrap-safe actions for small screens.
 - [ ] Capture updated screenshots for docs and App Store metadata.
 
 ---

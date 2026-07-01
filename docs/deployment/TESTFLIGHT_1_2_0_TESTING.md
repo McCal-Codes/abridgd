@@ -1,5 +1,7 @@
 # Version 1.2.0 Testing Guide
 
+Last Updated: 2026-06-10
+
 ## What's New
 
 This release introduces experimental features and enhanced glass morphism effects based on iOS 26 design language.

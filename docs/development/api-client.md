@@ -1,5 +1,7 @@
 # API Client — Design & Usage
 
+Last Updated: 2026-06-10
+
 This doc describes the `ApiClient` PoC and how to use it.
 
 Overview

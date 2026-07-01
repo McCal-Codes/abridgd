@@ -1,5 +1,7 @@
 # Grounding Selector Design Agent Prompt
 
+Last Updated: 2026-06-10
+
 ## Purpose
 
 System prompt for agents designing or evaluating the **grounding selector** interaction in Abridged. Use this to keep grounding calm, optional, and swipeable.
