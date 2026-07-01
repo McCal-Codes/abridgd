@@ -1,6 +1,6 @@
 # ADR 0002: RSS Parsing and Content Extraction
 
-Last Updated: 2026-01-16
+Last Updated: 2026-07-01
 
 **Date**: 2026-01-15
 **Status**: Accepted
@@ -70,3 +70,11 @@ Specifically:
 - Cache full articles in `AsyncStorage` with a TTL (e.g., 24 hours).
 - See `src/utils/contentParser.ts` for the parsing logic.
 - For specific sources (e.g., paywalled sites), add custom selectors in a config file.
+
+## Correction (2026-07-01)
+
+The implementation notes above no longer match the codebase and are left as historical record rather than rewritten. As of the feed pipeline modularization ([ADR-0005](0005-feed-pipeline-modularization.md)):
+
+- Full-article-body extraction actually uses **`node-html-parser`**, not Cheerio, and lives in `src/services/FullStoryService.ts` — not `RssService.ts`. It uses a per-domain CSS selector map plus a TribLive-specific WordPress REST API fast path.
+- RSS *feed* parsing (distinct from full-article extraction) uses `fast-xml-parser` and now lives in `src/services/feed/parser.ts`.
+- The 24-hour `AsyncStorage` caching described above for full articles is now implemented, in `src/services/fullStoryCache.ts`, wrapping `FullStoryService.fetchFullArticleBody` rather than being built into it.

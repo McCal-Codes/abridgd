@@ -1,142 +1,72 @@
 import type { ArticleCategory } from "../../types/Article";
 
-// Mocks
-const mockLoadSourcePrefs = jest.fn(async () => ({ overrides: {}, customFeeds: [] }));
-const mockIsSourceEnabled = jest.fn(() => true);
+const mockFetchCategory = jest.fn();
+const mockGetCachedCategory = jest.fn();
+const mockGetCategoryFetchedAt = jest.fn();
 
-jest.mock("../../data/feedConfig", () => ({
-  RSS_FEEDS: {
-    Top: [{ name: "Mock Feed", url: "https://example.com/rss" }],
-  },
+jest.mock("../feed/repository", () => ({
+  fetchCategory: (...args: unknown[]) => mockFetchCategory(...args),
+  getCachedCategory: (...args: unknown[]) => mockGetCachedCategory(...args),
+  getCategoryFetchedAt: (...args: unknown[]) => mockGetCategoryFetchedAt(...args),
 }));
 
-jest.mock("../../utils/sourcePreferences", () => ({
-  loadSourcePreferences: () => mockLoadSourcePrefs(),
-  isSourceEnabled: () => mockIsSourceEnabled(),
+jest.mock("../feed/sourceRegistry", () => ({
+  getAllCategories: () => ["Top", "Local"],
 }));
 
-// Helper to import a fresh module instance (categoryCache lives at module scope)
-const importService = () => {
-  jest.resetModules();
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const service = require("../RssService");
-  return {
-    fetchArticlesByCategory: service.fetchArticlesByCategory,
-    getCachedArticles: service.getCachedArticles,
-  };
+import { fetchArticlesByCategory, fetchAllArticles, getCachedArticles, getLastFetchedAt } from "../RssService";
+
+const sampleArticle = {
+  id: "1",
+  headline: "A",
+  summary: "",
+  body: "",
+  source: "Source",
+  timestamp: "",
+  publishedAt: Date.now(),
+  category: "Top" as ArticleCategory,
+  readTimeMinutes: 1,
 };
 
-const buildResponse = (body: string, ok = true) =>
-  ({
-    ok,
-    status: ok ? 200 : 500,
-    text: async () => body,
-  }) as Response;
-
-const SAMPLE_FEED = `<?xml version="1.0"?><rss><channel><item><title>A</title><link>https://a</link><description>Body</description><pubDate>Mon, 01 Jan 2026 00:00:00 GMT</pubDate></item></channel></rss>`;
-const SAME_DAY_SORT_FEED = `<?xml version="1.0"?><rss><channel><item><title>Earlier</title><link>https://earlier</link><description>Older body</description><pubDate>Mon, 01 Jan 2026 08:00:00 GMT</pubDate></item><item><title>Later</title><link>https://later</link><description>Newer body</description><pubDate>Mon, 01 Jan 2026 20:00:00 GMT</pubDate></item></channel></rss>`;
-const EMPTY_FEED = `<?xml version="1.0"?><rss><channel></channel></rss>`;
-const DISABLED_OVERRIDES = { "Top::Mock Feed": false } as const;
-
-describe("RssService cache and storage", () => {
+describe("RssService facade", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("reuses cached articles when TTL is valid", async () => {
-    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    global.fetch = mockFetch as typeof fetch;
+  it("delegates fetchArticlesByCategory to feed/repository.fetchCategory and unwraps the result", async () => {
+    mockFetchCategory.mockResolvedValue({ articles: [sampleArticle], stale: false, lastUpdated: 123 });
 
-    const { fetchArticlesByCategory } = await importService();
+    const articles = await fetchArticlesByCategory("Top" as ArticleCategory, { forceRefresh: true });
 
-    const first = await fetchArticlesByCategory("Top" as ArticleCategory);
-    expect(first).toHaveLength(1);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-
-    const second = await fetchArticlesByCategory("Top" as ArticleCategory);
-    expect(second).toHaveLength(1);
-    expect(mockFetch).toHaveBeenCalledTimes(1); // cache hit
+    expect(mockFetchCategory).toHaveBeenCalledWith("Top", { forceRefresh: true });
+    expect(articles).toEqual([sampleArticle]);
   });
 
-  it("ignores cache when forceRefresh is true", async () => {
-    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    global.fetch = mockFetch as typeof fetch;
+  it("delegates getCachedArticles to feed/repository.getCachedCategory and unwraps articles", () => {
+    mockGetCachedCategory.mockReturnValue({ articles: [sampleArticle], stale: false, lastUpdated: 123 });
 
-    const { fetchArticlesByCategory } = await importService();
-
-    await fetchArticlesByCategory("Top" as ArticleCategory);
-    await fetchArticlesByCategory("Top" as ArticleCategory, { forceRefresh: true });
-
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(getCachedArticles("Top" as ArticleCategory)).toEqual([sampleArticle]);
   });
 
-  it("does not cache empty results", async () => {
-    const mockFetch = jest.fn().mockResolvedValue(buildResponse(EMPTY_FEED));
-    global.fetch = mockFetch as typeof fetch;
+  it("returns null from getCachedArticles when there is no cached category result", () => {
+    mockGetCachedCategory.mockReturnValue(null);
 
-    const { fetchArticlesByCategory } = await importService();
-
-    const first = await fetchArticlesByCategory("Top" as ArticleCategory);
-    expect(first).toHaveLength(0);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-
-    const second = await fetchArticlesByCategory("Top" as ArticleCategory);
-    expect(second).toHaveLength(0);
-    expect(mockFetch).toHaveBeenCalledTimes(2); // refetched because empty not cached
+    expect(getCachedArticles("Top" as ArticleCategory)).toBeNull();
   });
 
-  it("exposes cached articles via getCachedArticles", async () => {
-    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    global.fetch = mockFetch as typeof fetch;
+  it("delegates getLastFetchedAt to feed/repository.getCategoryFetchedAt", () => {
+    mockGetCategoryFetchedAt.mockReturnValue(42);
 
-    const { fetchArticlesByCategory, getCachedArticles } = await importService();
-
-    await fetchArticlesByCategory("Top" as ArticleCategory);
-    const cached = getCachedArticles("Top" as ArticleCategory);
-
-    expect(cached).not.toBeNull();
-    expect(cached).toHaveLength(1);
+    expect(getLastFetchedAt("Top" as ArticleCategory)).toBe(42);
+    expect(mockGetCategoryFetchedAt).toHaveBeenCalledWith("Top");
   });
 
-  it("falls back to default-on sources if overrides disable all sources", async () => {
-    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAMPLE_FEED));
-    global.fetch = mockFetch as typeof fetch;
+  it("fetchAllArticles fans out across every category and flattens the results", async () => {
+    mockFetchCategory.mockResolvedValue({ articles: [sampleArticle], stale: false, lastUpdated: 123 });
 
-    mockLoadSourcePrefs.mockResolvedValueOnce({
-      overrides: { ...DISABLED_OVERRIDES },
-      customFeeds: [],
-    });
+    const articles = await fetchAllArticles();
 
-    const { fetchArticlesByCategory } = await importService();
-
-    const articles = await fetchArticlesByCategory("Top" as ArticleCategory);
-
-    expect(articles).toHaveLength(1);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("sorts articles by publishedAt instead of display timestamp strings", async () => {
-    const mockFetch = jest.fn().mockResolvedValue(buildResponse(SAME_DAY_SORT_FEED));
-    global.fetch = mockFetch as typeof fetch;
-
-    const { fetchArticlesByCategory } = await importService();
-
-    const articles = await fetchArticlesByCategory("Top" as ArticleCategory);
-
-    expect(articles.map((article: { headline: string }) => article.headline)).toEqual([
-      "Later",
-      "Earlier",
-    ]);
-  });
-
-  it("throws when every source fails instead of returning an empty success", async () => {
-    const mockFetch = jest.fn().mockRejectedValue(new Error("fetch failed"));
-    global.fetch = mockFetch as typeof fetch;
-
-    const { fetchArticlesByCategory } = await importService();
-
-    await expect(fetchArticlesByCategory("Top" as ArticleCategory)).rejects.toMatchObject({
-      name: "FeedLoadError",
-    });
+    expect(mockFetchCategory).toHaveBeenCalledTimes(2);
+    expect(articles).toEqual([sampleArticle, sampleArticle]);
   });
 });

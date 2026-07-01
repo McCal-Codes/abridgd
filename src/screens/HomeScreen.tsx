@@ -6,11 +6,7 @@ import { useProfilesOptional } from "../context/ProfileContext";
 import { ScrollContext } from "../context/ScrollContext";
 import { ArticleCard } from "../components/ArticleCard";
 import { FunLoadingIndicator } from "../components/FunLoadingIndicator";
-import {
-  fetchArticlesByCategory,
-  getLastFetchedAt,
-  getCachedArticles,
-} from "../services/RssService";
+import { useCategoryFeed } from "../hooks/useCategoryFeed";
 import { Article } from "../types/Article";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -55,6 +51,10 @@ const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
   return `Updated ${diffDays}d ago`;
 };
 
+const isContinueReadingItem = (item: ContinueReadingItem | null): item is ContinueReadingItem => {
+  return item !== null;
+};
+
 const FeedStatusBanner = ({ message }: { message: string }) => {
   const styles = useThemedStyles(createStyles);
 
@@ -90,12 +90,19 @@ const ContinueReadingSection = ({
         <View style={{ flex: 1 }}>
           <Text style={styles.continueTitle}>Continue Reading</Text>
           <Text style={styles.continueSubtitle}>
-            {items.length === 1 ? "1 article in progress" : `${items.length} articles in progress`}
+            {items.length === 1
+              ? "1 story waiting where you left off"
+              : `${items.length} stories waiting where you left off`}
           </Text>
         </View>
         {lastUpdated && <Text style={styles.updatedBadge}>{formatUpdatedAgo(lastUpdated)}</Text>}
         {canToggle && (
-          <Pressable hitSlop={8} onPress={onToggleShowAll} accessibilityRole="button">
+          <Pressable
+            hitSlop={8}
+            onPress={onToggleShowAll}
+            accessibilityRole="button"
+            accessibilityLabel={showAll ? "Hide extra continue reading stories" : "Show all continue reading stories"}
+          >
             <Text style={styles.continueAction}>{showAll ? "Hide" : "Show all"}</Text>
           </Pressable>
         )}
@@ -136,11 +143,7 @@ export const HomeScreen: React.FC = () => {
   const { colors, isDark } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
 
-  const [articles, setArticles] = React.useState<Article[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const { articles, loading, error, refreshing, stale, lastUpdated, refresh } = useCategoryFeed("Top");
   const [showAllContinue, setShowAllContinue] = React.useState(false);
   const { inProgressArticles } = useReadingProgressOptional();
   const { savedArticles } = useSavedArticles();
@@ -169,34 +172,15 @@ export const HomeScreen: React.FC = () => {
     recordLastFetchedRef.current = profileContext?.recordLastFetchedArticles;
   }, [profileContext?.recordLastFetchedArticles]);
 
+  const recordedArticleIdsRef = React.useRef<string>("");
   React.useEffect(() => {
-    const load = async () => {
-      try {
-        setError(null);
-        const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
-        setArticles(data);
-        recordLastFetchedRef.current?.(data.map((article) => article.id));
-        const fetchedAt = getLastFetchedAt("Top");
-        setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-      } catch (e: any) {
-        setError(e?.message || "Failed to load articles.");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    };
-    const cached = getCachedArticles("Top");
-    if (cached && cached.length) {
-      setArticles(cached);
-      recordLastFetchedRef.current?.(cached.map((article) => article.id));
-      const fetchedAt = getLastFetchedAt("Top");
-      setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
-      setLoading(false);
-      setRefreshing(true);
-    }
-
-    load();
-  }, []);
+    if (articles.length === 0) return;
+    const ids = articles.map((article) => article.id);
+    const key = ids.join(",");
+    if (key === recordedArticleIdsRef.current) return;
+    recordedArticleIdsRef.current = key;
+    recordLastFetchedRef.current?.(ids);
+  }, [articles]);
 
   const continueReadingItems = React.useMemo(() => {
     if (!inProgressArticles.length) return [];
@@ -209,8 +193,12 @@ export const HomeScreen: React.FC = () => {
         if (!article) return null;
         return { article, progress };
       })
-      .filter(Boolean) as { article: Article; progress: any }[];
+      .filter(isContinueReadingItem);
   }, [inProgressArticles, savedArticles, articles]);
+
+  const handleRetry = React.useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   const handleToggleShowAll = React.useCallback(async () => {
     try {
@@ -227,15 +215,19 @@ export const HomeScreen: React.FC = () => {
     }
   }, [continueReadingItems.length, showAllContinue]);
 
-  const showSkeleton = loading && articles.length === 0;
+  const showSkeleton = articles.length === 0 && (loading || refreshing);
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
-  const showEmptyState = !loading && !error && articles.length === 0;
+  const showEmptyState = !loading && !refreshing && !error && articles.length === 0;
 
   const renderHeroHeader = () => (
     <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
       <HeroHeader
-        title="Top Stories"
-        subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+        title="Morning Brief"
+        subtitle={
+          lastUpdated
+            ? `${formatUpdatedAgo(lastUpdated)}. A finite catch-up on the Pittsburgh stories worth your attention.`
+            : "A finite catch-up on the Pittsburgh stories worth your attention."
+        }
         Icon={HomeIcon}
       />
     </View>
@@ -251,41 +243,28 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.flexContent}>
           {renderHeroHeader()}
           <View style={styles.centerContent}>
-            <FunLoadingIndicator message="Fetching top stories…" />
+            <FunLoadingIndicator message="Preparing your morning brief…" />
           </View>
         </View>
       ) : showErrorState ? (
         <View style={styles.flexContent}>
           {renderHeroHeader()}
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
-              <Animated.Text style={{ color: colors.systemRed, marginBottom: 8 }}>
-                Network error
-              </Animated.Text>
-              <Animated.Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
+            <View style={styles.errorCard}>
+              <Text style={styles.errorTitle}>
+                We couldn't refresh your brief
+              </Text>
+              <Text style={styles.errorSubtitle}>
                 {error}
-              </Animated.Text>
-              <Animated.Text
-                onPress={() => {
-                  setLoading(true);
-                  setError(null);
-                  fetchArticlesByCategory("Top", { forceRefresh: true })
-                    .then((data) => {
-                      setArticles(data);
-                      recordLastFetchedRef.current?.(data.map((article) => article.id));
-                      const fetchedAt = getLastFetchedAt("Top");
-                      setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-                      setLoading(false);
-                    })
-                    .catch((e) => {
-                      setError(e?.message || "Failed to load articles.");
-                      setLoading(false);
-                    });
-                }}
-                style={{ color: colors.tint }}
+              </Text>
+              <Pressable
+                onPress={handleRetry}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading the morning brief"
+                style={styles.retryButton}
               >
-                Retry
-              </Animated.Text>
+                <Text style={styles.retryButtonText}>Try again</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -293,8 +272,8 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.flexContent}>
           {renderHeroHeader()}
           <View style={styles.centerContent}>
-            <Text style={styles.emptyTitle}>No stories available right now.</Text>
-            <Text style={styles.emptySubtitle}>Pull to refresh again in a bit.</Text>
+            <Text style={styles.emptyTitle}>You're caught up for now.</Text>
+            <Text style={styles.emptySubtitle}>Pull to refresh when you're ready to check again.</Text>
           </View>
         </View>
       ) : (
@@ -311,9 +290,11 @@ export const HomeScreen: React.FC = () => {
           ListHeaderComponent={() => (
             <>
               {renderHeroHeader()}
-              {error && articles.length > 0 && (
+              {error && articles.length > 0 ? (
                 <FeedStatusBanner message="Couldn't load fresh stories. Showing the last successful update." />
-              )}
+              ) : stale ? (
+                <FeedStatusBanner message="Showing your last saved brief while we check for fresh stories." />
+              ) : null}
               {isContinueReadingEnabled && (
                 <ContinueReadingSection
                   items={continueReadingItems}
@@ -323,6 +304,12 @@ export const HomeScreen: React.FC = () => {
                   lastUpdated={lastUpdated}
                 />
               )}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Today's Brief</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Start here, read what matters, then be done.
+                </Text>
+              </View>
             </>
           )}
           contentContainerStyle={[
@@ -348,19 +335,7 @@ export const HomeScreen: React.FC = () => {
             } catch {
               // noop if haptics unavailable
             }
-            setRefreshing(true);
-            setError(null);
-            try {
-              const data = await fetchArticlesByCategory("Top", { forceRefresh: true });
-              setArticles(data);
-              recordLastFetchedRef.current?.(data.map((article) => article.id));
-              const fetchedAt = getLastFetchedAt("Top");
-              setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-            } catch (e: any) {
-              setError(e?.message || "Failed to refresh.");
-            } finally {
-              setRefreshing(false);
-            }
+            await refresh();
           }}
         />
       )}
@@ -482,14 +457,66 @@ const createStyles = (colors: ThemeColors) =>
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  statusBannerText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-  },
-  emptyTitle: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: typography.size.xl,
+	  statusBannerText: {
+	    fontFamily: typography.fontFamily.sans,
+	    fontSize: typography.size.sm,
+	    color: colors.textSecondary,
+	  },
+	  sectionHeader: {
+	    paddingHorizontal: spacing.gutter,
+	    paddingTop: spacing.lg,
+	    paddingBottom: spacing.sm,
+	  },
+	  sectionTitle: {
+	    fontFamily: typography.fontFamily.serif,
+	    fontSize: typography.size.xl,
+	    fontWeight: "700",
+	    color: colors.text,
+	  },
+	  sectionSubtitle: {
+	    marginTop: spacing.xs,
+	    fontFamily: typography.fontFamily.sans,
+	    fontSize: typography.size.sm,
+	    color: colors.textSecondary,
+	  },
+	  errorCard: {
+	    marginHorizontal: spacing.gutter,
+	    padding: spacing.lg,
+	    borderRadius: 14,
+	    backgroundColor: colors.surface,
+	    borderWidth: StyleSheet.hairlineWidth,
+	    borderColor: colors.border,
+	  },
+	  errorTitle: {
+	    fontFamily: typography.fontFamily.serif,
+	    fontSize: typography.size.xl,
+	    fontWeight: "700",
+	    color: colors.text,
+	    marginBottom: spacing.xs,
+	  },
+	  errorSubtitle: {
+	    fontFamily: typography.fontFamily.sans,
+	    fontSize: typography.size.sm,
+	    color: colors.textSecondary,
+	    marginBottom: spacing.md,
+	  },
+	  retryButton: {
+	    minHeight: 44,
+	    alignItems: "center",
+	    justifyContent: "center",
+	    borderRadius: 12,
+	    backgroundColor: colors.tintTransparent,
+	    paddingHorizontal: spacing.md,
+	  },
+	  retryButtonText: {
+	    fontFamily: typography.fontFamily.sans,
+	    fontSize: typography.size.md,
+	    fontWeight: "700",
+	    color: colors.tint,
+	  },
+	  emptyTitle: {
+	    fontFamily: typography.fontFamily.serif,
+	    fontSize: typography.size.xl,
     color: colors.text,
     textAlign: "center",
   },

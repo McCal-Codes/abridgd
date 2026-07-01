@@ -1,6 +1,6 @@
 # Active To-Do List
 
-Last Updated: March 22, 2026
+Last Updated: July 1, 2026
 
 **Quick Reference:**
 - See [completed.md](./completed.md) for all finished tasks
@@ -91,6 +91,44 @@ Last Updated: March 22, 2026
   - **Definition of Done**: Any ported onboarding/profile improvements land with tests and without reintroducing the release branch's dependency, RSS, or profile regressions.
   - **Dependencies**: OnboardingScreen, ProfileScreen, associated tests
   - **Completed**: March 22, 2026
+
+- [x] **TODO-041** | **v1.4.1** | Reader-first quality sweep baseline + Morning Brief
+  - **Status**: Completed
+  - **Description**: Sync to current master, restore TypeScript/Jest/docs lint gates, and reshape Home into a finite Morning Brief with cached-state messaging, accessible retry copy, and Today’s Brief framing.
+  - **Effort**: 4 hours
+  - **Definition of Done**: `npx tsc --noEmit`, `npm test -- --runInBand`, `npm run repo:health`, and `npm run lint:docs` pass; Home tests cover Morning Brief, cached-state, refresh, error, and continue-reading behavior.
+  - **Dependencies**: HomeScreen, ThemeContext, Jest setup, docs lint metadata
+  - **Completed**: June 10, 2026
+
+- [x] **TODO-042** | **v1.4.1** | Reader-first onboarding overflow pass
+  - **Status**: Completed
+  - **Description**: Simplify onboarding into a five-slide welcome flow with app-like previews, one optional grounding choice, and wrap-safe footer actions instead of front-loading tab-layout configuration.
+  - **Effort**: 1.5 hours
+  - **Definition of Done**: Onboarding tests pass, TypeScript stays clean, and first-run onboarding no longer includes icon-only placeholder slides or a second setup decision.
+  - **Dependencies**: OnboardingScreen, OnboardingScreen tests
+  - **Completed**: June 14, 2026
+
+- [x] **TODO-043** | **v1.4.2** | Modularize RSS feed pipeline (source registry, transport, parser, repository, per-source cache)
+  - **Status**: Completed
+  - **Description**: Split `RssService.ts` into `src/services/feed/{types,sourceRegistry,transport,parser,htmlUtils,cacheStore,repository}.ts`, replacing the single in-memory category cache with a per-source AsyncStorage cache so one broken source no longer blanks a whole category. Disabled the 11 sources confirmed broken by the June 25, 2026 health probe. `RssService.ts` becomes a permanent thin facade so `AiService`/existing callers are unaffected.
+  - **Effort**: 5 hours
+  - **Definition of Done**: `npx tsc --noEmit` passes; new `feed/parser.test.ts` and `feed/repository.test.ts` cover Atom/rss2json/media/malformed-HTML/date-fallback fixtures and partial-failure/dedupe/TTL behavior; `RssService.test.ts` narrowed to a facade smoke test.
+  - **Dependencies**: None
+  - **Completed**: July 1, 2026
+
+- [x] **TODO-044** | **v1.4.2** | Adopt `useCategoryFeed` in Home/Section screens for cache-first launch
+  - **Status**: Completed
+  - **Description**: Added `src/hooks/useCategoryFeed.ts` and migrated `HomeScreen`/`SectionScreen` to it, replacing the old always-force-refresh-on-mount pattern with cache-first display and background revalidation only past the 5-minute soft TTL. Pull-to-refresh and cached-on-failure behavior preserved.
+  - **Effort**: 3 hours
+  - **Definition of Done**: `HomeScreen.test.tsx`/`SectionScreen.test.tsx` updated to mock the hook and pass; new `useCategoryFeed.test.ts` covers cache-first-no-spinner, background revalidation, cold-start loading, and refresh-preserves-articles-on-failure.
+  - **Dependencies**: TODO-043
+
+- [x] **TODO-045** | **v1.4.2** | Add full-story cache/dedupe and "Why this story?" trust panel
+  - **Status**: Completed
+  - **Description**: Added `src/services/fullStoryCache.ts` (cache/dedupe wrapper around the existing `FullStoryService.fetchFullArticleBody`) and `src/hooks/useFullStoryEnrichment.ts`, refactoring ArticleScreen's inline enrichment effect. Added `ArticleProvenance` to `Article`, populated at feed-normalize time, and a new "Why this story?" action opening a `BlurSheet`-based `ArticleProvenancePanel` with factual, non-personalized source/category/publish-time/inclusion-reason/last-refresh copy.
+  - **Effort**: 4 hours
+  - **Definition of Done**: New `fullStoryCache.test.ts` and `useFullStoryEnrichment.test.ts` pass; `ArticleScreen.test.tsx` covers the trust panel trigger with and without provenance set.
+  - **Dependencies**: TODO-043
 
 ---
 
@@ -381,5 +419,3 @@ Example:
 - Auto-shows WhatsNewScreen on version mismatch
 - Closes TODO-005 for v1.2.0
 ```
-
-

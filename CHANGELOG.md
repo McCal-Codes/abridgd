@@ -6,7 +6,24 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- Added a "Why this story?" trust panel on the article screen, showing source, category, publish time, inclusion reason, and last feed refresh time.
+
+### Changed
+- Home now presents the feed as a calm Morning Brief with finite catch-up framing, cached-state messaging, and a Today’s Brief section.
+- Onboarding now follows a five-slide reader-first welcome flow with app-like previews, one optional grounding choice, and wrap-safe actions for small screens and larger text.
+- Refactored the RSS feed pipeline into modular source registry, transport, parser, and repository layers with per-source AsyncStorage caching, replacing the single in-memory category cache.
+- Home and Section feeds now show cached stories immediately on launch without a blocking forced refresh, refreshing in the background instead.
+
+### Fixed
+- Restored the local TypeScript gate by normalizing nullable system color scheme values in ThemeContext.
+- Restored the Expo SDK 54 Jest baseline by pinning test-safe winter runtime globals in `jest.setup.js`.
+- Disabled 11 RSS sources confirmed broken in a June 2026 health probe (CBS Pittsburgh, New Pittsburgh Courier, The Incline, Pgh Business Times, TribLive Business, TribLive Sports, Penguins, Pirates, Pitt Panthers, City Paper, WESA Arts) so they no longer cause partial feed failures.
+- Full-story enrichment on the article screen now caches fetched content and de-duplicates in-flight requests instead of re-fetching on every article view.
+- A broken RSS source no longer blanks its whole category — per-source caching preserves other sources' last-known-good stories.
+
 ### Documentation
+- Added missing `Last Updated` metadata across docs so `npm run lint:docs` passes.
 - Release iOS Build can now download the finished iOS archive and attach the IPA directly to a tagged GitHub release.
 
 ## [1.4.0] - 2026-03-22

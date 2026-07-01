@@ -20,7 +20,6 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
-import { fetchFullArticleBody } from "../services/FullStoryService";
 import { summarizeArticle } from "../services/AiService";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -28,8 +27,11 @@ import { useSettings } from "../context/SettingsContext";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { ScaleButton } from "../components/ScaleButton";
 import { GroundingOverlay } from "../components/GroundingOverlay";
+import { BlurSheet } from "../components/BlurSheet";
+import { ArticleProvenancePanel } from "../components/ArticleProvenancePanel";
 import { parseHtmlContent } from "../utils/contentParser";
-import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle } from "lucide-react-native";
+import { useFullStoryEnrichment } from "../hooks/useFullStoryEnrichment";
+import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle, Info } from "lucide-react-native";
 import { useSavedArticles } from "../context/SavedArticlesContext";
 import { useReadingProgress, useReadingProgressOptional } from "../context/ReadingProgressContext";
 import {
@@ -78,9 +80,9 @@ export const ArticleScreen: React.FC = () => {
 
   // Use local state for body so we can update it
   const [bodyContent, setBodyContent] = useState(article.body);
-  const [isLoadingFullStory, setIsLoadingFullStory] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [isProvenanceSheetVisible, setIsProvenanceSheetVisible] = useState(false);
   const {
     isReaderEnabled,
     isGroundingEnabled,
@@ -245,32 +247,15 @@ export const ArticleScreen: React.FC = () => {
     }
   };
 
-  // Attempt to fetch full story if content is short (likely just a summary)
-  // OR if the source is known to provide truncated RSS feeds (WTAE, WPXI, CBS)
+  // Full-story enrichment (cache-first, deduped) — upgrades bodyContent once/if it resolves.
+  const { enrichedBody, isLoadingFullStory } = useFullStoryEnrichment(article, bodyContent.length);
+
   useEffect(() => {
-    const fetchFull = async () => {
-      const isTruncatedSource = ["WTAE", "WPXI", "CBS", "City Paper"].some((s) =>
-        article.source.includes(s),
-      );
-      const isShort = bodyContent.length < 800; // Increased threshold
-
-      if (article.link && (isShort || isTruncatedSource)) {
-        // Avoid re-fetching if we already have a long body and it wasn't a short one
-        if (!isTruncatedSource && !isShort) return;
-
-        setIsLoadingFullStory(true);
-        const fullHtml = await fetchFullArticleBody(article.link);
-        if (fullHtml && fullHtml.length > bodyContent.length) {
-          setBodyContent(fullHtml);
-        }
-        setIsLoadingFullStory(false);
-      }
-    };
-
-    // Add a small delay to not block transition
-    const timer = setTimeout(fetchFull, 500);
-    return () => clearTimeout(timer);
-  }, [article.link]);
+    if (enrichedBody && enrichedBody.length > bodyContent.length) {
+      setBodyContent(enrichedBody);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enrichedBody]);
 
   useEffect(() => {
     if (isSummarizationEnabled && bodyContent && !summary) {
@@ -766,8 +751,31 @@ export const ArticleScreen: React.FC = () => {
                 {isSaved ? "Saved" : "Save for Later"}
               </Text>
             </ScaleButton>
+
+            <ScaleButton
+              style={styles.actionButton}
+              accessibilityRole="button"
+              accessibilityLabel="Why this story? View source information"
+              onPress={async () => {
+                try {
+                  await Haptics.selectionAsync();
+                } catch {}
+                setIsProvenanceSheetVisible(true);
+              }}
+            >
+              <Info size={18} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Why this story?</Text>
+            </ScaleButton>
           </View>
         </ScrollView>
+
+        <BlurSheet
+          visible={isProvenanceSheetVisible}
+          onClose={() => setIsProvenanceSheetVisible(false)}
+          initialDetent="medium"
+        >
+          <ArticleProvenancePanel provenance={article.provenance} />
+        </BlurSheet>
       </Animated.View>
     );
   } catch (error) {

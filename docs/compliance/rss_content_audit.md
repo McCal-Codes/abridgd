@@ -1,4 +1,6 @@
 # RSS Content Use Audit
+
+Last Updated: 2026-07-01
 **App:** Abridgd
 **Purpose:** Document legal, ethical, and platform-compliant use of RSS feeds
 
@@ -106,8 +108,10 @@ The app:
 - Will remove sources upon valid publisher request
 - Does not attempt to evade blocks or access restrictions
 
+Implemented Safeguards:
+- Source-level disable switch (`defaultEnabled` in `src/data/feedConfig.ts`, plus a per-user override), so a source can be turned off without a code deploy for user preferences, or with one for the default catalog.
+
 Planned / Optional Safeguards:
-- Source-level disable switch
 - Internal blacklist for disallowed feeds
 
 **Risk Level:** Low
@@ -162,6 +166,32 @@ The app does not:
 This document is for **internal documentation and risk assessment purposes only** and does not constitute legal advice.
 
 For commercial scaling or high-traffic deployments, consultation with an IP or media attorney is recommended.
+
+---
+
+## 12. Source Health & Reliability
+
+Consistent with the publisher-first posture in Sections 7–8, the app periodically probes configured sources for availability and stops pulling from endpoints that are no longer serving readable RSS/Atom content. This is framed as respecting publisher infrastructure — a source returning errors, an HTML page, or an empty feed is not retried indefinitely; it is disabled by default (`defaultEnabled: false` with a `health: "pending-replacement"` note in `src/data/feedConfig.ts`) until a working replacement is confirmed, rather than the app continuing to hit a broken or reconfigured endpoint.
+
+**2026-06-25 source health probe** — the following sources were confirmed non-functional (HTML/403/404/empty/non-feed response) and are currently disabled pending replacement:
+
+| Category | Source |
+| --- | --- |
+| Top | CBS Pittsburgh |
+| Local | New Pittsburgh Courier |
+| Local | The Incline |
+| Business | Pgh Business Times |
+| Business | TribLive Business |
+| Sports | TribLive Sports |
+| Sports | Penguins |
+| Sports | Pirates |
+| Sports | Pitt Panthers |
+| Culture | City Paper |
+| Culture | WESA Arts |
+
+**Known follow-up:** disabling City Paper and WESA Arts leaves Pittsburgh Mag as the only enabled Culture source. This was a deliberate choice — the app does not keep a verified-broken source enabled just to pad a category's source count — but it is a single point of failure worth resolving by sourcing a second healthy Culture feed in a future pass. See [ADR-0005](../standards/adr/0005-feed-pipeline-modularization.md) for the caching/reliability design this rests on.
+
+**Risk Level:** Low (this section documents operational reliability, not a new legal/compliance exposure)
 
 ---
 

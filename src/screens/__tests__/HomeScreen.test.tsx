@@ -3,13 +3,22 @@ import { act, render, fireEvent, waitFor } from "@testing-library/react-native";
 import { Animated } from "react-native";
 import { HomeScreen } from "../HomeScreen";
 import { ScrollContext } from "../../context/ScrollContext";
-import { fetchArticlesByCategory, getCachedArticles } from "../../services/RssService";
+import { useCategoryFeed } from "../../hooks/useCategoryFeed";
 
-jest.mock("../../services/RssService", () => ({
-  fetchArticlesByCategory: jest.fn(),
-  getLastFetchedAt: jest.fn(() => Date.now()),
-  getCachedArticles: jest.fn(() => null),
+const mockUseCategoryFeed = jest.fn();
+jest.mock("../../hooks/useCategoryFeed", () => ({
+  useCategoryFeed: (...args: unknown[]) => mockUseCategoryFeed(...args),
 }));
+
+const baseFeedState = {
+  articles: [] as any[],
+  loading: true,
+  refreshing: false,
+  error: null as string | null,
+  stale: false,
+  lastUpdated: null as Date | null,
+  refresh: jest.fn(),
+};
 
 jest.mock("../../context/SavedArticlesContext", () => ({
   useSavedArticles: () => mockSavedArticlesContext,
@@ -133,8 +142,7 @@ describe("HomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetSettings();
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValue([]);
-    (getCachedArticles as jest.Mock).mockReturnValue(null);
+    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, refresh: jest.fn() });
     mockSavedArticlesContext = {
       savedArticles: [],
       saveArticle: jest.fn(),
@@ -170,65 +178,100 @@ describe("HomeScreen", () => {
   });
 
   it("renders loading indicator initially", () => {
-    (fetchArticlesByCategory as jest.Mock).mockImplementationOnce(() => new Promise(() => {}));
+    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, loading: true });
     const { getByText } = renderScreen();
-    expect(getByText("Fetching top stories…")).toBeTruthy();
+    expect(getByText("Preparing your morning brief…")).toBeTruthy();
   });
 
-  it("displays fetched headlines", async () => {
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce([
-      {
-        id: "1",
-        headline: "First",
-        summary: "",
-        body: "",
-        source: "",
-        timestamp: "",
-        publishedAt: Date.now(),
-        category: "Top",
-        readTimeMinutes: 1,
-      },
-    ]);
+  it("displays fetched headlines without a blocking spinner once cache/fresh data arrives", async () => {
+    mockUseCategoryFeed.mockReturnValue({
+      ...baseFeedState,
+      articles: [
+        {
+          id: "1",
+          headline: "First",
+          summary: "",
+          body: "",
+          source: "",
+          timestamp: "",
+          publishedAt: Date.now(),
+          category: "Top",
+          readTimeMinutes: 1,
+        },
+      ],
+      loading: false,
+    });
 
     const { findByText } = renderScreen();
 
+    expect(await findByText("Morning Brief")).toBeTruthy();
+    expect(await findByText("Today's Brief")).toBeTruthy();
     expect(await findByText("First")).toBeTruthy();
     expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["1"]);
     await settleVirtualizedList();
   });
 
-  it("shows error state when fetch fails", async () => {
-    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+  it("shows error state when there is no cache and the fetch fails", async () => {
+    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, loading: false, error: "Boom" });
 
     const { findByText } = renderScreen();
 
-    expect(await findByText(/Network error/i)).toBeTruthy();
+    expect(await findByText(/We couldn't refresh your brief/i)).toBeTruthy();
     expect(await findByText(/Boom/i)).toBeTruthy();
     await settleVirtualizedList();
   });
 
-  it("keeps cached stories visible when refresh fails", async () => {
-    (getCachedArticles as jest.Mock).mockReturnValue([
-      {
-        id: "cached-1",
-        headline: "Cached Story",
-        summary: "",
-        body: "",
-        source: "Cache",
-        timestamp: "",
-        publishedAt: Date.now(),
-        category: "Top",
-        readTimeMinutes: 1,
-      },
-    ]);
-    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+  it("keeps cached stories visible when a background refresh fails", async () => {
+    mockUseCategoryFeed.mockReturnValue({
+      ...baseFeedState,
+      loading: false,
+      error: "Boom",
+      articles: [
+        {
+          id: "cached-1",
+          headline: "Cached Story",
+          summary: "",
+          body: "",
+          source: "Cache",
+          timestamp: "",
+          publishedAt: Date.now(),
+          category: "Top",
+          readTimeMinutes: 1,
+        },
+      ],
+    });
 
     const { findByText, findByTestId, queryByText } = renderScreen();
 
     expect(await findByText("Cached Story")).toBeTruthy();
     expect(await findByTestId("home-feed-status")).toBeTruthy();
-    expect(queryByText(/Network error/i)).toBeNull();
+    expect(queryByText(/We couldn't refresh your brief/i)).toBeNull();
     expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["cached-1"]);
+    await settleVirtualizedList();
+  });
+
+  it("shows the cached banner (not fresh) when the feed hook reports stale data", async () => {
+    mockUseCategoryFeed.mockReturnValue({
+      ...baseFeedState,
+      loading: false,
+      stale: true,
+      articles: [
+        {
+          id: "1",
+          headline: "Stale Story",
+          summary: "",
+          body: "",
+          source: "",
+          timestamp: "",
+          publishedAt: Date.now(),
+          category: "Top",
+          readTimeMinutes: 1,
+        },
+      ],
+    });
+
+    const { findByTestId } = renderScreen();
+    expect(await findByTestId("home-feed-status")).toBeTruthy();
     await settleVirtualizedList();
   });
 
@@ -260,13 +303,24 @@ describe("HomeScreen", () => {
       },
     ];
 
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce(firstArticles);
+    // Stateful mock so pull-to-refresh actually triggers a re-render, like the real hook.
+    mockUseCategoryFeed.mockImplementation(() => {
+      const [state, setState] = React.useState({
+        ...baseFeedState,
+        loading: false,
+        articles: firstArticles,
+      });
+      return {
+        ...state,
+        refresh: async () => {
+          setState((prev: any) => ({ ...prev, articles: secondArticles }));
+        },
+      };
+    });
 
     const { findByText, getByTestId } = renderScreen();
 
     expect(await findByText("First")).toBeTruthy();
-
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce(secondArticles);
 
     await act(async () => {
       const list = getByTestId("home-list");
@@ -274,7 +328,6 @@ describe("HomeScreen", () => {
     });
 
     expect(await findByText("Second")).toBeTruthy();
-    expect(fetchArticlesByCategory).toHaveBeenCalledTimes(2);
     await settleVirtualizedList();
   });
 
@@ -302,7 +355,11 @@ describe("HomeScreen", () => {
       totalReadTimeSeconds: 60,
       status: "in-progress",
     }));
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce([inProgress[0]]);
+    mockUseCategoryFeed.mockReturnValue({
+      ...baseFeedState,
+      loading: false,
+      articles: [inProgress[0]],
+    });
 
     const { findByTestId, findByText, getByText } = renderScreen();
 
