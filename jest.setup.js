@@ -10,6 +10,27 @@ jest.mock("@sentry/react-native", () => ({
   captureMessage: jest.fn(),
 }));
 
+Object.defineProperty(global, "__ExpoImportMetaRegistry", {
+  configurable: true,
+  enumerable: false,
+  value: {},
+  writable: true,
+});
+
+Object.defineProperty(global, "structuredClone", {
+  configurable: true,
+  enumerable: false,
+  value:
+    global.structuredClone ||
+    ((value) => {
+      if (value === undefined) {
+        return undefined;
+      }
+      return JSON.parse(JSON.stringify(value));
+    }),
+  writable: true,
+});
+
 // Mock SafeAreaContext
 jest.mock("react-native-safe-area-context", () => {
   const React = require("react");
@@ -33,6 +54,7 @@ jest.mock("lucide-react-native", () => {
     Waypoints: createMockIcon(),
     Zap: createMockIcon(),
     Bookmark: createMockIcon(),
+    Info: createMockIcon(),
     // Other icons used in the app
     Flame: createMockIcon(),
     MapPin: createMockIcon(),

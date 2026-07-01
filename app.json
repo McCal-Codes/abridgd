@@ -19,7 +19,9 @@
       "bundleIdentifier": "com.mccalmedia.abridged",
       "buildNumber": "1",
       "entitlements": {
-        "com.apple.developer.applesignin": ["Default"]
+        "com.apple.developer.applesignin": [
+          "Default"
+        ]
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -39,7 +41,8 @@
       "output": "single"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {
