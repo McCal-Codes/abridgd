@@ -219,6 +219,16 @@ export const HomeScreen: React.FC = () => {
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
   const showEmptyState = !loading && !refreshing && !error && articles.length === 0;
 
+  const renderArticle = React.useCallback(
+    ({ item }: { item: Article }) => (
+      <ArticleCard
+        article={item}
+        onPress={(article) => navigation.navigate("Article", { article: article })}
+      />
+    ),
+    [navigation],
+  );
+
   const renderHeroHeader = () => (
     <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
       <HeroHeader
@@ -281,12 +291,7 @@ export const HomeScreen: React.FC = () => {
           testID="home-list"
           data={articles}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ArticleCard
-              article={item}
-              onPress={(article) => navigation.navigate("Article", { article: article })}
-            />
-          )}
+          renderItem={renderArticle}
           ListHeaderComponent={() => (
             <>
               {renderHeroHeader()}

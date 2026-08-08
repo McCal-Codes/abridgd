@@ -2,7 +2,6 @@ import React from "react";
 import { View, FlatList, StyleSheet, Text, TextInput, Pressable, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
-import { ArticleCard } from "../components/ArticleCard";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
@@ -14,7 +13,7 @@ import { ScaleButton } from "../components/ScaleButton";
 import { Bookmark, Star as Sparkles, Search, SlidersHorizontal, X } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
-import { ArticleCategory } from "../types/Article";
+import { Article, ArticleCategory } from "../types/Article";
 import { HeroHeader } from "../components/HeroHeader";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
@@ -23,6 +22,60 @@ type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>,
   BottomTabNavigationProp<TabParamList>
 >;
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Renders `text` with any `query` match wrapped in the highlight style. Pure, so a memoized
+ * row component that calls it stays correctly memoized on (text, query). */
+const renderHighlighted = (
+  text: string,
+  query: string,
+  styles: ReturnType<typeof createStyles>,
+) => {
+  if (!query) return <Text style={styles.resultHeadline}>{text}</Text>;
+  const regex = new RegExp(`(${escapeRegExp(query)})`, "ig");
+  const parts = text.split(regex);
+  return (
+    <Text style={styles.resultHeadline}>
+      {parts.map((part, idx) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <Text key={idx} style={styles.highlight}>
+            {part}
+          </Text>
+        ) : (
+          <Text key={idx}>{part}</Text>
+        ),
+      )}
+    </Text>
+  );
+};
+
+const SavedResultRow: React.FC<{
+  article: Article;
+  query: string;
+  onPress: (article: Article) => void;
+}> = React.memo(({ article, query, onPress }) => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <ScaleButton
+      style={styles.resultCard}
+      onPress={() => onPress(article)}
+      accessibilityLabel={`Open ${article.headline}`}
+    >
+      {renderHighlighted(article.headline, query, styles)}
+      <Text style={styles.resultMeta}>
+        {article.source} • {article.category}
+      </Text>
+      {!!query && (
+        <Text style={styles.resultSnippet} numberOfLines={2}>
+          {renderHighlighted(article.summary || article.body || "", query, styles)}
+        </Text>
+      )}
+    </ScaleButton>
+  );
+});
+SavedResultRow.displayName = "SavedResultRow";
 
 export const SavedScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -186,29 +239,6 @@ export const SavedScreen: React.FC = () => {
     return list;
   }, [filteredArticles, sortBy, getProgress]);
 
-  const highlightMatch = React.useCallback(
-    (text: string) => {
-      const query = debouncedQuery;
-      if (!query) return <Text style={styles.resultHeadline}>{text}</Text>;
-      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")})`, "ig");
-      const parts = text.split(regex);
-      return (
-        <Text style={styles.resultHeadline}>
-          {parts.map((part, idx) =>
-            part.toLowerCase() === query.toLowerCase() ? (
-              <Text key={idx} style={styles.highlight}>
-                {part}
-              </Text>
-            ) : (
-              <Text key={idx}>{part}</Text>
-            ),
-          )}
-        </Text>
-      );
-    },
-    [debouncedQuery],
-  );
-
   const addRecentQuery = React.useCallback(
     (query: string) => {
       const trimmed = query.trim();
@@ -282,6 +312,17 @@ export const SavedScreen: React.FC = () => {
   const availableCategories = React.useMemo(
     () => Array.from(new Set(savedArticles.map((a) => a.category))).sort(),
     [savedArticles],
+  );
+
+  const renderSavedResult = React.useCallback(
+    ({ item }: { item: Article }) => (
+      <SavedResultRow
+        article={item}
+        query={debouncedQuery}
+        onPress={(article) => navigation.navigate("Article", { article })}
+      />
+    ),
+    [navigation, debouncedQuery],
   );
 
   const searchAnim = React.useRef(new Animated.Value(0)).current;
@@ -530,23 +571,7 @@ export const SavedScreen: React.FC = () => {
           testID="saved-list"
           data={sortedArticles}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ScaleButton
-              style={styles.resultCard}
-              onPress={() => navigation.navigate("Article", { article: item })}
-              accessibilityLabel={`Open ${item.headline}`}
-            >
-              {highlightMatch(item.headline)}
-              <Text style={styles.resultMeta}>
-                {item.source} • {item.category}
-              </Text>
-              {!!debouncedQuery && (
-                <Text style={styles.resultSnippet} numberOfLines={2}>
-                  {highlightMatch(item.summary || item.body || "")}
-                </Text>
-              )}
-            </ScaleButton>
-          )}
+          renderItem={renderSavedResult}
           contentContainerStyle={[
             styles.listContent,
             {

@@ -16,7 +16,7 @@ interface ArticleCardProps {
 import { ScaleButton } from "./ScaleButton";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) => {
+export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, onPress }) => {
   const styles = useThemedStyles(createStyles);
 
   return (
@@ -45,7 +45,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) =>
       </ScaleButton>
     </Animated.View>
   );
-};
+});
 
 export const ArticleCardSkeleton: React.FC = () => {
   const styles = useThemedStyles(createStyles);

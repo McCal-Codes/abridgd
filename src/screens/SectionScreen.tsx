@@ -9,7 +9,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList, TabParamList } from "../navigation/types";
 import { spacing } from "../theme/spacing";
-import { ArticleCategory } from "../types/Article";
+import { Article, ArticleCategory } from "../types/Article";
 import { typography } from "../theme/typography";
 import * as Haptics from "expo-haptics";
 import { HeroHeader } from "../components/HeroHeader";
@@ -83,6 +83,16 @@ export const SectionScreen: React.FC = () => {
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
   const showEmptyState = !loading && !refreshing && !error && articles.length === 0;
 
+  const renderArticle = React.useCallback(
+    ({ item }: { item: Article }) => (
+      <ArticleCard
+        article={item}
+        onPress={(article) => navigation.navigate("Article", { article: article })}
+      />
+    ),
+    [navigation],
+  );
+
   return (
     <View style={styles.container}>
       {showSkeleton ? (
@@ -111,12 +121,7 @@ export const SectionScreen: React.FC = () => {
           testID="section-list"
           data={articles}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ArticleCard
-              article={item}
-              onPress={(article) => navigation.navigate("Article", { article: article })}
-            />
-          )}
+          renderItem={renderArticle}
           contentContainerStyle={[
             styles.listContent,
             {
