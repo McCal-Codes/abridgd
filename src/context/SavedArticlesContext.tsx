@@ -5,6 +5,7 @@ import {
   saveArticlesToStorage,
   isMigrationComplete,
   markMigrationComplete,
+  getSavedArticlesStorageKey,
 } from "../utils/storage";
 import { useProfilesOptional } from "./ProfileContext";
 
@@ -26,7 +27,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
   const profileContext = useProfilesOptional?.() ?? undefined;
   const activeProfileId = profileContext?.activeProfile?.id;
   const storageKey = useMemo(
-    () => `@abridged_saved_articles_${activeProfileId ?? "default"}`,
+    () => getSavedArticlesStorageKey(activeProfileId),
     [activeProfileId],
   );
   const syncProfileSavedArticles = useMemo(

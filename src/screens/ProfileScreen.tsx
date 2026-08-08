@@ -98,6 +98,7 @@ const ProfileScreen: React.FC = () => {
     activeProfile,
     signInWithAppleProfile,
     signOut,
+    deleteActiveProfile,
     exportProfileKey,
     importProfileKey,
     updateSettingsTag,
@@ -197,6 +198,29 @@ const ProfileScreen: React.FC = () => {
     } else {
       Alert.alert("Import failed", "Please check the code and try again.");
     }
+  };
+
+  const handleDeleteLocalData = () => {
+    Alert.alert(
+      "Delete local data",
+      "This removes this profile along with its saved articles and reading progress from this device. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const profile = await deleteActiveProfile();
+              Alert.alert("Deleted", `Local data removed. Switched to ${profile.name}.`);
+            } catch (e) {
+              console.error("Failed to delete local data:", e);
+              Alert.alert("Error", "Couldn't delete local data. Please try again.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -406,13 +430,14 @@ const ProfileScreen: React.FC = () => {
             <GlassButton
               label="Delete local data"
               prominence="standard"
-              onPress={() => Alert.alert("Coming soon", "Local data deletion will ship with sync.")}
+              onPress={handleDeleteLocalData}
               accessibilityLabel="Delete local data"
-              accessibilityHint="Future control to remove local profile data."
+              accessibilityHint="Removes this profile's saved articles and reading progress from this device."
               style={styles.cardAction}
             />
             <Text style={styles.transferHint}>
-              Keep this code private. Data consent and granular deletion ship with sync.
+              Keep this code private. Deleting removes this profile's saved articles and
+              reading progress; app settings stay as they are.
             </Text>
           </View>
         </View>

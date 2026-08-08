@@ -5,6 +5,8 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Buffer } from "buffer";
+import { clearSavedArticles, getSavedArticlesStorageKey } from "../utils/storage";
+import { clearAllReadingProgress, getReadingProgressStorageKey } from "../utils/readingProgressStorage";
 
 // Ensure Buffer exists in React Native runtime
 const globalWithBuffer = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
@@ -21,6 +23,7 @@ interface ProfileContextType {
   updateSettingsTag: (tag: string) => void;
   signInWithAppleProfile: (user: { id: string; email?: string; displayName?: string }) => Profile;
   signOut: () => Profile;
+  deleteActiveProfile: () => Promise<Profile>;
   trackArticleRead: () => void;
   trackSavedAction: () => void;
   recordLastFetchedArticles: (articleIds: string[]) => void;
@@ -460,6 +463,60 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     return fallback;
   };
 
+  // Removes the active profile plus its own saved-articles and reading-progress data, then
+  // falls back to another local profile (or a fresh anonymous one) using signOut's pattern.
+  // Global settings and the sensitive-content log are intentionally left untouched — they
+  // aren't scoped to a single profile.
+  const deleteActiveProfile = async (): Promise<Profile> => {
+    const profileToDelete = activeProfile;
+    if (!profileToDelete) {
+      throw new Error("No active profile to delete");
+    }
+
+    try {
+      await clearSavedArticles(getSavedArticlesStorageKey(profileToDelete.id));
+    } catch (e) {
+      console.error("Failed to remove saved articles for deleted profile", e);
+    }
+
+    try {
+      await clearAllReadingProgress(getReadingProgressStorageKey(profileToDelete.id));
+    } catch (e) {
+      console.error("Failed to remove reading progress for deleted profile", e);
+    }
+
+    const remaining = profiles.filter((p) => p.id !== profileToDelete.id);
+
+    if (remaining.length) {
+      const local = remaining.find((p) => !p.appleUserId) || remaining[0];
+      activateProfile(local);
+      persistProfiles(remaining);
+      return local;
+    }
+
+    const used = new Set<string>();
+    const fallback: Profile = withProfileDefaults(
+      {
+        id: "anonymous",
+        name: "Reader",
+        codename: generateCodename(used),
+        stats: {
+          articlesRead: 0,
+          savedActions: 0,
+          lastReadAt: null,
+          lastSavedAt: null,
+          lastFetchedArticleIds: [],
+          lastFetchedAt: null,
+        },
+        savedArticles: [],
+      },
+      used,
+    );
+    activateProfile(fallback);
+    persistProfiles([fallback]);
+    return fallback;
+  };
+
   const signInWithAppleProfile = (user: {
     id: string;
     email?: string;
@@ -567,6 +624,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         updateSettingsTag,
         signInWithAppleProfile,
         signOut,
+        deleteActiveProfile,
         trackArticleRead,
         trackSavedAction,
         recordLastFetchedArticles,

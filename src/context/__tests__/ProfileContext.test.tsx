@@ -41,7 +41,8 @@ const mockStorage = (entries: Record<string, string | null>) => {
 };
 
 const TestConsumer = () => {
-  const { activeProfile, profiles, switchProfile, recordLastFetchedArticles } = useProfiles();
+  const { activeProfile, profiles, switchProfile, recordLastFetchedArticles, deleteActiveProfile } =
+    useProfiles();
 
   return (
     <>
@@ -62,6 +63,9 @@ const TestConsumer = () => {
         onPress={() => recordLastFetchedArticles(["story-1", "story-2", "story-1"])}
       >
         <Text>Record</Text>
+      </Pressable>
+      <Pressable testID="delete-active-profile" onPress={() => deleteActiveProfile()}>
+        <Text>Delete</Text>
       </Pressable>
     </>
   );
@@ -159,6 +163,75 @@ describe("ProfileContext", () => {
         PROFILES_STORAGE_KEY,
         expect.stringContaining('"lastFetchedArticleIds":["story-1","story-2"]'),
       );
+    });
+  });
+
+  describe("deleteActiveProfile", () => {
+    it("switches to another local profile and removes its scoped storage keys", async () => {
+      mockStorage({
+        [PROFILES_STORAGE_KEY]: JSON.stringify(storedProfiles),
+        [ACTIVE_PROFILE_STORAGE_KEY]: "profile-1",
+      });
+
+      render(
+        <ProfileProvider>
+          <TestConsumer />
+        </ProfileProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("active-profile")).toHaveTextContent("profile-1");
+      });
+
+      fireEvent.press(screen.getByTestId("delete-active-profile"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("active-profile")).toHaveTextContent("profile-2");
+        expect(screen.getByTestId("profile-count")).toHaveTextContent("1");
+      });
+
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles_profile-1");
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_reading_progress_profile-1");
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        PROFILES_STORAGE_KEY,
+        expect.not.stringContaining('"id":"profile-1"'),
+      );
+    });
+
+    it("creates a fresh anonymous profile when deleting the only profile", async () => {
+      const soloProfile: Profile[] = [
+        {
+          id: "solo",
+          name: "Solo Reader",
+          codename: "Quiet Wren",
+          savedArticles: [],
+          stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        },
+      ];
+      mockStorage({
+        [PROFILES_STORAGE_KEY]: JSON.stringify(soloProfile),
+        [ACTIVE_PROFILE_STORAGE_KEY]: "solo",
+      });
+
+      render(
+        <ProfileProvider>
+          <TestConsumer />
+        </ProfileProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("active-profile")).toHaveTextContent("solo");
+      });
+
+      fireEvent.press(screen.getByTestId("delete-active-profile"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("profile-count")).toHaveTextContent("1");
+        expect(screen.getByTestId("active-profile")).not.toHaveTextContent("solo");
+      });
+
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles_solo");
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_reading_progress_solo");
     });
   });
 });

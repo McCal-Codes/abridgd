@@ -26,6 +26,9 @@ interface StorageSchemaV2 {
   timestamp: number;
 }
 
+export const getSavedArticlesStorageKey = (profileId?: string | null): string =>
+  `${SAVED_ARTICLES_KEY}_${profileId ?? "default"}`;
+
 /**
  * Serialize articles to JSON and optionally compress
  */
