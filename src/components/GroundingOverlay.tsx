@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions, AccessibilityInfo } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,6 +13,7 @@ import { useSettings } from "../context/SettingsContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ScaleButton } from "./ScaleButton";
+import { useReduceMotion } from "../hooks/useReduceMotion";
 
 const { width, height } = Dimensions.get("window");
 
@@ -47,6 +48,7 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
   const { groundingColor, groundingBreathDuration, groundingCycles, showGroundingPrompts } =
     useSettings();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
   const pulseScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.6);
   const sheetTranslate = useSharedValue(140);
@@ -60,23 +62,29 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
     const holdDuration = Math.floor(breathDuration * 0.5);
     const totalCycleDuration = breathDuration * 2 + holdDuration;
 
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.15, { duration: breathDuration, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1.2, { duration: holdDuration }),
-        withTiming(0.95, { duration: breathDuration, easing: Easing.inOut(Easing.ease) }),
-      ),
-      groundingCycles,
-    );
+    if (reduceMotion) {
+      // Skip the repeating pulse/glow entirely — hold a static, calm state instead.
+      pulseScale.value = 1.1;
+      glowOpacity.value = 0.7;
+    } else {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: breathDuration, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.2, { duration: holdDuration }),
+          withTiming(0.95, { duration: breathDuration, easing: Easing.inOut(Easing.ease) }),
+        ),
+        groundingCycles,
+      );
 
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.9, { duration: breathDuration }),
-        withTiming(0.75, { duration: holdDuration }),
-        withTiming(0.45, { duration: breathDuration }),
-      ),
-      groundingCycles,
-    );
+      glowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.9, { duration: breathDuration }),
+          withTiming(0.75, { duration: holdDuration }),
+          withTiming(0.45, { duration: breathDuration }),
+        ),
+        groundingCycles,
+      );
+    }
 
     const interval = setInterval(() => {
       setInstruction("Inhale...");
@@ -95,16 +103,29 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
       clearInterval(interval);
       clearTimeout(autoCloseTimer);
     };
-  }, [groundingBreathDuration, groundingCycles]);
+  }, [groundingBreathDuration, groundingCycles, reduceMotion]);
 
   useEffect(() => {
-    sheetTranslate.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.exp) });
-  }, [sheetTranslate]);
+    sheetTranslate.value = withTiming(0, {
+      duration: reduceMotion ? 0 : 700,
+      easing: Easing.out(Easing.exp),
+    });
+  }, [sheetTranslate, reduceMotion]);
 
   useEffect(() => {
+    if (reduceMotion) {
+      promptOpacity.value = 1;
+      return;
+    }
     promptOpacity.value = 0;
     promptOpacity.value = withTiming(1, { duration: 500 });
-  }, [promptIndex, promptOpacity]);
+  }, [promptIndex, promptOpacity, reduceMotion]);
+
+  // Announce each breathing-cue change for screen reader users, since the text updates
+  // in place rather than via navigation and accessibilityLiveRegion isn't honored on iOS.
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(instruction);
+  }, [instruction]);
 
   const haloStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],

@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   Linking,
+  AccessibilityInfo,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -170,6 +171,14 @@ export const ArticleScreen: React.FC = () => {
       closer: "We’ll move through this together.",
     };
   }, [sensitiveTone]);
+
+  // Announce the warning when it interrupts the reading flow, since it replaces content
+  // in-place rather than navigating — screen readers won't pick it up automatically.
+  useEffect(() => {
+    if (!hasConsented) {
+      AccessibilityInfo.announceForAccessibility(tonePreset.heading);
+    }
+  }, [hasConsented, tonePreset.heading]);
 
   const warningSummaryCopy = useMemo(() => {
     if (sensitivePromptLevel === "minimal" && sensitivity.reasons.length) {
@@ -460,7 +469,7 @@ export const ArticleScreen: React.FC = () => {
     return (
       <View style={styles.warningContainer}>
         <View style={styles.warningContent}>
-          <Text style={styles.warningTitle}>{tonePreset.heading}</Text>
+          <Text style={styles.warningTitle} accessibilityRole="header">{tonePreset.heading}</Text>
           <Text style={styles.warningText}>{warningSummaryCopy}</Text>
           <Text style={styles.warningHelper}>{helperCopy}</Text>
         </View>

@@ -13,6 +13,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { useReduceMotion } from "../hooks/useReduceMotion";
 
 interface ScaleButtonProps extends Omit<PressableProps, "style" | "children" | "onPress"> {
   onPress: NonNullable<PressableProps["onPress"]>;
@@ -32,6 +33,7 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
 }) => {
   const isTestEnv = typeof process !== "undefined" && !!process.env.JEST_WORKER_ID;
   const scale = useSharedValue(1);
+  const reduceMotion = useReduceMotion();
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -39,20 +41,17 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
     };
   });
 
+  const animateScaleTo = (value: number) =>
+    reduceMotion ? withTiming(value, { duration: 0 }) : withSpring(value, { damping: 10, stiffness: 100 });
+
   const handlePressIn = (event: GestureResponderEvent) => {
     onPressIn?.(event);
-    scale.value = withSpring(scaleTo, {
-      damping: 10,
-      stiffness: 100,
-    });
+    scale.value = animateScaleTo(scaleTo);
   };
 
   const handlePressOut = (event: GestureResponderEvent) => {
     onPressOut?.(event);
-    scale.value = withSpring(1, {
-      damping: 10,
-      stiffness: 100,
-    });
+    scale.value = animateScaleTo(1);
   };
 
   if (isTestEnv) {
