@@ -461,6 +461,9 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                 handleTabLayout(route.key, event.nativeEvent.layout)
               }
               activeOpacity={0.75}
+              accessibilityRole="tab"
+              accessibilityLabel={label}
+              accessibilityState={{ selected: focused }}
             >
               <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
                 {IconRenderer ? IconRenderer({ color, size: iconSize, focused }) : null}
