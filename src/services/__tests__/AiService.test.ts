@@ -1,9 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { Article } from "../../types/Article";
 import { fetchArticlesByCategory } from "../RssService";
 import { fetchDailyDigest, summarizeArticle } from "../AiService";
 
 jest.mock("@react-native-async-storage/async-storage");
+jest.mock("expo-secure-store");
 jest.mock("../RssService", () => ({
   fetchArticlesByCategory: jest.fn(),
 }));
@@ -31,6 +33,7 @@ describe("AiService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
     mockFetchArticlesByCategory.mockImplementation(async (category) => {
       if (category === "Top") {
         return [
@@ -87,7 +90,7 @@ describe("AiService", () => {
   });
 
   it("uses the saved Perplexity key for article summaries", async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue("pplx-secret");
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue("pplx-secret");
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -106,7 +109,7 @@ describe("AiService", () => {
       "Saved key headline",
     );
 
-    expect(AsyncStorage.getItem).toHaveBeenCalledWith("perplexityApiKey");
+    expect(SecureStore.getItemAsync).toHaveBeenCalledWith("perplexityApiKey");
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(summary).toBe("A concise AI summary.");
   });

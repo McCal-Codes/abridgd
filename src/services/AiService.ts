@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RSS_FEEDS } from "../data/feedConfig";
 import { SETTINGS_STORAGE_KEYS } from "../shared/settings/storageKeys";
+import { getSecureValue } from "../shared/settings/secureApiKeyStorage";
 import { Article, ArticleCategory } from "../types/Article";
 import { fetchArticlesByCategory } from "./RssService";
 
@@ -76,7 +76,7 @@ const getArticleFallbackSummary = (content: string, headline: string) =>
 
 const getStoredPerplexityApiKey = async (): Promise<string> => {
   try {
-    return (await AsyncStorage.getItem(SETTINGS_STORAGE_KEYS.perplexityApiKey))?.trim() || "";
+    return (await getSecureValue(SETTINGS_STORAGE_KEYS.perplexityApiKey))?.trim() || "";
   } catch (error) {
     console.error("Failed to read Perplexity API key", error);
     return "";

@@ -3,6 +3,15 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 
+// Mock expo-secure-store (no official jest mock ships with it). Stateless by default — test
+// files that need to exercise read/write/migration behavior override with their own
+// jest.mock("expo-secure-store") + mockImplementation, same pattern used for AsyncStorage above.
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn(() => Promise.resolve(null)),
+  setItemAsync: jest.fn(() => Promise.resolve()),
+  deleteItemAsync: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock("@sentry/react-native", () => ({
   init: jest.fn(),
   addBreadcrumb: jest.fn(),
