@@ -1,6 +1,6 @@
 # Active To-Do List
 
-Last Updated: July 1, 2026
+Last Updated: August 8, 2026
 
 **Quick Reference:**
 - See [completed.md](./completed.md) for all finished tasks
@@ -129,6 +129,72 @@ Last Updated: July 1, 2026
   - **Effort**: 4 hours
   - **Definition of Done**: New `fullStoryCache.test.ts` and `useFullStoryEnrichment.test.ts` pass; `ArticleScreen.test.tsx` covers the trust panel trigger with and without provenance set.
   - **Dependencies**: TODO-043
+
+---
+
+## Full App Audit Fixes (August 8, 2026)
+
+A six-domain external-best-practices audit (OWASP Mobile Top 10, WCAG 2.2 AA, Apple HIG, App
+Store Review Guidelines, React Native/Expo official docs) produced 50 findings; the following
+items are the eight highest-priority fixes from that report. Numbered as a new block (TODO-101+)
+rather than continuing sequentially from TODO-045, to keep this batch of work visually distinct
+in history — commit messages reference these same IDs.
+
+- [x] **TODO-101** | **v1.4.3** | Add real account deletion for local profiles
+  - **Status**: Completed
+  - **Description**: Added `ProfileContext.deleteActiveProfile()` (App Store Guideline 5.1.1(v) — "Delete local data" previously just showed a "Coming soon" alert). Removes the profile plus its own saved-articles/reading-progress storage keys, falls back to another local profile or a fresh anonymous one. Global settings and the sensitive-content log are intentionally untouched.
+  - **Effort**: 2 hours
+  - **Definition of Done**: New `ProfileContext.test.tsx`/`ProfileScreen.test.tsx` cases pass; `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
+
+- [x] **TODO-102** | **v1.4.3** | Reconcile RSS compliance doc with FullStoryService behavior
+  - **Status**: Completed
+  - **Description**: `docs/compliance/rss_content_audit.md` claimed the app never scrapes HTML or displays full articles, contradicting `FullStoryService.ts`'s actual full-article extraction (Abridged Reader). Rewrote the affected sections to describe real behavior with an updated risk assessment, rather than scaling the feature back.
+  - **Effort**: 1 hour
+  - **Definition of Done**: `npm run lint:docs` passes.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
+
+- [x] **TODO-103** | **v1.4.3** | Move Perplexity API key to expo-secure-store
+  - **Status**: Completed
+  - **Description**: The user-supplied Perplexity API key was stored in plaintext AsyncStorage (billing exposure if leaked). Added `src/shared/settings/secureApiKeyStorage.ts` with a one-time migration from any legacy plaintext value.
+  - **Effort**: 2 hours
+  - **Definition of Done**: New `secureApiKeyStorage.test.ts` passes; `SettingsProvider.test.tsx`/`AiService.test.ts` updated for the new storage path.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
+
+- [x] **TODO-104** | **v1.4.3** | Add VoiceOver support to the tab bar
+  - **Status**: Completed
+  - **Description**: The custom `LiquidTabBar` had no accessibility role/label/state — with labels hidden, VoiceOver had nothing to announce for primary navigation. Added `accessibilityRole="tab"`, `accessibilityLabel`, `accessibilityState` unconditionally.
+  - **Effort**: 0.5 hours
+  - **Definition of Done**: `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
+
+- [x] **TODO-105** | **v1.4.3** | Add Reduce Motion support, BlurSheet focus trap, and sensitive-content announcements
+  - **Status**: Completed
+  - **Description**: Added `src/hooks/useReduceMotion.ts`; branched decorative springs/repeats in `BlurSheet`, `ScaleButton`, and `GroundingOverlay`'s breathing pulse to instant transitions when Reduce Motion is on. Added `accessibilityViewIsModal` to `BlurSheet`. Added `AccessibilityInfo.announceForAccessibility` calls for the sensitive-content warning and grounding breathing cues, since both replace content in place.
+  - **Effort**: 3 hours
+  - **Definition of Done**: `npx tsc --noEmit` clean; existing `ArticleScreen.test.tsx` still passes.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
+
+- [x] **TODO-106** | **v1.4.3** | Memoize ArticleCard and stabilize list rendering
+  - **Status**: Completed
+  - **Description**: Wrapped `ArticleCard` in `React.memo` and extracted stable `useCallback` `renderItem`s in Home/Section screens. `SavedScreen` doesn't use `ArticleCard` — extracted its own bespoke row into a new `React.memo`-wrapped `SavedResultRow`.
+  - **Effort**: 2 hours
+  - **Definition of Done**: `ArticleCard.test.tsx`/`HomeScreen.test.tsx`/`SectionScreen.test.tsx`/`SavedScreen.test.tsx` pass.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
+
+- [x] **TODO-107** | **v1.4.3** | Adopt consistent error logging in SettingsContext
+  - **Status**: Completed
+  - **Description**: Swept ~56 near-identical `console.error("Failed to X", e)` catch blocks to a shared `logSettingError(action, error)` helper — message-consistency only, no behavior change.
+  - **Effort**: 1 hour
+  - **Definition of Done**: `npx tsc --noEmit` clean; no test asserted on the old message shape.
+  - **Dependencies**: None
+  - **Completed**: August 8, 2026
 
 ---
 
