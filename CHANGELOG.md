@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Security
+- Applied all non-breaking `npm audit` fixes (11 of 50 flagged findings, including 1 critical). The remaining 39 are all in build-time tooling (Metro, EAS CLI, Xcode project generation, Jest) that never ships in the app itself, not runtime app code. Fixing them requires bumping the Expo SDK from 54 to 57 - a major, multi-package upgrade that needs its own dedicated pass with full re-testing, tracked here rather than rushed.
+
 ### Added
 - Added a "Why this story?" trust panel on the article screen, showing source, category, publish time, inclusion reason, and last feed refresh time.
 
