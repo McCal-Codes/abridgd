@@ -1,0 +1,619 @@
+<title>Abridgd Launch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F9F9F7;
+    --surface: #FFFFFF;
+    --surface-raised: #FFFFFF;
+    --text: #121212;
+    --text-secondary: #555555;
+    --text-tertiary: #8E8E93;
+    --border: #E0E0E0;
+    --accent: #0097A7;
+    --accent-soft: rgba(0,151,167,0.10);
+    --accent-ink: #ffffff;
+    --pop: #E8734A;
+    --pop-soft: rgba(232,115,74,0.12);
+    --amber: #C88A1E;
+    --amber-soft: rgba(200,138,30,0.12);
+    --shadow: 0 20px 60px -30px rgba(18,18,18,0.35);
+    --phone-bg: #0C0C0C;
+    --phone-surface: #1A1A1A;
+    --phone-text: #F5F5F7;
+    --phone-text-secondary: #B0B0B0;
+    --phone-border: #2A2A2A;
+    --phone-accent: #00BCD4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C0C0C;
+      --surface: #1A1A1A;
+      --surface-raised: #1F1F1F;
+      --text: #F5F5F7;
+      --text-secondary: #B0B0B0;
+      --text-tertiary: #7A7A7E;
+      --border: #2A2A2A;
+      --accent: #00BCD4;
+      --accent-soft: rgba(0,188,212,0.12);
+      --accent-ink: #06181A;
+      --shadow: 0 20px 60px -25px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0C0C0C;
+    --surface: #1A1A1A;
+    --surface-raised: #1F1F1F;
+    --text: #F5F5F7;
+    --text-secondary: #B0B0B0;
+    --text-tertiary: #7A7A7E;
+    --border: #2A2A2A;
+    --accent: #00BCD4;
+    --accent-soft: rgba(0,188,212,0.12);
+    --accent-ink: #06181A;
+    --shadow: 0 20px 60px -25px rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.01em;
+  }
+  .masthead-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pop);
+    background: var(--pop-soft);
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 88px 0 96px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+  h1.hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(42px, 5.6vw, 66px);
+    line-height: 1.03;
+    letter-spacing: -0.01em;
+    margin: 0 0 26px;
+    text-wrap: balance;
+  }
+  h1.hero-title em {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .hero-sub {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 46ch;
+    margin: 0 0 34px;
+  }
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent-ink);
+    background: var(--accent);
+    padding: 13px 22px;
+    border-radius: 12px;
+    margin-bottom: 40px;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .hero-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -8px var(--accent); }
+  .hero-cta .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-ink);
+    opacity: 0.9;
+  }
+  .hero-cta .arrow { opacity: 0.85; }
+  .hero-meta {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .stat { }
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    display: block;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 6px;
+    display: block;
+  }
+
+  /* ---------- Phone mockups ---------- */
+  .phones {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 640px;
+  }
+  .phone {
+    width: 260px;
+    border-radius: 34px;
+    background: var(--phone-bg);
+    border: 8px solid #050505;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-a { z-index: 2; transform: rotate(-4deg); transition: transform 0.35s ease; }
+  .phone-b {
+    position: absolute;
+    left: 168px;
+    top: 96px;
+    z-index: 1;
+    transform: rotate(5deg);
+    opacity: 0.94;
+    transition: transform 0.35s ease;
+  }
+  .phones:hover .phone-a { transform: rotate(-7deg) translateY(-4px); }
+  .phones:hover .phone-b { transform: rotate(8deg) translateY(-2px); }
+  @media (prefers-reduced-motion: reduce) {
+    .phone-a, .phone-b { transition: none; }
+    .phones:hover .phone-a, .phones:hover .phone-b { transform: none; }
+  }
+  .phone-screen {
+    aspect-ratio: 375 / 812;
+    padding: 30px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-family: 'Source Sans 3', sans-serif;
+    color: var(--phone-text);
+  }
+  .ph-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--phone-accent);
+    font-weight: 500;
+  }
+  .ph-h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 21px;
+    line-height: 1.12;
+    color: var(--phone-text);
+    margin: 2px 0 0;
+  }
+  .ph-p {
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--phone-text-secondary);
+    margin: 0;
+  }
+  .ph-card {
+    margin-top: 6px;
+    background: var(--phone-surface);
+    border: 1px solid var(--phone-border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .ph-card-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+  }
+  .ph-card-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--phone-accent);
+    font-weight: 500;
+  }
+  .ph-card-meta { color: var(--phone-text-secondary); }
+  .ph-card-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin: 8px 0 8px;
+    color: var(--phone-text);
+  }
+  .ph-divider { height: 1px; background: var(--phone-border); margin-bottom: 8px; }
+  .ph-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 10.5px;
+    color: var(--phone-text);
+    padding: 4px 0;
+  }
+  .ph-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--phone-accent); margin-top: 4px; flex-shrink: 0; }
+  .ph-source { color: var(--phone-text-secondary); font-size: 9px; }
+
+  .ph-articles { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .ph-article-headline {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 12.5px;
+    line-height: 1.28;
+    color: var(--phone-text);
+    margin: 0 0 4px;
+  }
+  .ph-article-meta {
+    font-size: 9px;
+    color: var(--phone-text-secondary);
+  }
+
+  .ph-footer { margin-top: auto; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .ph-dots { display: flex; gap: 5px; }
+  .ph-pdot { width: 5px; height: 5px; border-radius: 50%; background: var(--phone-border); }
+  .ph-pdot.active { width: 16px; border-radius: 3px; background: var(--phone-accent); }
+  .ph-btn {
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 9px 0;
+    border-radius: 9px;
+  }
+  .ph-btn.primary { background: #F5F5F7; color: #0C0C0C; }
+  .ph-btn.ghost { background: var(--phone-surface); color: var(--phone-text-secondary); }
+
+  /* ---------- Index strip ---------- */
+  .index {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 44px 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .index-item {
+    padding: 22px 20px;
+    border-radius: 16px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .index-item:hover { transform: translateY(-3px); border-color: var(--item-color, var(--accent)); }
+  .index-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: var(--item-soft, var(--accent-soft));
+    color: var(--item-color, var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .index-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0 0 6px;
+  }
+  .index-desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  /* ---------- Changelog ---------- */
+  .section-head {
+    padding: 64px 0 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  h2.section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 34px;
+    margin: 0;
+  }
+  .section-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+  .dispatches {
+    padding: 24px 0 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .dispatch {
+    padding: 24px;
+    border-radius: 18px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .dispatch:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+  .dispatch.wide { grid-column: 1 / -1; }
+  .kind {
+    display: inline-block;
+    margin-bottom: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tag-color, var(--accent));
+    background: var(--tag-soft, var(--accent-soft));
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .dispatch-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 19px;
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+  .dispatch-body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .also-list {
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+  }
+  .also-list li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding-left: 16px;
+    position: relative;
+  }
+  .also-list li::before {
+    content: "+";
+    position: absolute;
+    left: 0;
+    color: var(--pop);
+    font-weight: 700;
+  }
+  .also-list b { color: var(--text); font-weight: 600; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 36px 0 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+  footer .wordmark { font-size: 15px; }
+
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; padding: 56px 0 64px; }
+    .phones { min-height: 460px; margin-top: 24px; }
+    .phone { width: 200px; }
+    .phone-b { left: 128px; top: 72px; }
+    .index { grid-template-columns: 1fr; }
+    .dispatches { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 20px; }
+    .phones { transform: scale(0.9); transform-origin: top center; }
+    .also-list { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="masthead">
+    <span class="wordmark">Abridgd</span>
+    <span class="masthead-tag">TestFlight Beta · v1.4.3</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">News, abridged to you</p>
+      <h1 class="hero-title">A calmer way<br>into <em>the news.</em></h1>
+      <p class="hero-sub">We bridge the news to you — calmly, quickly, and without being tracked. No account, no clutter, just the stories worth your attention, at a reading pace you control.</p>
+      <a class="hero-cta" href="https://testflight.apple.com/join/W15tgNJY"><span class="dot"></span>Join the TestFlight beta<span class="arrow">→</span></a>
+      <div class="hero-meta">
+        <div class="stat"><span class="stat-num">0</span><span class="stat-label">Accounts required</span></div>
+        <div class="stat"><span class="stat-num">1×</span><span class="stat-label">Word at a time, RSVP reader</span></div>
+        <div class="stat"><span class="stat-num">100%</span><span class="stat-label">On‑device, no tracking</span></div>
+      </div>
+    </div>
+
+    <div class="phones">
+      <div class="phone phone-b">
+        <div class="phone-screen">
+          <div class="ph-eyebrow">Morning Brief</div>
+          <p class="ph-h1" style="font-size:17px;">Today's Brief</p>
+          <p class="ph-p">Start here, read what matters, then be done.</p>
+          <div class="ph-articles">
+            <div>
+              <p class="ph-article-headline">Acrisure Stadium ranks No. 6 by fans in new study</p>
+              <p class="ph-article-meta">WPXI · 8/23</p>
+            </div>
+            <div>
+              <p class="ph-article-headline">Drier Sunday marks start of big cool down</p>
+              <p class="ph-article-meta">WPXI · 8/23</p>
+            </div>
+            <div>
+              <p class="ph-article-headline">Annual banana split festival celebrates Latrobe's sweetest invention</p>
+              <p class="ph-article-meta">WPXI · 8/22</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone phone-a">
+        <div class="phone-screen">
+          <div class="ph-eyebrow">Welcome</div>
+          <p class="ph-h1">A calmer way into the news</p>
+          <p class="ph-p">Start with a short brief. Keep reading when you want more. No need to build the whole app in your head on day one.</p>
+          <div class="ph-card">
+            <div class="ph-card-row">
+              <span class="ph-card-eyebrow">Morning Brief</span>
+              <span class="ph-card-meta">Updated 8:15 AM</span>
+            </div>
+            <p class="ph-card-title">Today at a glance</p>
+            <div class="ph-divider"></div>
+            <div class="ph-line"><span class="ph-dot"></span>Top story, short summary</div>
+            <div class="ph-line"><span class="ph-dot"></span>Local updates</div>
+            <div class="ph-line"><span class="ph-dot"></span>Continue reading</div>
+          </div>
+          <div class="ph-footer">
+            <div class="ph-dots">
+              <span class="ph-pdot active"></span><span class="ph-pdot"></span><span class="ph-pdot"></span><span class="ph-pdot"></span><span class="ph-pdot"></span>
+            </div>
+            <div class="ph-btn primary">Next</div>
+            <div class="ph-btn ghost">Skip for now</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="index">
+    <div class="index-item" style="--item-color: var(--accent); --item-soft: var(--accent-soft);">
+      <div class="index-dot">AM</div>
+      <h3 class="index-title">Morning Brief</h3>
+      <p class="index-desc">A finite catch-up on the stories worth your attention — not an endless scroll.</p>
+    </div>
+    <div class="index-item" style="--item-color: var(--pop); --item-soft: var(--pop-soft);">
+      <div class="index-dot">1×</div>
+      <h3 class="index-title">RSVP Reader</h3>
+      <p class="index-desc">One word at a time, locked in place. Calm, focused reading at your pace.</p>
+    </div>
+    <div class="index-item" style="--item-color: var(--amber); --item-soft: var(--amber-soft);">
+      <div class="index-dot">◡</div>
+      <h3 class="index-title">Grounding</h3>
+      <p class="index-desc">An optional breathing cue before heavy stories. Skip it, or tune it in Settings.</p>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <div class="section-head">
+    <h2 class="section-title">What's new</h2>
+    <span class="section-note">Latest build · TODO‑112</span>
+  </div>
+
+  <div class="dispatches">
+    <article class="dispatch" style="--tag-color: var(--pop); --tag-soft: var(--pop-soft);">
+      <span class="kind">Typeface</span>
+      <h3 class="dispatch-title">Headlines got a personality</h3>
+      <p class="dispatch-body">Every headline in the app now sets in Fraunces instead of quietly falling back to the system font. Bold means bold, too.</p>
+    </article>
+
+    <article class="dispatch" style="--tag-color: var(--accent); --tag-soft: var(--accent-soft);">
+      <span class="kind">Fixed</span>
+      <h3 class="dispatch-title">"Next" now means next</h3>
+      <p class="dispatch-body">Onboarding could get stuck on slide one no matter how many times you tapped Next. It scrolls all the way through now.</p>
+    </article>
+
+    <article class="dispatch" style="--tag-color: var(--amber); --tag-soft: var(--amber-soft);">
+      <span class="kind">Fixed</span>
+      <h3 class="dispatch-title">No more déjà vu crash</h3>
+      <p class="dispatch-body">A rare loop between profile and saved-articles state could freeze the app on first run. Found it, killed it.</p>
+    </article>
+
+    <article class="dispatch" style="--tag-color: var(--accent); --tag-soft: var(--accent-soft);">
+      <span class="kind">Changed</span>
+      <h3 class="dispatch-title">Home got calmer</h3>
+      <p class="dispatch-body">A finite Morning Brief replaces the old open-ended feed — loads instantly from cache, refreshes quietly in the background.</p>
+    </article>
+
+    <article class="dispatch" style="--tag-color: var(--pop); --tag-soft: var(--pop-soft);">
+      <span class="kind">Changed</span>
+      <h3 class="dispatch-title">Feeds got tougher</h3>
+      <p class="dispatch-body">Rebuilt RSS fetching so one broken source can't blank a whole category anymore — everything else keeps its last-known-good stories.</p>
+    </article>
+
+    <article class="dispatch wide">
+      <span class="kind">Also in this build</span>
+      <ul class="also-list">
+        <li><b>Why this story?</b> — a trust panel on every article: source, category, and why it's in your feed</li>
+        <li><b>Real account deletion</b> — wipe your profile's saved articles and progress, on-device</li>
+        <li><b>VoiceOver support</b> — the tab bar announces itself correctly to screen readers</li>
+        <li><b>Reduce Motion</b> — every animation, including the grounding breathing cue, respects it</li>
+      </ul>
+    </article>
+  </div>
+</div>
+
+<div class="wrap">
+  <footer>
+    <span class="wordmark">Abridgd</span>
+    <span>News abridged to you — for iOS, via TestFlight.</span>
+  </footer>
+</div>
