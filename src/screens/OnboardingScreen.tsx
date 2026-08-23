@@ -352,7 +352,7 @@ export const OnboardingScreen: React.FC = () => {
     reduceMotion,
   } = useSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const listRef = useRef<FlatList<OnboardingSlide>>(null);
+  const listRef = useRef<ScrollView>(null);
   const { width, height: screenHeight } = useWindowDimensions();
   const isCompactHeight = screenHeight < 720;
   const isMediumHeight = screenHeight >= 720 && screenHeight < 820;
@@ -365,11 +365,9 @@ export const OnboardingScreen: React.FC = () => {
   const scrollToSlide = useCallback(
     (index: number, animated = true) => {
       setCurrentIndex(index);
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToIndex({ index, animated });
-      });
+      listRef.current?.scrollTo({ x: index * width, animated });
     },
-    [],
+    [width],
   );
 
   useEffect(() => {
@@ -384,14 +382,14 @@ export const OnboardingScreen: React.FC = () => {
     if (index >= 0) {
       setCurrentIndex(index);
       const timeout = setTimeout(() => {
-        listRef.current?.scrollToIndex({ index, animated: false });
+        listRef.current?.scrollTo({ x: index * width, animated: false });
       }, 50);
 
       return () => clearTimeout(timeout);
     }
 
     return undefined;
-  }, [route?.params]);
+  }, [route?.params, width]);
 
   const handleNext = useCallback(() => {
     const nextIndex = Math.min(currentIndex + 1, SLIDES.length - 1);
@@ -498,32 +496,26 @@ export const OnboardingScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
+      <ScrollView
         ref={listRef}
         testID="onboarding-list"
-        data={SLIDES}
-        renderItem={renderItem}
         horizontal
         pagingEnabled
-        initialNumToRender={SLIDES.length}
-        windowSize={SLIDES.length}
         snapToInterval={width}
         snapToAlignment="start"
         decelerationRate={reduceMotion ? "normal" : "fast"}
         disableIntervalMomentum
         bounces={false}
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
         onMomentumScrollEnd={(event) => {
           const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
           setCurrentIndex(nextIndex);
         }}
-        onScrollToIndexFailed={(info) => {
-          setTimeout(() => {
-            listRef.current?.scrollToIndex({ index: info.index, animated: false });
-          }, 50);
-        }}
-      />
+      >
+        {SLIDES.map((item) => (
+          <React.Fragment key={item.id}>{renderItem({ item })}</React.Fragment>
+        ))}
+      </ScrollView>
 
       <View
         style={[
