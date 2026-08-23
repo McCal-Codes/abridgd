@@ -415,9 +415,8 @@ const createStyles = (colors: ThemeColors) =>
     gap: spacing.sm,
   },
   continueHeadline: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: typography.size.md,
-    fontWeight: "700",
     color: colors.text,
   },
   continueMetaRow: {
@@ -473,9 +472,8 @@ const createStyles = (colors: ThemeColors) =>
 	    paddingBottom: spacing.sm,
 	  },
 	  sectionTitle: {
-	    fontFamily: typography.fontFamily.serif,
+	    fontFamily: typography.fontFamily.serifBold,
 	    fontSize: typography.size.xl,
-	    fontWeight: "700",
 	    color: colors.text,
 	  },
 	  sectionSubtitle: {
@@ -493,9 +491,8 @@ const createStyles = (colors: ThemeColors) =>
 	    borderColor: colors.border,
 	  },
 	  errorTitle: {
-	    fontFamily: typography.fontFamily.serif,
+	    fontFamily: typography.fontFamily.serifBold,
 	    fontSize: typography.size.xl,
-	    fontWeight: "700",
 	    color: colors.text,
 	    marginBottom: spacing.xs,
 	  },

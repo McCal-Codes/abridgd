@@ -62,9 +62,8 @@ const createStyles = (colors: ThemeColors) =>
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 150 },
   header: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 32,
-    fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.xs,
   },

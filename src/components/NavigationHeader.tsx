@@ -66,9 +66,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   title: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 17,
-    fontWeight: '700',
     letterSpacing: 0.2,
   },
   titleLarge: {

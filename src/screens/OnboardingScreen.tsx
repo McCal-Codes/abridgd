@@ -630,9 +630,8 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.xs,
     },
     title: {
-      fontFamily: typography.fontFamily.serif,
+      fontFamily: typography.fontFamily.serifBold,
       fontSize: 26,
-      fontWeight: "700",
       color: colors.text,
       textAlign: "center",
       marginBottom: spacing.xs,
@@ -895,9 +894,8 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textSecondary,
     },
     previewTitle: {
-      fontFamily: typography.fontFamily.serif,
+      fontFamily: typography.fontFamily.serifBold,
       fontSize: 22,
-      fontWeight: "700",
       color: colors.text,
     },
     previewDivider: {

@@ -573,9 +573,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 22,
-    fontWeight: "700",
     marginBottom: 6,
   },
   sectionDescription: {
@@ -597,9 +596,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 24,
-    fontWeight: "700",
   },
   modalBody: {
     fontFamily: typography.fontFamily.sans,
@@ -611,9 +609,8 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   sheetTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 28,
-    fontWeight: "700",
     marginBottom: 16,
   },
   sheetBody: {
@@ -647,9 +644,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   liveTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 18,
-    fontWeight: "700",
   },
   liveSubtitle: {
     fontFamily: typography.fontFamily.sans,
@@ -701,9 +697,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stackTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 16,
-    fontWeight: "700",
   },
   stackSubtitle: {
     fontFamily: typography.fontFamily.sans,

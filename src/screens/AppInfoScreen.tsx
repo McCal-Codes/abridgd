@@ -150,9 +150,8 @@ const createStyles = (colors: ThemeColors) =>
     paddingBottom: 150,
   },
   header: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 32,
-    fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.xs,
   },

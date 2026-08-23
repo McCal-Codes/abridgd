@@ -748,10 +748,9 @@ const createStyles = (colors: ThemeColors) =>
     gap: spacing.xs,
   },
   resultHeadline: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: typography.size.md,
     color: colors.text,
-    fontWeight: "700",
   },
   highlight: {
     color: colors.tint,
@@ -899,9 +898,8 @@ const createStyles = (colors: ThemeColors) =>
     gap: spacing.sm,
   },
   noResultsTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: typography.size.lg,
-    fontWeight: "700",
     color: colors.text,
     textAlign: "center",
   },

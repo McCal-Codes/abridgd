@@ -51,9 +51,8 @@ const createStyles = (colors: ThemeColors) =>
     marginBottom: spacing.xs,
   },
   title: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 28,
-    fontWeight: "700",
     color: colors.text,
   },
   subtitle: {

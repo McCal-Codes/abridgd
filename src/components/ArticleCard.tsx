@@ -96,10 +96,8 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.border,
   },
   headline: {
-    // Falls back to system font if serif not loaded, handled at App level
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: typography.size.lg,
-    fontWeight: "700", // string for weight
     color: colors.text,
     marginBottom: spacing.xs,
     lineHeight: 28, // Hardcoded for consistent rhythm

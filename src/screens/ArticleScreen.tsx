@@ -826,9 +826,8 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     alignSelf: "center",
   },
   headline: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 32, // Larger, more newspaper-like
-    fontWeight: "800",
     color: colors.text,
     marginBottom: spacing.md,
     lineHeight: 42,
@@ -1052,10 +1051,9 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     marginBottom: spacing.xl,
   },
   warningTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 32,
     lineHeight: 40,
-    fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.lg,
     textAlign: "center",

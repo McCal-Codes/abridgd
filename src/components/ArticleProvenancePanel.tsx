@@ -72,9 +72,8 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.md,
     },
     title: {
-      fontFamily: typography.fontFamily.serif,
+      fontFamily: typography.fontFamily.serifBold,
       fontSize: typography.size.xl,
-      fontWeight: "700",
       color: colors.text,
       marginBottom: spacing.sm,
     },
