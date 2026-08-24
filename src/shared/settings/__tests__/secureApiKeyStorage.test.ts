@@ -59,4 +59,22 @@ describe("secureApiKeyStorage", () => {
     expect(value).toBeNull();
     expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
   });
+
+  it("setSecureValue rejects when the underlying write fails", async () => {
+    (SecureStore.setItemAsync as jest.Mock).mockRejectedValueOnce(new Error("keychain error"));
+    await expect(setSecureValue(KEY, "secret")).rejects.toThrow("keychain error");
+  });
+
+  it("migrateFromAsyncStorage preserves the legacy value when the secure write fails", async () => {
+    // Regression test: setSecureValue used to swallow its own errors, so a failed
+    // migration write still fell through to deleting the legacy AsyncStorage copy -
+    // losing the value entirely (not in SecureStore, no longer in AsyncStorage either).
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue("legacy-plaintext");
+    (SecureStore.setItemAsync as jest.Mock).mockRejectedValueOnce(new Error("keychain error"));
+
+    const value = await migrateFromAsyncStorage(KEY);
+
+    expect(value).toBeNull();
+    expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+  });
 });

@@ -19,24 +19,22 @@ export const getSecureValue = async (key: string): Promise<string | null> => {
 };
 
 export const setSecureValue = async (key: string, value: string): Promise<void> => {
-  try {
-    if (!value) {
-      if (!isSecureStoreAvailable) {
-        await AsyncStorage.removeItem(key);
-        return;
-      }
-      await SecureStore.deleteItemAsync(key);
-      return;
-    }
-
+  // Deliberately does not catch: callers (including the legacy-value migration below)
+  // need to know a write actually failed rather than silently proceeding as if it saved.
+  if (!value) {
     if (!isSecureStoreAvailable) {
-      await AsyncStorage.setItem(key, value);
+      await AsyncStorage.removeItem(key);
       return;
     }
-    await SecureStore.setItemAsync(key, value);
-  } catch (e) {
-    console.error(`Failed to save secure value for ${key}`, e);
+    await SecureStore.deleteItemAsync(key);
+    return;
   }
+
+  if (!isSecureStoreAvailable) {
+    await AsyncStorage.setItem(key, value);
+    return;
+  }
+  await SecureStore.setItemAsync(key, value);
 };
 
 /**
