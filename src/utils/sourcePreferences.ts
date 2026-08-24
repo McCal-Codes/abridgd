@@ -23,7 +23,17 @@ const DEFAULT_PREFS: SourcePreferences = {
   customFeeds: [],
 };
 
+// A synchronous mirror of the last-loaded preferences, for callers (like the cache-only
+// read path in feed/repository.ts) that can't await AsyncStorage - e.g. a useState
+// initializer. Populated as a side effect of loadSourcePreferences/persistPreferences, so
+// it only reflects reality once something has loaded or saved prefs at least once this
+// session; before that, sync readers still see DEFAULT_PREFS.
+let syncPrefsCache: SourcePreferences = DEFAULT_PREFS;
+
+export const getSourcePreferencesSync = (): SourcePreferences => syncPrefsCache;
+
 const persistPreferences = async (prefs: SourcePreferences) => {
+  syncPrefsCache = prefs;
   await AsyncStorage.setItem(SOURCE_PREFS_STORAGE_KEY, JSON.stringify(prefs));
 };
 
@@ -34,13 +44,16 @@ export const loadSourcePreferences = async (): Promise<SourcePreferences> => {
   try {
     const stored = await AsyncStorage.getItem(SOURCE_PREFS_STORAGE_KEY);
     if (!stored) {
+      syncPrefsCache = DEFAULT_PREFS;
       return DEFAULT_PREFS;
     }
     const parsed = JSON.parse(stored);
-    return {
+    const prefs: SourcePreferences = {
       overrides: parsed.overrides || {},
       customFeeds: parsed.customFeeds || [],
     };
+    syncPrefsCache = prefs;
+    return prefs;
   } catch (error) {
     console.warn("Failed to load source preferences", error);
     return DEFAULT_PREFS;

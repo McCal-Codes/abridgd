@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { Article, ArticleCategory } from "../../types/Article";
 import { FeedSource } from "../../data/feedConfig";
 import { ErrorCode, ErrorHandler } from "../../utils/errorCodes";
-import { loadSourcePreferences, isSourceEnabled } from "../../utils/sourcePreferences";
+import { loadSourcePreferences, isSourceEnabled, getSourcePreferencesSync } from "../../utils/sourcePreferences";
 import { getSourcesForCategory, getSourceDomain } from "./sourceRegistry";
 import { fetchFeedXml, fetchViaRss2Json } from "./transport";
 import { parseFeedXml, normalizeFeedItem } from "./parser";
@@ -72,9 +72,12 @@ const fetchSingleSource = async (
 ): Promise<{ snapshot: FeedCacheSnapshot | null; failure: FeedFetchFailure | null }> => {
   const now = Date.now();
   const sourceDomain = getSourceDomain(source);
+  // Both call sites below are on the successful-fetch path, building the snapshot that's
+  // about to be written with fetchedAt: now - so provenance should report that same "now",
+  // not the pre-fetch cached snapshot (which is always one fetch behind what just succeeded).
   const provenance = () => ({
     sourceDomain,
-    sourceLastRefreshedAt: getSourceSnapshot(category, source.name)?.fetchedAt ?? null,
+    sourceLastRefreshedAt: now,
   });
 
   try {
@@ -187,8 +190,14 @@ const resolveSourcesToFetch = async (category: ArticleCategory): Promise<FeedSou
 const mergeCategoryFromCache = (category: ArticleCategory, sourceNames: string[]): FeedLoadResult => {
   const snapshots = getCategorySnapshots(category, sourceNames);
   const articles = sortArticles(snapshots.flatMap((snapshot) => snapshot.articles));
-  const lastUpdated = snapshots.length ? Math.max(...snapshots.map((snapshot) => snapshot.fetchedAt)) : null;
-  const stale = lastUpdated !== null && Date.now() - lastUpdated > SOFT_TTL_MS;
+  // lastUpdated (display) uses the most recent source; stale (does this need a refetch?)
+  // uses the oldest included source - taking the max for both would mark the merged
+  // result fresh whenever any single source just refreshed, even while other sources
+  // in the same merge are still serving old, stale-while-revalidate-eligible snapshots.
+  const fetchedTimes = snapshots.map((snapshot) => snapshot.fetchedAt);
+  const lastUpdated = fetchedTimes.length ? Math.max(...fetchedTimes) : null;
+  const oldestUpdated = fetchedTimes.length ? Math.min(...fetchedTimes) : null;
+  const stale = oldestUpdated !== null && Date.now() - oldestUpdated > SOFT_TTL_MS;
   return { articles, stale, lastUpdated };
 };
 
@@ -242,7 +251,14 @@ export const fetchCategory = async (
 };
 
 export const getCachedCategory = (category: ArticleCategory): FeedLoadResult | null => {
-  const sources = getSourcesForCategory(category);
+  const allSources = getSourcesForCategory(category);
+  const { overrides } = getSourcePreferencesSync();
+  let sources = allSources.filter((src) =>
+    isSourceEnabled(overrides, category, src.name, src.defaultEnabled ?? true),
+  );
+  if (sources.length === 0) {
+    sources = allSources.filter((src) => src.defaultEnabled ?? true);
+  }
   const result = mergeCategoryFromCache(category, sources.map((source) => source.name));
   return result.articles.length > 0 ? result : null;
 };

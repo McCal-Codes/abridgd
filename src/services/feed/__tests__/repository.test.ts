@@ -12,6 +12,7 @@ jest.mock("../transport", () => ({
 const mockLoadSourcePrefs = jest.fn(async () => ({ overrides: {}, customFeeds: [] }));
 jest.mock("../../../utils/sourcePreferences", () => ({
   loadSourcePreferences: () => mockLoadSourcePrefs(),
+  getSourcePreferencesSync: () => ({ overrides: {}, customFeeds: [] }),
   isSourceEnabled: (
     overrides: Record<string, boolean>,
     category: string,
