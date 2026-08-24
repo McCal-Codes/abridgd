@@ -494,17 +494,10 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       throw new Error("No active profile to delete");
     }
 
-    try {
-      await clearSavedArticles(getSavedArticlesStorageKey(profileToDelete.id));
-    } catch (e) {
-      console.error("Failed to remove saved articles for deleted profile", e);
-    }
-
-    try {
-      await clearAllReadingProgress(getReadingProgressStorageKey(profileToDelete.id));
-    } catch (e) {
-      console.error("Failed to remove reading progress for deleted profile", e);
-    }
+    // Let storage errors propagate instead of swallowing them - if we can't actually
+    // clear the on-device data, the caller must not report the deletion as successful.
+    await clearSavedArticles(getSavedArticlesStorageKey(profileToDelete.id));
+    await clearAllReadingProgress(getReadingProgressStorageKey(profileToDelete.id));
 
     const remaining = profiles.filter((p) => p.id !== profileToDelete.id);
 
@@ -518,7 +511,11 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     const used = new Set<string>();
     const fallback: Profile = withProfileDefaults(
       {
-        id: "anonymous",
+        // A fresh uuid, not the "anonymous" literal reused elsewhere: SavedArticlesContext
+        // and ReadingProgressContext only reload when activeProfile.id changes, so reusing
+        // the just-deleted profile's id would leave their in-memory state stale, and a
+        // later save/progress update would resurrect the data we just cleared.
+        id: uuidv4(),
         name: "Reader",
         codename: generateCodename(used),
         stats: {

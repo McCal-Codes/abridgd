@@ -233,5 +233,92 @@ describe("ProfileContext", () => {
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles_solo");
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_reading_progress_solo");
     });
+
+    it("gives the fallback profile a fresh id, not the deleted profile's own id", async () => {
+      // Regression test: the fallback used to hardcode id "anonymous". Deleting a profile
+      // that was itself "anonymous" left activeProfile.id unchanged across the delete, so
+      // SavedArticlesContext/ReadingProgressContext (which only reload on id change) kept
+      // serving stale in-memory data that could get re-persisted under the same key.
+      const soloAnonymousProfile: Profile[] = [
+        {
+          id: "anonymous",
+          name: "Reader",
+          codename: "Quiet Wren",
+          savedArticles: [],
+          stats: { articlesRead: 0, savedActions: 0, lastReadAt: null },
+        },
+      ];
+      mockStorage({
+        [PROFILES_STORAGE_KEY]: JSON.stringify(soloAnonymousProfile),
+        [ACTIVE_PROFILE_STORAGE_KEY]: "anonymous",
+      });
+
+      render(
+        <ProfileProvider>
+          <TestConsumer />
+        </ProfileProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("active-profile")).toHaveTextContent("anonymous");
+      });
+
+      fireEvent.press(screen.getByTestId("delete-active-profile"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("active-profile")).not.toHaveTextContent("anonymous");
+      });
+    });
+
+    it("does not report success if clearing on-device storage fails", async () => {
+      mockStorage({
+        [PROFILES_STORAGE_KEY]: JSON.stringify(storedProfiles),
+        [ACTIVE_PROFILE_STORAGE_KEY]: "profile-1",
+      });
+      (AsyncStorage.removeItem as jest.Mock).mockRejectedValueOnce(new Error("disk full"));
+
+      let caughtError: unknown = null;
+      const ThrowingConsumer = () => {
+        const { activeProfile, deleteActiveProfile } = useProfiles();
+        return (
+          <>
+            <View testID="active-profile">
+              <Text>{activeProfile?.id ?? "none"}</Text>
+            </View>
+            <Pressable
+              testID="delete-active-profile"
+              onPress={async () => {
+                try {
+                  await deleteActiveProfile();
+                } catch (e) {
+                  caughtError = e;
+                }
+              }}
+            >
+              <Text>Delete</Text>
+            </Pressable>
+          </>
+        );
+      };
+
+      render(
+        <ProfileProvider>
+          <ThrowingConsumer />
+        </ProfileProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("active-profile")).toHaveTextContent("profile-1");
+      });
+
+      fireEvent.press(screen.getByTestId("delete-active-profile"));
+
+      await waitFor(() => {
+        expect(caughtError).not.toBeNull();
+      });
+
+      // Deletion aborted - still on the original profile, not silently switched away.
+      expect(screen.getByTestId("active-profile")).toHaveTextContent("profile-1");
+    });
   });
 });
