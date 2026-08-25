@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mccalmedia.abridged",
-      "buildNumber": "1",
+      "buildNumber": "35",
       "entitlements": {
         "com.apple.developer.applesignin": [
           "Default"
