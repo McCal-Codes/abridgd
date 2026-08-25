@@ -13,8 +13,11 @@ export type FastXmlAttributeNode = {
   "@_url"?: string;
   "@_type"?: string;
   "@_href"?: string;
+  "@_width"?: string | number;
   [key: string]: unknown;
 };
+
+export type FastXmlAuthorNode = FastXmlTextNode | { name?: FastXmlTextNode };
 
 export interface RawFeedItem {
   title?: FastXmlTextNode;
@@ -31,6 +34,8 @@ export interface RawFeedItem {
   enclosure?: FastXmlAttributeNode;
   "media:content"?: FastXmlAttributeNode | FastXmlAttributeNode[];
   "itunes:image"?: FastXmlAttributeNode;
+  author?: FastXmlAuthorNode;
+  "dc:creator"?: FastXmlTextNode;
 }
 
 /** Fully-typed, post-extraction article shape. Alias of Article for now — normalizeFeedItem

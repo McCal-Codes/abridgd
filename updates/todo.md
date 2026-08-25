@@ -198,6 +198,71 @@ in history — commit messages reference these same IDs.
 
 ---
 
+## Reader-First Quality Sweep (August 25, 2026)
+
+A follow-up pass fixing UI elements that looked functional but weren't (a fake Apple Sign-In
+button, a "Quiet Hours" toggle with no notification system to suppress), plus real bugs in
+article parsing and the bottom tab bar. Numbered starting at TODO-115 — TODO-108 through
+TODO-112 were already used by the Fraunces/serif-typeface work (see `e85fd96`/`61bb41e`).
+
+- [x] **TODO-115** | **v1.5.0** | Wire up real Apple Sign-In
+  - **Status**: Completed
+  - **Description**: `SignInWithApple.tsx` previously showed a "Coming soon" alert despite `expo-apple-authentication` being installed and the `com.apple.developer.applesignin` entitlement already present in `app.json`. Rewrote it to use Apple's own `AppleAuthenticationButton`, gated by `isAvailableAsync()`, silent on user-cancel. `ProfileScreen`'s Apple Account section is now state-aware (shows Connected/Local-only correctly).
+  - **Effort**: 2 hours
+  - **Definition of Done**: New `SignInWithApple.test.tsx` passes; `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 25, 2026
+
+- [x] **TODO-116** | **v1.5.0** | Redesign the Profile screen
+  - **Status**: Completed
+  - **Description**: Destructive "Delete local data" now uses `GlassButton`'s existing `destructive` prop instead of looking like a neutral action. Added a `Skeleton` loading state instead of "—" placeholders. Added inline "Saved" feedback after the profile-label field blurs. Split the overloaded "Account & backup" card into Sign in / Backup & transfer / Danger zone. Avatar now shows initials on a profile-derived color (`src/utils/avatar.ts`) instead of a generic icon.
+  - **Effort**: 3 hours
+  - **Definition of Done**: `ProfileScreen.test.tsx` passes; `npx tsc --noEmit` clean.
+  - **Dependencies**: TODO-115
+  - **Completed**: August 25, 2026
+
+- [x] **TODO-117** | **v1.5.0** | Extract and display author bylines
+  - **Status**: Completed
+  - **Description**: No author field existed anywhere in the app. Added `author?: string` to the `Article` type; `parser.ts` now extracts `dc:creator`, RSS `<author>` (including the "email (Name)" convention), and Atom `<author><name>`. `FullStoryService.ts` scrapes a byline from the full article page as a fallback when the feed has none, threaded through `fullStoryCache` → `useFullStoryEnrichment` → `ArticleScreen`. Rendered in both `ArticleCard` and `ArticleScreen` when present.
+  - **Effort**: 2.5 hours
+  - **Definition of Done**: New author-extraction tests in `parser.test.ts`, `useFullStoryEnrichment.test.ts`; `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 25, 2026
+
+- [x] **TODO-118** | **v1.5.0** | Fix photo parsing and rendering bugs
+  - **Status**: Completed
+  - **Description**: New `ArticleBodyImage.tsx` sizes in-article images by their true aspect ratio instead of a hard-cropped 300px band, with a visible "Image unavailable" fallback instead of a blank box on load failure (same fallback added to `ArticleCard`'s thumbnail). `parser.ts` now picks the image with the largest declared width when feeds report one, instead of "whichever source resolves first" — a low-res `enclosure` icon no longer beats a full-size `media:content` photo. Caption/credit detection widened to catch "AP Photo", "Getty Images", "Photo courtesy", etc.
+  - **Effort**: 3 hours
+  - **Definition of Done**: New `ArticleBodyImage.test.tsx`, `ArticleCard.test.tsx` cases; `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 25, 2026
+
+- [x] **TODO-119** | **v1.5.0** | Fix HTML entity decoding and summary truncation
+  - **Status**: Completed
+  - **Description**: `sanitizeText` (feed parsing) and `decodeEntities` (full-content rendering) each hand-maintained their own drifting entity list, leaking literal `&eacute;`/`&#8217;`-style text on some sources. Unified into a shared `src/utils/htmlEntities.ts` with real numeric-entity decoding. Article summaries now truncate at a word boundary instead of mid-word/mid-sentence. Removed `extractParagraphsFromHtml`, dead code never wired into rendering.
+  - **Effort**: 1.5 hours
+  - **Definition of Done**: New `htmlEntities.test.ts`; `parser.test.ts` truncation cases; `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 25, 2026
+
+- [x] **TODO-120** | **v1.5.0** | Fix tab bar badge anchoring and add Reduce Transparency support
+  - **Status**: Completed
+  - **Description**: The "Saved" tab badge was positioned with fixed pixel offsets from the tab button's edge rather than the icon itself, drifting off-center whenever tab width, icon size, or label visibility changed. Now anchored to a wrapper that hugs the icon's actual size. Added `reduceTransparency` to `SettingsContext`, backed by `AccessibilityInfo.isReduceTransparencyEnabled()` — `LiquidTabBar` now forces its blur off and background fully opaque when that system setting is on, regardless of the in-app blur preference (previously ignored entirely).
+  - **Effort**: 1.5 hours
+  - **Definition of Done**: `npx tsc --noEmit` clean; full suite (172 tests) passes.
+  - **Dependencies**: None
+  - **Completed**: August 25, 2026
+
+- [x] **TODO-121** | **v1.5.0** | Remove unused `rss-parser` dependency
+  - **Status**: Completed
+  - **Description**: Listed in `package.json` with zero usages anywhere in `src/` — the actual feed pipeline uses `fast-xml-parser`. Removed via `npm uninstall`.
+  - **Effort**: 0.1 hours
+  - **Definition of Done**: `npx tsc --noEmit` clean.
+  - **Dependencies**: None
+  - **Completed**: August 25, 2026
+
+---
+
 ## 📋 Version Roadmap
 
 ### 🚀 v1.1.0 (Current) — Build & Branding Complete
@@ -280,11 +345,11 @@ in history — commit messages reference these same IDs.
   - **Definition of Done**: Digest settings persist, can enable/disable per topic
   - **Dependencies**: SettingsContext, DigestScreen
 
-- [ ] **TODO-012** | **v1.3.0** | Add push notifications for breaking news
-  - **Status**: 🔜 Not Started
-  - **Description**: Send opt-in push notifications for high-priority articles
-  - **Effort**: 3 hours
-  - **Definition of Done**: Notification permissions requested, breaking news triggers notification
+- [ ] **TODO-012** | **Superseded** | Add push notifications for breaking news
+  - **Status**: 🔁 Superseded — see the "Reader-First Quality Sweep" Phase 2 replan below (not yet ticketed under a TODO-1xx id)
+  - **Description**: Originally scoped as opt-in breaking-news alerts at a 3-hour estimate. That estimate assumed client-only work; the app has no backend at all (RSS fetching is 100% on-device), so real push needs a new server-side poller plus EAS push credentials. The "breaking news" framing also cuts against this app's own stated "Calm — no distracting notifications" positioning (docs/product/vision.md, docs/product/FEATURES.md). Replanned as a gentler, opt-in "today's digest is ready" notification backed by a new dedicated Supabase project, scoped as its own effort rather than a quick add-on.
+  - **Effort**: ~~3 hours~~ — see replan (backend + app work, multi-session effort)
+  - **Definition of Done**: N/A — tracked going forward under the Phase 2 plan
   - **Dependencies**: None
 
 - [ ] **TODO-013** | **v1.3.0** | Implement article source management

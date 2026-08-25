@@ -1,4 +1,5 @@
 import { FastXmlTextNode } from "./types";
+import { decodeHtmlEntities } from "../../utils/htmlEntities";
 
 export const calculateReadTime = (text: string): number => {
   const wordsPerMinute = 200;
@@ -38,16 +39,12 @@ export const sanitizeText = (text: FastXmlTextNode | undefined | null): string =
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\/div>/gi, "\n\n")
     .replace(/<\/li>/gi, "\n")
-    .replace(/<[^>]*>?/gm, "") // Strip remaining tags
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8216;/g, "'")
-    .replace(/&#039;/g, "'") // Fix common apostrophe issue
-    .replace(/&#39;/g, "'") // Alternate apostrophe
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"');
+    .replace(/<\/h[1-6]>/gi, "\n\n")
+    .replace(/<\/blockquote>/gi, "\n\n")
+    .replace(/<\/tr>/gi, "\n")
+    .replace(/<[^>]*>?/gm, ""); // Strip remaining tags
+
+  clean = decodeHtmlEntities(clean);
 
   clean = clean
     .replace(/\s+\n/g, "\n")
@@ -55,22 +52,4 @@ export const sanitizeText = (text: FastXmlTextNode | undefined | null): string =
     .trim();
 
   return clean;
-};
-
-export const extractParagraphsFromHtml = (html: string): string => {
-  if (!html) return "";
-  const paragraphMatches = html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
-  if (!paragraphMatches || paragraphMatches.length === 0) {
-    return sanitizeText(html);
-  }
-
-  const paragraphs = paragraphMatches
-    .map((p) => {
-      // strip the wrapping <p> tags but keep inner text
-      const inner = p.replace(/^<p[^>]*>/i, "").replace(/<\/p>$/i, "");
-      return sanitizeText(inner);
-    })
-    .filter(Boolean);
-
-  return paragraphs.join("\n\n");
 };

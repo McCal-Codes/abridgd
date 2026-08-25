@@ -1,132 +1,90 @@
 /**
- * Sign in with Apple Component (Temporarily Disabled)
+ * Sign in with Apple Component
  *
- * Apple sign-in is paused while entitlements are finalized. Shows a friendly
- * “coming soon” prompt and keeps users on their local profile.
+ * Wraps Apple's own AppleAuthenticationButton, which the App Store Guidelines
+ * require for starting the sign-in flow (a custom button is not permitted).
  */
 
-import React, { useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
-import { typography } from "../theme/typography";
-import { spacing } from "../theme/spacing";
-import { ErrorCode, ErrorHandler } from "../utils/errorCodes";
-import { useThemedStyles } from "../theme/useThemedStyles";
+import React, { useCallback, useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { useThemeOptional } from "../theme/ThemeContext";
 
-interface SignInWithAppleProps {
-  onSuccess?: (user: any) => void;
-  onError?: (error: any) => void;
+interface SignInWithAppleUser {
+  id: string;
+  email?: string;
+  displayName?: string;
 }
 
-/**
- * Sign in with Apple Button
- *
- * TODO: Install expo-apple-authentication
- * $ npx expo install expo-apple-authentication
- *
- * TODO: Configure entitlements in app.json:
- * "ios": {
- *   "entitlements": {
- *     "com.apple.developer.applesignin": ["Default"]
- *   }
- * }
- *
- * TODO: Add Apple Sign In capability in Xcode project
- */
-export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onError }) => {
-  const { colors, isDark } = useThemeOptional();
-  const styles = useThemedStyles(createStyles);
+interface SignInWithAppleProps {
+  onSuccess?: (user: SignInWithAppleUser) => void;
+  onError?: (error: unknown) => void;
+}
 
-  const handleComingSoon = useCallback(() => {
-    const error = ErrorHandler.createError(
-      ErrorCode.FEATURE_NOT_IMPLEMENTED,
-      "Sign in with Apple is temporarily disabled",
-    );
+export const SignInWithApple: React.FC<SignInWithAppleProps> = ({ onSuccess, onError }) => {
+  const { isDark } = useThemeOptional();
+  const [isAvailable, setIsAvailable] = useState(false);
 
-    onError?.(error);
+  useEffect(() => {
+    let mounted = true;
+    AppleAuthentication.isAvailableAsync().then((available) => {
+      if (mounted) setIsAvailable(available);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-    Alert.alert(
-      "Coming soon",
-      "Sign in with Apple is disabled while we finish setup. Your local profile stays active for now.",
-    );
-  }, [onError]);
+  const handlePress = useCallback(async () => {
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const displayName = credential.fullName
+        ? AppleAuthentication.formatFullName(credential.fullName).trim()
+        : "";
+
+      onSuccess?.({
+        id: credential.user,
+        email: credential.email || undefined,
+        displayName: displayName || undefined,
+      });
+    } catch (error: any) {
+      // The user backed out of the native sheet - not a failure worth surfacing.
+      if (error?.code === "ERR_REQUEST_CANCELED") return;
+      onError?.(error);
+    }
+  }, [onSuccess, onError]);
+
+  if (!isAvailable) return null;
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={[
-          styles.button,
-          styles.buttonDisabled,
-          { backgroundColor: isDark ? colors.surface : "#000" },
-        ]}
-        onPress={handleComingSoon}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel="Sign in with Apple coming soon"
-        accessibilityHint="Feature is temporarily disabled; your local profile remains active."
-      >
-        <Text style={[styles.buttonText, { color: isDark ? colors.text : "#FFF" }]}>
-          Sign in with Apple
-        </Text>
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>Coming soon</Text>
-        </View>
-      </TouchableOpacity>
-
-      <Text style={styles.disclaimer}>
-        Sync and backup will be enabled when Sign in with Apple launches. You’re using your local
-        profile for now.
-      </Text>
+      <AppleAuthentication.AppleAuthenticationButton
+        buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+        buttonStyle={
+          isDark
+            ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+            : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+        }
+        cornerRadius={10}
+        style={styles.button}
+        onPress={handlePress}
+      />
     </View>
   );
 };
 
-const createStyles = (colors: ThemeColors) =>
-  StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     width: "100%",
-    alignItems: "center",
   },
   button: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 8,
     width: "100%",
-    gap: spacing.sm,
+    height: 48,
   },
-  buttonDisabled: {
-    opacity: 0.75,
-  },
-  buttonText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  disclaimer: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.xl,
-  },
-  tag: {
-    backgroundColor: `${colors.surface}60`,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    marginLeft: spacing.sm,
-    borderWidth: 1,
-    borderColor: `${colors.textSecondary}25`,
-  },
-  tagText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  });
+});

@@ -3,6 +3,67 @@ import { Article, ArticleCategory } from "../../types/Article";
 import { RawFeedItem, ProvenanceContext } from "./types";
 import { calculateReadTime, extractMediaFromHtml, sanitizeText } from "./htmlUtils";
 
+const SUMMARY_MAX_LENGTH = 150;
+
+/** Truncates at the nearest word boundary instead of cutting mid-word/mid-sentence,
+ * unless the last word before the limit starts too early in the string to be worth
+ * keeping (in which case a hard cut reads better than an overly short summary). */
+const truncateAtWordBoundary = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text;
+  const slice = text.slice(0, maxLength);
+  const lastSpace = slice.lastIndexOf(" ");
+  const cut = lastSpace > maxLength * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return `${cut.trimEnd()}…`;
+};
+
+/** RSS 2.0 <author> is conventionally "email@example.com (Full Name)"; Atom's
+ * <author><name>...</name></author> and RSS's <dc:creator> are usually a plain name. */
+const extractAuthorName = (raw: unknown): string | undefined => {
+  if (!raw) return undefined;
+
+  let text: string | undefined;
+  if (typeof raw === "string") {
+    text = raw;
+  } else if (typeof raw === "object") {
+    const obj = raw as { "#text"?: string; name?: unknown };
+    if (obj.name) {
+      text = typeof obj.name === "string" ? obj.name : ((obj.name as any)?.["#text"] as string | undefined);
+    } else if (obj["#text"]) {
+      text = obj["#text"];
+    }
+  }
+  if (!text) return undefined;
+
+  const parenMatch = text.match(/\(([^)]+)\)/);
+  const candidate = parenMatch ? parenMatch[1] : text;
+
+  const cleaned = sanitizeText(candidate).replace(/^by\s+/i, "").trim();
+  if (!cleaned || cleaned.includes("@") || cleaned.length > 80) return undefined;
+  return cleaned;
+};
+
+const parseDeclaredWidth = (val: unknown): number => {
+  const n = typeof val === "string" ? parseInt(val, 10) : typeof val === "number" ? val : NaN;
+  return Number.isFinite(n) ? n : 0;
+};
+
+type ImageCandidate = { url: string; width: number; priority: number };
+
+/** Picks the best imageUrl among candidates: prefer the largest declared width when any
+ * candidate reports one, otherwise fall back to source priority (media:content is
+ * purpose-built article media; enclosure is often reused for a generic/low-res thumbnail
+ * on WordPress-based sources, so it ranks below media:content and itunes:image). */
+const pickBestImage = (candidates: ImageCandidate[]): string | undefined => {
+  if (!candidates.length) return undefined;
+  const withWidth = candidates.filter((c) => c.width > 0);
+  const pool = withWidth.length ? withWidth : candidates;
+  return pool.reduce((best, c) => {
+    if (!best) return c;
+    if (c.width !== best.width) return c.width > best.width ? c : best;
+    return c.priority < best.priority ? c : best;
+  }).url;
+};
+
 const xmlParser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
@@ -46,18 +107,21 @@ export const normalizeFeedItem = (
   const summaryText = sanitizeText(item.description || item.title || "");
   const headline = sanitizeText(textOf(item.title)?.trim() || "Untitled");
 
-  // Extract image from enclosure or media:content or itunes:image
+  // Extract image from enclosure, media:content, or itunes:image. Candidates are scored
+  // by declared width (falling back to source priority) rather than "whichever resolves
+  // first" — see pickBestImage for why.
   let imageUrl: string | undefined;
   const mediaImages = new Set<string>();
   const mediaVideos = new Set<string>();
+  const imageCandidates: ImageCandidate[] = [];
 
   if (item.enclosure && item.enclosure["@_url"]) {
     const url = item.enclosure["@_url"];
     if (item.enclosure["@_type"]?.startsWith("video")) {
       mediaVideos.add(url);
     } else {
-      imageUrl = imageUrl || url;
       mediaImages.add(url);
+      imageCandidates.push({ url, width: parseDeclaredWidth(item.enclosure["@_width"]), priority: 2 });
     }
   }
 
@@ -71,17 +135,19 @@ export const normalizeFeedItem = (
       if (typeof type === "string" && type.startsWith("video")) {
         mediaVideos.add(url);
       } else {
-        if (!imageUrl) imageUrl = url;
         mediaImages.add(url);
+        imageCandidates.push({ url, width: parseDeclaredWidth(mc?.["@_width"]), priority: 0 });
       }
     });
   }
 
   if (item["itunes:image"] && item["itunes:image"]["@_href"]) {
     const url = item["itunes:image"]["@_href"];
-    if (!imageUrl) imageUrl = url;
     mediaImages.add(url);
+    imageCandidates.push({ url, width: 0, priority: 1 });
   }
+
+  imageUrl = pickBestImage(imageCandidates);
 
   // Fallback: Try to find an image in the description or content
   if (!imageUrl) {
@@ -111,6 +177,8 @@ export const normalizeFeedItem = (
   bodyMedia.images.forEach((img) => mediaImages.add(img));
   bodyMedia.videos.forEach((vid) => mediaVideos.add(vid));
 
+  const author = extractAuthorName(item["dc:creator"]) || extractAuthorName(item.author);
+
   const articleId =
     extractId(item.guid) ||
     extractId(item.id) ||
@@ -127,9 +195,10 @@ export const normalizeFeedItem = (
   return {
     id: articleId,
     headline,
-    summary: summaryText.substring(0, 150) + (summaryText.length > 150 ? "..." : ""),
+    summary: truncateAtWordBoundary(summaryText, SUMMARY_MAX_LENGTH),
     body: content, // Pass RAW content
     source: sourceName,
+    author,
     timestamp,
     publishedAt,
     category,

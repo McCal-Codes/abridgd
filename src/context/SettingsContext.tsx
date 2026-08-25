@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
+import { AccessibilityInfo } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
 import { APP_VERSION } from "../config/appInfo";
@@ -113,6 +114,7 @@ interface SettingsContextType {
   setAnimationsEnabled: (enabled: boolean) => Promise<void>;
   reduceMotion: boolean; // honor system setting, allow override
   setReduceMotion: (enabled: boolean) => Promise<void>;
+  reduceTransparency: boolean; // read-only, mirrors the OS "Reduce Transparency" setting
   animationScale: number; // 0.5 - 2.0
   setAnimationScale: (scale: number) => Promise<void>;
   sensitivePromptLevel: SensitivePromptLevel;
@@ -230,6 +232,7 @@ const defaultSettingsContext: SettingsContextType = {
   setAnimationsEnabled: async (_b: boolean) => {},
   reduceMotion: false,
   setReduceMotion: async (_b: boolean) => {},
+  reduceTransparency: false,
   animationScale: 1.0,
   setAnimationScale: async (_n: number) => {},
   sensitivePromptLevel: "full",
@@ -332,6 +335,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Global animation controls
   const [animationsEnabled, setAnimationsEnabledState] = useState(true);
   const [reduceMotion, setReduceMotionState] = useState(false);
+  const [reduceTransparency, setReduceTransparency] = useState(false);
   const [animationScale, setAnimationScaleState] = useState(1.0);
   const [sensitivePromptLevel, setSensitivePromptLevelState] =
     useState<SensitivePromptLevel>("full");
@@ -364,6 +368,28 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     loadSettings();
+  }, []);
+
+  // Reduce Transparency is a live OS accessibility setting, not something the app persists —
+  // read it on mount and stay in sync if the user flips it in system Settings while the app
+  // is open, same as iOS itself does for Reduce Motion.
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceTransparencyEnabled?.()
+      .then((enabled) => {
+        if (mounted) setReduceTransparency(enabled);
+      })
+      .catch(() => {});
+
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceTransparencyChanged",
+      (enabled: boolean) => setReduceTransparency(enabled),
+    );
+
+    return () => {
+      mounted = false;
+      subscription?.remove?.();
+    };
   }, []);
 
   const loadSettings = async () => {
@@ -1227,6 +1253,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setAnimationsEnabled,
         reduceMotion,
         setReduceMotion,
+        reduceTransparency,
         animationScale,
         setAnimationScale,
         sensitivePromptLevel,

@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Image,
   ActivityIndicator,
   Linking,
   AccessibilityInfo,
@@ -30,6 +29,7 @@ import { ScaleButton } from "../components/ScaleButton";
 import { GroundingOverlay } from "../components/GroundingOverlay";
 import { BlurSheet } from "../components/BlurSheet";
 import { ArticleProvenancePanel } from "../components/ArticleProvenancePanel";
+import { ArticleBodyImage } from "../components/ArticleBodyImage";
 import { parseHtmlContent } from "../utils/contentParser";
 import { useFullStoryEnrichment } from "../hooks/useFullStoryEnrichment";
 import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle, Info } from "lucide-react-native";
@@ -47,6 +47,11 @@ import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
+
+// Matches common photo-credit phrasing: "Photo:", "Credit:", "Photo by ...", wire-service
+// attributions ("AP Photo", "Getty Images", "Associated Press"), and "Photo/Courtesy of" lines.
+const CREDIT_PATTERN =
+  /^(photo|credit|courtesy|image)s?[:\s]|\b(AP Photo|Getty Images?|Associated Press|Photo by|Photo courtesy|Courtesy of)\b/i;
 
 export const ArticleScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -257,7 +262,11 @@ export const ArticleScreen: React.FC = () => {
   };
 
   // Full-story enrichment (cache-first, deduped) — upgrades bodyContent once/if it resolves.
-  const { enrichedBody, isLoadingFullStory } = useFullStoryEnrichment(article, bodyContent.length);
+  const { enrichedBody, enrichedAuthor, isLoadingFullStory } = useFullStoryEnrichment(
+    article,
+    bodyContent.length,
+  );
+  const displayAuthor = article.author || enrichedAuthor;
 
   useEffect(() => {
     if (enrichedBody && enrichedBody.length > bodyContent.length) {
@@ -571,6 +580,12 @@ export const ArticleScreen: React.FC = () => {
             <Text style={styles.source}>{article.source}</Text>
             <Text style={styles.dot}>•</Text>
             <Text style={styles.timestamp}>{article.timestamp}</Text>
+            {displayAuthor ? (
+              <>
+                <Text style={styles.dot}>•</Text>
+                <Text style={styles.timestamp}>By {displayAuthor}</Text>
+              </>
+            ) : null}
           </View>
 
           <View style={styles.divider} />
@@ -636,12 +651,12 @@ export const ArticleScreen: React.FC = () => {
 
           {parsedContent.map((node, index) => {
             if (node.type === "text" && node.text) {
-              // Check for credit pattern (Credits often start with "Photo:" or are short italicized lines at end)
-              // This is a naive heuristic but works for many feeds
+              // Check for credit pattern (Credits often start with "Photo:"/"Credit:" or name a
+              // wire service/photo agency). A naive heuristic, but covers far more real-world
+              // patterns than checking only "Photo:"/"Credit:" prefixes.
               const isCredit =
-                node.text.startsWith("Photo:") ||
-                node.text.startsWith("Credit:") ||
-                (node.text.length < 50 && node.text.includes("Photo by"));
+                node.text.length < 140 &&
+                CREDIT_PATTERN.test(node.text);
 
               if (isCredit) {
                 return (
@@ -670,15 +685,11 @@ export const ArticleScreen: React.FC = () => {
 
               return (
                 <View key={index} style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: normalizeUri(node.src)! }}
-                    style={[
-                      styles.image,
-                      imageLoadingMode === "compressed" && styles.imageCompressed,
-                    ]}
-                    resizeMode={imageLoadingMode === "compressed" ? "center" : "cover"}
+                  <ArticleBodyImage
+                    uri={normalizeUri(node.src)!}
+                    caption={node.caption}
+                    compressed={imageLoadingMode === "compressed"}
                   />
-                  {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
                 </View>
               );
             } else if (node.type === "video" && node.src) {
@@ -836,6 +847,7 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     marginBottom: spacing.xl,
     marginTop: spacing.xs,
   },
@@ -882,16 +894,6 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     backgroundColor: colors.surface,
     borderRadius: 12,
     overflow: "hidden", // Clip caption if needed, mainly for shadow
-  },
-  image: {
-    width: "100%",
-    height: 300, // Taller default
-    borderRadius: 12,
-    backgroundColor: colors.border,
-  },
-  imageCompressed: {
-    height: 200, // Reduce height for compressed mode to save data
-    opacity: 0.85, // Subtle visual feedback that image is compressed
   },
   caption: {
     marginTop: spacing.sm,

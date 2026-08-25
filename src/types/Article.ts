@@ -39,6 +39,7 @@ export interface Article {
   summary: string;
   body: string;
   source: string;
+  author?: string;
   timestamp: string;
   publishedAt: number; // Unix timestamp for when article was published
   category: ArticleCategory;

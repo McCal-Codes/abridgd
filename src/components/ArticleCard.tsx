@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { Article } from "../types/Article";
 import { typography } from "../theme/typography";
@@ -18,6 +18,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, onPress }) => {
   const styles = useThemedStyles(createStyles);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
@@ -32,14 +33,27 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
               <Text style={styles.metaText}>{article.source}</Text>
               <Text style={styles.metaText}> • </Text>
               <Text style={styles.metaText}>{article.timestamp}</Text>
+              {article.author ? (
+                <>
+                  <Text style={styles.metaText}> • </Text>
+                  <Text style={styles.metaText} numberOfLines={1}>
+                    By {article.author}
+                  </Text>
+                </>
+              ) : null}
             </View>
             {/* Progress indicator - only shows if article has been read */}
             <View style={styles.progressContainer}>
               <ArticleProgressIndicator articleId={article.id} size="small" />
             </View>
           </View>
-          {article.imageUrl && (
-            <Image source={{ uri: article.imageUrl }} style={styles.thumbnail} />
+          {article.imageUrl && !thumbnailFailed && (
+            <Image
+              testID="article-thumbnail"
+              source={{ uri: article.imageUrl }}
+              style={styles.thumbnail}
+              onError={() => setThumbnailFailed(true)}
+            />
           )}
         </View>
       </ScaleButton>
@@ -112,6 +126,7 @@ const createStyles = (colors: ThemeColors) =>
   metaContainer: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
   },
   progressContainer: {
     marginTop: spacing.xs,

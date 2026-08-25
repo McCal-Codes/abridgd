@@ -16,14 +16,14 @@ describe("fullStoryCache", () => {
   });
 
   it("caches a successful fetch and serves it on the next call without refetching", async () => {
-    (fetchFullArticleBody as jest.Mock).mockResolvedValue("<p>Full story</p>");
+    (fetchFullArticleBody as jest.Mock).mockResolvedValue({ body: "<p>Full story</p>", author: "Jane Doe" });
 
     const first = await fetchAndCacheFullStory(URL);
-    expect(first).toBe("<p>Full story</p>");
+    expect(first).toEqual({ body: "<p>Full story</p>", author: "Jane Doe" });
     expect(fetchFullArticleBody).toHaveBeenCalledTimes(1);
 
     const second = await fetchAndCacheFullStory(URL);
-    expect(second).toBe("<p>Full story</p>");
+    expect(second).toEqual({ body: "<p>Full story</p>", author: "Jane Doe" });
     expect(fetchFullArticleBody).toHaveBeenCalledTimes(1); // served from cache
   });
 
@@ -39,7 +39,7 @@ describe("fullStoryCache", () => {
   });
 
   it("expires a cache entry older than the TTL on read", async () => {
-    (fetchFullArticleBody as jest.Mock).mockResolvedValue("<p>Old content</p>");
+    (fetchFullArticleBody as jest.Mock).mockResolvedValue({ body: "<p>Old content</p>" });
     await fetchAndCacheFullStory(URL);
 
     const realNow = Date.now;
@@ -53,7 +53,7 @@ describe("fullStoryCache", () => {
   });
 
   it("dedupes concurrent fetches for the same URL", async () => {
-    let resolveFetch: (value: string) => void = () => {};
+    let resolveFetch: (value: { body: string }) => void = () => {};
     (fetchFullArticleBody as jest.Mock).mockImplementation(
       () =>
         new Promise((resolve) => {
@@ -71,16 +71,16 @@ describe("fullStoryCache", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
 
-    resolveFetch("<p>Deduped content</p>");
+    resolveFetch({ body: "<p>Deduped content</p>" });
 
     const [r1, r2] = await Promise.all([p1, p2]);
-    expect(r1).toBe("<p>Deduped content</p>");
-    expect(r2).toBe("<p>Deduped content</p>");
+    expect(r1).toEqual({ body: "<p>Deduped content</p>" });
+    expect(r2).toEqual({ body: "<p>Deduped content</p>" });
     expect(fetchFullArticleBody).toHaveBeenCalledTimes(1);
   });
 
   it("clearExpiredFullStories removes only entries past the TTL", async () => {
-    (fetchFullArticleBody as jest.Mock).mockResolvedValue("<p>Content</p>");
+    (fetchFullArticleBody as jest.Mock).mockResolvedValue({ body: "<p>Content</p>" });
     await fetchAndCacheFullStory(URL);
 
     const keysBefore = (await AsyncStorage.getAllKeys()).filter((key) => key.startsWith(KEY_PREFIX));

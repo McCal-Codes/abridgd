@@ -8,6 +8,7 @@ const FETCH_DELAY_MS = 500;
 
 export interface FullStoryEnrichmentState {
   enrichedBody: string | null;
+  enrichedAuthor: string | null;
   isLoadingFullStory: boolean;
 }
 
@@ -22,10 +23,12 @@ export const useFullStoryEnrichment = (
   currentBodyLength: number,
 ): FullStoryEnrichmentState => {
   const [enrichedBody, setEnrichedBody] = useState<string | null>(null);
+  const [enrichedAuthor, setEnrichedAuthor] = useState<string | null>(null);
   const [isLoadingFullStory, setIsLoadingFullStory] = useState(false);
 
   useEffect(() => {
     setEnrichedBody(null);
+    setEnrichedAuthor(null);
 
     const isTruncatedSource = TRUNCATED_SOURCES.some((source) => article.source.includes(source));
     const isShort = currentBodyLength < SHORT_BODY_THRESHOLD;
@@ -37,10 +40,13 @@ export const useFullStoryEnrichment = (
     let cancelled = false;
     const timer = setTimeout(async () => {
       setIsLoadingFullStory(true);
-      const fullHtml = await fetchAndCacheFullStory(article.link!);
+      const fullStory = await fetchAndCacheFullStory(article.link!);
       if (!cancelled) {
-        if (fullHtml && fullHtml.length > currentBodyLength) {
-          setEnrichedBody(fullHtml);
+        if (fullStory?.body && fullStory.body.length > currentBodyLength) {
+          setEnrichedBody(fullStory.body);
+        }
+        if (fullStory?.author) {
+          setEnrichedAuthor(fullStory.author);
         }
         setIsLoadingFullStory(false);
       }
@@ -55,5 +61,5 @@ export const useFullStoryEnrichment = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article.link]);
 
-  return { enrichedBody, isLoadingFullStory };
+  return { enrichedBody, enrichedAuthor, isLoadingFullStory };
 };

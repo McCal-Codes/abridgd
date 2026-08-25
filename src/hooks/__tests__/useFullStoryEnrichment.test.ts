@@ -28,7 +28,7 @@ describe("useFullStoryEnrichment", () => {
   });
 
   it("triggers enrichment for a short body and applies a longer result", async () => {
-    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue(`<p>${"x".repeat(2000)}</p>`);
+    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue({ body: `<p>${"x".repeat(2000)}</p>` });
     const article = buildArticle({ source: "Random Source", body: "short" });
 
     const { result } = renderHook(({ art, len }: { art: Article; len: number }) => useFullStoryEnrichment(art, len), {
@@ -37,6 +37,20 @@ describe("useFullStoryEnrichment", () => {
 
     await waitFor(() => expect(result.current.enrichedBody).not.toBeNull(), { timeout: 2000 });
     expect(fetchAndCacheFullStory).toHaveBeenCalledWith(article.link);
+  });
+
+  it("surfaces an author scraped from the full story page", async () => {
+    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue({
+      body: `<p>${"x".repeat(2000)}</p>`,
+      author: "Jane Doe",
+    });
+    const article = buildArticle({ source: "Random Source", body: "short" });
+
+    const { result } = renderHook(({ art, len }: { art: Article; len: number }) => useFullStoryEnrichment(art, len), {
+      initialProps: { art: article, len: article.body.length },
+    });
+
+    await waitFor(() => expect(result.current.enrichedAuthor).toBe("Jane Doe"), { timeout: 2000 });
   });
 
   it("triggers enrichment for a known truncated source even with a long body", async () => {
@@ -66,7 +80,7 @@ describe("useFullStoryEnrichment", () => {
   });
 
   it("does not apply a fetched body that is shorter than the current body", async () => {
-    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue("<p>short</p>");
+    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue({ body: "<p>short</p>" });
     const article = buildArticle({ source: "Random Source", body: "a".repeat(50) });
 
     const { result } = renderHook(({ art, len }: { art: Article; len: number }) => useFullStoryEnrichment(art, len), {
@@ -78,7 +92,7 @@ describe("useFullStoryEnrichment", () => {
   });
 
   it("does not re-trigger enrichment on rerender when article.link is unchanged", async () => {
-    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue(`<p>${"x".repeat(2000)}</p>`);
+    (fetchAndCacheFullStory as jest.Mock).mockResolvedValue({ body: `<p>${"x".repeat(2000)}</p>` });
     const article = buildArticle({ source: "Random Source", body: "short" });
 
     const { rerender } = renderHook(({ art, len }: { art: Article; len: number }) => useFullStoryEnrichment(art, len), {

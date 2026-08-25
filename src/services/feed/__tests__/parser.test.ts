@@ -128,6 +128,85 @@ describe("normalizeFeedItem", () => {
     expect(article.id).toBeTruthy();
   });
 
+  it("extracts author from dc:creator", () => {
+    const item = { title: "A", link: "https://a", description: "desc", "dc:creator": "Jane Doe" };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.author).toBe("Jane Doe");
+  });
+
+  it("extracts author from an RSS 2.0 'email (Name)' author field, preferring the name", () => {
+    const item = {
+      title: "A",
+      link: "https://a",
+      description: "desc",
+      author: "jane@example.com (Jane Doe)",
+    };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.author).toBe("Jane Doe");
+  });
+
+  it("extracts author from an Atom <author><name> object", () => {
+    const item = {
+      title: "A",
+      link: "https://a",
+      description: "desc",
+      author: { name: "Jane Doe" },
+    };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.author).toBe("Jane Doe");
+  });
+
+  it("strips a leading 'By ' prefix from the author field", () => {
+    const item = { title: "A", link: "https://a", description: "desc", "dc:creator": "By Jane Doe" };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.author).toBe("Jane Doe");
+  });
+
+  it("does not surface a bare email address with no parenthesized name as an author", () => {
+    const item = { title: "A", link: "https://a", description: "desc", author: "newsroom@example.com" };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.author).toBeUndefined();
+  });
+
+  it("leaves author undefined when no author field is present", () => {
+    const item = { title: "A", link: "https://a", description: "desc" };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.author).toBeUndefined();
+  });
+
+  it("prefers the media:content image with the largest declared width over enclosure", () => {
+    const item = {
+      title: "A",
+      link: "https://a",
+      description: "desc",
+      enclosure: { "@_url": "https://img/thumb.jpg", "@_type": "image/jpeg" },
+      "media:content": { "@_url": "https://img/full.jpg", "@_type": "image/jpeg", "@_width": "1200" },
+    };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.imageUrl).toBe("https://img/full.jpg");
+  });
+
+  it("falls back to source-priority (media:content over enclosure) when no width is declared", () => {
+    const item = {
+      title: "A",
+      link: "https://a",
+      description: "desc",
+      enclosure: { "@_url": "https://img/thumb.jpg", "@_type": "image/jpeg" },
+      "media:content": { "@_url": "https://img/full.jpg", "@_type": "image/jpeg" },
+    };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.imageUrl).toBe("https://img/full.jpg");
+  });
+
+  it("truncates a long summary at a word boundary instead of mid-word", () => {
+    const longSummary = "word ".repeat(40).trim(); // well over 150 chars, all short words
+    const item = { title: "A", link: "https://a", description: longSummary };
+    const article = normalizeFeedItem(item, "Top", "Source", provenance);
+    expect(article.summary.length).toBeLessThanOrEqual(151);
+    expect(article.summary.endsWith("…")).toBe(true);
+    expect(article.summary.slice(0, -1).trim().endsWith("word")).toBe(true);
+  });
+
   it("populates provenance with the passed-in source domain and refresh timestamp", () => {
     const item = { title: "Provenance test", link: "https://a", description: "desc" };
     const article = normalizeFeedItem(item, "Local", "Kidsburgh", {

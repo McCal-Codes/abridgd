@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchFullArticleBody } from "./FullStoryService";
+import { fetchFullArticleBody, FullStoryContent } from "./FullStoryService";
 
 const KEY_PREFIX = "abridged:fullStoryCache:v1:";
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours — full article bodies rarely change post-publish
@@ -7,6 +7,7 @@ const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours — full article bodies rarely c
 type FullStoryCacheEntry = {
   url: string;
   html: string;
+  author?: string;
   fetchedAt: number;
   schemaVersion: 1;
 };
@@ -21,9 +22,9 @@ const hashUrl = (url: string): string => {
 
 const keyFor = (url: string) => `${KEY_PREFIX}${hashUrl(url)}`;
 
-const inFlight = new Map<string, Promise<string | null>>();
+const inFlight = new Map<string, Promise<FullStoryContent | null>>();
 
-export const getCachedFullStory = async (url: string): Promise<string | null> => {
+export const getCachedFullStory = async (url: string): Promise<FullStoryContent | null> => {
   try {
     const raw = await AsyncStorage.getItem(keyFor(url));
     if (!raw) return null;
@@ -33,15 +34,21 @@ export const getCachedFullStory = async (url: string): Promise<string | null> =>
       await AsyncStorage.removeItem(keyFor(url));
       return null;
     }
-    return entry.html;
+    return { body: entry.html, author: entry.author };
   } catch (error) {
     console.warn("Failed to read full-story cache", error);
     return null;
   }
 };
 
-const writeCachedFullStory = async (url: string, html: string): Promise<void> => {
-  const entry: FullStoryCacheEntry = { url, html, fetchedAt: Date.now(), schemaVersion: 1 };
+const writeCachedFullStory = async (url: string, content: FullStoryContent): Promise<void> => {
+  const entry: FullStoryCacheEntry = {
+    url,
+    html: content.body,
+    author: content.author,
+    fetchedAt: Date.now(),
+    schemaVersion: 1,
+  };
   try {
     await AsyncStorage.setItem(keyFor(url), JSON.stringify(entry));
   } catch (error) {
@@ -52,7 +59,7 @@ const writeCachedFullStory = async (url: string, html: string): Promise<void> =>
 /** Cache-first, dedupe-wrapped full-story fetch. Wraps the existing (unmodified)
  * FullStoryService.fetchFullArticleBody — this module only adds caching and in-flight
  * dedupe on top of it, not a new extraction pipeline. */
-export const fetchAndCacheFullStory = async (url: string): Promise<string | null> => {
+export const fetchAndCacheFullStory = async (url: string): Promise<FullStoryContent | null> => {
   const cached = await getCachedFullStory(url);
   if (cached) return cached;
 
@@ -60,11 +67,11 @@ export const fetchAndCacheFullStory = async (url: string): Promise<string | null
   if (existing) return existing;
 
   const promise = (async () => {
-    const html = await fetchFullArticleBody(url);
-    if (html) {
-      await writeCachedFullStory(url, html);
+    const content = await fetchFullArticleBody(url);
+    if (content) {
+      await writeCachedFullStory(url, content);
     }
-    return html;
+    return content;
   })().finally(() => {
     inFlight.delete(url);
   });

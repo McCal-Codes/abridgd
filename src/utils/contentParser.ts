@@ -1,4 +1,5 @@
 import { parse } from "node-html-parser";
+import { decodeHtmlEntities } from "./htmlEntities";
 
 interface ContentNode {
   type: "text" | "image" | "header" | "video";
@@ -120,24 +121,5 @@ export const parseHtmlContent = (html: string): ContentNode[] => {
 
 // fast-html-parser might not decode entities automatically in .text?
 function decodeEntities(text: string): string {
-  return text
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8216;/g, "'")
-    .replace(/&#039;/g, "'")
-    .replace(/&#39;/g, "'")
-    .replace(/&rsquo;/g, "'") // Right single quote
-    .replace(/&lsquo;/g, "'") // Left single quote
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&rdquo;/g, '"') // Right double quote
-    .replace(/&ldquo;/g, '"') // Left double quote
-    .replace(/&mdash;/g, "—") // Em dash
-    .replace(/&ndash;/g, "–") // En dash
-    .replace(/&hellip;/g, "...") // Ellipsis
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&gt;/g, ">")
-    .replace(/&lt;/g, "<");
+  return decodeHtmlEntities(text);
 }
