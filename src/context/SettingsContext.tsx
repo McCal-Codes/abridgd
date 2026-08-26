@@ -1,9 +1,17 @@
 import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
+import { AccessibilityInfo } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { adaptSettingsBasedOnBehavior } from "../services/UserBehaviorLogger";
 import { APP_VERSION } from "../config/appInfo";
 import { allowedTabs, defaultTabs } from "../navigation/tabs";
 import { SETTINGS_STORAGE_KEYS } from "../shared/settings/storageKeys";
+import { migrateFromAsyncStorage, setSecureValue } from "../shared/settings/secureApiKeyStorage";
+
+// Every setting persists via the same "AsyncStorage write, then update state" shape below;
+// this centralizes the failure log so all ~50 call sites report consistently instead of each
+// hand-writing its own console.error message.
+const logSettingError = (action: string, error: unknown): void =>
+  console.error(`Failed to ${action}`, error);
 
 export type AnchorStrategy = "early" | "standard" | "center";
 export type DigestSummaryMode = "fact-based" | "ai-summary" | "headline-only";
@@ -106,6 +114,7 @@ interface SettingsContextType {
   setAnimationsEnabled: (enabled: boolean) => Promise<void>;
   reduceMotion: boolean; // honor system setting, allow override
   setReduceMotion: (enabled: boolean) => Promise<void>;
+  reduceTransparency: boolean; // read-only, mirrors the OS "Reduce Transparency" setting
   animationScale: number; // 0.5 - 2.0
   setAnimationScale: (scale: number) => Promise<void>;
   sensitivePromptLevel: SensitivePromptLevel;
@@ -223,6 +232,7 @@ const defaultSettingsContext: SettingsContextType = {
   setAnimationsEnabled: async (_b: boolean) => {},
   reduceMotion: false,
   setReduceMotion: async (_b: boolean) => {},
+  reduceTransparency: false,
   animationScale: 1.0,
   setAnimationScale: async (_n: number) => {},
   sensitivePromptLevel: "full",
@@ -325,6 +335,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Global animation controls
   const [animationsEnabled, setAnimationsEnabledState] = useState(true);
   const [reduceMotion, setReduceMotionState] = useState(false);
+  const [reduceTransparency, setReduceTransparency] = useState(false);
   const [animationScale, setAnimationScaleState] = useState(1.0);
   const [sensitivePromptLevel, setSensitivePromptLevelState] =
     useState<SensitivePromptLevel>("full");
@@ -359,6 +370,28 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadSettings();
   }, []);
 
+  // Reduce Transparency is a live OS accessibility setting, not something the app persists —
+  // read it on mount and stay in sync if the user flips it in system Settings while the app
+  // is open, same as iOS itself does for Reduce Motion.
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceTransparencyEnabled?.()
+      .then((enabled) => {
+        if (mounted) setReduceTransparency(enabled);
+      })
+      .catch(() => {});
+
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceTransparencyChanged",
+      (enabled: boolean) => setReduceTransparency(enabled),
+    );
+
+    return () => {
+      mounted = false;
+      subscription?.remove?.();
+    };
+  }, []);
+
   const loadSettings = async () => {
     try {
       const onboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
@@ -372,7 +405,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const continueReadingEnabled = await AsyncStorage.getItem("isContinueReadingEnabled");
       const lastVisit = await AsyncStorage.getItem("lastAppVisit");
       const savedDigestMode = await AsyncStorage.getItem("digestSummaryMode");
-      const savedPerplexityApiKey = await AsyncStorage.getItem(
+      const savedPerplexityApiKey = await migrateFromAsyncStorage(
         SETTINGS_STORAGE_KEYS.perplexityApiKey,
       );
       const savedBreathDuration = await AsyncStorage.getItem("groundingBreathDuration");
@@ -478,7 +511,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
           }
         } catch (e) {
-          console.error("Failed to parse active tabs", e);
+          logSettingError("parse active tabs", e);
         }
       }
 
@@ -594,7 +627,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setHapticIntensityState(savedHapticIntensity as HapticIntensity);
       }
     } catch (error) {
-      console.error("Failed to load settings", error);
+      logSettingError("load settings", error);
     } finally {
       setIsLoadingSettings(false);
       // Adapt settings based on learned user behavior
@@ -617,7 +650,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setHasCompletedOnboarding(true);
       setLastSeenVersion(APP_VERSION);
     } catch (e) {
-      console.error("Failed to save onboarding", e);
+      logSettingError("save onboarding", e);
     }
   };
 
@@ -626,7 +659,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.removeItem("hasCompletedOnboarding");
       setHasCompletedOnboarding(false);
     } catch (e) {
-      console.error("Failed to reset onboarding", e);
+      logSettingError("reset onboarding", e);
     }
   };
 
@@ -635,7 +668,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("rsvpHighlightColor", color);
       setRsvpHighlightColorState(color);
     } catch (e) {
-      console.error("Failed to save color", e);
+      logSettingError("save color", e);
     }
   };
 
@@ -644,7 +677,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("rsvpAnchorStrategy", strategy);
       setRsvpAnchorStrategyState(strategy);
     } catch (e) {
-      console.error("Failed to save anchor strategy", e);
+      logSettingError("save anchor strategy", e);
     }
   };
 
@@ -653,7 +686,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("groundingColor", color);
       setGroundingColorState(color);
     } catch (e) {
-      console.error("Failed to save grounding color", e);
+      logSettingError("save grounding color", e);
     }
   };
 
@@ -662,7 +695,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("isReaderEnabled", enabled.toString());
       setIsReaderEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save reader enabled state", e);
+      logSettingError("save reader enabled state", e);
     }
   };
 
@@ -671,7 +704,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("isGroundingEnabled", enabled.toString());
       setIsGroundingEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save grounding enabled state", e);
+      logSettingError("save grounding enabled state", e);
     }
   };
 
@@ -680,7 +713,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("isSummarizationEnabled", enabled.toString());
       setIsSummarizationEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save summarization enabled state", e);
+      logSettingError("save summarization enabled state", e);
     }
   };
 
@@ -689,7 +722,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("isWelcomeBackEnabled", enabled.toString());
       setIsWelcomeBackEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save welcome back enabled state", e);
+      logSettingError("save welcome back enabled state", e);
     }
   };
 
@@ -698,7 +731,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("isContinueReadingEnabled", enabled.toString());
       setIsContinueReadingEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save continue reading enabled state", e);
+      logSettingError("save continue reading enabled state", e);
     }
   };
 
@@ -707,7 +740,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("subscriptionFeaturesLocked", enabled.toString());
       setSubscriptionFeaturesLockedState(enabled);
     } catch (e) {
-      console.error("Failed to save subscription features locked state", e);
+      logSettingError("save subscription features locked state", e);
     }
   };
 
@@ -717,7 +750,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("lastAppVisit", now.toString());
       setLastAppVisit(now);
     } catch (e) {
-      console.error("Failed to save last app visit", e);
+      logSettingError("save last app visit", e);
     }
   };
 
@@ -726,7 +759,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("digestSummaryMode", mode);
       setDigestSummaryModeState(mode);
     } catch (e) {
-      console.error("Failed to save digest summary mode", e);
+      logSettingError("save digest summary mode", e);
     }
   };
 
@@ -734,14 +767,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const normalized = apiKey.trim();
 
     try {
-      if (normalized) {
-        await AsyncStorage.setItem(SETTINGS_STORAGE_KEYS.perplexityApiKey, normalized);
-      } else {
-        await AsyncStorage.removeItem(SETTINGS_STORAGE_KEYS.perplexityApiKey);
-      }
+      await setSecureValue(SETTINGS_STORAGE_KEYS.perplexityApiKey, normalized);
       setPerplexityApiKeyState(normalized);
     } catch (e) {
-      console.error("Failed to save Perplexity API key", e);
+      logSettingError("save Perplexity API key", e);
     }
   };
 
@@ -750,7 +779,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("groundingBreathDuration", duration.toString());
       setGroundingBreathDurationState(duration);
     } catch (e) {
-      console.error("Failed to save grounding breath duration", e);
+      logSettingError("save grounding breath duration", e);
     }
   };
 
@@ -759,7 +788,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("groundingCycles", cycles.toString());
       setGroundingCyclesState(cycles);
     } catch (e) {
-      console.error("Failed to save grounding cycles", e);
+      logSettingError("save grounding cycles", e);
     }
   };
 
@@ -768,7 +797,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("groundingAnimationStyle", style);
       setGroundingAnimationStyleState(style);
     } catch (e) {
-      console.error("Failed to save grounding animation style", e);
+      logSettingError("save grounding animation style", e);
     }
   };
 
@@ -777,7 +806,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("showGroundingPrompts", show.toString());
       setShowGroundingPromptsState(show);
     } catch (e) {
-      console.error("Failed to save grounding prompts setting", e);
+      logSettingError("save grounding prompts setting", e);
     }
   };
 
@@ -786,7 +815,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("readingSpeed", speed.toString());
       setReadingSpeedState(speed);
     } catch (e) {
-      console.error("Failed to save reading speed", e);
+      logSettingError("save reading speed", e);
     }
   };
 
@@ -795,7 +824,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("fontSize", size.toString());
       setFontSizeState(size);
     } catch (e) {
-      console.error("Failed to save font size", e);
+      logSettingError("save font size", e);
     }
   };
 
@@ -804,7 +833,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("autoSaveOnComplete", enabled.toString());
       setAutoSaveOnCompleteState(enabled);
     } catch (e) {
-      console.error("Failed to save auto-save preference", e);
+      logSettingError("save auto-save preference", e);
     }
   };
 
@@ -815,7 +844,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("defaultTab", resolved);
       setDefaultTabState(resolved);
     } catch (e) {
-      console.error("Failed to save default tab", e);
+      logSettingError("save default tab", e);
     }
   };
 
@@ -825,7 +854,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
       setActiveTabsState(normalized);
     } catch (e) {
-      console.error("Failed to save active tabs", e);
+      logSettingError("save active tabs", e);
     }
   };
 
@@ -834,7 +863,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabBarStyle", style);
       setTabBarStyleState(style);
     } catch (e) {
-      console.error("Failed to save tab bar style", e);
+      logSettingError("save tab bar style", e);
     }
   };
 
@@ -843,7 +872,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("showTabLabels", show.toString());
       setShowTabLabelsState(show);
     } catch (e) {
-      console.error("Failed to save show tab labels", e);
+      logSettingError("save show tab labels", e);
     }
   };
 
@@ -852,7 +881,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabIconSize", size.toString());
       setTabIconSizeState(size);
     } catch (e) {
-      console.error("Failed to save tab icon size", e);
+      logSettingError("save tab icon size", e);
     }
   };
 
@@ -863,7 +892,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabBarFloatingHeight", clamped.toString());
       setTabBarFloatingHeightState(clamped);
     } catch (e) {
-      console.error("Failed to save tab bar floating height", e);
+      logSettingError("save tab bar floating height", e);
     }
   };
 
@@ -872,7 +901,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("enableAdvancedHeightControls", enabled.toString());
       setEnableAdvancedHeightControlsState(enabled);
     } catch (e) {
-      console.error("Failed to save enableAdvancedHeightControls", e);
+      logSettingError("save enableAdvancedHeightControls", e);
     }
   };
 
@@ -882,7 +911,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("dockedHeightStep", clamped.toString());
       setDockedHeightStepState(clamped);
     } catch (e) {
-      console.error("Failed to save dockedHeightStep", e);
+      logSettingError("save dockedHeightStep", e);
     }
   };
 
@@ -892,7 +921,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("hiddenHeightStep", clamped.toString());
       setHiddenHeightStepState(clamped);
     } catch (e) {
-      console.error("Failed to save hiddenHeightStep", e);
+      logSettingError("save hiddenHeightStep", e);
     }
   };
 
@@ -902,7 +931,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("floatingHeightStep", clamped.toString());
       setFloatingHeightStepState(clamped);
     } catch (e) {
-      console.error("Failed to save floatingHeightStep", e);
+      logSettingError("save floatingHeightStep", e);
     }
   };
 
@@ -918,7 +947,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         Math.max(tabBarHiddenHeight, clamped).toString(),
       );
     } catch (e) {
-      console.error("Failed to save tab bar docked height", e);
+      logSettingError("save tab bar docked height", e);
     }
   };
 
@@ -929,7 +958,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabBarHiddenHeight", clamped.toString());
       setTabBarHiddenHeightState(clamped);
     } catch (e) {
-      console.error("Failed to save tab bar hidden height", e);
+      logSettingError("save tab bar hidden height", e);
     }
   };
 
@@ -938,7 +967,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabBarBlur", enabled.toString());
       setTabBarBlurState(enabled);
     } catch (e) {
-      console.error("Failed to save tab bar blur", e);
+      logSettingError("save tab bar blur", e);
     }
   };
 
@@ -947,7 +976,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("allowContentUnderTabBar", enabled.toString());
       setAllowContentUnderTabBarState(enabled);
     } catch (e) {
-      console.error("Failed to save allowContentUnderTabBar", e);
+      logSettingError("save allowContentUnderTabBar", e);
     }
   };
 
@@ -956,7 +985,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabBadgeStyle", style);
       setTabBadgeStyleState(style);
     } catch (e) {
-      console.error("Failed to save tab badge style", e);
+      logSettingError("save tab badge style", e);
     }
   };
 
@@ -965,7 +994,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("tabIndicatorStyle", style);
       setTabIndicatorStyleState(style);
     } catch (e) {
-      console.error("Failed to save tab indicator style", e);
+      logSettingError("save tab indicator style", e);
     }
   };
 
@@ -974,7 +1003,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("modalPresentationStyle", style);
       setModalPresentationStyleState(style);
     } catch (e) {
-      console.error("Failed to save modal presentation style", e);
+      logSettingError("save modal presentation style", e);
     }
   };
 
@@ -989,7 +1018,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setActiveTabsState(normalized);
       await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
     } catch (e) {
-      console.error("Failed to save tab layout", e);
+      logSettingError("save tab layout", e);
     }
   };
 
@@ -998,7 +1027,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("experimentalIOS26NavBar", enabled.toString());
       setExperimentalIOS26NavBarState(enabled);
     } catch (e) {
-      console.error("Failed to save experimental iOS 26 navbar setting", e);
+      logSettingError("save experimental iOS 26 navbar setting", e);
     }
   };
 
@@ -1008,7 +1037,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("animationsEnabled", enabled.toString());
       setAnimationsEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save animations enabled setting", e);
+      logSettingError("save animations enabled setting", e);
     }
   };
 
@@ -1017,7 +1046,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("reduceMotion", enabled.toString());
       setReduceMotionState(enabled);
     } catch (e) {
-      console.error("Failed to save reduce motion setting", e);
+      logSettingError("save reduce motion setting", e);
     }
   };
 
@@ -1027,7 +1056,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("animationScale", clamped.toString());
       setAnimationScaleState(clamped);
     } catch (e) {
-      console.error("Failed to save animation scale", e);
+      logSettingError("save animation scale", e);
     }
   };
 
@@ -1036,7 +1065,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("sensitivePromptLevel", level);
       setSensitivePromptLevelState(level);
     } catch (e) {
-      console.error("Failed to save sensitive prompt level", e);
+      logSettingError("save sensitive prompt level", e);
     }
   };
 
@@ -1045,7 +1074,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("sensitiveActionPreference", preference);
       setSensitiveActionPreferenceState(preference);
     } catch (e) {
-      console.error("Failed to save sensitive action preference", e);
+      logSettingError("save sensitive action preference", e);
     }
   };
 
@@ -1054,7 +1083,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("sensitiveTone", tone);
       setSensitiveToneState(tone);
     } catch (e) {
-      console.error("Failed to save sensitive tone", e);
+      logSettingError("save sensitive tone", e);
     }
   };
 
@@ -1064,7 +1093,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("lineHeight", clamped.toString());
       setLineHeightState(clamped);
     } catch (e) {
-      console.error("Failed to save line height", e);
+      logSettingError("save line height", e);
     }
   };
 
@@ -1073,7 +1102,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("imageLoadingMode", mode);
       setImageLoadingModeState(mode);
     } catch (e) {
-      console.error("Failed to save image loading mode", e);
+      logSettingError("save image loading mode", e);
     }
   };
 
@@ -1082,7 +1111,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("dataSaverMode", enabled.toString());
       setDataSaverModeState(enabled);
     } catch (e) {
-      console.error("Failed to save data saver mode", e);
+      logSettingError("save data saver mode", e);
     }
   };
 
@@ -1091,7 +1120,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("quietHoursEnabled", enabled.toString());
       setQuietHoursEnabledState(enabled);
     } catch (e) {
-      console.error("Failed to save quiet hours enabled", e);
+      logSettingError("save quiet hours enabled", e);
     }
   };
 
@@ -1100,7 +1129,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("quietHoursStart", time);
       setQuietHoursStartState(time);
     } catch (e) {
-      console.error("Failed to save quiet hours start", e);
+      logSettingError("save quiet hours start", e);
     }
   };
 
@@ -1109,7 +1138,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("quietHoursEnd", time);
       setQuietHoursEndState(time);
     } catch (e) {
-      console.error("Failed to save quiet hours end", e);
+      logSettingError("save quiet hours end", e);
     }
   };
 
@@ -1118,7 +1147,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("hapticIntensity", intensity);
       setHapticIntensityState(intensity);
     } catch (e) {
-      console.error("Failed to save haptic intensity", e);
+      logSettingError("save haptic intensity", e);
     }
   };
 
@@ -1128,7 +1157,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await AsyncStorage.setItem("lastSeenVersion", v);
       setLastSeenVersion(v);
     } catch (e) {
-      console.error("Failed to save last seen version", e);
+      logSettingError("save last seen version", e);
     }
   };
 
@@ -1224,6 +1253,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setAnimationsEnabled,
         reduceMotion,
         setReduceMotion,
+        reduceTransparency,
         animationScale,
         setAnimationScale,
         sensitivePromptLevel,

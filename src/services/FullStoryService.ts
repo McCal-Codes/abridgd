@@ -4,6 +4,51 @@ import { parse } from 'node-html-parser';
 const PROXY_URL = 'https://corsproxy.io/?';
 const FETCH_TIMEOUT_MS = 7000;
 
+export interface FullStoryContent {
+    body: string;
+    author?: string;
+}
+
+const AUTHOR_SELECTORS = [
+    '[rel="author"]',
+    '.byline',
+    '.author-name',
+    '.article-author',
+    '.entry-author',
+    'a.author',
+    '.author',
+];
+
+/** Scrapes a byline from the full article page as a fallback for feeds whose RSS
+ * doesn't carry an author/dc:creator tag. Tries common byline selectors first, then
+ * standard author meta tags. Best-effort — returns undefined rather than a bad guess. */
+const extractAuthorFromHtml = (root: ReturnType<typeof parse>): string | undefined => {
+    for (const selector of AUTHOR_SELECTORS) {
+        try {
+            const node = root.querySelector(selector);
+            const text = node?.text?.trim();
+            if (text) {
+                const cleaned = text.replace(/^by\s+/i, '').trim();
+                if (cleaned && cleaned.length <= 80) return cleaned;
+            }
+        } catch {
+            // Unsupported selector on this parser version - try the next one.
+        }
+    }
+
+    for (const metaName of ['author', 'article:author', 'parsely-author']) {
+        try {
+            const meta = root.querySelector(`meta[name="${metaName}"]`) || root.querySelector(`meta[property="${metaName}"]`);
+            const content = meta?.attributes?.content?.trim();
+            if (content && content.length <= 80 && !content.includes('://')) return content;
+        } catch {
+            // Unsupported selector on this parser version - try the next one.
+        }
+    }
+
+    return undefined;
+};
+
 const fetchWithTimeout = async (url: string, init: RequestInit = {}): Promise<Response> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -25,7 +70,7 @@ const SELECTORS: Record<string, string[]> = {
     'wpxi.com': ['.article-body', '.story-body']
 };
 
-export const fetchFullArticleBody = async (url: string): Promise<string | null> => {
+export const fetchFullArticleBody = async (url: string): Promise<FullStoryContent | null> => {
     if (!url) return null;
 
     try {
@@ -35,23 +80,23 @@ export const fetchFullArticleBody = async (url: string): Promise<string | null> 
                  // Extract slug: https://triblive.com/.../.../cleanup-continues/ -> cleanup-continues
                  const parts = url.split('/').filter(p => p.length > 0);
                  const slug = parts[parts.length - 1];
-                 
+
                  const apiUrl = `https://triblive.com/wp-json/wp/v2/posts?slug=${slug}&_fields=content`;
                  const apiProxyUrl = PROXY_URL + encodeURIComponent(apiUrl);
-                 
+
                  const apiRes = await fetch(apiProxyUrl);
                  if (apiRes.ok) {
                      const data = await apiRes.json();
                      if (Array.isArray(data) && data.length > 0 && data[0].content?.rendered) {
                          console.log('Successfully fetched TribLive content via API');
-                         return data[0].content.rendered;
+                         return { body: data[0].content.rendered };
                      }
                  }
              } catch (e) {
                  console.warn('TribLive API fetch failed, falling back to scrape', e);
              }
         }
-        
+
         console.log(`Fetching full content for: ${url}`);
         const proxyUrl = PROXY_URL + encodeURIComponent(url);
 
@@ -73,16 +118,16 @@ export const fetchFullArticleBody = async (url: string): Promise<string | null> 
         }
 
         if (!response || !response.ok) throw new Error(`Status ${response?.status ?? 'unknown'}`);
-        
+
         if (!response.ok) throw new Error(`Status ${response.status}`);
-        
+
         const html = await response.text();
         const root = parse(html);
-        
+
         // Determine domain
         const domain = Object.keys(SELECTORS).find(d => url.includes(d));
         const candidates = domain ? SELECTORS[domain] : ['article', 'main', '.entry-content', '.content'];
-        
+
         let contentNode = null;
         for (const selector of candidates) {
             contentNode = root.querySelector(selector);
@@ -91,15 +136,15 @@ export const fetchFullArticleBody = async (url: string): Promise<string | null> 
 
         if (contentNode) {
             // fast-html-parser structure gives us 'innerHTML' or we can reconstruct it?
-            // fast-html-parser doesn't have .innerHTML access directly in all versions, 
+            // fast-html-parser doesn't have .innerHTML access directly in all versions,
             // but usually valid RSS parsers used earlier returned raw HTML.
-            // Let's check fast-html-parser docs or properties. 
+            // Let's check fast-html-parser docs or properties.
             // It has .toString() on the node which returns the outer HTML usually.
-            
+
             // We want the inner HTML to keep structure
-            return contentNode.innerHTML; 
+            return { body: contentNode.innerHTML, author: extractAuthorFromHtml(root) };
         }
-        
+
         return null; // No content found
     } catch (error) {
         console.error('Error fetching full story:', error);

@@ -1,5 +1,7 @@
 # iOS 26 Components - Installation Guide
 
+Last Updated: 2026-06-10
+
 ## Required Dependencies
 
 The iOS 26 components require the following npm packages to be installed:

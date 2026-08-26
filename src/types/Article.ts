@@ -21,12 +21,25 @@ export type ContentWarning =
   | "hate-speech"
   | "graphic";
 
+export interface ArticleProvenance {
+  sourceName: string;
+  /** Canonical domain the source publishes from, e.g. "wtae.com". */
+  sourceDomain: string;
+  category: ArticleCategory;
+  publishedAt: number;
+  /** Factual, non-personalized explanation of why this story is in the feed. */
+  inclusionReason: string;
+  /** This source's last successful fetch timestamp, or null if not yet refreshed this session. */
+  sourceLastRefreshedAt: number | null;
+}
+
 export interface Article {
   id: string;
   headline: string;
   summary: string;
   body: string;
   source: string;
+  author?: string;
   timestamp: string;
   publishedAt: number; // Unix timestamp for when article was published
   category: ArticleCategory;
@@ -40,4 +53,5 @@ export interface Article {
   tags?: string[];
   contentWarnings?: ContentWarning[];
   emotionalIntensity?: "low" | "medium" | "high";
+  provenance?: ArticleProvenance;
 }

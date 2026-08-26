@@ -151,6 +151,17 @@ jest.mock("../../services/FullStoryService", () => ({
   fetchFullArticleBody: jest.fn(() => Promise.resolve("<p>full body</p>")),
 }));
 
+// BlurSheet calls the strict useTheme() (throws without a ThemeProvider) even when not
+// visible, since it's assumed to always render inside real app chrome. This suite doesn't
+// wrap with a ThemeProvider, so mock it the same way AbridgedReader/GroundingOverlay are.
+jest.mock("../../components/BlurSheet", () => {
+  const React = require("react");
+  return {
+    BlurSheet: ({ visible, children }: { visible: boolean; children: React.ReactNode }) =>
+      visible ? React.createElement(React.Fragment, null, children) : null,
+  };
+});
+
 jest.mock("../../services/AiService", () => ({
   summarizeArticle: jest.fn(() => Promise.resolve("Mock summary")),
 }));
@@ -276,5 +287,55 @@ describe("ArticleScreen sensitive gating", () => {
         }),
       );
     });
+  });
+});
+
+describe("ArticleScreen provenance panel", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useRealTimers();
+    mockRouteArticle = { ...baseArticle };
+    mockSavedArticlesApi.isArticleSaved.mockReturnValue(false);
+    // Disable grounding so the sensitive-content gate never blocks content from rendering —
+    // unrelated to what these tests are checking.
+    resetSettings({ isGroundingEnabled: false });
+    mockReadingProgressApi.getProgress.mockReturnValue(undefined);
+  });
+
+  it("opens the trust panel with source, category, and inclusion reason when provenance is set", async () => {
+    mockRouteArticle = {
+      ...mockRouteArticle,
+      provenance: {
+        sourceName: "WTAE",
+        sourceDomain: "wtae.com",
+        category: "Top",
+        publishedAt: Date.now(),
+        inclusionReason: "Included because WTAE is an enabled source in your Top feed.",
+        sourceLastRefreshedAt: Date.now(),
+      },
+    };
+
+    const { getByText, findByText } = render(<ArticleScreen />);
+    await findByText(mockRouteArticle.headline);
+
+    const trigger = getByText("Why this story?");
+    await act(async () => {
+      fireEvent.press(trigger);
+    });
+
+    expect(await findByText("WTAE · wtae.com")).toBeTruthy();
+    expect(await findByText(mockRouteArticle.provenance!.inclusionReason)).toBeTruthy();
+  });
+
+  it("renders the trigger safely without crashing when provenance is undefined", async () => {
+    const { getByText, findByText } = render(<ArticleScreen />);
+    await findByText(mockRouteArticle.headline);
+
+    const trigger = getByText("Why this story?");
+    await act(async () => {
+      fireEvent.press(trigger);
+    });
+
+    expect(await findByText("Source details aren't available for this story yet.")).toBeTruthy();
   });
 });

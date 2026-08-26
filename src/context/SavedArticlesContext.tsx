@@ -1,10 +1,11 @@
-import React, { createContext, useState, ReactNode, useEffect, useMemo, useContext } from "react";
+import React, { createContext, useState, ReactNode, useEffect, useMemo, useRef, useContext } from "react";
 import { Article } from "../types/Article";
 import {
   loadArticlesFromStorage,
   saveArticlesToStorage,
   isMigrationComplete,
   markMigrationComplete,
+  getSavedArticlesStorageKey,
 } from "../utils/storage";
 import { useProfilesOptional } from "./ProfileContext";
 
@@ -26,7 +27,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
   const profileContext = useProfilesOptional?.() ?? undefined;
   const activeProfileId = profileContext?.activeProfile?.id;
   const storageKey = useMemo(
-    () => `@abridged_saved_articles_${activeProfileId ?? "default"}`,
+    () => getSavedArticlesStorageKey(activeProfileId),
     [activeProfileId],
   );
   const syncProfileSavedArticles = useMemo(
@@ -37,6 +38,15 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
     () => profileContext?.trackSavedAction ?? (() => {}),
     [profileContext?.trackSavedAction],
   );
+
+  // Calling syncProfileSavedArticles updates ProfileContext state, which gives it a new
+  // identity — if it were a dependency of the effect below, that would re-trigger the very
+  // effect that calls it, looping forever. A ref lets the effect call the latest version
+  // without needing to react to it changing.
+  const syncProfileSavedArticlesRef = useRef(syncProfileSavedArticles);
+  useEffect(() => {
+    syncProfileSavedArticlesRef.current = syncProfileSavedArticles;
+  }, [syncProfileSavedArticles]);
 
   // Initialize: Load articles from AsyncStorage on app start
   useEffect(() => {
@@ -54,7 +64,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
         const articles = await loadArticlesFromStorage(3, 100, storageKey);
         if (cancelled) return;
         setSavedArticles(articles);
-        syncProfileSavedArticles(articles);
+        syncProfileSavedArticlesRef.current(articles);
 
         // Mark migration as complete for future app launches
         if (!migrationDone) {
@@ -79,7 +89,9 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
     return () => {
       cancelled = true;
     };
-  }, [storageKey, syncProfileSavedArticles]);
+    // Deliberately excludes syncProfileSavedArticles — see the ref above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
   // Auto-save to AsyncStorage whenever savedArticles changes
   useEffect(() => {

@@ -1,5 +1,7 @@
 # Branching & Pull Request (PR) Guidelines — Abridged
 
+Last Updated: 2026-06-10
+
 This document expands on the repo's branching model and PR workflow with practical examples, checklist items, and common gotchas.
 
 ## Branching model

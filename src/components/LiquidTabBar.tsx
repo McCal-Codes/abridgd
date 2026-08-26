@@ -44,6 +44,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
     tabBadgeStyle,
     tabIndicatorStyle,
     tabIconSize,
+    reduceTransparency,
   } = useSettings();
   const { savedArticles } = useSavedArticles();
   const savedArticlesCount = savedArticles.length;
@@ -87,8 +88,16 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   });
   const blurOpacity = tabBarBlur ? blurOpacityAnimated : 1;
 
-  // Enhanced blur intensity for experimental iOS 26 navbar effect
-  const blurIntensity = experimentalIOS26NavBar && tabBarBlur ? 80 : tabBarBlur ? 60 : 0;
+  // Enhanced blur intensity for experimental iOS 26 navbar effect. Reduce Transparency
+  // overrides everything else — a translucent, blurred bar is exactly what that setting
+  // asks apps to avoid, so it wins regardless of the user's tabBarBlur preference.
+  const blurIntensity = reduceTransparency
+    ? 0
+    : experimentalIOS26NavBar && tabBarBlur
+      ? 80
+      : tabBarBlur
+        ? 60
+        : 0;
   // (normalHeight/hiddenHeight already computed above)
 
   // Place the capsule very close to the bottom; keep a small base offset and add the inset
@@ -112,18 +121,22 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
           styles.blur,
           {
             borderRadius: isStandard ? 0 : 32,
-            opacity: typeof blurOpacity === "number" ? blurOpacity : blurOpacity,
-            backgroundColor: experimentalIOS26NavBar
+            opacity: reduceTransparency ? 1 : blurOpacity,
+            backgroundColor: reduceTransparency
               ? isDark
-                ? "rgba(18, 18, 18, 0.95)"
-                : "rgba(255, 255, 255, 0.95)"
-              : isStandard
+                ? "rgb(18, 18, 18)"
+                : "rgb(255, 255, 255)"
+              : experimentalIOS26NavBar
                 ? isDark
-                  ? "rgba(18, 18, 18, 0.88)"
-                  : "rgba(255, 255, 255, 0.85)"
-                : isDark
-                  ? "rgba(26, 26, 26, 0.8)"
-                  : "rgba(255, 255, 255, 0.75)",
+                  ? "rgba(18, 18, 18, 0.95)"
+                  : "rgba(255, 255, 255, 0.95)"
+                : isStandard
+                  ? isDark
+                    ? "rgba(18, 18, 18, 0.88)"
+                    : "rgba(255, 255, 255, 0.85)"
+                  : isDark
+                    ? "rgba(26, 26, 26, 0.8)"
+                    : "rgba(255, 255, 255, 0.75)",
           },
         ]}
         // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
@@ -224,14 +237,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 4,
   },
+  // Wraps just the icon (shrink-wraps to its natural size, unlike the flex:1 tabButton) so
+  // the badge below can anchor to the icon's actual corner instead of a fixed offset from
+  // the tab button's edge, which drifted whenever tab width, icon size, or labels changed.
+  iconWrap: {
+    position: "relative",
+  },
   label: {
     fontSize: 10,
     marginTop: 2,
   },
   badge: {
     position: "absolute",
-    top: 6,
-    right: 22,
+    top: -6,
+    right: -10,
     backgroundColor: "#ff3b30",
     borderRadius: 8,
     paddingHorizontal: 5,
@@ -242,8 +261,8 @@ const styles = StyleSheet.create({
   },
   badgeDot: {
     position: "absolute",
-    top: 8,
-    right: 26,
+    top: -2,
+    right: -4,
     width: 10,
     height: 10,
     borderRadius: 5,
@@ -461,10 +480,24 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                 handleTabLayout(route.key, event.nativeEvent.layout)
               }
               activeOpacity={0.75}
+              accessibilityRole="tab"
+              accessibilityLabel={label}
+              accessibilityState={{ selected: focused }}
             >
-              <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
-                {IconRenderer ? IconRenderer({ color, size: iconSize, focused }) : null}
-              </Animated.View>
+              <View style={styles.iconWrap}>
+                <Animated.View style={{ transform: [{ scale: focused ? 1.12 : 1 }] }}>
+                  {IconRenderer ? IconRenderer({ color, size: iconSize, focused }) : null}
+                </Animated.View>
+                {badge ? (
+                  badge.type === "dot" ? (
+                    <View style={[styles.badgeDot, { backgroundColor: colors.primary }]} />
+                  ) : (
+                    <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.badgeText}>{badge.value}</Text>
+                    </View>
+                  )
+                ) : null}
+              </View>
               {showTabLabels ? (
                 <Text
                   style={[
@@ -477,15 +510,6 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                 >
                   {label}
                 </Text>
-              ) : null}
-              {badge ? (
-                badge.type === "dot" ? (
-                  <View style={[styles.badgeDot, { backgroundColor: colors.primary }]} />
-                ) : (
-                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.badgeText}>{badge.value}</Text>
-                  </View>
-                )
               ) : null}
             </AnimatedTouchable>
           );

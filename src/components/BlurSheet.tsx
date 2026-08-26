@@ -13,8 +13,18 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeContext";
+import { useReduceMotion } from "../hooks/useReduceMotion";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
+
+// Worklet helper so gesture callbacks (which run on the UI thread) and the show/hide effect
+// share one place that decides spring-vs-instant based on the Reduce Motion preference.
+const animateSheetTo = (value: number, reduceMotion: boolean) => {
+  "worklet";
+  return reduceMotion
+    ? withTiming(value, { duration: 0 })
+    : withSpring(value, { damping: 30, stiffness: 400 });
+};
 
 export type SheetDetent = "medium" | "large";
 
@@ -44,6 +54,7 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
 }) => {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
 
   // Detent heights
   const mediumHeight = SCREEN_HEIGHT * 0.5;
@@ -59,17 +70,11 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
   // Show/hide animation
   React.useEffect(() => {
     if (visible) {
-      translateY.value = withSpring(SCREEN_HEIGHT - getDetentHeight(currentDetent), {
-        damping: 30,
-        stiffness: 400,
-      });
+      translateY.value = animateSheetTo(SCREEN_HEIGHT - getDetentHeight(currentDetent), reduceMotion);
     } else {
-      translateY.value = withSpring(SCREEN_HEIGHT, {
-        damping: 30,
-        stiffness: 400,
-      });
+      translateY.value = animateSheetTo(SCREEN_HEIGHT, reduceMotion);
     }
-  }, [visible, currentDetent]);
+  }, [visible, currentDetent, reduceMotion]);
 
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
@@ -86,24 +91,15 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
 
       if (velocity > 500 || currentY > SCREEN_HEIGHT - mediumHeight + 100) {
         // Dismiss
-        translateY.value = withSpring(SCREEN_HEIGHT, {
-          damping: 30,
-          stiffness: 400,
-        });
+        translateY.value = animateSheetTo(SCREEN_HEIGHT, reduceMotion);
         runOnJS(onClose)();
       } else if (currentY < midpoint || velocity < -500) {
         // Snap to large
-        translateY.value = withSpring(SCREEN_HEIGHT - largeHeight, {
-          damping: 30,
-          stiffness: 400,
-        });
+        translateY.value = animateSheetTo(SCREEN_HEIGHT - largeHeight, reduceMotion);
         runOnJS(setCurrentDetent)("large");
       } else {
         // Snap to medium
-        translateY.value = withSpring(SCREEN_HEIGHT - mediumHeight, {
-          damping: 30,
-          stiffness: 400,
-        });
+        translateY.value = animateSheetTo(SCREEN_HEIGHT - mediumHeight, reduceMotion);
         runOnJS(setCurrentDetent)("medium");
       }
     });
@@ -174,7 +170,7 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
 
       {/* Sheet */}
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, sheetStyle]}>
+        <Animated.View style={[styles.sheet, sheetStyle]} accessibilityViewIsModal>
           {/* Dynamic background with blur/transparency effect */}
           <Animated.View style={[StyleSheet.absoluteFill, backgroundStyle]}>
             {blur && Platform.OS === "ios" ? (

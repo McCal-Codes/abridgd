@@ -1,15 +1,15 @@
 # Architecture
 
-Last Updated: 2026-01-16
+Last Updated: 2026-06-10
 
 ## Overview
 Abridged is built as a **TypeScript Expo (React Native)** application. It prioritizes native performance, strict typing, and a modular component structure.
 
 ## Tech Stack
-*   **Framework:** React Native (via Expo SDK 50+)
+*   **Framework:** React Native via Expo SDK 54
 *   **Language:** TypeScript
 *   **Navigation:** React Navigation (Native Stack + Bottom Tabs)
-*   **State Management:** React Context + Local State (initially). No Redux/Zustand until complexity demands it.
+*   **State Management:** React Context + AsyncStorage-backed helpers. No Redux/Zustand until profiling or complexity demands it.
 *   **Styling:** StyleSheet API with a central theme system (Tokens).
 
 ## Navigation Structure
@@ -18,8 +18,9 @@ The app uses a nested navigation strategy:
 2.  **TabNavigator (Bottom Tabs):** The main interface for browsing categories.
 
 ## Data Flow
-*   **Current:** Data is mocked in `src/data/mockArticles.ts` and consumed directly by screens.
-*   **Future:** An `ArticleService` will abstract fetching from local storage or an API.
+*   **Current:** Feed data is fetched through `RssService`, cached by category, and surfaced with honest loading, retry, cached-state, and last-updated labels.
+*   **Home model:** Home is the Reader-First Morning Brief: a finite catch-up surface with Continue Reading and Today’s Brief sections.
+*   **Storage:** Saved articles, reading progress, settings, and profile-scoped metadata persist through AsyncStorage helpers and context providers.
 
 ## Design System
 We use a token-based design system located in `src/theme/`.

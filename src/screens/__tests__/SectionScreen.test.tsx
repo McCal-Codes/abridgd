@@ -1,15 +1,23 @@
 import React from "react";
 import { act, render, waitFor } from "@testing-library/react-native";
 import { SectionScreen } from "../SectionScreen";
-import { fetchArticlesByCategory, getCachedArticles } from "../../services/RssService";
 import { useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-jest.mock("../../services/RssService", () => ({
-  fetchArticlesByCategory: jest.fn(),
-  getCachedArticles: jest.fn(() => null),
-  getLastFetchedAt: jest.fn(() => Date.now()),
+const mockUseCategoryFeed = jest.fn();
+jest.mock("../../hooks/useCategoryFeed", () => ({
+  useCategoryFeed: (...args: unknown[]) => mockUseCategoryFeed(...args),
 }));
+
+const baseFeedState = {
+  articles: [] as any[],
+  loading: true,
+  refreshing: false,
+  error: null as string | null,
+  stale: false,
+  lastUpdated: null as Date | null,
+  refresh: jest.fn(),
+};
 
 jest.mock("@react-navigation/native", () => {
   const actual = jest.requireActual("@react-navigation/native");
@@ -69,6 +77,18 @@ let mockInsets = { top: 0, bottom: 0, left: 0, right: 0 };
   params: { category: "Technology" },
 });
 
+const sampleArticle = {
+  id: "1",
+  headline: "Tech Story",
+  summary: "",
+  body: "",
+  source: "Test",
+  timestamp: "Today",
+  publishedAt: Date.now(),
+  category: "Technology",
+  readTimeMinutes: 1,
+};
+
 describe("SectionScreen", () => {
   const settleVirtualizedList = async () => {
     await act(async () => {
@@ -82,20 +102,12 @@ describe("SectionScreen", () => {
       activeProfile: null,
       recordLastFetchedArticles: jest.fn(),
     };
-    (getCachedArticles as jest.Mock).mockReturnValue(null);
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValue([
-      {
-        id: "1",
-        headline: "Tech Story",
-        summary: "",
-        body: "",
-        source: "Test",
-        timestamp: "Today",
-        publishedAt: Date.now(),
-        category: "Technology",
-        readTimeMinutes: 1,
-      },
-    ]);
+    mockUseCategoryFeed.mockReturnValue({
+      ...baseFeedState,
+      loading: false,
+      lastUpdated: new Date(),
+      articles: [sampleArticle],
+    });
   });
 
   it("shows updated timestamp after load", async () => {
@@ -106,35 +118,39 @@ describe("SectionScreen", () => {
     await settleVirtualizedList();
   });
 
-  it("refresh sets updated timestamp", async () => {
+  it("refresh sets updated timestamp and swaps in new articles", async () => {
+    const refreshedArticle = { ...sampleArticle, id: "2", headline: "Refreshed Story" };
+
+    // Stateful mock so pull-to-refresh actually triggers a re-render, like the real hook.
+    mockUseCategoryFeed.mockImplementation(() => {
+      const [state, setState] = React.useState({
+        ...baseFeedState,
+        loading: false,
+        lastUpdated: new Date(),
+        articles: [sampleArticle],
+      });
+      return {
+        ...state,
+        refresh: async () => {
+          setState((prev: any) => ({ ...prev, articles: [refreshedArticle] }));
+        },
+      };
+    });
+
     const { getByTestId, findByText } = render(<SectionScreen />);
     await findByText("Tech Story");
 
-    (fetchArticlesByCategory as jest.Mock).mockResolvedValueOnce([
-      {
-        id: "2",
-        headline: "Refreshed Story",
-        summary: "",
-        body: "",
-        source: "Test",
-        timestamp: "Today",
-        publishedAt: Date.now(),
-        category: "Technology",
-        readTimeMinutes: 1,
-      },
-    ]);
-
-    act(() => {
+    await act(async () => {
       const list = getByTestId("section-list");
-      list.props.onRefresh();
+      await list.props.onRefresh();
     });
 
     expect(await findByText("Refreshed Story")).toBeTruthy();
     await settleVirtualizedList();
   });
 
-  it("shows an error state when no articles can be loaded", async () => {
-    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+  it("shows a network error state when there is no cache and the fetch fails", async () => {
+    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, loading: false, error: "Boom" });
 
     const { findByText } = render(<SectionScreen />);
 
@@ -143,21 +159,13 @@ describe("SectionScreen", () => {
     await settleVirtualizedList();
   });
 
-  it("keeps cached articles visible when refresh fails", async () => {
-    (getCachedArticles as jest.Mock).mockReturnValue([
-      {
-        id: "cached-1",
-        headline: "Cached Tech Story",
-        summary: "",
-        body: "",
-        source: "Test",
-        timestamp: "Today",
-        publishedAt: Date.now(),
-        category: "Technology",
-        readTimeMinutes: 1,
-      },
-    ]);
-    (fetchArticlesByCategory as jest.Mock).mockRejectedValueOnce(new Error("Boom"));
+  it("keeps cached articles visible when a background refresh fails", async () => {
+    mockUseCategoryFeed.mockReturnValue({
+      ...baseFeedState,
+      loading: false,
+      error: "Boom",
+      articles: [{ ...sampleArticle, id: "cached-1", headline: "Cached Tech Story" }],
+    });
 
     const { findByText, findByTestId, queryByText } = render(<SectionScreen />);
 
@@ -165,6 +173,15 @@ describe("SectionScreen", () => {
     expect(await findByTestId("section-feed-status")).toBeTruthy();
     expect(queryByText(/Network error/i)).toBeNull();
     expect(mockProfileContext.recordLastFetchedArticles).toHaveBeenCalledWith(["cached-1"]);
+    await settleVirtualizedList();
+  });
+
+  it("renders a skeleton, not the empty state, while a cold-start fetch is in flight", async () => {
+    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, loading: true, articles: [] });
+
+    const { getAllByTestId, queryByText } = render(<SectionScreen />);
+    expect(getAllByTestId("article-card-skeleton").length).toBeGreaterThan(0);
+    expect(queryByText(/No articles in/i)).toBeNull();
     await settleVirtualizedList();
   });
 });

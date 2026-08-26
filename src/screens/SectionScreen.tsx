@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { useProfilesOptional } from "../context/ProfileContext";
 import { ArticleCard, ArticleCardSkeleton } from "../components/ArticleCard";
-import { fetchArticlesByCategory, getCachedArticles, getLastFetchedAt } from "../services/RssService";
+import { useCategoryFeed } from "../hooks/useCategoryFeed";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList, TabParamList } from "../navigation/types";
@@ -50,11 +50,7 @@ export const SectionScreen: React.FC = () => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
 
-  const [articles, setArticles] = React.useState<Article[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const { articles, loading, error, refreshing, lastUpdated, refresh } = useCategoryFeed(category);
   const profileContext = useProfilesOptional();
   const recordLastFetchedRef = React.useRef(profileContext?.recordLastFetchedArticles);
   const insets = useSafeAreaInsets();
@@ -71,41 +67,31 @@ export const SectionScreen: React.FC = () => {
     recordLastFetchedRef.current = profileContext?.recordLastFetchedArticles;
   }, [profileContext?.recordLastFetchedArticles]);
 
+  const recordedArticleIdsRef = React.useRef<string>("");
   React.useEffect(() => {
-    const load = async () => {
-      try {
-        setError(null);
-        const data = await fetchArticlesByCategory(category, { forceRefresh: true });
-        setArticles(data);
-        recordLastFetchedRef.current?.(data.map((article) => article.id));
-        const fetchedAt = getLastFetchedAt(category);
-        setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-      } catch (e: any) {
-        setError(e?.message || "Failed to load articles.");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    };
-    const cached = getCachedArticles(category);
-    if (cached && cached.length) {
-      setArticles(cached);
-      recordLastFetchedRef.current?.(cached.map((article) => article.id));
-      const fetchedAt = getLastFetchedAt(category);
-      setLastUpdated(fetchedAt ? new Date(fetchedAt) : null);
-      setLoading(false);
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    load();
-  }, [category]);
+    if (articles.length === 0) return;
+    const ids = articles.map((article) => article.id);
+    const key = ids.join(",");
+    if (key === recordedArticleIdsRef.current) return;
+    recordedArticleIdsRef.current = key;
+    recordLastFetchedRef.current?.(ids);
+  }, [articles]);
 
   const headerIcon = category === "Local" ? MapPin : Newspaper;
 
-  const showSkeleton = loading && articles.length === 0;
+  const showSkeleton = articles.length === 0 && (loading || refreshing);
   const showErrorState = !showSkeleton && !!error && articles.length === 0;
-  const showEmptyState = !loading && !error && articles.length === 0;
+  const showEmptyState = !loading && !refreshing && !error && articles.length === 0;
+
+  const renderArticle = React.useCallback(
+    ({ item }: { item: Article }) => (
+      <ArticleCard
+        article={item}
+        onPress={(article) => navigation.navigate("Article", { article: article })}
+      />
+    ),
+    [navigation],
+  );
 
   return (
     <View style={styles.container}>
@@ -121,25 +107,7 @@ export const SectionScreen: React.FC = () => {
           <View style={{ padding: 16, borderRadius: 12, backgroundColor: colors.surface }}>
             <Text style={{ color: colors.systemRed, marginBottom: 8 }}>Network error</Text>
             <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>{error}</Text>
-            <Text
-              onPress={() => {
-                setLoading(true);
-                setError(null);
-                fetchArticlesByCategory(category, { forceRefresh: true })
-                  .then((data) => {
-                    setArticles(data);
-                    recordLastFetchedRef.current?.(data.map((article) => article.id));
-                    const fetchedAt = getLastFetchedAt(category);
-                    setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-                    setLoading(false);
-                  })
-                  .catch((e) => {
-                    setError(e?.message || "Failed to load articles.");
-                    setLoading(false);
-                  });
-              }}
-              style={{ color: colors.tint }}
-            >
+            <Text onPress={() => refresh()} style={{ color: colors.tint }}>
               Retry
             </Text>
           </View>
@@ -153,12 +121,7 @@ export const SectionScreen: React.FC = () => {
           testID="section-list"
           data={articles}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ArticleCard
-              article={item}
-              onPress={(article) => navigation.navigate("Article", { article: article })}
-            />
-          )}
+          renderItem={renderArticle}
           contentContainerStyle={[
             styles.listContent,
             {
@@ -194,19 +157,7 @@ export const SectionScreen: React.FC = () => {
             } catch {
               // noop if haptics unavailable
             }
-            setRefreshing(true);
-            setError(null);
-            try {
-              const data = await fetchArticlesByCategory(category, { forceRefresh: true });
-              setArticles(data);
-              recordLastFetchedRef.current?.(data.map((article) => article.id));
-              const fetchedAt = getLastFetchedAt(category);
-              setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
-            } catch (e: any) {
-              setError(e?.message || "Failed to refresh.");
-            } finally {
-              setRefreshing(false);
-            }
+            await refresh();
           }}
         />
       )}

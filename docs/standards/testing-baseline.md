@@ -1,8 +1,8 @@
 # Testing Baseline for Abridged App
 
-**Last Updated:** 2026  
-**Test Framework:** Jest 29.7.0 + React Native Testing Library 13.3.3  
-**Status:** ✅ All 10 baseline tests passing
+**Last Updated:** 2026-06-10
+**Test Framework:** Jest 29.7.0 + React Native Testing Library 13.3.3
+**Status:** ✅ All 91 baseline tests passing across 19 suites
 
 ## Overview
 
@@ -12,9 +12,10 @@ The Abridged app now includes a **minimum test harness** aligned to standards go
 
 | Suite | Tests | Status | Purpose |
 |-------|-------|--------|---------|
-| **HomeScreen** | 2 | ✅ PASS | Validates empty feed state and article fetching on mount |
+| **HomeScreen** | 6 | ✅ PASS | Validates Morning Brief loading, fetch, cached-state, refresh, errors, and continue reading |
 | **SavedScreen** | 4 | ✅ PASS | Validates saved articles context and empty/populated states |
 | **ArticleScreen** | 4 | ✅ PASS | Validates ArticleScreen component structure and mocking |
+| **Additional suites** | 77 | ✅ PASS | Covers navigation, onboarding, profile/settings contexts, RSS/AI services, API clients, and storage helpers |
 
 ## Running Tests
 
@@ -32,8 +33,11 @@ npx jest --watch
 ## Test Coverage
 
 ### HomeScreen Tests
-- ✅ Renders empty feed state when no articles
+- ✅ Renders Morning Brief loading state
 - ✅ Fetches articles on mount with correct category
+- ✅ Keeps cached stories visible when refresh fails
+- ✅ Supports pull-to-refresh
+- ✅ Surfaces Continue Reading cards and Show all toggle
 
 ### SavedScreen Tests
 - ✅ Renders empty saved articles state
@@ -82,13 +86,15 @@ Centralized mock definitions for:
 - React Native SVG
 - Lucide icon library
 - Expo modules
+- Expo SDK 54 winter runtime globals used by Jest (`structuredClone`, `__ExpoImportMetaRegistry`)
 
 ## Design Rationale
 
 **Baseline vs. Comprehensive:**
-The 3 baseline test suites target:
+The baseline suites target:
 - **Entry Points:** HomeScreen (main entry), SavedScreen (saved articles), ArticleScreen (article detail)
 - **State Management:** Context providers and async data fetching
+- **Services and Storage:** RSS parsing, AI/digest helpers, API clients, saved articles, reading progress, and profile persistence
 - **Smoke Tests:** Ensure components don't crash with valid data
 
 **Pragmatic Mocking:**

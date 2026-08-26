@@ -1,5 +1,7 @@
 # Observability Baseline — Abridged
 
+Last Updated: 2026-06-10
+
 This page documents our recommended baseline for monitoring and observability.
 
 Goals

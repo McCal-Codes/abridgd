@@ -27,6 +27,9 @@ jobs:
       - name: Run repo health audit
         run: npm run repo:health
 
+      - name: Check version consistency
+        run: npm run version:check
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest

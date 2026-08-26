@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   ScrollView,
@@ -27,7 +27,6 @@ import { typography } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type TabLayoutMode = "minimal" | "comprehensive";
 
 type OnboardingSlide = {
   id: string;
@@ -36,16 +35,17 @@ type OnboardingSlide = {
   demo?: boolean;
   demoText?: string;
   grounding?: boolean;
-  layoutChoice?: boolean;
+  preview?: "brief" | "settings" | "trust";
   Icon: typeof BookOpen;
 };
 
 const SLIDES: OnboardingSlide[] = [
   {
     id: "welcome",
-    title: "Finally, a Good News App",
+    title: "A calmer way into the news",
     description:
-      "We know the struggle. You downloaded this because you could not find a news app that felt right. You are in luck, you found it.",
+      "Start with a short brief. Keep reading when you want more. No need to build the whole app in your head on day one.",
+    preview: "brief",
     Icon: BookOpen,
   },
   {
@@ -62,7 +62,7 @@ const SLIDES: OnboardingSlide[] = [
     id: "grounding",
     title: "Optional grounding",
     description:
-      "For heavy stories, add a calm breathing cue. Optional, and changeable anytime in Settings > Reading.",
+      "For heavy stories, add a quiet breathing cue before you read. Skip it now, change it later in Settings > Reading.",
     grounding: true,
     Icon: Wind,
   },
@@ -70,22 +70,16 @@ const SLIDES: OnboardingSlide[] = [
     id: "make-it-yours",
     title: "Make It Yours",
     description:
-      "We do not do one size fits all. Change the colors, adjust the speed, or tweak the focus point. This is your quiet corner of the internet.",
-    Icon: Sliders,
-  },
-  {
-    id: "layout",
-    title: "Choose Your Layout",
-    description:
-      "Start with the calm default or a category-first layout. You can change this later in Tab Bar Settings.",
-    layoutChoice: true,
+      "Keep the default if it feels right. Tune speed, focus, haptics, and grounding later when you know what you want.",
+    preview: "settings",
     Icon: Sliders,
   },
   {
     id: "ready",
     title: "Welcome Home",
     description:
-      "No accounts, no tracking, no noise. Just the news, on your terms. We are glad you found us.",
+      "No account required. No tracking. No clutter. Just a simpler place to catch up, and settings when you want them.",
+    preview: "trust",
     Icon: CheckCircle,
   },
 ];
@@ -107,6 +101,9 @@ const GROUNDING_STYLE_COLORS: Record<GroundingAnimationStyle, string> = {
   waves: "#7FC6C9",
   pulse: "#A3D8DA",
 };
+const PREVIEW_TEXT_SCALE = 1.25;
+const CONTROL_TEXT_SCALE = 1.45;
+const ACTION_TEXT_SCALE = 1.6;
 
 const GroundingPreviewCard: React.FC<{
   isCompactHeight: boolean;
@@ -121,25 +118,42 @@ const GroundingPreviewCard: React.FC<{
   return (
     <View style={[styles.groundingCard, { padding: cardPadding }]}>
       <View style={styles.groundingCardHeader}>
-        <Text style={[styles.groundingCardLabel, { fontSize: labelSize }]}>Grounding Mode</Text>
+        <Text
+          style={[styles.groundingCardLabel, { fontSize: labelSize }]}
+          maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
+        >
+          Grounding Mode
+        </Text>
         <View style={styles.groundingStyleBadge}>
-          <Text style={styles.groundingStyleBadgeText}>{selectedStyle.label}</Text>
+          <Text style={styles.groundingStyleBadgeText} maxFontSizeMultiplier={CONTROL_TEXT_SCALE}>
+            {selectedStyle.label}
+          </Text>
         </View>
       </View>
-      <View style={styles.groundingCardBody}>
+      <View style={[styles.groundingCardBody, isCompactHeight && styles.groundingCardBodyCompact]}>
         <View
           style={[
             styles.groundingPulse,
             { width: pulseSize, height: pulseSize, borderRadius: pulseSize / 2 },
           ]}
         >
-          <Text style={[styles.groundingPulseText, isCompactHeight && { fontSize: 18 }]}>
+          <Text
+            style={[styles.groundingPulseText, isCompactHeight && { fontSize: 18 }]}
+            maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
+          >
             Inhale
           </Text>
-          <Text style={styles.groundingPulseSubtext}>softly</Text>
+          <Text style={styles.groundingPulseSubtext} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            softly
+          </Text>
         </View>
         <View style={styles.groundingDetails}>
-          <Text style={styles.groundingStyleDescriptionPreview}>{selectedStyle.description}</Text>
+          <Text
+            style={styles.groundingStyleDescriptionPreview}
+            maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
+          >
+            {selectedStyle.description}
+          </Text>
           <View style={styles.breathRow}>
             {BREATH_SEGMENTS.map((segment) => (
               <View
@@ -149,11 +163,15 @@ const GroundingPreviewCard: React.FC<{
                   { flex: segment.flex, backgroundColor: segment.color },
                 ]}
               >
-                <Text style={styles.breathSegmentLabel}>{segment.label}</Text>
+                <Text style={styles.breathSegmentLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+                  {segment.label}
+                </Text>
               </View>
             ))}
           </View>
-          <Text style={styles.breathTiming}>4s in | 1s still | 6s out</Text>
+          <Text style={styles.groundingChangeHint} maxFontSizeMultiplier={CONTROL_TEXT_SCALE}>
+            Optional, short, and easy to skip.
+          </Text>
         </View>
       </View>
     </View>
@@ -174,7 +192,10 @@ const GroundingStyleSelector: React.FC<{
 
   return (
     <View style={styles.groundingSelectorContainer}>
-      <Text style={[styles.groundingSelectorTitle, isCompactHeight && { fontSize: 16 }]}>
+      <Text
+        style={[styles.groundingSelectorTitle, isCompactHeight && { fontSize: 16 }]}
+        maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
+      >
         Pick your grounding feel
       </Text>
       <FlatList
@@ -189,6 +210,7 @@ const GroundingStyleSelector: React.FC<{
 
           return (
             <ScaleButton
+              testID={`onboarding-grounding-${item.id}`}
               onPress={() => onChange(item.id)}
               style={{ width: cardWidth }}
               accessibilityLabel={`Select ${item.label} grounding style`}
@@ -204,7 +226,10 @@ const GroundingStyleSelector: React.FC<{
                 <View style={styles.groundingStyleHeaderRow}>
                   <View style={[styles.groundingStyleSwatch, { backgroundColor: swatchColor }]} />
                   <View style={styles.groundingStyleTextColumn}>
-                    <Text style={[styles.groundingStyleLabel, isCompactHeight && { fontSize: 14 }]}>
+                    <Text
+                      style={[styles.groundingStyleLabel, isCompactHeight && { fontSize: 14 }]}
+                      maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
+                    >
                       {item.label}
                     </Text>
                     <Text
@@ -212,6 +237,7 @@ const GroundingStyleSelector: React.FC<{
                         styles.groundingStyleDescription,
                         isCompactHeight && { fontSize: 11 },
                       ]}
+                      maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
                     >
                       {item.description}
                     </Text>
@@ -227,77 +253,88 @@ const GroundingStyleSelector: React.FC<{
           );
         }}
       />
-      <Text style={[styles.groundingSelectorHint, isCompactHeight && { fontSize: 12 }]}>
+      <Text
+        style={[styles.groundingSelectorHint, isCompactHeight && { fontSize: 12 }]}
+        maxFontSizeMultiplier={CONTROL_TEXT_SCALE}
+      >
         {"You can change this later in Settings > Reading."}
       </Text>
     </View>
   );
 };
 
-const LayoutSelector: React.FC<{
-  value: TabLayoutMode;
-  onChange: (layout: TabLayoutMode) => void;
-  options: Array<{
-    id: TabLayoutMode;
-    title: string;
-    description: string;
-    tabs: string[];
-    accent: string;
-  }>;
-}> = ({ value, onChange, options }) => {
+const BriefPreview: React.FC = () => {
   const styles = useThemedStyles(createStyles);
 
   return (
-    <View style={styles.layoutSelectorContainer}>
-      <Text style={styles.layoutSelectorTitle}>Pick your tab layout</Text>
-      <Text style={styles.layoutSelectorDescription}>
-        This just sets your starting point. You can change it later in Settings.
+    <View style={styles.previewCard}>
+      <View style={styles.previewHeaderRow}>
+        <Text style={styles.previewEyebrow} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+          Morning Brief
+        </Text>
+        <Text style={styles.previewTimestamp} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+          Updated 8:15 AM
+        </Text>
+      </View>
+      <Text style={styles.previewTitle} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+        Today at a glance
       </Text>
-      {options.map((option) => {
-        const selected = option.id === value;
+      <View style={styles.previewDivider} />
+      {["Top story, short summary", "Local updates", "Continue reading"].map((item) => (
+        <View key={item} style={styles.previewLineRow}>
+          <View style={styles.previewDot} />
+          <Text style={styles.previewLineText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            {item}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+};
 
-        return (
-          <ScaleButton
-            key={option.id}
-            testID={`onboarding-layout-${option.id}`}
-            onPress={() => onChange(option.id)}
-            style={styles.layoutCard}
-            accessibilityLabel={`Choose ${option.title} tab layout`}
-            accessibilityState={{ selected }}
-          >
-            <View
-              style={[
-                styles.layoutCardBody,
-                selected && {
-                  borderColor: option.accent,
-                  backgroundColor: `${option.accent}12`,
-                },
-              ]}
-            >
-              <View style={styles.layoutCardHeader}>
-                <Text style={[styles.layoutCardTitle, selected && { color: option.accent }]}>
-                  {option.title}
-                </Text>
-                {selected ? (
-                  <View style={[styles.layoutSelectedBadge, { borderColor: option.accent }]}>
-                    <Text style={[styles.layoutSelectedBadgeText, { color: option.accent }]}>
-                      Selected
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text style={styles.layoutCardDescription}>{option.description}</Text>
-              <View style={styles.layoutTabRow}>
-                {option.tabs.map((tab) => (
-                  <View key={`${option.id}-${tab}`} style={styles.layoutTabPill}>
-                    <Text style={styles.layoutTabText}>{tab}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </ScaleButton>
-        );
-      })}
+const SettingsPreview: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.previewCard}>
+      <Text style={styles.previewEyebrow} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+        Reading Settings
+      </Text>
+      <View style={styles.settingPreviewRow}>
+        <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+          RSVP speed
+        </Text>
+        <View style={styles.settingPreviewTrack}>
+          <View style={styles.settingPreviewFill} />
+        </View>
+      </View>
+      {["Grounding cue", "Haptics", "Reader focus"].map((item, index) => (
+        <View key={item} style={styles.settingPreviewRow}>
+          <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            {item}
+          </Text>
+          <View style={[styles.settingPreviewToggle, index === 1 && styles.settingPreviewToggleOff]}>
+            <View style={[styles.settingPreviewKnob, index === 1 && styles.settingPreviewKnobOff]} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const TrustPreview: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.previewCard}>
+      {["No account required", "No tracking", "Change settings anytime"].map((item) => (
+        <View key={item} style={styles.trustPreviewRow}>
+          <CheckCircle size={18} color={styles.trustIcon.color} strokeWidth={2} />
+          <Text style={styles.trustPreviewText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            {item}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 };
@@ -312,12 +349,10 @@ export const OnboardingScreen: React.FC = () => {
     completeOnboarding,
     groundingAnimationStyle,
     setGroundingAnimationStyle,
-    tabLayout,
-    setTabLayout,
     reduceMotion,
   } = useSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const listRef = useRef<FlatList<OnboardingSlide>>(null);
+  const listRef = useRef<ScrollView>(null);
   const { width, height: screenHeight } = useWindowDimensions();
   const isCompactHeight = screenHeight < 720;
   const isMediumHeight = screenHeight >= 720 && screenHeight < 820;
@@ -326,45 +361,18 @@ export const OnboardingScreen: React.FC = () => {
   const slideBottomPadding = footerBottomPadding + spacing.lg;
   const [selectedGroundingStyle, setSelectedGroundingStyle] =
     useState<GroundingAnimationStyle>(groundingAnimationStyle);
-  const [selectedLayout, setSelectedLayout] = useState<TabLayoutMode>(tabLayout);
-
-  const layoutOptions = useMemo(
-    () => [
-      {
-        id: "minimal" as const,
-        title: "Minimal",
-        description: "Calm default with Home, Discover, Saved, Digest, and Profile.",
-        tabs: ["Home", "Discover", "Saved", "Digest", "Profile"],
-        accent: colors.primary,
-      },
-      {
-        id: "comprehensive" as const,
-        title: "Comprehensive",
-        description: "Category-first with Top and Local up front for quicker scanning.",
-        tabs: ["Top", "Local", "Digest", "Saved", "Profile"],
-        accent: colors.text,
-      },
-    ],
-    [colors.primary, colors.text],
-  );
 
   const scrollToSlide = useCallback(
     (index: number, animated = true) => {
       setCurrentIndex(index);
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToIndex({ index, animated });
-      });
+      listRef.current?.scrollTo({ x: index * width, animated });
     },
-    [],
+    [width],
   );
 
   useEffect(() => {
     setSelectedGroundingStyle(groundingAnimationStyle);
   }, [groundingAnimationStyle]);
-
-  useEffect(() => {
-    setSelectedLayout(tabLayout);
-  }, [tabLayout]);
 
   useEffect(() => {
     const startId = route?.params?.startSlideId as string | undefined;
@@ -374,14 +382,14 @@ export const OnboardingScreen: React.FC = () => {
     if (index >= 0) {
       setCurrentIndex(index);
       const timeout = setTimeout(() => {
-        listRef.current?.scrollToIndex({ index, animated: false });
+        listRef.current?.scrollTo({ x: index * width, animated: false });
       }, 50);
 
       return () => clearTimeout(timeout);
     }
 
     return undefined;
-  }, [route?.params]);
+  }, [route?.params, width]);
 
   const handleNext = useCallback(() => {
     const nextIndex = Math.min(currentIndex + 1, SLIDES.length - 1);
@@ -392,10 +400,6 @@ export const OnboardingScreen: React.FC = () => {
   const handleFinish = async (options?: { openReadingSettings?: boolean }) => {
     if (selectedGroundingStyle !== groundingAnimationStyle) {
       await setGroundingAnimationStyle(selectedGroundingStyle);
-    }
-
-    if (selectedLayout !== tabLayout) {
-      await setTabLayout(selectedLayout);
     }
 
     await completeOnboarding();
@@ -468,15 +472,19 @@ export const OnboardingScreen: React.FC = () => {
             </View>
           ) : null}
 
-          {item.layoutChoice ? (
-            <LayoutSelector
-              value={selectedLayout}
-              onChange={setSelectedLayout}
-              options={layoutOptions}
-            />
+          {item.preview === "brief" ? (
+            <BriefPreview />
           ) : null}
 
-          {!item.demo && !item.grounding && !item.layoutChoice ? (
+          {item.preview === "settings" ? (
+            <SettingsPreview />
+          ) : null}
+
+          {item.preview === "trust" ? (
+            <TrustPreview />
+          ) : null}
+
+          {!item.demo && !item.grounding && !item.preview ? (
             <View style={styles.placeholder}>
               <item.Icon size={72} color={colors.text} strokeWidth={1.5} />
             </View>
@@ -488,32 +496,26 @@ export const OnboardingScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
+      <ScrollView
         ref={listRef}
         testID="onboarding-list"
-        data={SLIDES}
-        renderItem={renderItem}
         horizontal
         pagingEnabled
-        initialNumToRender={SLIDES.length}
-        windowSize={SLIDES.length}
         snapToInterval={width}
         snapToAlignment="start"
         decelerationRate={reduceMotion ? "normal" : "fast"}
         disableIntervalMomentum
         bounces={false}
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
         onMomentumScrollEnd={(event) => {
           const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
           setCurrentIndex(nextIndex);
         }}
-        onScrollToIndexFailed={(info) => {
-          setTimeout(() => {
-            listRef.current?.scrollToIndex({ index: info.index, animated: false });
-          }, 50);
-        }}
-      />
+      >
+        {SLIDES.map((item) => (
+          <React.Fragment key={item.id}>{renderItem({ item })}</React.Fragment>
+        ))}
+      </ScrollView>
 
       <View
         style={[
@@ -549,7 +551,9 @@ export const OnboardingScreen: React.FC = () => {
               onPress={() => void handleFinish()}
             >
               <View style={styles.finishBtn}>
-                <Text style={styles.buttonText}>Get Started</Text>
+                <Text style={styles.buttonText} maxFontSizeMultiplier={ACTION_TEXT_SCALE}>
+                  Start reading
+                </Text>
               </View>
             </ScaleButton>
 
@@ -559,7 +563,12 @@ export const OnboardingScreen: React.FC = () => {
               onPress={() => void handleFinish({ openReadingSettings: true })}
             >
               <View style={styles.secondaryBtnContent}>
-                <Text style={styles.secondaryButtonText}>Fine-tune Settings Now</Text>
+                <Text
+                  style={styles.secondaryButtonText}
+                  maxFontSizeMultiplier={ACTION_TEXT_SCALE}
+                >
+                  Fine-tune settings
+                </Text>
               </View>
             </ScaleButton>
           </View>
@@ -567,7 +576,9 @@ export const OnboardingScreen: React.FC = () => {
           <View style={styles.progressActions}>
             <ScaleButton testID="onboarding-next" style={styles.button} onPress={handleNext}>
               <View style={styles.primaryActionContent}>
-                <Text style={styles.primaryActionText}>Next</Text>
+                <Text style={styles.primaryActionText} maxFontSizeMultiplier={ACTION_TEXT_SCALE}>
+                  Next
+                </Text>
               </View>
             </ScaleButton>
 
@@ -577,7 +588,9 @@ export const OnboardingScreen: React.FC = () => {
               onPress={() => void handleFinish()}
             >
               <View style={styles.skipBtnContent}>
-                <Text style={styles.skipButtonText}>Skip for now</Text>
+                <Text style={styles.skipButtonText} maxFontSizeMultiplier={ACTION_TEXT_SCALE}>
+                  Skip for now
+                </Text>
               </View>
             </ScaleButton>
           </View>
@@ -617,9 +630,8 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.xs,
     },
     title: {
-      fontFamily: typography.fontFamily.serif,
+      fontFamily: typography.fontFamily.serifBold,
       fontSize: 26,
-      fontWeight: "700",
       color: colors.text,
       textAlign: "center",
       marginBottom: spacing.xs,
@@ -673,6 +685,8 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+      gap: spacing.sm,
+      flexWrap: "wrap",
     },
     groundingCardLabel: {
       fontFamily: typography.fontFamily.serif,
@@ -683,6 +697,10 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       gap: spacing.sm,
       alignItems: "center",
+    },
+    groundingCardBodyCompact: {
+      flexDirection: "column",
+      alignItems: "stretch",
     },
     groundingPulse: {
       width: 88,
@@ -716,8 +734,8 @@ const createStyles = (colors: ThemeColors) =>
     },
     breathRow: {
       flexDirection: "row",
-      width: "72%",
-      maxWidth: "72%",
+      width: "100%",
+      maxWidth: 220,
       alignSelf: "flex-start",
       borderRadius: 999,
       overflow: "hidden",
@@ -734,7 +752,7 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.surface,
       fontWeight: "600",
     },
-    breathTiming: {
+    groundingChangeHint: {
       fontFamily: typography.fontFamily.sans,
       fontSize: 11,
       color: colors.textSecondary,
@@ -746,6 +764,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
+      maxWidth: "100%",
     },
     groundingStyleBadgeText: {
       fontFamily: typography.fontFamily.sans,
@@ -843,84 +862,129 @@ const createStyles = (colors: ThemeColors) =>
       height: "100%",
       borderRadius: 999,
     },
-    layoutSelectorContainer: {
+    previewCard: {
       width: "100%",
-      gap: spacing.sm,
-      marginTop: spacing.xs,
-    },
-    layoutSelectorTitle: {
-      fontFamily: typography.fontFamily.serif,
-      fontSize: 22,
-      color: colors.text,
-      textAlign: "center",
-    },
-    layoutSelectorDescription: {
-      fontFamily: typography.fontFamily.sans,
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: "center",
-      lineHeight: 20,
-      marginBottom: spacing.xs,
-    },
-    layoutCard: {
-      width: "100%",
-    },
-    layoutCardBody: {
-      width: "100%",
-      borderRadius: 16,
+      maxWidth: 380,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
       padding: spacing.md,
       gap: spacing.sm,
+      marginTop: spacing.sm,
     },
-    layoutCardHeader: {
+    previewHeaderRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       gap: spacing.sm,
-    },
-    layoutCardTitle: {
-      fontFamily: typography.fontFamily.serif,
-      fontSize: 19,
-      color: colors.text,
-    },
-    layoutSelectedBadge: {
-      borderRadius: 999,
-      borderWidth: 1,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      backgroundColor: colors.surface,
-    },
-    layoutSelectedBadgeText: {
-      fontFamily: typography.fontFamily.sans,
-      fontSize: 11,
-      fontWeight: "700",
-    },
-    layoutCardDescription: {
-      fontFamily: typography.fontFamily.sans,
-      fontSize: 14,
-      color: colors.textSecondary,
-      lineHeight: 20,
-    },
-    layoutTabRow: {
-      flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.xs,
     },
-    layoutTabPill: {
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.background,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-    },
-    layoutTabText: {
+    previewEyebrow: {
       fontFamily: typography.fontFamily.sans,
       fontSize: 12,
-      fontWeight: "600",
+      fontWeight: "700",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    previewTimestamp: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    previewTitle: {
+      fontFamily: typography.fontFamily.serifBold,
+      fontSize: 22,
       color: colors.text,
+    },
+    previewDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      width: "100%",
+    },
+    previewLineRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    previewDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+    },
+    previewLineText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 15,
+      color: colors.text,
+      flex: 1,
+      flexShrink: 1,
+    },
+    settingPreviewRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+      minHeight: 36,
+    },
+    settingPreviewLabel: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 15,
+      color: colors.text,
+      flex: 1,
+      flexShrink: 1,
+    },
+    settingPreviewTrack: {
+      width: 118,
+      maxWidth: "42%",
+      height: 8,
+      borderRadius: 999,
+      backgroundColor: colors.border,
+      overflow: "hidden",
+    },
+    settingPreviewFill: {
+      width: "58%",
+      height: "100%",
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+    },
+    settingPreviewToggle: {
+      width: 42,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "flex-end",
+      paddingHorizontal: 3,
+    },
+    settingPreviewToggleOff: {
+      backgroundColor: colors.border,
+      alignItems: "flex-start",
+    },
+    settingPreviewKnob: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: colors.surface,
+    },
+    settingPreviewKnobOff: {
+      backgroundColor: colors.background,
+    },
+    trustPreviewRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    trustPreviewText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 16,
+      color: colors.text,
+      flex: 1,
+      flexShrink: 1,
+    },
+    trustIcon: {
+      color: colors.primary,
     },
     placeholder: {
       height: 200,
@@ -955,7 +1019,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     button: {
       width: "100%",
-      marginHorizontal: spacing.sm,
+      maxWidth: 380,
     },
     finishActions: {
       width: "100%",
@@ -978,6 +1042,7 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.surface,
       fontSize: 18,
       fontWeight: "600",
+      textAlign: "center",
     },
     primaryActionContent: {
       borderRadius: 12,
@@ -990,6 +1055,7 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.surface,
       fontSize: 18,
       fontWeight: "600",
+      textAlign: "center",
     },
     secondaryButton: {
       borderRadius: 12,
@@ -1008,6 +1074,7 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 16,
       fontFamily: typography.fontFamily.sans,
       fontWeight: "600",
+      textAlign: "center",
     },
     skipButton: {
       borderRadius: 12,
@@ -1024,6 +1091,7 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 15,
       fontFamily: typography.fontFamily.sans,
       fontWeight: "600",
+      textAlign: "center",
     },
     srOnly: {
       position: "absolute",

@@ -64,26 +64,29 @@ describe("OnboardingScreen", () => {
     const { getByTestId } = render(<OnboardingScreen />);
 
     expect(getByTestId("onboarding-progress-text")).toHaveTextContent(
-      "Onboarding progress: slide 1 of 6",
+      "Onboarding progress: slide 1 of 5",
     );
 
     fireEvent.press(getByTestId("onboarding-next"));
 
     expect(getByTestId("onboarding-progress-text")).toHaveTextContent(
-      "Onboarding progress: slide 2 of 6",
+      "Onboarding progress: slide 2 of 5",
     );
   });
 
-  it("persists the selected layout before finishing onboarding", async () => {
-    mockRoute = { params: { startSlideId: "ready" } };
+  it("persists the selected grounding style before finishing onboarding", async () => {
+    mockRoute = { params: { startSlideId: "grounding" } };
 
     const { getByTestId } = render(<OnboardingScreen />);
 
-    fireEvent.press(getByTestId("onboarding-layout-comprehensive"));
+    fireEvent.press(getByTestId("onboarding-grounding-simple"));
+    fireEvent.press(getByTestId("onboarding-next"));
+    fireEvent.press(getByTestId("onboarding-next"));
     fireEvent.press(getByTestId("onboarding-finish"));
 
     await waitFor(() => {
-      expect(mockSettings.setTabLayout).toHaveBeenCalledWith("comprehensive");
+      expect(mockSettings.setGroundingAnimationStyle).toHaveBeenCalledWith("simple");
+      expect(mockSettings.setTabLayout).not.toHaveBeenCalled();
       expect(mockSettings.completeOnboarding).toHaveBeenCalled();
       expect(mockNavigation.reset).toHaveBeenCalledWith({
         index: 0,

@@ -4,7 +4,7 @@
  * Profile management with reading stats and account tools.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Linking,
@@ -28,6 +28,7 @@ import {
 } from "lucide-react-native";
 import { GlassButton } from "../components/GlassButton";
 import { SignInWithApple } from "../components/SignInWithApple";
+import { Skeleton } from "../components/Skeleton";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -43,6 +44,7 @@ import {
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { getAvatarColor, getInitials } from "../utils/avatar";
 
 const KARMA_TIERS = [
   { label: "Fresh", min: 0 },
@@ -98,6 +100,7 @@ const ProfileScreen: React.FC = () => {
     activeProfile,
     signInWithAppleProfile,
     signOut,
+    deleteActiveProfile,
     exportProfileKey,
     importProfileKey,
     updateSettingsTag,
@@ -106,7 +109,15 @@ const ProfileScreen: React.FC = () => {
 
   const [settingsTagInput, setSettingsTagInput] = useState(activeProfile?.settingsTag || "");
   const [importCode, setImportCode] = useState("");
+  const [tagSaved, setTagSaved] = useState(false);
+  const tagSavedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileReady = Boolean(activeProfile);
+
+  useEffect(() => {
+    return () => {
+      if (tagSavedTimeout.current) clearTimeout(tagSavedTimeout.current);
+    };
+  }, []);
 
   const achievementStatuses = useMemo(
     () => getAchievementStatuses(activeProfile || undefined),
@@ -174,6 +185,10 @@ const ProfileScreen: React.FC = () => {
     const cleaned = settingsTagInput.trim();
     updateSettingsTag(cleaned || "Local profile");
     setSettingsTagInput(cleaned || "Local profile");
+
+    setTagSaved(true);
+    if (tagSavedTimeout.current) clearTimeout(tagSavedTimeout.current);
+    tagSavedTimeout.current = setTimeout(() => setTagSaved(false), 1800);
   };
 
   const handleExportProfile = () => {
@@ -199,6 +214,29 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const handleDeleteLocalData = () => {
+    Alert.alert(
+      "Delete local data",
+      "This removes this profile along with its saved articles and reading progress from this device. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const profile = await deleteActiveProfile();
+              Alert.alert("Deleted", `Local data removed. Switched to ${profile.name}.`);
+            } catch (e) {
+              console.error("Failed to delete local data:", e);
+              Alert.alert("Error", "Couldn't delete local data. Please try again.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -208,47 +246,79 @@ const ProfileScreen: React.FC = () => {
 
         <View style={styles.card}>
           <View style={styles.profileRow}>
-            <View style={styles.avatarContainer}>
-              <User size={46} color={colors.textSecondary} strokeWidth={1.5} />
-            </View>
-            <View style={styles.profileTextBlock}>
-              <Text style={styles.profileName}>{activeProfile?.name || "Anonymous Reader"}</Text>
-              <Text style={styles.profileSubtext}>
-                Codename: {activeProfile?.codename || "Generating…"}
-              </Text>
-              <Text style={styles.profileSubtext}>
-                {activeProfile?.email || "Signed out"} · Sync coming soon
-              </Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {activeProfile?.settingsTag || "Local profile"}
-                </Text>
+            {profileReady ? (
+              <View
+                style={[
+                  styles.avatarContainer,
+                  { backgroundColor: getAvatarColor(activeProfile?.id), borderColor: "transparent" },
+                ]}
+              >
+                {getInitials(activeProfile?.name) ? (
+                  <Text style={styles.avatarInitials}>{getInitials(activeProfile?.name)}</Text>
+                ) : (
+                  <User size={46} color={colors.background} strokeWidth={1.5} />
+                )}
               </View>
+            ) : (
+              <Skeleton width={88} height={88} borderRadius={44} />
+            )}
+            <View style={styles.profileTextBlock}>
+              {profileReady ? (
+                <>
+                  <Text style={styles.profileName}>{activeProfile?.name || "Anonymous Reader"}</Text>
+                  <Text style={styles.profileSubtext}>
+                    Codename: {activeProfile?.codename || "Generating…"}
+                  </Text>
+                  <Text style={styles.profileSubtext}>
+                    {activeProfile?.appleUserId
+                      ? `Signed in with Apple${activeProfile?.email ? ` · ${activeProfile.email}` : ""}`
+                      : "Not signed in · data stays on this device"}
+                  </Text>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {activeProfile?.settingsTag || "Local profile"}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Skeleton width="70%" height={20} style={{ marginBottom: spacing.xs }} />
+                  <Skeleton width="50%" height={14} style={{ marginBottom: spacing.xs }} />
+                  <Skeleton width="60%" height={14} />
+                </>
+              )}
             </View>
           </View>
 
           <View style={styles.profilePillsGrid}>
-            <ProfilePill
-              label="Reads tracked"
-              value={articlesReadDisplay}
-              accessibilityLabel={`Reads tracked ${articlesReadDisplay}`}
-              style={styles.profilePillHalf}
-            />
-            <ProfilePill
-              label="Saved"
-              value={savedCountDisplay}
-              accessibilityLabel={`Saved articles ${savedCountDisplay}`}
-              style={styles.profilePillHalf}
-            />
+            {profileReady ? (
+              <>
+                <ProfilePill
+                  label="Reads tracked"
+                  value={articlesReadDisplay}
+                  accessibilityLabel={`Reads tracked ${articlesReadDisplay}`}
+                  style={styles.profilePillHalf}
+                />
+                <ProfilePill
+                  label="Saved"
+                  value={savedCountDisplay}
+                  accessibilityLabel={`Saved articles ${savedCountDisplay}`}
+                  style={styles.profilePillHalf}
+                />
+              </>
+            ) : (
+              <>
+                <Skeleton height={64} borderRadius={12} style={styles.profilePillHalf} />
+                <Skeleton height={64} borderRadius={12} style={styles.profilePillHalf} />
+              </>
+            )}
           </View>
 
-          {!profileReady ? (
-            <Text style={styles.noteText}>Loading your profile…</Text>
-          ) : (
+          {profileReady ? (
             <Text style={styles.noteText}>
               Reading stats come from tracked sessions and stay on this device until sync launches.
             </Text>
-          )}
+          ) : null}
 
           <GlassButton
             label="Open settings"
@@ -266,18 +336,6 @@ const ProfileScreen: React.FC = () => {
             style={styles.cardAction}
             icon={<BookOpen size={16} color={colors.text} strokeWidth={2} />}
           />
-          {activeProfile?.appleUserId ? (
-            <GlassButton
-              label="Sign out"
-              prominence="standard"
-              onPress={() => {
-                const profile = signOut();
-                Alert.alert("Signed out", `Switched to ${profile.name}.`);
-              }}
-              accessibilityLabel="Sign out of Apple account"
-              style={styles.cardAction}
-            />
-          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -320,7 +378,9 @@ const ProfileScreen: React.FC = () => {
 
         <View style={styles.section}>
           <SectionHeader title="Account & backup" />
+
           <View style={[styles.card, styles.transferCard]}>
+            <SectionHeader title="Sign in" compact style={styles.subsectionTitle} />
             <View style={styles.connectedRow}>
               <View style={styles.connectedIcon}>
                 <Shield size={18} color={colors.textSecondary} />
@@ -328,29 +388,61 @@ const ProfileScreen: React.FC = () => {
               <View style={styles.connectedTextBlock}>
                 <Text style={styles.connectedTitle}>Apple Account</Text>
                 <Text style={styles.connectedDesc}>
-                  Sync is not live yet. Data stays local until you opt in.
+                  {activeProfile?.appleUserId
+                    ? "Signed in. Your codename and stats stay tied to this Apple ID."
+                    : "Sign in to keep your codename and stats recoverable if you switch devices."}
                 </Text>
               </View>
-              <View style={styles.connectedBadge}>
-                <Text style={styles.connectedBadgeText}>Local only</Text>
+              <View
+                style={[
+                  styles.connectedBadge,
+                  activeProfile?.appleUserId && styles.connectedBadgeActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.connectedBadgeText,
+                    activeProfile?.appleUserId && styles.connectedBadgeTextActive,
+                  ]}
+                >
+                  {activeProfile?.appleUserId ? "Connected" : "Local only"}
+                </Text>
               </View>
             </View>
-            <SignInWithApple
-              onSuccess={(user) => {
-                const profile = signInWithAppleProfile({
-                  id: user.id,
-                  email: user.email,
-                  displayName: user.displayName,
-                });
-                Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
-              }}
-              onError={(error) => {
-                console.error("Sign in error:", error);
-              }}
-            />
+
+            {activeProfile?.appleUserId ? (
+              <GlassButton
+                label="Sign out"
+                prominence="standard"
+                onPress={() => {
+                  const profile = signOut();
+                  Alert.alert("Signed out", `Switched to ${profile.name}.`);
+                }}
+                accessibilityLabel="Sign out of Apple account"
+                style={styles.cardAction}
+              />
+            ) : (
+              <SignInWithApple
+                onSuccess={(user) => {
+                  const profile = signInWithAppleProfile({
+                    id: user.id,
+                    email: user.email,
+                    displayName: user.displayName,
+                  });
+                  Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
+                }}
+                onError={(error) => {
+                  console.error("Sign in error:", error);
+                }}
+              />
+            )}
+          </View>
+
+          <View style={[styles.card, styles.transferCard]}>
+            <SectionHeader title="Backup & transfer" compact style={styles.subsectionTitle} />
             <Text style={styles.sectionDesc}>
-              Keep this screen focused on the basics: label this device, keep a backup code handy,
-              and import a profile when you need to move settings later.
+              Label this device, keep a backup code handy, and import a profile when you need to
+              move settings later.
             </Text>
 
             <Text style={styles.transferLabel}>Profile label</Text>
@@ -365,6 +457,11 @@ const ProfileScreen: React.FC = () => {
               placeholderTextColor={colors.textSecondary}
               returnKeyType="done"
             />
+            {tagSaved ? (
+              <Text style={styles.savedFeedback} accessibilityLiveRegion="polite">
+                Saved
+              </Text>
+            ) : null}
 
             <View style={styles.cardDivider} />
 
@@ -403,16 +500,22 @@ const ProfileScreen: React.FC = () => {
               style={styles.cardAction}
               icon={<Download size={16} color={colors.text} strokeWidth={2} />}
             />
+            <Text style={styles.transferHint}>Keep this code private.</Text>
+          </View>
+
+          <View style={[styles.card, styles.dangerCard]}>
+            <SectionHeader title="Danger zone" compact style={styles.subsectionTitle} />
             <GlassButton
               label="Delete local data"
               prominence="standard"
-              onPress={() => Alert.alert("Coming soon", "Local data deletion will ship with sync.")}
+              destructive
+              onPress={handleDeleteLocalData}
               accessibilityLabel="Delete local data"
-              accessibilityHint="Future control to remove local profile data."
-              style={styles.cardAction}
+              accessibilityHint="Removes this profile's saved articles and reading progress from this device."
             />
             <Text style={styles.transferHint}>
-              Keep this code private. Data consent and granular deletion ship with sync.
+              Removes this profile's saved articles and reading progress from this device. App
+              settings stay as they are. This cannot be undone.
             </Text>
           </View>
         </View>
@@ -615,6 +718,12 @@ const createStyles = (colors: ThemeColors) =>
     borderWidth: 2,
     borderColor: colors.border,
   },
+  avatarInitials: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.background,
+  },
   profileTextBlock: { flex: 1, marginLeft: spacing.md },
   profileName: {
     fontFamily: typography.fontFamily.sans,
@@ -730,6 +839,20 @@ const createStyles = (colors: ThemeColors) =>
   transferCard: {
     // spacing handled per-child to avoid unsupported gap on React Native
   },
+  dangerCard: {
+    borderColor: `${colors.error}40`,
+    backgroundColor: `${colors.error}0D`,
+  },
+  subsectionTitle: {
+    fontSize: 15,
+  },
+  savedFeedback: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.primary,
+    marginTop: spacing.xs,
+  },
   transferLabel: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
@@ -801,10 +924,18 @@ const createStyles = (colors: ThemeColors) =>
     borderWidth: 1,
     borderColor: colors.border,
   },
+  connectedBadgeActive: {
+    backgroundColor: `${colors.primary}1A`,
+    borderColor: colors.primary,
+  },
   connectedBadgeText: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  connectedBadgeTextActive: {
+    color: colors.primary,
+    fontWeight: "700",
   },
   footerText: {
     fontFamily: typography.fontFamily.sans,

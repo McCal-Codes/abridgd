@@ -1,5 +1,6 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
+import { Alert } from "react-native";
 import ProfileScreen from "../ProfileScreen";
 
 const mockNavigation = {
@@ -113,6 +114,7 @@ let mockProfiles: any = {
   },
   signInWithAppleProfile: jest.fn(),
   signOut: jest.fn(),
+  deleteActiveProfile: jest.fn(() => Promise.resolve({ id: "anonymous", name: "Reader" })),
   exportProfileKey: jest.fn(() => "profile-key-123"),
   importProfileKey: jest.fn(() => true),
   updateSettingsTag: jest.fn(),
@@ -185,5 +187,34 @@ describe("ProfileScreen", () => {
     expect(queryByText("Personalization & advanced features")).toBeNull();
     expect(queryByText("Sync & privacy")).toBeNull();
     expect(queryByText("Reading streak")).toBeNull();
+  });
+
+  it("deletes local data after the user confirms the destructive alert", async () => {
+    jest.spyOn(Alert, "alert");
+    const { getByText } = render(<ProfileScreen />);
+
+    fireEvent.press(getByText("Delete local data"));
+
+    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
+    const deleteButton = buttons.find((b: { text: string }) => b.text === "Delete");
+
+    await act(async () => {
+      await deleteButton.onPress();
+    });
+
+    expect(mockProfiles.deleteActiveProfile).toHaveBeenCalled();
+  });
+
+  it("does not delete anything if the user cancels", () => {
+    jest.spyOn(Alert, "alert");
+    const { getByText } = render(<ProfileScreen />);
+
+    fireEvent.press(getByText("Delete local data"));
+
+    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
+    const cancelButton = buttons.find((b: { text: string }) => b.text === "Cancel");
+
+    expect(cancelButton).toBeTruthy();
+    expect(mockProfiles.deleteActiveProfile).not.toHaveBeenCalled();
   });
 });

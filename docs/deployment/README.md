@@ -1,5 +1,7 @@
 # Deployment Documentation
 
+Last Updated: 2026-06-10
+
 Guides for building, deploying, and distributing Abridged.
 
 ## Documents

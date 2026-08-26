@@ -1,4 +1,8 @@
 # RSS Content Use Audit
+
+Last Updated: 2026-08-08
+
+**Correction (2026-08-08):** Sections 2, 3, and 6 below previously stated the app never scrapes HTML and never displays full articles. That was inaccurate — `src/services/FullStoryService.ts` does fetch and extract full article HTML from the publisher's own page (via per-publisher CSS selectors, plus a TribLive-specific WordPress REST API path) to power the in-app "Abridged Reader" view, and caches the extracted text for 24 hours (`src/services/fullStoryCache.ts`). The sections below have been rewritten to describe this accurately rather than scaling the feature back, since it's a deliberate, user-facing reading feature, not an oversight. See the updated risk assessment in Section 10.
 **App:** Abridgd
 **Purpose:** Document legal, ethical, and platform-compliant use of RSS feeds
 
@@ -28,8 +32,15 @@ This audit reflects the app’s **current behavior**, not hypothetical features.
 The app **does not**:
 - Bypass login systems
 - Circumvent technical access controls
-- Scrape HTML when RSS is unavailable
 - Access feeds explicitly marked as private or restricted
+- Bypass paywalls or reconstruct subscriber-only content (see "Paywall detection" below)
+
+### Full-article extraction (see Section 3 for detail)
+When an RSS body is short or a source is known to ship truncated summaries, the app fetches the
+publisher's own article page and extracts the main article text via per-publisher CSS selectors
+(`src/services/FullStoryService.ts`) to power the in-app "Abridged Reader" view. This is a
+publicly-accessible-page fetch (same page a browser would load), not a login/paywall bypass — it
+is covered under Section 3's content-usage policy, not this section's "prohibited access" list.
 
 **Risk Level:** Low
 
@@ -38,22 +49,33 @@ The app **does not**:
 ## 3. Content Usage & Copyright Handling
 ### Content Displayed
 - Article titles
-- Publisher-provided summaries or excerpts
+- Publisher-provided summaries or excerpts (from RSS)
 - Metadata (author, publication date, source name)
-- Thumbnails explicitly included in the feed
+- Thumbnails and inline images explicitly included in the feed or article page
+- **Full article body text**, extracted from the publisher's own public article page, for
+  sources whose RSS feed ships only a truncated summary (`src/services/FullStoryService.ts`,
+  triggered when the RSS body is short or the source is on a known-truncated list). This powers
+  the "Abridged Reader" in-app reading view.
 
 ### Content Not Displayed
-- Full copyrighted articles
-- Reconstructed paywalled content
-- Stored or cached full article bodies for redistribution
-- Content presented in a way that replaces the publisher’s site
+- Reconstructed paywalled content (paywalled/subscriber-only pages are never fetched or bypassed —
+  see "Paywall detection" below)
+- Publisher advertising, tracking scripts, or page chrome (only the extracted article-body
+  selector's content is kept)
+- Content presented as Abridgd's own reporting — every article keeps clear source attribution and
+  a direct link back to the original (Section 4), and a persistent "Read Full Story on Web" action
 
-### Intended Role of RSS
-RSS is treated as:
+### Intended Role of RSS and Full-Article Extraction
+RSS remains the primary discovery mechanism — source name, headline, timing, and category all come
+from the feed. Full-article extraction is a **secondary, in-app reading convenience** layered on
+top of RSS for sources that ship truncated feeds, not a redistribution or archival product:
 
-> A discovery and navigation mechanism, not a content replacement layer.
+> Extraction reads the same publicly-accessible page a browser would; nothing paywalled or
+> access-controlled is fetched, and every article still links directly to the publisher.
 
-**Risk Level:** Low to Moderate (industry-standard use)
+**Risk Level:** Moderate (see Section 10 for the full assessment and mitigations — attribution,
+direct linking, a 24-hour cache TTL rather than permanent storage, per-source disable capability,
+and the existing publisher takedown/request policy in this document).
 
 ---
 
@@ -78,8 +100,9 @@ Design intent:
 - Preserve publisher traffic and analytics value
 
 The app:
-- Does not trap users inside a full-content reader
-- Does not monetize publisher content directly
+- Offers an in-app full-content reading view (Section 3) but never removes or hides the path back
+  to the publisher — a "Read Full Story on Web" action is always present on every article
+- Does not monetize publisher content directly (no ads inserted into extracted article text)
 - Does not inject ads into third-party articles
 
 **Risk Level:** Low
@@ -88,15 +111,21 @@ The app:
 
 ## 6. Caching & Network Behavior
 ### Feed Fetching
-- RSS feeds are fetched at reasonable intervals
-- Requests are rate-limited to avoid server strain
+- RSS feeds are fetched at reasonable intervals (5-minute soft cache per source, `src/services/feed/`)
+- Requests are rate-limited to avoid server strain; in-flight requests are de-duplicated
 
-### Caching
-- Cached data is temporary
-- Cached content reflects publisher-provided summaries only
-- No long-term archival of copyrighted text
+### Feed Caching
+- Feed-level cached data (headlines, summaries, metadata) is temporary and periodically refreshed
 
-**Risk Level:** Low
+### Full-Article Extraction Caching
+- Extracted full-article text (Section 3) is cached per article URL for **24 hours**
+  (`src/services/fullStoryCache.ts`), then expires on next read — this is a short-lived reading
+  cache to avoid re-fetching a publisher's page on every article view, not a permanent archive or
+  redistribution store
+- Only the extracted main-article-text selector's content is retained, not the full raw page
+
+**Risk Level:** Low–Moderate (bounded TTL and no redistribution mitigate the exposure introduced
+by full-article extraction; see Section 10)
 
 ---
 
@@ -106,8 +135,10 @@ The app:
 - Will remove sources upon valid publisher request
 - Does not attempt to evade blocks or access restrictions
 
+Implemented Safeguards:
+- Source-level disable switch (`defaultEnabled` in `src/data/feedConfig.ts`, plus a per-user override), so a source can be turned off without a code deploy for user preferences, or with one for the default catalog.
+
 Planned / Optional Safeguards:
-- Source-level disable switch
 - Internal blacklist for disallowed feeds
 
 **Risk Level:** Low
@@ -144,17 +175,20 @@ The app does not:
 ---
 
 ## 10. Overall Risk Assessment
-| Area | Risk |
-| --- | --- |
-| Illegal access | Low |
-| Copyright infringement | Low–Moderate |
-| ToS disputes | Low |
-| Platform rejection | Low |
-| Publisher complaints | Low |
+| Area | Risk | Why |
+| --- | --- | --- |
+| Illegal access | Low | Only publicly-accessible pages are fetched; no login/paywall bypass |
+| Copyright infringement | Moderate | Full-article text extraction (Section 3) goes beyond RSS-only excerpting; mitigated by direct attribution/linking, a 24h cache TTL (not permanent archival), per-source disable capability, and the takedown policy below |
+| ToS disputes | Low–Moderate | Same mitigation set as copyright; cooperative, good-faith response posture (Section 8) |
+| Platform rejection | Low | Extraction reads publicly-accessible pages only, consistent with common reader-mode/read-it-later app patterns |
+| Publisher complaints | Moderate | Full-text extraction is the most likely source of a publisher complaint; the takedown/request policy (below) exists specifically to resolve this quickly |
 
 **Overall Assessment:**
 
-> The app’s RSS usage is conservative, defensible, and consistent with established industry practice.
+> The app's RSS usage is conservative and defensible. Full-article extraction is the one area with
+> genuine, non-trivial risk — it is a deliberate reading-experience feature, not incidental
+> behavior, and is scoped and mitigated (bounded caching, attribution, easy per-source disable,
+> a working takedown process) rather than left undocumented.
 
 ---
 
@@ -165,8 +199,34 @@ For commercial scaling or high-traffic deployments, consultation with an IP or m
 
 ---
 
+## 12. Source Health & Reliability
+
+Consistent with the publisher-first posture in Sections 7–8, the app periodically probes configured sources for availability and stops pulling from endpoints that are no longer serving readable RSS/Atom content. This is framed as respecting publisher infrastructure — a source returning errors, an HTML page, or an empty feed is not retried indefinitely; it is disabled by default (`defaultEnabled: false` with a `health: "pending-replacement"` note in `src/data/feedConfig.ts`) until a working replacement is confirmed, rather than the app continuing to hit a broken or reconfigured endpoint.
+
+**2026-06-25 source health probe** — the following sources were confirmed non-functional (HTML/403/404/empty/non-feed response) and are currently disabled pending replacement:
+
+| Category | Source |
+| --- | --- |
+| Top | CBS Pittsburgh |
+| Local | New Pittsburgh Courier |
+| Local | The Incline |
+| Business | Pgh Business Times |
+| Business | TribLive Business |
+| Sports | TribLive Sports |
+| Sports | Penguins |
+| Sports | Pirates |
+| Sports | Pitt Panthers |
+| Culture | City Paper |
+| Culture | WESA Arts |
+
+**Known follow-up:** disabling City Paper and WESA Arts leaves Pittsburgh Mag as the only enabled Culture source. This was a deliberate choice — the app does not keep a verified-broken source enabled just to pad a category's source count — but it is a single point of failure worth resolving by sourcing a second healthy Culture feed in a future pass. See [ADR-0005](../standards/adr/0005-feed-pipeline-modularization.md) for the caching/reliability design this rests on.
+
+**Risk Level:** Low (this section documents operational reliability, not a new legal/compliance exposure)
+
+---
+
 ## RSS Ethics Statement (for site/App Store)
-"Abridgd aggregates publicly available RSS feeds to help readers discover journalism and commentary. We honor publisher ownership by showing source names, linking directly to the original articles, and limiting in-app content to publisher-provided titles, summaries, and thumbnails. We do not bypass paywalls, reconstruct full articles, or monetize third-party content. If a publisher wants adjustments or removal, we will comply promptly."
+"Abridgd aggregates publicly available RSS feeds to help readers discover journalism and commentary. We honor publisher ownership by showing source names, linking directly to the original articles, and offering a convenience reading view built only from each publisher's own public page for sources whose feeds ship truncated summaries. We do not bypass paywalls, redistribute or permanently archive publisher content, or monetize third-party content. If a publisher wants adjustments or removal, we will comply promptly."
 
 ---
 

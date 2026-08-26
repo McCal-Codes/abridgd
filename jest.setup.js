@@ -3,12 +3,42 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 
+// Mock expo-secure-store (no official jest mock ships with it). Stateless by default — test
+// files that need to exercise read/write/migration behavior override with their own
+// jest.mock("expo-secure-store") + mockImplementation, same pattern used for AsyncStorage above.
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn(() => Promise.resolve(null)),
+  setItemAsync: jest.fn(() => Promise.resolve()),
+  deleteItemAsync: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock("@sentry/react-native", () => ({
   init: jest.fn(),
   addBreadcrumb: jest.fn(),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
 }));
+
+Object.defineProperty(global, "__ExpoImportMetaRegistry", {
+  configurable: true,
+  enumerable: false,
+  value: {},
+  writable: true,
+});
+
+Object.defineProperty(global, "structuredClone", {
+  configurable: true,
+  enumerable: false,
+  value:
+    global.structuredClone ||
+    ((value) => {
+      if (value === undefined) {
+        return undefined;
+      }
+      return JSON.parse(JSON.stringify(value));
+    }),
+  writable: true,
+});
 
 // Mock SafeAreaContext
 jest.mock("react-native-safe-area-context", () => {
@@ -33,6 +63,7 @@ jest.mock("lucide-react-native", () => {
     Waypoints: createMockIcon(),
     Zap: createMockIcon(),
     Bookmark: createMockIcon(),
+    Info: createMockIcon(),
     // Other icons used in the app
     Flame: createMockIcon(),
     MapPin: createMockIcon(),
@@ -65,6 +96,7 @@ jest.mock("lucide-react-native", () => {
     Undo2: createMockIcon(),
     Sparkles: createMockIcon(),
     ArrowRightCircle: createMockIcon(),
+    ImageOff: createMockIcon(),
   };
 });
 

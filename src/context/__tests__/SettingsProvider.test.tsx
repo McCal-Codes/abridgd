@@ -2,10 +2,12 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Pressable, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { APP_VERSION } from "../../config/appInfo";
 import { SettingsProvider, useSettings } from "../SettingsContext";
 
 jest.mock("@react-native-async-storage/async-storage");
+jest.mock("expo-secure-store");
 jest.mock("../../services/UserBehaviorLogger", () => ({
   adaptSettingsBasedOnBehavior: jest.fn(),
 }));
@@ -21,6 +23,21 @@ const mockStorage = (entries: Record<string, string | null>) => {
   (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
   (AsyncStorage.multiSet as jest.Mock).mockResolvedValue(undefined);
   (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
+};
+
+const mockSecureStore = (entries: Record<string, string | null> = {}) => {
+  const store: Record<string, string | null> = { ...entries };
+  (SecureStore.getItemAsync as jest.Mock).mockImplementation((key: string) =>
+    Promise.resolve(store[key] ?? null),
+  );
+  (SecureStore.setItemAsync as jest.Mock).mockImplementation((key: string, value: string) => {
+    store[key] = value;
+    return Promise.resolve();
+  });
+  (SecureStore.deleteItemAsync as jest.Mock).mockImplementation((key: string) => {
+    delete store[key];
+    return Promise.resolve();
+  });
 };
 
 const TestConsumer = () => {
@@ -65,6 +82,7 @@ describe("SettingsProvider", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockStorage({});
+    mockSecureStore();
   });
 
   it("marks the current version as seen when onboarding completes", async () => {
@@ -98,7 +116,7 @@ describe("SettingsProvider", () => {
     });
   });
 
-  it("loads and trims the saved Perplexity API key", async () => {
+  it("migrates a legacy plaintext Perplexity API key from AsyncStorage into SecureStore", async () => {
     mockStorage({
       perplexityApiKey: "pplx-existing",
     });
@@ -111,13 +129,31 @@ describe("SettingsProvider", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("settings-api-key")).toHaveTextContent("pplx-existing");
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith("perplexityApiKey", "pplx-existing");
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("perplexityApiKey");
     });
 
     fireEvent.press(screen.getByTestId("settings-save-api-key"));
 
     await waitFor(() => {
       expect(screen.getByTestId("settings-api-key")).toHaveTextContent("pplx-test-key");
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith("perplexityApiKey", "pplx-test-key");
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith("perplexityApiKey", "pplx-test-key");
     });
+  });
+
+  it("reads an already-migrated Perplexity API key straight from SecureStore", async () => {
+    mockSecureStore({ perplexityApiKey: "pplx-secure" });
+
+    render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-api-key")).toHaveTextContent("pplx-secure");
+    });
+
+    expect(AsyncStorage.getItem).not.toHaveBeenCalledWith("perplexityApiKey");
   });
 });

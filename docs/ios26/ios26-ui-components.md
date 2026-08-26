@@ -1,5 +1,7 @@
 # iOS 26 SwiftUI Toolbar & Sheet Enhancements — React Native Implementation
 
+Last Updated: 2026-06-10
+
 ## Core Additions in iOS 26
 
 * **Glass toolbar buttons** now extend the Liquid Glass design language into toolbars.

@@ -1,5 +1,7 @@
 # iOS 26 UI Components - Quick Reference
 
+Last Updated: 2026-06-10
+
 ## Component Cheat Sheet
 
 ### 🔘 GlassButton
@@ -397,3 +399,5 @@ Or navigate directly:
 ```tsx
 navigation.navigate('iOS26Demo');
 ```
+
+End of quick reference.

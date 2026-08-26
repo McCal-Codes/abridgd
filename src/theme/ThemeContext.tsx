@@ -70,18 +70,22 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const normalizeColorScheme = (colorScheme: ColorSchemeName | null | undefined): ColorSchemeName => {
+  return colorScheme === 'dark' ? 'dark' : 'light';
+};
+
 const getColorsForScheme = (colorScheme: ColorSchemeName): ThemeColors => {
   return colorScheme === 'dark' ? darkColors : lightColors;
 };
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [colorScheme, setColorScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme()
+    normalizeColorScheme(Appearance.getColorScheme())
   );
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      setColorScheme(colorScheme);
+      setColorScheme(normalizeColorScheme(colorScheme));
     });
 
     return () => subscription.remove();
@@ -111,7 +115,7 @@ export const useThemeOptional = (): ThemeContextType => {
     return context;
   }
 
-  const colorScheme = Appearance.getColorScheme();
+  const colorScheme = normalizeColorScheme(Appearance.getColorScheme());
   return {
     colors: getColorsForScheme(colorScheme),
     isDark: colorScheme === 'dark',

@@ -1,6 +1,6 @@
 # Abridged App — UI & Design Standards
-Version 1.4
-Last Updated: January 20, 2026
+Version 1.5
+Last Updated: August 25, 2026
 
 ## Canonical Sources (Authoritative)
 
@@ -277,12 +277,14 @@ All interactive elements, navigation tabs, and UI indicators must use proper ico
 - Messaging should specify availability ("Available with subscription", "Coming soon") and avoid dark patterns
 - Keep gating in the capability layer, not in primary navigation or safety controls
 
-**Current Implementation**
-- Profile → Personalization & advanced features: three locked rows (Reading pace & presentation, Digest tuning, Focus & grounding modes) with Lucide icons and "Locked" pills
-- Profile → Sync & privacy: Sign in with Apple surfaced as Offline badge; CTA present but described as temporarily disabled
-- Profile → Data controls: export/share profile key available; delete local data and granular consent marked "Coming soon"
-- Profile identity: badge shows Local vs Apple account; settings tag editable via text input on blur
-- Debt: Sync/subscription not yet live; locked/offline messaging kept visible to set expectation
+**Current Implementation** (as of the August 25, 2026 Profile redesign — see TODO-108/109)
+- Profile identity card: avatar shows initials on a profile-derived color; name, codename, and a real sign-in-status line ("Signed in with Apple" or "Not signed in"); settings-tag badge
+- Profile → Account & backup, split into three cards:
+  - **Sign in**: real `AppleAuthenticationButton` when not connected; "Connected" badge + Sign out button when signed in — no more "Coming soon"/Offline placeholder state
+  - **Backup & transfer**: profile-label field (inline "Saved" confirmation on blur), profile key export/share, import
+  - **Danger zone**: "Delete local data" only, using `GlassButton`'s `destructive` styling and a red-tinted card border, visually separated from the backup actions above it
+- No locked/subscription rows currently exist on Profile — the capability-gating pattern above is documented for future use, not reflecting current Profile content
+- Debt: none tracked for Profile as of this pass; revisit this section again if/when a subscription layer is actually introduced
 
 ---
 
@@ -331,6 +333,10 @@ When uncertain, default to the system.
 ---
 
 ## Version History
+
+### v1.5 (August 25, 2026)
+- Rewrote §7.5's "Current Implementation" to match the actual Profile screen (real Apple Sign-In, Sign in/Backup & transfer/Danger zone cards) instead of a since-removed locked-rows layout from an earlier redesign
+- Clarified that no subscription-gated rows currently exist on Profile
 
 ### v1.4 (January 20, 2026)
 - Updated button standard to reflect `GlassButton` prominence styles, haptics, and sizing

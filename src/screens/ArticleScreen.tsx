@@ -4,9 +4,9 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Image,
   ActivityIndicator,
   Linking,
+  AccessibilityInfo,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -20,7 +20,6 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
-import { fetchFullArticleBody } from "../services/FullStoryService";
 import { summarizeArticle } from "../services/AiService";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -28,8 +27,12 @@ import { useSettings } from "../context/SettingsContext";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { ScaleButton } from "../components/ScaleButton";
 import { GroundingOverlay } from "../components/GroundingOverlay";
+import { BlurSheet } from "../components/BlurSheet";
+import { ArticleProvenancePanel } from "../components/ArticleProvenancePanel";
+import { ArticleBodyImage } from "../components/ArticleBodyImage";
 import { parseHtmlContent } from "../utils/contentParser";
-import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle } from "lucide-react-native";
+import { useFullStoryEnrichment } from "../hooks/useFullStoryEnrichment";
+import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle, Info } from "lucide-react-native";
 import { useSavedArticles } from "../context/SavedArticlesContext";
 import { useReadingProgress, useReadingProgressOptional } from "../context/ReadingProgressContext";
 import {
@@ -44,6 +47,11 @@ import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
+
+// Matches common photo-credit phrasing: "Photo:", "Credit:", "Photo by ...", wire-service
+// attributions ("AP Photo", "Getty Images", "Associated Press"), and "Photo/Courtesy of" lines.
+const CREDIT_PATTERN =
+  /^(photo|credit|courtesy|image)s?[:\s]|\b(AP Photo|Getty Images?|Associated Press|Photo by|Photo courtesy|Courtesy of)\b/i;
 
 export const ArticleScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -78,9 +86,9 @@ export const ArticleScreen: React.FC = () => {
 
   // Use local state for body so we can update it
   const [bodyContent, setBodyContent] = useState(article.body);
-  const [isLoadingFullStory, setIsLoadingFullStory] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [isProvenanceSheetVisible, setIsProvenanceSheetVisible] = useState(false);
   const {
     isReaderEnabled,
     isGroundingEnabled,
@@ -169,6 +177,14 @@ export const ArticleScreen: React.FC = () => {
     };
   }, [sensitiveTone]);
 
+  // Announce the warning when it interrupts the reading flow, since it replaces content
+  // in-place rather than navigating — screen readers won't pick it up automatically.
+  useEffect(() => {
+    if (!hasConsented) {
+      AccessibilityInfo.announceForAccessibility(tonePreset.heading);
+    }
+  }, [hasConsented, tonePreset.heading]);
+
   const warningSummaryCopy = useMemo(() => {
     if (sensitivePromptLevel === "minimal" && sensitivity.reasons.length) {
       const reasons = formatWarningReasons(sensitivity.reasons);
@@ -245,32 +261,19 @@ export const ArticleScreen: React.FC = () => {
     }
   };
 
-  // Attempt to fetch full story if content is short (likely just a summary)
-  // OR if the source is known to provide truncated RSS feeds (WTAE, WPXI, CBS)
+  // Full-story enrichment (cache-first, deduped) — upgrades bodyContent once/if it resolves.
+  const { enrichedBody, enrichedAuthor, isLoadingFullStory } = useFullStoryEnrichment(
+    article,
+    bodyContent.length,
+  );
+  const displayAuthor = article.author || enrichedAuthor;
+
   useEffect(() => {
-    const fetchFull = async () => {
-      const isTruncatedSource = ["WTAE", "WPXI", "CBS", "City Paper"].some((s) =>
-        article.source.includes(s),
-      );
-      const isShort = bodyContent.length < 800; // Increased threshold
-
-      if (article.link && (isShort || isTruncatedSource)) {
-        // Avoid re-fetching if we already have a long body and it wasn't a short one
-        if (!isTruncatedSource && !isShort) return;
-
-        setIsLoadingFullStory(true);
-        const fullHtml = await fetchFullArticleBody(article.link);
-        if (fullHtml && fullHtml.length > bodyContent.length) {
-          setBodyContent(fullHtml);
-        }
-        setIsLoadingFullStory(false);
-      }
-    };
-
-    // Add a small delay to not block transition
-    const timer = setTimeout(fetchFull, 500);
-    return () => clearTimeout(timer);
-  }, [article.link]);
+    if (enrichedBody && enrichedBody.length > bodyContent.length) {
+      setBodyContent(enrichedBody);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enrichedBody]);
 
   useEffect(() => {
     if (isSummarizationEnabled && bodyContent && !summary) {
@@ -475,7 +478,7 @@ export const ArticleScreen: React.FC = () => {
     return (
       <View style={styles.warningContainer}>
         <View style={styles.warningContent}>
-          <Text style={styles.warningTitle}>{tonePreset.heading}</Text>
+          <Text style={styles.warningTitle} accessibilityRole="header">{tonePreset.heading}</Text>
           <Text style={styles.warningText}>{warningSummaryCopy}</Text>
           <Text style={styles.warningHelper}>{helperCopy}</Text>
         </View>
@@ -577,6 +580,12 @@ export const ArticleScreen: React.FC = () => {
             <Text style={styles.source}>{article.source}</Text>
             <Text style={styles.dot}>•</Text>
             <Text style={styles.timestamp}>{article.timestamp}</Text>
+            {displayAuthor ? (
+              <>
+                <Text style={styles.dot}>•</Text>
+                <Text style={styles.timestamp}>By {displayAuthor}</Text>
+              </>
+            ) : null}
           </View>
 
           <View style={styles.divider} />
@@ -642,12 +651,12 @@ export const ArticleScreen: React.FC = () => {
 
           {parsedContent.map((node, index) => {
             if (node.type === "text" && node.text) {
-              // Check for credit pattern (Credits often start with "Photo:" or are short italicized lines at end)
-              // This is a naive heuristic but works for many feeds
+              // Check for credit pattern (Credits often start with "Photo:"/"Credit:" or name a
+              // wire service/photo agency). A naive heuristic, but covers far more real-world
+              // patterns than checking only "Photo:"/"Credit:" prefixes.
               const isCredit =
-                node.text.startsWith("Photo:") ||
-                node.text.startsWith("Credit:") ||
-                (node.text.length < 50 && node.text.includes("Photo by"));
+                node.text.length < 140 &&
+                CREDIT_PATTERN.test(node.text);
 
               if (isCredit) {
                 return (
@@ -676,15 +685,11 @@ export const ArticleScreen: React.FC = () => {
 
               return (
                 <View key={index} style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: normalizeUri(node.src)! }}
-                    style={[
-                      styles.image,
-                      imageLoadingMode === "compressed" && styles.imageCompressed,
-                    ]}
-                    resizeMode={imageLoadingMode === "compressed" ? "center" : "cover"}
+                  <ArticleBodyImage
+                    uri={normalizeUri(node.src)!}
+                    caption={node.caption}
+                    compressed={imageLoadingMode === "compressed"}
                   />
-                  {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
                 </View>
               );
             } else if (node.type === "video" && node.src) {
@@ -766,8 +771,31 @@ export const ArticleScreen: React.FC = () => {
                 {isSaved ? "Saved" : "Save for Later"}
               </Text>
             </ScaleButton>
+
+            <ScaleButton
+              style={styles.actionButton}
+              accessibilityRole="button"
+              accessibilityLabel="Why this story? View source information"
+              onPress={async () => {
+                try {
+                  await Haptics.selectionAsync();
+                } catch {}
+                setIsProvenanceSheetVisible(true);
+              }}
+            >
+              <Info size={18} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Why this story?</Text>
+            </ScaleButton>
           </View>
         </ScrollView>
+
+        <BlurSheet
+          visible={isProvenanceSheetVisible}
+          onClose={() => setIsProvenanceSheetVisible(false)}
+          initialDetent="medium"
+        >
+          <ArticleProvenancePanel provenance={article.provenance} />
+        </BlurSheet>
       </Animated.View>
     );
   } catch (error) {
@@ -809,9 +837,8 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     alignSelf: "center",
   },
   headline: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 32, // Larger, more newspaper-like
-    fontWeight: "800",
     color: colors.text,
     marginBottom: spacing.md,
     lineHeight: 42,
@@ -820,6 +847,7 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     marginBottom: spacing.xl,
     marginTop: spacing.xs,
   },
@@ -866,16 +894,6 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     backgroundColor: colors.surface,
     borderRadius: 12,
     overflow: "hidden", // Clip caption if needed, mainly for shadow
-  },
-  image: {
-    width: "100%",
-    height: 300, // Taller default
-    borderRadius: 12,
-    backgroundColor: colors.border,
-  },
-  imageCompressed: {
-    height: 200, // Reduce height for compressed mode to save data
-    opacity: 0.85, // Subtle visual feedback that image is compressed
   },
   caption: {
     marginTop: spacing.sm,
@@ -1035,10 +1053,9 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     marginBottom: spacing.xl,
   },
   warningTitle: {
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: 32,
     lineHeight: 40,
-    fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.lg,
     textAlign: "center",

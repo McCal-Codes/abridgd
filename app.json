@@ -3,7 +3,7 @@
     "name": "Abridgd",
     "slug": "abridged",
     "scheme": "abridged",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "subtitle": "News abridged to you",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,9 +17,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mccalmedia.abridged",
-      "buildNumber": "1",
+      "buildNumber": "36",
       "entitlements": {
-        "com.apple.developer.applesignin": ["Default"]
+        "com.apple.developer.applesignin": [
+          "Default"
+        ]
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -39,7 +41,9 @@
       "output": "single"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@sentry/react-native",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

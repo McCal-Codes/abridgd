@@ -57,4 +57,27 @@ describe("ArticleCard", () => {
     expect(mockOnPress).toHaveBeenCalledWith(baseArticle);
     expect(mockProgress).toHaveBeenCalledWith("article-1", "small");
   });
+
+  it("does not render a byline when the article has no author", () => {
+    const { queryByText } = render(<ArticleCard article={baseArticle} onPress={mockOnPress} />);
+    expect(queryByText(/^By /)).toBeNull();
+  });
+
+  it("renders the author as a byline when present", () => {
+    const article = { ...baseArticle, author: "Jane Doe" };
+    const { getByText } = render(<ArticleCard article={article} onPress={mockOnPress} />);
+    expect(getByText("By Jane Doe")).toBeTruthy();
+  });
+
+  it("hides the thumbnail after the image fails to load", () => {
+    const article = { ...baseArticle, imageUrl: "https://example.com/broken.jpg" };
+    const { getByTestId, queryByTestId } = render(
+      <ArticleCard article={article} onPress={mockOnPress} />,
+    );
+
+    const image = getByTestId("article-thumbnail");
+    fireEvent(image, "onError");
+
+    expect(queryByTestId("article-thumbnail")).toBeNull();
+  });
 });

@@ -1,5 +1,7 @@
 # Onboarding & Grounding Design Agent Prompt
 
+Last Updated: 2026-06-10
+
 ## Purpose
 
 System prompt for design and UX-writing agents working on **Abridged** onboarding and grounding experiences. This combines:

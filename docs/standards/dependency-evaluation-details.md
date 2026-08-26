@@ -1,5 +1,7 @@
 # Dependency Evaluation — Detailed Guidance
 
+Last Updated: 2026-06-10
+
 This page expands the quick checklist with concrete steps, examples, and CLI helpers for auditing a package before adding it to the repo.
 
 ## Pre-proposal research

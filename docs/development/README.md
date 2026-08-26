@@ -1,5 +1,7 @@
 # Development Documentation
 
+Last Updated: 2026-06-10
+
 Guides, standards, and best practices for developing Abridged.
 
 ## Documents

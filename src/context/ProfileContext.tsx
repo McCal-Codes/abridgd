@@ -1,10 +1,12 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { AchievementDefinition, AchievementState, Profile } from "../types/Profile";
 import { Article } from "../types/Article";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Buffer } from "buffer";
+import { clearSavedArticles, getSavedArticlesStorageKey } from "../utils/storage";
+import { clearAllReadingProgress, getReadingProgressStorageKey } from "../utils/readingProgressStorage";
 
 // Ensure Buffer exists in React Native runtime
 const globalWithBuffer = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
@@ -21,6 +23,7 @@ interface ProfileContextType {
   updateSettingsTag: (tag: string) => void;
   signInWithAppleProfile: (user: { id: string; email?: string; displayName?: string }) => Profile;
   signOut: () => Profile;
+  deleteActiveProfile: () => Promise<Profile>;
   trackArticleRead: () => void;
   trackSavedAction: () => void;
   recordLastFetchedArticles: (articleIds: string[]) => void;
@@ -253,10 +256,10 @@ const ensureCodename = async () => {
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
-  const activateProfile = (profile: Profile | null) => {
+  const activateProfile = useCallback((profile: Profile | null) => {
     setActiveProfile(profile);
     void persistActiveProfileId(profile?.id ?? null);
-  };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -311,125 +314,146 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  const persistProfiles = async (next: Profile[]) => {
+  const persistProfiles = useCallback(async (next: Profile[]) => {
     setProfiles(next);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch (e) {
       console.error("Failed to persist profiles", e);
     }
-  };
+  }, []);
 
-  const createProfile = (name: string) => {
-    const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
-    const newProfile = withProfileDefaults(
-      {
-        id: uuidv4(),
-        name,
-        codename: generateCodename(used),
-        stats: {
-          articlesRead: 0,
-          savedActions: 0,
-          lastReadAt: null,
-          lastSavedAt: null,
-          lastFetchedArticleIds: [],
-          lastFetchedAt: null,
+  const createProfile = useCallback(
+    (name: string) => {
+      const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
+      const newProfile = withProfileDefaults(
+        {
+          id: uuidv4(),
+          name,
+          codename: generateCodename(used),
+          stats: {
+            articlesRead: 0,
+            savedActions: 0,
+            lastReadAt: null,
+            lastSavedAt: null,
+            lastFetchedArticleIds: [],
+            lastFetchedAt: null,
+          },
+          savedArticles: [],
         },
-        savedArticles: [],
-      },
-      used,
-    );
-    const next = [...profiles, newProfile];
-    persistProfiles(next);
-    if (!activeProfile) {
-      activateProfile(newProfile);
-    }
-  };
+        used,
+      );
+      const next = [...profiles, newProfile];
+      persistProfiles(next);
+      if (!activeProfile) {
+        activateProfile(newProfile);
+      }
+    },
+    [profiles, activeProfile, persistProfiles, activateProfile],
+  );
 
-  const switchProfile = (profileId: string) => {
-    const profile = profiles.find((p) => p.id === profileId);
-    if (profile) {
-      activateProfile(profile);
-    }
-  };
+  const switchProfile = useCallback(
+    (profileId: string) => {
+      const profile = profiles.find((p) => p.id === profileId);
+      if (profile) {
+        activateProfile(profile);
+      }
+    },
+    [profiles, activateProfile],
+  );
 
-  const updateActiveProfileName = (name: string) => {
-    if (!activeProfile) return;
-    const updated = applyAchievements({ ...activeProfile, name });
-    const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    activateProfile(updated);
-    persistProfiles(next);
-  };
+  const updateActiveProfileName = useCallback(
+    (name: string) => {
+      if (!activeProfile) return;
+      const updated = applyAchievements({ ...activeProfile, name });
+      const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
+      activateProfile(updated);
+      persistProfiles(next);
+    },
+    [activeProfile, profiles, activateProfile, persistProfiles],
+  );
 
-  const updateSettingsTag = (tag: string) => {
-    if (!activeProfile) return;
-    const cleaned = tag.trim() || "Local profile";
-    const updated = applyAchievements({ ...activeProfile, settingsTag: cleaned });
-    const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    activateProfile(updated);
-    persistProfiles(next);
-  };
+  const updateSettingsTag = useCallback(
+    (tag: string) => {
+      if (!activeProfile) return;
+      const cleaned = tag.trim() || "Local profile";
+      const updated = applyAchievements({ ...activeProfile, settingsTag: cleaned });
+      const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
+      activateProfile(updated);
+      persistProfiles(next);
+    },
+    [activeProfile, profiles, activateProfile, persistProfiles],
+  );
 
-  const updateActiveProfileStats = (changes: Partial<Profile["stats"]>) => {
-    if (!activeProfile) return;
-    const nextChanges = changes || {};
-    const currentStats = activeProfile.stats || {
-      articlesRead: 0,
-      savedActions: 0,
-      lastReadAt: null,
-      lastSavedAt: null,
-      lastFetchedArticleIds: [],
-      lastFetchedAt: null,
-    };
-    const updated: Profile = applyAchievements({
-      ...activeProfile,
-      stats: { ...currentStats, ...nextChanges },
-    });
-    const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    activateProfile(updated);
-    persistProfiles(next);
-  };
+  const updateActiveProfileStats = useCallback(
+    (changes: Partial<Profile["stats"]>) => {
+      if (!activeProfile) return;
+      const nextChanges = changes || {};
+      const currentStats = activeProfile.stats || {
+        articlesRead: 0,
+        savedActions: 0,
+        lastReadAt: null,
+        lastSavedAt: null,
+        lastFetchedArticleIds: [],
+        lastFetchedAt: null,
+      };
+      const updated: Profile = applyAchievements({
+        ...activeProfile,
+        stats: { ...currentStats, ...nextChanges },
+      });
+      const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
+      activateProfile(updated);
+      persistProfiles(next);
+    },
+    [activeProfile, profiles, activateProfile, persistProfiles],
+  );
 
-  const trackArticleRead = () => {
+  const trackArticleRead = useCallback(() => {
     const current = activeProfile?.stats?.articlesRead || 0;
     updateActiveProfileStats({ articlesRead: current + 1, lastReadAt: Date.now() });
-  };
+  }, [activeProfile, updateActiveProfileStats]);
 
-  const trackSavedAction = () => {
+  const trackSavedAction = useCallback(() => {
     const current = activeProfile?.stats?.savedActions || 0;
     updateActiveProfileStats({ savedActions: current + 1, lastSavedAt: Date.now() });
-  };
+  }, [activeProfile, updateActiveProfileStats]);
 
-  const recordLastFetchedArticles = (articleIds: string[]) => {
-    if (!activeProfile || !articleIds.length) return;
+  const recordLastFetchedArticles = useCallback(
+    (articleIds: string[]) => {
+      if (!activeProfile || !articleIds.length) return;
 
-    const currentStats = activeProfile.stats || {
-      articlesRead: 0,
-      savedActions: 0,
-      lastReadAt: null,
-      lastSavedAt: null,
-      lastFetchedArticleIds: [],
-      lastFetchedAt: null,
-    };
+      const currentStats = activeProfile.stats || {
+        articlesRead: 0,
+        savedActions: 0,
+        lastReadAt: null,
+        lastSavedAt: null,
+        lastFetchedArticleIds: [],
+        lastFetchedAt: null,
+      };
 
-    updateActiveProfileStats({
-      lastFetchedArticleIds: mergeRecentArticleIds(currentStats.lastFetchedArticleIds, articleIds),
-      lastFetchedAt: Date.now(),
-    });
-  };
+      updateActiveProfileStats({
+        lastFetchedArticleIds: mergeRecentArticleIds(currentStats.lastFetchedArticleIds, articleIds),
+        lastFetchedAt: Date.now(),
+      });
+    },
+    [activeProfile, updateActiveProfileStats],
+  );
 
-  const updateSavedArticles = (articles: Article[]) => {
-    if (!activeProfile) return;
-    const updated: Profile = applyAchievements({
-      ...activeProfile,
-      savedArticles: articles,
-    });
-    const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
-    activateProfile(updated);
-    persistProfiles(next);
-  };
+  const updateSavedArticles = useCallback(
+    (articles: Article[]) => {
+      if (!activeProfile) return;
+      const updated: Profile = applyAchievements({
+        ...activeProfile,
+        savedArticles: articles,
+      });
+      const next = profiles.map((p) => (p.id === activeProfile.id ? updated : p));
+      activateProfile(updated);
+      persistProfiles(next);
+    },
+    [activeProfile, profiles, activateProfile, persistProfiles],
+  );
 
-  const signOut = (): Profile => {
+  const signOut = useCallback((): Profile => {
     const local = profiles.find((p) => !p.appleUserId) || profiles[0];
     if (local) {
       activateProfile(local);
@@ -458,32 +482,41 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     activateProfile(fallback);
     persistProfiles(next);
     return fallback;
-  };
+  }, [profiles, activateProfile, persistProfiles]);
 
-  const signInWithAppleProfile = (user: {
-    id: string;
-    email?: string;
-    displayName?: string;
-  }): Profile => {
-    // If we already have a profile for this Apple user, switch to it.
-    const existing = profiles.find((p) => p.appleUserId === user.id || p.id === user.id);
-    if (existing) {
-      activateProfile(existing);
-      return existing;
+  // Removes the active profile plus its own saved-articles and reading-progress data, then
+  // falls back to another local profile (or a fresh anonymous one) using signOut's pattern.
+  // Global settings and the sensitive-content log are intentionally left untouched — they
+  // aren't scoped to a single profile.
+  const deleteActiveProfile = useCallback(async (): Promise<Profile> => {
+    const profileToDelete = activeProfile;
+    if (!profileToDelete) {
+      throw new Error("No active profile to delete");
     }
 
-    const derivedName =
-      user.displayName || user.email?.split("@")[0] || activeProfile?.name || "Reader";
+    // Let storage errors propagate instead of swallowing them - if we can't actually
+    // clear the on-device data, the caller must not report the deletion as successful.
+    await clearSavedArticles(getSavedArticlesStorageKey(profileToDelete.id));
+    await clearAllReadingProgress(getReadingProgressStorageKey(profileToDelete.id));
 
-    const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
+    const remaining = profiles.filter((p) => p.id !== profileToDelete.id);
 
-    const newProfile = withProfileDefaults(
+    if (remaining.length) {
+      const local = remaining.find((p) => !p.appleUserId) || remaining[0];
+      activateProfile(local);
+      persistProfiles(remaining);
+      return local;
+    }
+
+    const used = new Set<string>();
+    const fallback: Profile = withProfileDefaults(
       {
-        id: user.id,
-        appleUserId: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        name: derivedName,
+        // A fresh uuid, not the "anonymous" literal reused elsewhere: SavedArticlesContext
+        // and ReadingProgressContext only reload when activeProfile.id changes, so reusing
+        // the just-deleted profile's id would leave their in-memory state stale, and a
+        // later save/progress update would resurrect the data we just cleared.
+        id: uuidv4(),
+        name: "Reader",
         codename: generateCodename(used),
         stats: {
           articlesRead: 0,
@@ -497,14 +530,55 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       },
       used,
     );
+    activateProfile(fallback);
+    persistProfiles([fallback]);
+    return fallback;
+  }, [activeProfile, profiles, activateProfile, persistProfiles]);
 
-    const next = [...profiles, newProfile];
-    activateProfile(newProfile);
-    persistProfiles(next);
-    return newProfile;
-  };
+  const signInWithAppleProfile = useCallback(
+    (user: { id: string; email?: string; displayName?: string }): Profile => {
+      // If we already have a profile for this Apple user, switch to it.
+      const existing = profiles.find((p) => p.appleUserId === user.id || p.id === user.id);
+      if (existing) {
+        activateProfile(existing);
+        return existing;
+      }
 
-  const exportProfileKey = () => {
+      const derivedName =
+        user.displayName || user.email?.split("@")[0] || activeProfile?.name || "Reader";
+
+      const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
+
+      const newProfile = withProfileDefaults(
+        {
+          id: user.id,
+          appleUserId: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          name: derivedName,
+          codename: generateCodename(used),
+          stats: {
+            articlesRead: 0,
+            savedActions: 0,
+            lastReadAt: null,
+            lastSavedAt: null,
+            lastFetchedArticleIds: [],
+            lastFetchedAt: null,
+          },
+          savedArticles: [],
+        },
+        used,
+      );
+
+      const next = [...profiles, newProfile];
+      activateProfile(newProfile);
+      persistProfiles(next);
+      return newProfile;
+    },
+    [profiles, activeProfile, activateProfile, persistProfiles],
+  );
+
+  const exportProfileKey = useCallback(() => {
     if (!activeProfile) return null;
     try {
       const normalized = applyAchievements(activeProfile);
@@ -514,70 +588,89 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       console.error("Failed to export profile key", e);
       return null;
     }
-  };
+  }, [activeProfile]);
 
-  const importProfileKey = (key: string) => {
-    try {
-      const json = fromBase64(key);
-      const parsed: Profile = JSON.parse(json);
-      if (!parsed?.id || !parsed?.name) return false;
-      const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
-      const sanitized = withProfileDefaults(
-        {
-          ...parsed,
-          stats: parsed.stats || {
-            articlesRead: 0,
-            savedActions: 0,
-            lastReadAt: null,
-            lastSavedAt: null,
-            lastFetchedArticleIds: [],
-            lastFetchedAt: null,
+  const importProfileKey = useCallback(
+    (key: string) => {
+      try {
+        const json = fromBase64(key);
+        const parsed: Profile = JSON.parse(json);
+        if (!parsed?.id || !parsed?.name) return false;
+        const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
+        const sanitized = withProfileDefaults(
+          {
+            ...parsed,
+            stats: parsed.stats || {
+              articlesRead: 0,
+              savedActions: 0,
+              lastReadAt: null,
+              lastSavedAt: null,
+              lastFetchedArticleIds: [],
+              lastFetchedAt: null,
+            },
+            savedArticles: parsed.savedArticles || [],
           },
-          savedArticles: parsed.savedArticles || [],
-        },
-        used,
-      );
-      const existingIdx = profiles.findIndex(
-        (p) => p.id === sanitized.id || p.transferKey === sanitized.transferKey,
-      );
-      let next: Profile[];
-      if (existingIdx >= 0) {
-        next = [...profiles];
-        next[existingIdx] = sanitized;
-      } else {
-        next = [...profiles, sanitized];
+          used,
+        );
+        const existingIdx = profiles.findIndex(
+          (p) => p.id === sanitized.id || p.transferKey === sanitized.transferKey,
+        );
+        let next: Profile[];
+        if (existingIdx >= 0) {
+          next = [...profiles];
+          next[existingIdx] = sanitized;
+        } else {
+          next = [...profiles, sanitized];
+        }
+        activateProfile(sanitized);
+        persistProfiles(next);
+        return true;
+      } catch (e) {
+        console.error("Failed to import profile key", e);
+        return false;
       }
-      activateProfile(sanitized);
-      persistProfiles(next);
-      return true;
-    } catch (e) {
-      console.error("Failed to import profile key", e);
-      return false;
-    }
-  };
-
-  return (
-    <ProfileContext.Provider
-      value={{
-        profiles,
-        activeProfile,
-        createProfile,
-        switchProfile,
-        updateActiveProfileName,
-        updateSettingsTag,
-        signInWithAppleProfile,
-        signOut,
-        trackArticleRead,
-        trackSavedAction,
-        recordLastFetchedArticles,
-        exportProfileKey,
-        importProfileKey,
-        updateSavedArticles,
-      }}
-    >
-      {children}
-    </ProfileContext.Provider>
+    },
+    [profiles, activateProfile, persistProfiles],
   );
+
+  const value = useMemo<ProfileContextType>(
+    () => ({
+      profiles,
+      activeProfile,
+      createProfile,
+      switchProfile,
+      updateActiveProfileName,
+      updateSettingsTag,
+      signInWithAppleProfile,
+      signOut,
+      deleteActiveProfile,
+      trackArticleRead,
+      trackSavedAction,
+      recordLastFetchedArticles,
+      exportProfileKey,
+      importProfileKey,
+      updateSavedArticles,
+    }),
+    [
+      profiles,
+      activeProfile,
+      createProfile,
+      switchProfile,
+      updateActiveProfileName,
+      updateSettingsTag,
+      signInWithAppleProfile,
+      signOut,
+      deleteActiveProfile,
+      trackArticleRead,
+      trackSavedAction,
+      recordLastFetchedArticles,
+      exportProfileKey,
+      importProfileKey,
+      updateSavedArticles,
+    ],
+  );
+
+  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 };
 
 export const useProfiles = () => {

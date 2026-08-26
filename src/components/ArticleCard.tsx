@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { Article } from "../types/Article";
 import { typography } from "../theme/typography";
@@ -16,8 +16,9 @@ interface ArticleCardProps {
 import { ScaleButton } from "./ScaleButton";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) => {
+export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, onPress }) => {
   const styles = useThemedStyles(createStyles);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
@@ -32,20 +33,33 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onPress }) =>
               <Text style={styles.metaText}>{article.source}</Text>
               <Text style={styles.metaText}> • </Text>
               <Text style={styles.metaText}>{article.timestamp}</Text>
+              {article.author ? (
+                <>
+                  <Text style={styles.metaText}> • </Text>
+                  <Text style={styles.metaText} numberOfLines={1}>
+                    By {article.author}
+                  </Text>
+                </>
+              ) : null}
             </View>
             {/* Progress indicator - only shows if article has been read */}
             <View style={styles.progressContainer}>
               <ArticleProgressIndicator articleId={article.id} size="small" />
             </View>
           </View>
-          {article.imageUrl && (
-            <Image source={{ uri: article.imageUrl }} style={styles.thumbnail} />
+          {article.imageUrl && !thumbnailFailed && (
+            <Image
+              testID="article-thumbnail"
+              source={{ uri: article.imageUrl }}
+              style={styles.thumbnail}
+              onError={() => setThumbnailFailed(true)}
+            />
           )}
         </View>
       </ScaleButton>
     </Animated.View>
   );
-};
+});
 
 export const ArticleCardSkeleton: React.FC = () => {
   const styles = useThemedStyles(createStyles);
@@ -96,10 +110,8 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.border,
   },
   headline: {
-    // Falls back to system font if serif not loaded, handled at App level
-    fontFamily: typography.fontFamily.serif,
+    fontFamily: typography.fontFamily.serifBold,
     fontSize: typography.size.lg,
-    fontWeight: "700", // string for weight
     color: colors.text,
     marginBottom: spacing.xs,
     lineHeight: 28, // Hardcoded for consistent rhythm
@@ -114,6 +126,7 @@ const createStyles = (colors: ThemeColors) =>
   metaContainer: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
   },
   progressContainer: {
     marginTop: spacing.xs,
