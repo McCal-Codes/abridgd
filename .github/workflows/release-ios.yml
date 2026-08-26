@@ -153,31 +153,7 @@ jobs:
           build_json="$("${cmd[@]}")"
           printf '%s\n' "$build_json" > eas-build.json
 
-          node <<'EOF' > eas-build-outputs.txt
-const fs = require('fs');
-
-const raw = fs.readFileSync('eas-build.json', 'utf8');
-const data = JSON.parse(raw);
-const build = Array.isArray(data) ? data[0] : data;
-const buildId = build?.id || '';
-const buildUrl = build?.artifacts?.buildUrl || '';
-const archiveUrl = build?.artifacts?.applicationArchiveUrl || '';
-
-if (!buildId) {
-  console.error('Missing build id in EAS JSON output.');
-  process.exit(1);
-}
-
-process.stdout.write(`build_id=${buildId}\n`);
-
-if (buildUrl) {
-  process.stdout.write(`build_url=${buildUrl}\n`);
-}
-
-if (archiveUrl) {
-  process.stdout.write(`archive_url=${archiveUrl}\n`);
-}
-EOF
+          node scripts/ci/parse-eas-build-output.js eas-build.json > eas-build-outputs.txt
 
           cat eas-build-outputs.txt >> "$GITHUB_OUTPUT"
 
