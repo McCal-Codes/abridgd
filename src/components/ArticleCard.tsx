@@ -16,13 +16,36 @@ interface ArticleCardProps {
 import { ScaleButton } from "./ScaleButton";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
+/** The meta row is a single line of small text under the summary. Headline and summary scale
+ * with Dynamic Type without limit; this row is capped so it wraps gracefully instead of
+ * pushing the thumbnail off the card at the largest accessibility sizes. */
+const META_TEXT_SCALE = 1.4;
+
 export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, onPress }) => {
   const styles = useThemedStyles(createStyles);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
+  // Read as one item, not as six fragments. VoiceOver was walking the headline, summary,
+  // source, separator dots and timestamp separately, none of which announced as a control.
+  const accessibilityLabel = [
+    article.headline,
+    article.source,
+    article.timestamp,
+    article.author ? `By ${article.author}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
-      <ScaleButton style={styles.card} onPress={() => onPress(article)}>
+      <ScaleButton
+        style={styles.card}
+        onPress={() => onPress(article)}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Opens the full story"
+      >
         <View style={styles.cardContent}>
           <View style={styles.textContainer}>
             <Text style={styles.headline}>{article.headline}</Text>
@@ -30,13 +53,23 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
               {article.summary}
             </Text>
             <View style={styles.metaContainer}>
-              <Text style={styles.metaText}>{article.source}</Text>
-              <Text style={styles.metaText}> • </Text>
-              <Text style={styles.metaText}>{article.timestamp}</Text>
+              <Text style={styles.metaText} maxFontSizeMultiplier={META_TEXT_SCALE}>
+                {article.source}
+              </Text>
+              <Text style={styles.metaText} maxFontSizeMultiplier={META_TEXT_SCALE}>
+                {" • "}
+              </Text>
+              <Text style={styles.metaText} maxFontSizeMultiplier={META_TEXT_SCALE}>
+                {article.timestamp}
+              </Text>
               {article.author ? (
                 <>
                   <Text style={styles.metaText}> • </Text>
-                  <Text style={styles.metaText} numberOfLines={1}>
+                  <Text
+                    style={styles.metaText}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={META_TEXT_SCALE}
+                  >
                     By {article.author}
                   </Text>
                 </>

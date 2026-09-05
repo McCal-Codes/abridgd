@@ -81,3 +81,37 @@ describe("ArticleCard", () => {
     expect(queryByTestId("article-thumbnail")).toBeNull();
   });
 });
+
+describe("ArticleCard accessibility", () => {
+  const fixture = {
+    id: "article-a11y",
+    headline: "Council approves riverfront plan",
+    summary: "Summary text",
+    source: "Post-Gazette",
+    timestamp: "2h ago",
+    publishedAt: Date.now(),
+    category: "Local" as const,
+    readTimeMinutes: 3,
+    body: "",
+  };
+
+  it("announces as one button carrying headline, source, time and byline", () => {
+    const article = { ...fixture, author: "Jane Doe" };
+
+    const { getByRole } = render(<ArticleCard article={article} onPress={jest.fn()} />);
+
+    const card = getByRole("button");
+    expect(card.props.accessibilityLabel).toBe(
+      "Council approves riverfront plan, Post-Gazette, 2h ago, By Jane Doe",
+    );
+    expect(card.props.accessibilityHint).toBe("Opens the full story");
+  });
+
+  it("omits the byline from the label when the story has no author", () => {
+    const article = { ...fixture, author: undefined };
+
+    const { getByRole } = render(<ArticleCard article={article} onPress={jest.fn()} />);
+
+    expect(getByRole("button").props.accessibilityLabel).not.toContain("By ");
+  });
+});
