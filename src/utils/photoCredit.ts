@@ -9,11 +9,6 @@ const STRONG_LEADING_PATTERN =
  * — "Associated Press reporters spent six months..." — so they need the short-string bound. */
 const WEAK_LEADING_PATTERN = /^(?:Getty\s+Images?|Associated\s+Press|Reuters)/i;
 
-const LEADING_CREDIT_PATTERN = new RegExp(
-  `${STRONG_LEADING_PATTERN.source}|${WEAK_LEADING_PATTERN.source.replace(/^\^/, "^")}`,
-  "i",
-);
-
 /** Wire-service and photographer names that identify a credit anywhere in a SHORT string.
  * Unanchored matching only makes sense for short strings: a full paragraph that happens to
  * mention the Associated Press is reporting, not an attribution. */
@@ -27,8 +22,6 @@ const MAX_INLINE_CREDIT_LENGTH = 60;
  * the Heinz History Center, the exhibit runs through March...". Without a bound those
  * paragraphs were styled as credits, and the content parser deleted them outright. */
 const MAX_LEADING_CREDIT_LENGTH = 120;
-
-export const CREDIT_PATTERN = LEADING_CREDIT_PATTERN;
 
 export const isPhotoCredit = (text: string): boolean => {
   const trimmed = text.trim();

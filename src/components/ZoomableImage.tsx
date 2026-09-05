@@ -35,7 +35,7 @@ export const ZoomableImage: React.FC<ZoomableImageProps> = ({
   accessibilityLabel,
   onDismiss,
 }) => {
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
 
   const scale = useSharedValue(1);
@@ -126,7 +126,12 @@ export const ZoomableImage: React.FC<ZoomableImageProps> = ({
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.container, { width, height: height * 0.9 }, animatedStyle]}>
+      {/* Fills whatever box the modal gives it. Sizing to the window instead meant the image
+          overflowed ZoomModal's 90%-wide, overflow:hidden content view and was clipped — badly
+          on iPad, where that view is capped at 500pt. */}
+      <Animated.View
+        style={[styles.container, { width: "100%", height: height * 0.9 }, animatedStyle]}
+      >
         <Image
           source={{ uri }}
           style={styles.image}
