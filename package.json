@@ -13,6 +13,7 @@
     "build:ipa": "eas build --platform ios --profile production",
     "build:ipa:quick": "eas build --platform ios --profile preview",
     "build:ipa:submit": "eas build --platform ios --profile production --auto-submit",
+    "build:apk": "eas build --platform android --profile preview",
     "repo:health": "node scripts/audit/repo-health.js",
     "version:check": "node scripts/audit/version-check.js",
     "audit:ai-leak": "node scripts/audit/ai-leak-check.js",

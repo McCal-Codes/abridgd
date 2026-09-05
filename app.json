@@ -5,7 +5,7 @@
     "scheme": "abridged",
     "version": "1.5.0",
     "subtitle": "News abridged to you",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -32,7 +32,18 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mccal.abridged",
+      "package": "com.mccalmedia.abridged",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -43,7 +54,8 @@
     "plugins": [
       "expo-font",
       "@sentry/react-native",
-      "expo-secure-store"
+      "expo-secure-store",
+      "./plugins/withFoldableConfigChanges"
     ],
     "extra": {
       "eas": {
