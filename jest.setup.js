@@ -117,6 +117,12 @@ jest.mock("react-native-reanimated", () => {
     withSpring: jest.fn((value) => value),
     interpolate: jest.fn(() => 0),
     runOnJS: jest.fn((fn) => fn),
+    runOnUI: jest.fn((fn) => fn),
+    // Layout-measurement APIs. Without these, any component using them (ZoomModal) throws on
+    // import and simply can't be tested — which is how its missing close button went unnoticed.
+    useAnimatedRef: jest.fn(() => ({ current: null })),
+    measure: jest.fn(() => null),
+    useDerivedValue: jest.fn((fn) => ({ value: fn() })),
     Easing: { ease: jest.fn() },
   };
 });

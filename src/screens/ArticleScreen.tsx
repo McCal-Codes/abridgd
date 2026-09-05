@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Linking,
   AccessibilityInfo,
 } from "react-native";
 import Animated, {
@@ -44,6 +43,7 @@ import {
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
 import { isPhotoCredit } from "../utils/photoCredit";
+import { openExternalUrl } from "../utils/externalLinks";
 import { resolveRestoreOffset } from "../utils/readingPosition";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
@@ -739,7 +739,10 @@ export const ArticleScreen: React.FC = () => {
                     </Text>
                   )}
                   {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
-                  <ScaleButton style={styles.videoOpenButton} onPress={() => Linking.openURL(uri)}>
+                  <ScaleButton
+                    style={styles.videoOpenButton}
+                    onPress={() => void openExternalUrl(uri)}
+                  >
                     <Text style={styles.videoOpenText}>Open video in browser</Text>
                   </ScaleButton>
                 </View>
@@ -768,7 +771,7 @@ export const ArticleScreen: React.FC = () => {
                   try {
                     await Haptics.selectionAsync();
                   } catch {}
-                  Linking.openURL(article.link!);
+                  void openExternalUrl(article.link);
                 }}
               >
                 <Text style={styles.sourceButtonText}>Read Full Story on Web</Text>

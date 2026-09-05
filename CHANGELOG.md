@@ -7,6 +7,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [Unreleased]
 
 ### Fixed
+- Article links from feeds are opened only when they use `http` or `https`. `Linking.openURL` was handed the `<link>` value straight out of third-party RSS, so a hostile or compromised feed could supply `tel:`, `sms:`, or another app's custom scheme and iOS would act on it. (TODO-138)
+- The photo viewer had no way out that wasn't a gesture. Its only dismissal was a backdrop tap, and the full-screen image added this release covers nearly all of that backdrop — so a VoiceOver user, who cannot perform drag-to-dismiss, could not close it at all. There is a labelled Close button now. (TODO-138)
 - Body paragraphs were being deleted from articles. The photo-credit heuristic had no length bound on its leading patterns, so a paragraph opening "Courtesy of the Heinz History Center, the exhibit will run through..." was folded into the preceding image as its credit and dropped from the article entirely. Explicit attribution phrases are now bounded at 120 characters and bare wire-service names — which legitimately open sentences — at 60. (TODO-137)
 - Pull-to-refresh announced the wrong outcome to VoiceOver. It read `articles` and `error` from the handler's render closure after awaiting the refresh, so those still held pre-refresh values: a failed refresh announced "12 stories loaded". `refresh()` now returns what it actually did. (TODO-137)
 - A category where every source is genuinely quiet showed a network error with a Retry button that could not help. Empty-but-valid feeds are still recorded as failures so they cannot pass as silent successes, but they no longer count toward the error state — that case is "You're caught up". (TODO-137)

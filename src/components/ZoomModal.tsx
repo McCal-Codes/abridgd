@@ -1,5 +1,7 @@
 import React, { useRef } from "react";
 import { Modal, View, StyleSheet, Pressable, ViewProps, findNodeHandle } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { X } from "lucide-react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -35,6 +37,7 @@ export const ZoomModal: React.FC<ZoomModalProps> = ({
   blurIntensity = 30,
 }) => {
   const { colors } = useThemeOptional();
+  const insets = useSafeAreaInsets();
   const containerRef = useAnimatedRef<Animated.View>();
 
   // Animation values
@@ -146,6 +149,20 @@ export const ZoomModal: React.FC<ZoomModalProps> = ({
           </Animated.View>
         </Pressable>
 
+        {/* The backdrop Pressable below used to be the only way out. Content that fills the
+            screen — the article photo viewer does — leaves almost none of it tappable, and a
+            drag-to-dismiss gesture is not something VoiceOver can perform, so without this
+            button a screen-reader user could not close the viewer at all. */}
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          hitSlop={12}
+          style={[styles.closeButton, { top: insets.top + 12 }]}
+        >
+          <X size={22} color="#fff" strokeWidth={2.5} />
+        </Pressable>
+
         {/* Content */}
         <Animated.View
           ref={containerRef}
@@ -163,6 +180,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  closeButton: {
+    position: "absolute",
+    right: 16,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
   },
   content: {
     width: "90%",
