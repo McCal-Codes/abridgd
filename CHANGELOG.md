@@ -7,6 +7,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [Unreleased]
 
 ### Added
+- Articles reopen where you stopped reading. `scrollPixels` was written on every scroll and never read back, so Continue Reading took you to the story and dropped you at the top. A finished article still starts at the beginning. (TODO-133)
 - Tap any in-article photo to open it full screen. `ZoomModal` was built for this and used only by the demo screen, so a reading app had no way to look closely at a photo. The zoom view mounts only while open, rather than keeping a Modal alive per image. (TODO-131)
 - A documented Dynamic Type policy in `theme/typography.ts`. React Native already scales text with the system setting, so the risk was unbounded scaling breaking layout, not missing support: reading content stays uncapped, while chrome that sits beside a control or must hold one line (tab labels, badges, card meta rows, settings row labels) is capped generously rather than left to reach iOS's ~300%. (TODO-130)
 - Every category is now reachable. Business, Sports, and Culture were fetched only for the daily digest — Home is hardcoded to "Top" and both tab layouts pointed the section screen at "Local" — so three of five categories had no browsable entry point. The section screen now has a category picker across all five, rendered in the empty and error states too so a failing category isn't a dead end. (TODO-122)

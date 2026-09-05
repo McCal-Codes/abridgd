@@ -44,6 +44,7 @@ import {
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
 import { isPhotoCredit } from "../utils/photoCredit";
+import { resolveRestoreOffset } from "../utils/readingPosition";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
@@ -72,6 +73,11 @@ export const ArticleScreen: React.FC = () => {
 
   // Reading progress state
   const [readStartTime] = useState(Date.now());
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  // Reading position was written on every scroll and never read back, so "Continue Reading"
+  // took you to the article and dropped you at the top. Restore once, on the first layout
+  // that is actually tall enough to hold the saved offset.
+  const restoredScrollRef = React.useRef(false);
   const readingTimeIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const lastProgressSyncRef = React.useRef({
     completionPercentage: -1,
@@ -515,7 +521,19 @@ export const ArticleScreen: React.FC = () => {
     articleContent = (
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         <ScrollView
+          ref={scrollViewRef}
           style={styles.container}
+          onContentSizeChange={(_width, height) => {
+            if (restoredScrollRef.current) return;
+
+            const decision = resolveRestoreOffset(getProgress?.(article.id), height);
+            if (decision.action === "wait") return;
+
+            restoredScrollRef.current = true;
+            if (decision.action === "restore") {
+              scrollViewRef.current?.scrollTo({ y: decision.offset, animated: false });
+            }
+          }}
           contentContainerStyle={[
             styles.content,
             {

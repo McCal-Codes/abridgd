@@ -156,3 +156,21 @@ export const useSavedArticles = () => {
   }
   return context;
 };
+
+/** Safe no-op variant, matching useReadingProgressOptional. Lets presentational components —
+ * ArticleCard's swipe-to-save, in particular — reach saved state without every render tree
+ * that mounts a card being obliged to provide the context. */
+export const useSavedArticlesOptional = (): SavedArticlesContextType => {
+  const context = useContext(SavedArticlesContext);
+  if (context === undefined) {
+    return {
+      savedArticles: [],
+      saveArticle: (_article: Article) => {},
+      unsaveArticle: (_articleId: string) => {},
+      isArticleSaved: (_articleId: string) => false,
+      isLoading: false,
+      error: null,
+    } as SavedArticlesContextType;
+  }
+  return context;
+};
