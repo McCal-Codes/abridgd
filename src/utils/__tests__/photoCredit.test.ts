@@ -75,3 +75,40 @@ describe("parseHtmlContent captions", () => {
     expect(nodes).toHaveLength(2);
   });
 });
+
+describe("isPhotoCredit length bounds", () => {
+  it("does not treat a long paragraph that opens with an attribution phrase as a credit", () => {
+    // Newsrooms open body copy this way. Without a length bound the content parser folded
+    // these into the preceding image and dropped them from the article.
+    const paragraph =
+      "Courtesy of the Heinz History Center, the exhibit will run through the end of March and features more than two hundred objects drawn from the museum's permanent collection.";
+    expect(isPhotoCredit(paragraph)).toBe(false);
+  });
+
+  it("does not treat a wire-service lede as a credit", () => {
+    const lede =
+      "Associated Press reporters spent six months reviewing county pension filings and found a shortfall that had gone unreported for years.";
+    expect(isPhotoCredit(lede)).toBe(false);
+  });
+
+  it("still recognises the short attributions those patterns exist for", () => {
+    expect(isPhotoCredit("Courtesy of the Heinz History Center")).toBe(true);
+    expect(isPhotoCredit("AP Photo/Gene J. Puskar")).toBe(true);
+    expect(isPhotoCredit("Photo: Jane Doe")).toBe(true);
+  });
+});
+
+describe("parseHtmlContent keeps body copy", () => {
+  it("does not swallow a long attribution-led paragraph into the image above it", () => {
+    const nodes = parseHtmlContent(
+      '<div><img src="https://x.test/a.jpg" />' +
+        "<p>Courtesy of the Heinz History Center, the exhibit will run through the end of March and features more than two hundred objects drawn from the museum's permanent collection.</p>" +
+        "<p>The council met on Tuesday.</p></div>",
+    );
+
+    expect(nodes).toHaveLength(3);
+    expect(nodes[0].type).toBe("image");
+    expect(nodes[0].credit).toBeUndefined();
+    expect(nodes[1].text).toContain("Heinz History Center");
+  });
+});

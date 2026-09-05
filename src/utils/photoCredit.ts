@@ -1,9 +1,18 @@
 import { decodeHtmlEntities } from "./htmlEntities";
 
-/** Credit lines that announce themselves up front: "Photo:", "Credit —", "Courtesy of …",
- * "AP Photo/Gene J. Puskar". Anchored, because these words only mean attribution at the start. */
-const LEADING_CREDIT_PATTERN =
-  /^(?:(?:photo|credit|courtesy|image|illustration)s?\s*[:\-—–]|photos?\s+(?:by|courtesy)|photograph(?:ed)?\s+by|courtesy\s+of|submitted\s+photo|AP\s+Photo|Getty\s+Images?|Associated\s+Press|Reuters)/i;
+/** Phrases that only ever introduce an attribution: "Photo:", "Credit —", "Courtesy of …",
+ * "AP Photo/Gene J. Puskar". Nobody opens a news paragraph with these. */
+const STRONG_LEADING_PATTERN =
+  /^(?:(?:photo|credit|courtesy|image|illustration)s?\s*[:\-—–]|photos?\s+(?:by|courtesy)|photograph(?:ed)?\s+by|courtesy\s+of|submitted\s+photo|AP\s+Photo)/i;
+
+/** Bare organisation names. These do introduce credits, but they also open ordinary sentences
+ * — "Associated Press reporters spent six months..." — so they need the short-string bound. */
+const WEAK_LEADING_PATTERN = /^(?:Getty\s+Images?|Associated\s+Press|Reuters)/i;
+
+const LEADING_CREDIT_PATTERN = new RegExp(
+  `${STRONG_LEADING_PATTERN.source}|${WEAK_LEADING_PATTERN.source.replace(/^\^/, "^")}`,
+  "i",
+);
 
 /** Wire-service and photographer names that identify a credit anywhere in a SHORT string.
  * Unanchored matching only makes sense for short strings: a full paragraph that happens to
@@ -14,13 +23,21 @@ const INLINE_CREDIT_PATTERN =
 /** Beyond this, a string is prose that mentions a wire service rather than a credit line. */
 const MAX_INLINE_CREDIT_LENGTH = 60;
 
+/** Even an explicit "Courtesy of ..." is prose past this length — newsrooms write "Courtesy of
+ * the Heinz History Center, the exhibit runs through March...". Without a bound those
+ * paragraphs were styled as credits, and the content parser deleted them outright. */
+const MAX_LEADING_CREDIT_LENGTH = 120;
+
 export const CREDIT_PATTERN = LEADING_CREDIT_PATTERN;
 
 export const isPhotoCredit = (text: string): boolean => {
   const trimmed = text.trim();
   if (!trimmed) return false;
-  if (LEADING_CREDIT_PATTERN.test(trimmed)) return true;
-  return trimmed.length <= MAX_INLINE_CREDIT_LENGTH && INLINE_CREDIT_PATTERN.test(trimmed);
+  if (trimmed.length <= MAX_LEADING_CREDIT_LENGTH && STRONG_LEADING_PATTERN.test(trimmed)) {
+    return true;
+  }
+  if (trimmed.length > MAX_INLINE_CREDIT_LENGTH) return false;
+  return WEAK_LEADING_PATTERN.test(trimmed) || INLINE_CREDIT_PATTERN.test(trimmed);
 };
 
 /** A trailing credit clause inside a caption: "…at the rally. (Photo: Jane Doe/AP)" or

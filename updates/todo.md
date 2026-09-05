@@ -346,6 +346,12 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `SavedArticlesContext` recreated its functions and value each render while every `ArticleCard` now subscribes to it, so a whole feed lost memoization at once and each card rebuilt its pan gesture; `isArticleSaved` was an O(cards x saved) linear scan; `useCategoryFeed` called `getCachedCategory` — which filters sources and merges and sorts the category cache — on every render for a value only its state initializers read; `ArticleBodyImage` fetched every photo twice via `Image.getSize` before rendering it; the three article feeds used FlatList's default windowing; and `ScrollContext` rebuilt its value object around a ref-stable Animated.Value.
   - **Completed**: September 5, 2026
 
+- [x] **TODO-137** | **Unreleased** | Fix three defects found in review of this branch
+  - **Status**: Completed
+  - **Description**: A diff review over the branch turned up three real failures in code added this session. The photo-credit heuristic dropped the `length < 140` guard the ArticleScreen code it replaced had, so `foldCreditsIntoImages` deleted body paragraphs that opened with "Courtesy of"/"Associated Press" — verified against a 170-character paragraph that vanished from the parsed output. Pull-to-refresh read `articles`/`error` from a stale render closure and announced the opposite of what happened. And a genuinely quiet category raised a network error instead of the caught-up state, because empty-but-valid feeds counted toward the throw condition.
+  - **Completed**: September 5, 2026
+
+
 
 
 

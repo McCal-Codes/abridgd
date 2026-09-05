@@ -15,7 +15,15 @@ export interface CategoryFeedState {
   /** True when the currently-shown data is older than the soft cache TTL. */
   stale: boolean;
   lastUpdated: Date | null;
-  refresh: () => Promise<void>;
+  /** Resolves with what the refresh actually did. Callers that report the outcome can't read
+   * it off `articles`/`error` afterwards: those are captured in the handler's render closure
+   * and still hold pre-refresh values when the await returns. */
+  refresh: () => Promise<RefreshOutcome>;
+}
+
+export interface RefreshOutcome {
+  count: number;
+  failed: boolean;
 }
 
 const getErrorMessage = (error: unknown, fallback: string): string =>
@@ -49,14 +57,16 @@ export const useCategoryFeed = (category: ArticleCategory): CategoryFeedState =>
     setLastUpdated(toDate(result.lastUpdated));
   }, []);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<RefreshOutcome> => {
     setRefreshing(true);
     setError(null);
     try {
       const result = await fetchCategory(categoryRef.current, { forceRefresh: true });
       applyResult(result);
+      return { count: result.articles.length, failed: false };
     } catch (e) {
       setError(getErrorMessage(e, "Failed to refresh."));
+      return { count: 0, failed: true };
     } finally {
       setRefreshing(false);
     }

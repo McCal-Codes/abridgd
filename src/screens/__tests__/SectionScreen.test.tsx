@@ -16,7 +16,7 @@ const baseFeedState = {
   error: null as string | null,
   stale: false,
   lastUpdated: null as Date | null,
-  refresh: jest.fn(),
+  refresh: jest.fn(async () => ({ count: 0, failed: false })),
 };
 
 jest.mock("@react-navigation/native", () => {
@@ -133,6 +133,7 @@ describe("SectionScreen", () => {
         ...state,
         refresh: async () => {
           setState((prev: any) => ({ ...prev, articles: [refreshedArticle] }));
+          return { count: 1, failed: false };
         },
       };
     });

@@ -210,7 +210,6 @@ export const SectionScreen: React.FC = () => {
       ) : (
         <FlatList
           testID="section-list"
-          removeClippedSubviews
           initialNumToRender={6}
           maxToRenderPerBatch={6}
           windowSize={9}
@@ -236,8 +235,8 @@ export const SectionScreen: React.FC = () => {
             } catch {
               // noop if haptics unavailable
             }
-            await refresh();
-            announceRefreshResult(articles.length, !!error);
+            const outcome = await refresh();
+            announceRefreshResult(outcome.count, outcome.failed);
           }}
         />
       )}

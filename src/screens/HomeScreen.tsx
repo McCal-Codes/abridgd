@@ -269,7 +269,6 @@ export const HomeScreen: React.FC = () => {
       ) : (
         <AnimatedFlatList
           testID="home-list"
-          removeClippedSubviews
           initialNumToRender={6}
           maxToRenderPerBatch={6}
           windowSize={9}
@@ -324,8 +323,8 @@ export const HomeScreen: React.FC = () => {
             } catch {
               // noop if haptics unavailable
             }
-            await refresh();
-            announceRefreshResult(articles.length, !!error);
+            const outcome = await refresh();
+            announceRefreshResult(outcome.count, outcome.failed);
           }}
         />
       )}
