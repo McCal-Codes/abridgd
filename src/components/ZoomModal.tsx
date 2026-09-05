@@ -9,7 +9,7 @@ import Animated, {
   measure,
   useAnimatedRef,
 } from "react-native-reanimated";
-import { BlurView } from "expo-blur";
+import { GlassSurface } from "./GlassSurface";
 import { useTheme } from "../theme/ThemeContext";
 
 interface ZoomModalProps {
@@ -34,7 +34,7 @@ export const ZoomModal: React.FC<ZoomModalProps> = ({
   blur = true,
   blurIntensity = 30,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const containerRef = useAnimatedRef<Animated.View>();
 
   // Animation values
@@ -134,13 +134,11 @@ export const ZoomModal: React.FC<ZoomModalProps> = ({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
           <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
             {blur ? (
-              <BlurView
+              <GlassSurface
                 intensity={blurIntensity}
-                tint={isDark ? "dark" : "light"}
-                style={[
-                  StyleSheet.absoluteFill,
-                  { backgroundColor: isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(0, 0, 0, 0.3)" },
-                ]}
+                tone={{ light: "rgba(0, 0, 0, 0.3)", dark: "rgba(0, 0, 0, 0.5)" }}
+                opaqueTone={{ light: "rgba(0, 0, 0, 0.6)", dark: "rgba(0, 0, 0, 0.7)" }}
+                style={StyleSheet.absoluteFill}
               />
             ) : (
               <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0, 0, 0, 0.5)" }]} />

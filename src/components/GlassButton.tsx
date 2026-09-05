@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, Text, View, Platform, StyleProp, ViewStyle } from "react-native";
-import { BlurView } from "expo-blur";
+import { GlassSurface } from "./GlassSurface";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "../theme/ThemeContext";
 
@@ -120,13 +120,14 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       style={[styles.container, compact && styles.containerCompact, style, disabled && styles.disabled]}
     >
       {shouldUseBlur ? (
-        <BlurView
+        <GlassSurface
           intensity={isDark ? 40 : 30}
-          tint={isDark ? "dark" : "light"}
-          style={[styles.blur, { backgroundColor: getBackgroundColor() }]}
+          tone={{ light: getBackgroundColor(), dark: getBackgroundColor() }}
+          opaqueTone={{ light: colors.surface, dark: colors.surface }}
+          style={styles.blur}
         >
           {content}
-        </BlurView>
+        </GlassSurface>
       ) : (
         content
       )}

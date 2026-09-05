@@ -17,6 +17,7 @@ import { Article, ArticleCategory } from "../types/Article";
 import { HeroHeader } from "../components/HeroHeader";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { formatUpdatedAgo } from "../utils/relativeTime";
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>,
@@ -139,19 +140,6 @@ export const SavedScreen: React.FC = () => {
       setLastUpdated(new Date());
       setRefreshing(false);
     }, 400);
-  }, []);
-
-  const formatUpdatedAgo = React.useCallback((updated: Date | null): string | undefined => {
-    if (!updated) return undefined;
-    const diffMs = Date.now() - updated.getTime();
-    const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
-    if (diffSeconds < 60) return "Updated just now";
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `Updated ${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `Updated ${diffDays}d ago`;
   }, []);
 
   // Debounce search input

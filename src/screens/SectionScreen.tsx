@@ -14,35 +14,14 @@ import { Article, ArticleCategory } from "../types/Article";
 import { typography } from "../theme/typography";
 import * as Haptics from "expo-haptics";
 import { HeroHeader } from "../components/HeroHeader";
+import { FeedStatusBanner } from "../components/FeedStatusBanner";
 import { MapPin, Newspaper } from "lucide-react-native";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { formatUpdatedAgo } from "../utils/relativeTime";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SectionRouteProp = RouteProp<TabParamList, "Discover">;
-
-const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
-  if (!lastUpdated) return undefined;
-  const diffMs = Date.now() - lastUpdated.getTime();
-  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
-  if (diffSeconds < 60) return "Updated just now";
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `Updated ${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `Updated ${diffDays}d ago`;
-};
-
-const FeedStatusBanner = ({ message }: { message: string }) => {
-  const styles = useThemedStyles(createStyles);
-
-  return (
-    <View style={styles.statusBanner} testID="section-feed-status">
-      <Text style={styles.statusBannerText}>{message}</Text>
-    </View>
-  );
-};
 
 /** Horizontal picker across every configured category. Until this existed, Business, Sports
  * and Culture were fetched for the digest but had no browsable entry point anywhere in the app. */
@@ -238,7 +217,10 @@ export const SectionScreen: React.FC = () => {
             <>
               {renderHeader()}
               {error && articles.length > 0 && (
-                <FeedStatusBanner message="Couldn't load fresh stories. Showing the last successful update." />
+                <FeedStatusBanner
+                  testID="section-feed-status"
+                  message="Couldn't load fresh stories. Showing the last successful update."
+                />
               )}
             </>
           }
@@ -294,21 +276,6 @@ const createStyles = (colors: ThemeColors) =>
     chipLabelSelected: {
       color: colors.background,
       fontWeight: "600",
-    },
-    statusBanner: {
-      marginHorizontal: spacing.gutter,
-      marginBottom: spacing.xs,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-    },
-    statusBannerText: {
-      fontFamily: typography.fontFamily.sans,
-      fontSize: typography.size.sm,
-      color: colors.textSecondary,
     },
     center: {
       justifyContent: "center",

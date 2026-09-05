@@ -44,6 +44,7 @@ import {
   User,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
+import { GlassStackHeader } from "../components/GlassStackHeader";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -224,6 +225,15 @@ export const RootNavigator = () => {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerTitleAlign: "left",
+            // GlassStackHeader was built for this and then wired into nothing, leaving 14
+            // screens on the stock header. One renderer here covers all of them.
+            header: ({ navigation, options, back }) => (
+              <GlassStackHeader
+                title={typeof options.title === "string" ? options.title : ""}
+                canGoBack={!!back}
+                onBack={navigation.goBack}
+              />
+            ),
           }}
         >
           <Stack.Screen
