@@ -12,12 +12,13 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BookOpen,
-  CheckCircle,
+  Compass,
   PauseCircle,
-  Sliders,
   Wind,
 } from "lucide-react-native";
 import { ScaleButton } from "../components/ScaleButton";
+import { getAllCategories } from "../services/feed/sourceRegistry";
+import { WhatsNewView } from "./onboarding/WhatsNewView";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { useSettings, GroundingAnimationStyle } from "../context/SettingsContext";
 import { RootStackParamList } from "../navigation/types";
@@ -35,54 +36,50 @@ type OnboardingSlide = {
   demo?: boolean;
   demoText?: string;
   grounding?: boolean;
-  preview?: "brief" | "settings" | "trust";
+  preview?: "brief" | "sections";
   Icon: typeof BookOpen;
 };
 
 const SLIDES: OnboardingSlide[] = [
   {
     id: "welcome",
-    title: "A calmer way into the news",
+    title: "Local news, abridged",
     description:
-      "Start with a short brief. Keep reading when you want more. No need to build the whole app in your head on day one.",
+      "A short brief of what happened in Pittsburgh, from newsrooms that cover it. Read the summary, or open the whole story. Either way it ends.",
     preview: "brief",
     Icon: BookOpen,
   },
   {
-    id: "rsvp-demo",
-    title: "Give Your Eyes a Break",
+    id: "sections",
+    title: "Five sections, one place",
     description:
-      "Doomscrolling is exhausting. Our RSVP reader shows you one word at a time, locked in place. It is surprisingly calm, like a massage for your brain.",
+      "Top and Local for the day's news, then Business, Sports, and Culture when you want them. Every section pulls from several newsrooms, and you choose which ones.",
+    preview: "sections",
+    Icon: Compass,
+  },
+  {
+    id: "reader",
+    title: "One word at a time",
+    description:
+      "The Abridged reader holds each word in the same spot so your eyes stop hunting across the line. Try it here — tap play, and drag the speed wherever it feels right.",
     demo: true,
     demoText:
-      "We hope you find this reading experience to be incredibly peaceful and kind to your eyes, and if you are ever feeling hungry, remember that almost everything is better as chicken on a stick.",
+      "City council approved the riverfront plan on Tuesday after two years of hearings, clearing the way for construction to begin next spring.",
     Icon: PauseCircle,
   },
   {
     id: "grounding",
-    title: "Optional grounding",
+    title: "A breath before the hard ones",
     description:
-      "For heavy stories, add a quiet breathing cue before you read. Skip it now, change it later in Settings > Reading.",
+      "Some stories land heavy. Turn on a short breathing cue before those, or skip it entirely — you can change this later in Settings.",
     grounding: true,
     Icon: Wind,
   },
-  {
-    id: "make-it-yours",
-    title: "Make It Yours",
-    description:
-      "Keep the default if it feels right. Tune speed, focus, haptics, and grounding later when you know what you want.",
-    preview: "settings",
-    Icon: Sliders,
-  },
-  {
-    id: "ready",
-    title: "Welcome Home",
-    description:
-      "No account required. No tracking. No clutter. Just a simpler place to catch up, and settings when you want them.",
-    preview: "trust",
-    Icon: CheckCircle,
-  },
 ];
+
+/** Shown under the final slide's actions. These were a whole slide of their own, which spent
+ * a full screen telling readers about the absence of things. */
+const TRUST_POINTS = ["No account", "No tracking", "Nothing to configure"];
 
 const BREATH_SEGMENTS = [
   { label: "In", flex: 4, color: "#3FA2A7" },
@@ -292,45 +289,35 @@ const BriefPreview: React.FC = () => {
   );
 };
 
-const SettingsPreview: React.FC = () => {
+const SectionsPreview: React.FC = () => {
   const styles = useThemedStyles(createStyles);
+  const categories = getAllCategories();
 
   return (
     <View style={styles.previewCard}>
       <Text style={styles.previewEyebrow} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
-        Reading Settings
+        Sections
       </Text>
-      <View style={styles.settingPreviewRow}>
-        <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
-          RSVP speed
-        </Text>
-        <View style={styles.settingPreviewTrack}>
-          <View style={styles.settingPreviewFill} />
-        </View>
-      </View>
-      {["Grounding cue", "Haptics", "Reader focus"].map((item, index) => (
-        <View key={item} style={styles.settingPreviewRow}>
-          <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
-            {item}
-          </Text>
-          <View style={[styles.settingPreviewToggle, index === 1 && styles.settingPreviewToggleOff]}>
-            <View style={[styles.settingPreviewKnob, index === 1 && styles.settingPreviewKnobOff]} />
+      <View style={styles.sectionChipRow}>
+        {categories.map((category, index) => (
+          <View
+            key={category}
+            style={[styles.sectionChip, index === 0 && styles.sectionChipActive]}
+          >
+            <Text
+              style={[styles.sectionChipText, index === 0 && styles.sectionChipTextActive]}
+              maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}
+            >
+              {category}
+            </Text>
           </View>
-        </View>
-      ))}
-    </View>
-  );
-};
-
-const TrustPreview: React.FC = () => {
-  const styles = useThemedStyles(createStyles);
-
-  return (
-    <View style={styles.previewCard}>
-      {["No account required", "No tracking", "Change settings anytime"].map((item) => (
-        <View key={item} style={styles.trustPreviewRow}>
-          <CheckCircle size={18} color={styles.trustIcon.color} strokeWidth={2} />
-          <Text style={styles.trustPreviewText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+        ))}
+      </View>
+      <View style={styles.previewDivider} />
+      {["WESA", "Post-Gazette", "PublicSource"].map((item) => (
+        <View key={item} style={styles.previewLineRow}>
+          <View style={styles.previewDot} />
+          <Text style={styles.previewLineText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
             {item}
           </Text>
         </View>
@@ -347,10 +334,12 @@ export const OnboardingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const {
     completeOnboarding,
+    markVersionSeen,
     groundingAnimationStyle,
     setGroundingAnimationStyle,
     reduceMotion,
   } = useSettings();
+  const mode = (route?.params?.mode as "firstRun" | "whatsNew" | undefined) ?? "firstRun";
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<ScrollView>(null);
   const { width, height: screenHeight } = useWindowDimensions();
@@ -386,6 +375,12 @@ export const OnboardingScreen: React.FC = () => {
       }, 50);
 
       return () => clearTimeout(timeout);
+    }
+
+    // Silently ignoring an unknown id is how `startSlideId: "whats-new"` shipped: it matched
+    // no slide, so every returning reader got the first-run flow from slide one instead.
+    if (__DEV__) {
+      console.warn(`[Onboarding] startSlideId "${startId}" matches no slide.`);
     }
 
     return undefined;
@@ -476,12 +471,8 @@ export const OnboardingScreen: React.FC = () => {
             <BriefPreview />
           ) : null}
 
-          {item.preview === "settings" ? (
-            <SettingsPreview />
-          ) : null}
-
-          {item.preview === "trust" ? (
-            <TrustPreview />
+          {item.preview === "sections" ? (
+            <SectionsPreview />
           ) : null}
 
           {!item.demo && !item.grounding && !item.preview ? (
@@ -493,6 +484,17 @@ export const OnboardingScreen: React.FC = () => {
       </View>
     );
   };
+
+  if (mode === "whatsNew") {
+    return (
+      <WhatsNewView
+        onDismiss={() => {
+          void markVersionSeen();
+          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -571,6 +573,14 @@ export const OnboardingScreen: React.FC = () => {
                 </Text>
               </View>
             </ScaleButton>
+
+            <View style={styles.trustRow} testID="onboarding-trust">
+              {TRUST_POINTS.map((point) => (
+                <Text key={point} style={styles.trustText} maxFontSizeMultiplier={1.4}>
+                  {point}
+                </Text>
+              ))}
+            </View>
           </View>
         ) : (
           <View style={styles.progressActions}>
@@ -921,71 +931,6 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       flexShrink: 1,
     },
-    settingPreviewRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: spacing.md,
-      minHeight: 36,
-    },
-    settingPreviewLabel: {
-      fontFamily: typography.fontFamily.sans,
-      fontSize: 15,
-      color: colors.text,
-      flex: 1,
-      flexShrink: 1,
-    },
-    settingPreviewTrack: {
-      width: 118,
-      maxWidth: "42%",
-      height: 8,
-      borderRadius: 999,
-      backgroundColor: colors.border,
-      overflow: "hidden",
-    },
-    settingPreviewFill: {
-      width: "58%",
-      height: "100%",
-      borderRadius: 999,
-      backgroundColor: colors.primary,
-    },
-    settingPreviewToggle: {
-      width: 42,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
-      justifyContent: "center",
-      alignItems: "flex-end",
-      paddingHorizontal: 3,
-    },
-    settingPreviewToggleOff: {
-      backgroundColor: colors.border,
-      alignItems: "flex-start",
-    },
-    settingPreviewKnob: {
-      width: 18,
-      height: 18,
-      borderRadius: 9,
-      backgroundColor: colors.surface,
-    },
-    settingPreviewKnobOff: {
-      backgroundColor: colors.background,
-    },
-    trustPreviewRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-    trustPreviewText: {
-      fontFamily: typography.fontFamily.sans,
-      fontSize: 16,
-      color: colors.text,
-      flex: 1,
-      flexShrink: 1,
-    },
-    trustIcon: {
-      color: colors.primary,
-    },
     placeholder: {
       height: 200,
       justifyContent: "center",
@@ -1093,7 +1038,46 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "600",
       textAlign: "center",
     },
-    srOnly: {
+    sectionChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  sectionChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  sectionChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sectionChipText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  sectionChipTextActive: {
+    color: colors.background,
+    fontWeight: "600",
+  },
+  trustRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  trustText: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  srOnly: {
       position: "absolute",
       height: 0,
       width: 0,

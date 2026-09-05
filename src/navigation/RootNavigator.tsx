@@ -207,7 +207,7 @@ export const RootNavigator = () => {
   }
 
   const initialRouteName = hasCompletedOnboarding && !shouldShowWhatsNew ? "Main" : "Onboarding";
-  const onboardingParams = shouldShowWhatsNew ? { startSlideId: "whats-new" } : undefined;
+  const onboardingParams = shouldShowWhatsNew ? ({ mode: "whatsNew" } as const) : undefined;
 
   return (
     <SafeAreaView

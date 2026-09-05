@@ -44,24 +44,33 @@ export const AppInfoScreen: React.FC = () => {
             <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
+          {/* Both of these used to pass slide ids ("whats-new-profile", "practice") that no
+              slide has ever had, so the buttons dropped readers on slide one of onboarding. */}
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => (navigation as any).navigate("Onboarding", { startSlideId: "whats-new-profile" })}
+            accessibilityRole="button"
+            accessibilityLabel={`What's new in version ${APP_VERSION}`}
+            onPress={() => (navigation as any).navigate("Onboarding", { mode: "whatsNew" })}
           >
             <View style={styles.inline}>
               <View style={styles.iconContainer}>
                 <Star size={18} color={colors.primary} />
               </View>
-              <Text style={[styles.actionText, { marginLeft: spacing.md }]}>What's New: Profile tab</Text>
+              <Text style={[styles.actionText, { marginLeft: spacing.md }]}>
+                What's new in {APP_VERSION}
+              </Text>
             </View>
             <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionRow}
-            onPress={() => (navigation as any).navigate("Onboarding", { startSlideId: "practice" })}
+            accessibilityRole="button"
+            onPress={() =>
+              (navigation as any).navigate("Onboarding", { startSlideId: "reader" })
+            }
           >
-            <Text style={styles.actionText}>Revisit RSVP Tutorial</Text>
+            <Text style={styles.actionText}>Revisit the Abridged reader tour</Text>
             <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
