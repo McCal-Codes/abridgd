@@ -150,6 +150,11 @@ jest.mock("react-native-gesture-handler", () => {
       "requireExternalGestureToFail",
       "hitSlop",
       "runOnJS",
+      "numberOfTaps",
+      "maxDuration",
+      "maxDelay",
+      "minDuration",
+      "averageTouches",
     ].forEach((method) => {
       chain[method] = jest.fn(() => chain);
     });

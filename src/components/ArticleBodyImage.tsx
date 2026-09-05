@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ImageOff } from "lucide-react-native";
 import { ZoomModal } from "./ZoomModal";
+import { ZoomableImage } from "./ZoomableImage";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { spacing } from "../theme/spacing";
@@ -102,11 +103,10 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
           Modals is a dozen render trees kept alive for a view nobody has asked for yet. */}
       {zoomed ? (
         <ZoomModal visible onClose={() => setZoomed(false)}>
-          <Image
-            source={{ uri }}
-            style={[styles.zoomedImage, aspectRatio ? { aspectRatio } : null]}
-            resizeMode="contain"
+          <ZoomableImage
+            uri={uri}
             accessibilityLabel={caption || "Photo"}
+            onDismiss={() => setZoomed(false)}
           />
         </ZoomModal>
       ) : null}
@@ -120,10 +120,6 @@ const createStyles = (colors: ThemeColors) =>
       width: "100%",
       borderRadius: 12,
       backgroundColor: colors.border,
-    },
-    zoomedImage: {
-      width: "100%",
-      maxHeight: "80%",
     },
     imageCompressed: {
       height: COMPRESSED_HEIGHT,
