@@ -31,3 +31,25 @@ export const typography = {
     bold: '700',
   },
 };
+
+/**
+ * Dynamic Type policy.
+ *
+ * React Native scales text with the system setting by default, so the app already responds to
+ * Larger Text — the risk is unbounded scaling breaking layout, not missing support. iOS goes up
+ * to roughly 300%, which is enough to push a thumbnail off a card or truncate a tab label.
+ *
+ * Reading content stays uncapped: a reader who asked for larger text wants the article larger.
+ * Chrome that sits beside a control, or must fit on one line, is capped instead — and capped
+ * generously, since anything under about 1.2 defeats the point of the setting.
+ */
+export const fontScaleLimit = {
+  /** Headlines and article body — no cap. Pass `undefined` to maxFontSizeMultiplier. */
+  content: undefined,
+  /** Buttons and other action labels. */
+  action: 1.6,
+  /** Row labels that sit next to a switch or chevron. */
+  control: 1.5,
+  /** Single-line meta text: bylines, timestamps, badges, tab labels. */
+  meta: 1.4,
+} as const;

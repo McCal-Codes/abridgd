@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { Article } from "../types/Article";
-import { typography } from "../theme/typography";
+import { fontScaleLimit, typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ArticleProgressIndicator } from "./ArticleProgressIndicator";
 import { Skeleton } from "./Skeleton";
@@ -15,11 +15,6 @@ interface ArticleCardProps {
 
 import { ScaleButton } from "./ScaleButton";
 import Animated, { FadeInDown } from "react-native-reanimated";
-
-/** The meta row is a single line of small text under the summary. Headline and summary scale
- * with Dynamic Type without limit; this row is capped so it wraps gracefully instead of
- * pushing the thumbnail off the card at the largest accessibility sizes. */
-const META_TEXT_SCALE = 1.4;
 
 export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, onPress }) => {
   const styles = useThemedStyles(createStyles);
@@ -53,13 +48,13 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
               {article.summary}
             </Text>
             <View style={styles.metaContainer}>
-              <Text style={styles.metaText} maxFontSizeMultiplier={META_TEXT_SCALE}>
+              <Text style={styles.metaText} maxFontSizeMultiplier={fontScaleLimit.meta}>
                 {article.source}
               </Text>
-              <Text style={styles.metaText} maxFontSizeMultiplier={META_TEXT_SCALE}>
+              <Text style={styles.metaText} maxFontSizeMultiplier={fontScaleLimit.meta}>
                 {" • "}
               </Text>
-              <Text style={styles.metaText} maxFontSizeMultiplier={META_TEXT_SCALE}>
+              <Text style={styles.metaText} maxFontSizeMultiplier={fontScaleLimit.meta}>
                 {article.timestamp}
               </Text>
               {article.author ? (
@@ -68,7 +63,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
                   <Text
                     style={styles.metaText}
                     numberOfLines={1}
-                    maxFontSizeMultiplier={META_TEXT_SCALE}
+                    maxFontSizeMultiplier={fontScaleLimit.meta}
                   >
                     By {article.author}
                   </Text>

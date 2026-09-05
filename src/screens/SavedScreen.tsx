@@ -18,6 +18,7 @@ import { HeroHeader } from "../components/HeroHeader";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { formatUpdatedAgo } from "../utils/relativeTime";
+import { announceForAccessibility } from "../utils/announce";
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>,
@@ -139,6 +140,7 @@ export const SavedScreen: React.FC = () => {
     setTimeout(() => {
       setLastUpdated(new Date());
       setRefreshing(false);
+      announceForAccessibility("Saved articles up to date");
     }, 400);
   }, []);
 

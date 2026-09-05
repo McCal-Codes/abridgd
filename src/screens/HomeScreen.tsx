@@ -25,6 +25,7 @@ import { Home as HomeIcon } from "lucide-react-native";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { formatUpdatedAgo } from "../utils/relativeTime";
+import { announceRefreshResult } from "../utils/announce";
 
 type ContinueReadingItem = {
   article: Article;
@@ -320,6 +321,7 @@ export const HomeScreen: React.FC = () => {
               // noop if haptics unavailable
             }
             await refresh();
+            announceRefreshResult(articles.length, !!error);
           }}
         />
       )}

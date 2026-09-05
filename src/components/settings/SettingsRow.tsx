@@ -2,12 +2,9 @@ import React from "react";
 import { Pressable, StyleSheet, Switch, Text, View, ViewStyle } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 import { spacing } from "../../theme/spacing";
-import { typography } from "../../theme/typography";
+import { fontScaleLimit, typography } from "../../theme/typography";
 import { ThemeColors, useThemeOptional } from "../../theme/ThemeContext";
 import { useThemedStyles } from "../../theme/useThemedStyles";
-
-/** Labels stay readable at large sizes but stop short of pushing the control off the row. */
-const ROW_TEXT_SCALE = 1.6;
 
 interface SettingsSectionProps {
   title?: string;
@@ -70,11 +67,11 @@ export const SettingsToggleRow: React.FC<SettingsToggleRowProps> = ({
       style={[styles.row, disabled && styles.rowDisabled]}
     >
       <View style={styles.rowTextContainer}>
-        <Text style={styles.rowLabel} maxFontSizeMultiplier={ROW_TEXT_SCALE}>
+        <Text style={styles.rowLabel} maxFontSizeMultiplier={fontScaleLimit.control}>
           {label}
         </Text>
         {description ? (
-          <Text style={styles.rowDescription} maxFontSizeMultiplier={ROW_TEXT_SCALE}>
+          <Text style={styles.rowDescription} maxFontSizeMultiplier={fontScaleLimit.control}>
             {description}
           </Text>
         ) : null}
@@ -126,17 +123,17 @@ export const SettingsDisclosureRow: React.FC<SettingsDisclosureRowProps> = ({
     >
       {icon ? <View style={styles.rowIcon}>{icon}</View> : null}
       <View style={styles.rowTextContainer}>
-        <Text style={styles.rowLabel} maxFontSizeMultiplier={ROW_TEXT_SCALE}>
+        <Text style={styles.rowLabel} maxFontSizeMultiplier={fontScaleLimit.control}>
           {label}
         </Text>
         {description ? (
-          <Text style={styles.rowDescription} maxFontSizeMultiplier={ROW_TEXT_SCALE}>
+          <Text style={styles.rowDescription} maxFontSizeMultiplier={fontScaleLimit.control}>
             {description}
           </Text>
         ) : null}
       </View>
       {value ? (
-        <Text style={styles.rowValue} maxFontSizeMultiplier={ROW_TEXT_SCALE}>
+        <Text style={styles.rowValue} maxFontSizeMultiplier={fontScaleLimit.control}>
           {value}
         </Text>
       ) : null}
