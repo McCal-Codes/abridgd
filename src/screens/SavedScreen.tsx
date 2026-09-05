@@ -559,6 +559,10 @@ export const SavedScreen: React.FC = () => {
       {savedArticles.length > 0 || hasActiveFiltersOrSearch ? (
         <FlatList
           testID="saved-list"
+          removeClippedSubviews
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={9}
           data={sortedArticles}
           keyExtractor={(item) => item.id}
           renderItem={renderSavedResult}

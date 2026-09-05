@@ -45,16 +45,27 @@ export const ZoomableImage: React.FC<ZoomableImageProps> = ({
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
 
-  const settle = (value: number) =>
-    reduceMotion ? withTiming(value, { duration: 0 }) : withSpring(value, { damping: 20, stiffness: 200 });
+  // Both of these run on the UI thread from inside gesture callbacks, so they have to be
+  // worklets themselves. A plain component-scope helper called from a worklet throws at
+  // runtime ("tried to synchronously call a non-worklet function on the UI thread") — it
+  // type-checks and passes tests, and fails the first time a finger touches the screen.
+  const settle = React.useCallback(
+    (value: number) => {
+      "worklet";
+      return reduceMotion
+        ? withTiming(value, { duration: 0 })
+        : withSpring(value, { damping: 20, stiffness: 200 });
+    },
+    [reduceMotion],
+  );
 
-  const resetPosition = () => {
+  const resetPosition = React.useCallback(() => {
     "worklet";
     translateX.value = settle(0);
     translateY.value = settle(0);
     savedTranslateX.value = 0;
     savedTranslateY.value = 0;
-  };
+  }, [settle, translateX, translateY, savedTranslateX, savedTranslateY]);
 
   const pinch = Gesture.Pinch()
     .onUpdate((event) => {

@@ -30,7 +30,10 @@ const toDate = (timestamp: number | null): Date | null => (timestamp ? new Date(
  * (`refresh()`) is the only path that forces a live fetch regardless of freshness.
  */
 export const useCategoryFeed = (category: ArticleCategory): CategoryFeedState => {
-  const initialCache = getCachedCategory(category);
+  // Lazy: getCachedCategory filters sources, reads preferences, then merges and sorts every
+  // cached article for the category. It ran on every render of Home and Section while only
+  // ever being used by the state initializers below, which run once.
+  const [initialCache] = useState(() => getCachedCategory(category));
 
   const [articles, setArticles] = useState<Article[]>(initialCache?.articles ?? []);
   const [loading, setLoading] = useState<boolean>(!initialCache);

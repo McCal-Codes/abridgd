@@ -269,6 +269,10 @@ export const HomeScreen: React.FC = () => {
       ) : (
         <AnimatedFlatList
           testID="home-list"
+          removeClippedSubviews
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={9}
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={renderArticle}

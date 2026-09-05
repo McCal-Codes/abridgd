@@ -56,10 +56,14 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, [article, saved, saveArticle, unsaveArticle]);
 
-  const settle = React.useCallback(
-    () => (reduceMotion ? withTiming(0, { duration: 0 }) : withSpring(0, { damping: 18, stiffness: 220 })),
-    [reduceMotion],
-  );
+  // Runs on the UI thread from the pan's onEnd, so it must be a worklet: calling a plain
+  // component-scope function from inside a gesture callback throws at runtime.
+  const settle = React.useCallback(() => {
+    "worklet";
+    return reduceMotion
+      ? withTiming(0, { duration: 0 })
+      : withSpring(0, { damping: 18, stiffness: 220 });
+  }, [reduceMotion]);
 
   const swipe = React.useMemo(
     () =>

@@ -210,6 +210,10 @@ export const SectionScreen: React.FC = () => {
       ) : (
         <FlatList
           testID="section-list"
+          removeClippedSubviews
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={9}
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={renderArticle}

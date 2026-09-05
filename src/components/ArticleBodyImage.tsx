@@ -42,26 +42,14 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
   useEffect(() => {
     setFailed(false);
     setAspectRatio(null);
+  }, [uri]);
 
-    if (compressed) return; // compressed mode intentionally keeps a fixed, smaller footprint
-
-    let cancelled = false;
-    Image.getSize(
-      uri,
-      (width, height) => {
-        if (cancelled || !width || !height) return;
-        const ratio = Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, width / height));
-        setAspectRatio(ratio);
-      },
-      () => {
-        if (!cancelled) setFailed(true);
-      },
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, [uri, compressed]);
+  /** Clamped so a very tall image can't dominate the article and a very wide one can't
+   * collapse to a sliver. */
+  const applyDimensions = (width: number, height: number) => {
+    if (!width || !height) return;
+    setAspectRatio(Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, width / height)));
+  };
 
   if (failed) {
     return (
@@ -89,6 +77,14 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
               : [styles.image, aspectRatio ? { aspectRatio } : { height: LOADING_HEIGHT }]
           }
           resizeMode={compressed ? "center" : "cover"}
+          // Sized from the image that is already loading. Image.getSize used to run first,
+          // which meant every in-article photo was fetched twice — once to measure, once to
+          // render — on an article that can carry a dozen of them.
+          onLoad={(event) => {
+            if (compressed) return; // compressed mode keeps a fixed, smaller footprint
+            const { width, height } = event.nativeEvent.source;
+            applyDimensions(width, height);
+          }}
           onError={() => setFailed(true)}
         />
       </Pressable>
