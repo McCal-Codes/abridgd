@@ -39,7 +39,7 @@ import {
   Newspaper,
   Bookmark,
   Home,
-  Search,
+  Compass,
   Star,
   User,
 } from "lucide-react-native";
@@ -62,10 +62,11 @@ export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string
     minimal: {
       home: { name: "Home", component: HomeScreen, Icon: Home },
       discover: {
+        // Landing category only - SectionScreen's picker browses every configured category.
         name: "Discover",
         component: SectionScreen,
         params: { category: "Local" },
-        Icon: Search,
+        Icon: Compass,
       },
       saved: { name: "Saved", component: SavedScreen, Icon: Bookmark },
       digest: { name: "Digest", component: DigestScreen, Icon: Star },

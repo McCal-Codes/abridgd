@@ -60,8 +60,21 @@ export const useCategoryFeed = (category: ArticleCategory): CategoryFeedState =>
   }, [applyResult]);
 
   useEffect(() => {
+    const categoryChanged = categoryRef.current !== category;
     categoryRef.current = category;
     let cancelled = false;
+
+    if (categoryChanged) {
+      // Switching categories in place (the Section screen's category picker): drop the
+      // previous category's articles immediately so they never render under the new
+      // heading, seeding from cache when we have it.
+      const cachedForNext = getCachedCategory(category);
+      setArticles(cachedForNext?.articles ?? []);
+      setStale(cachedForNext?.stale ?? false);
+      setLastUpdated(toDate(cachedForNext?.lastUpdated ?? null));
+      setLoading(!cachedForNext);
+      setError(null);
+    }
 
     const bootstrap = async () => {
       await ensureHydrated();

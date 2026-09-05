@@ -16,6 +16,7 @@
     "repo:health": "node scripts/audit/repo-health.js",
     "version:check": "node scripts/audit/version-check.js",
     "audit:ai-leak": "node scripts/audit/ai-leak-check.js",
+    "audit:feeds": "node scripts/audit/feed-health.js",
     "eas:workflow:run": "eas workflow:run",
     "lint:docs": "node docs/scripts/doc-lint.js"
   },
