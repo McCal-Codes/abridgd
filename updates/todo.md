@@ -263,6 +263,52 @@ TODO-112 were already used by the Fraunces/serif-typeface work (see `e85fd96`/`6
 
 ---
 
+### Reachability, feeds, and onboarding (September 2026)
+
+Numbered from TODO-122; TODO-121 was taken by the v1.5.0 `rss-parser` removal above. This batch
+came out of an audit that started as a backlog groom and turned up shipped content readers could
+not reach, settings that did nothing, and an upgrade flow that treated returning readers as new.
+
+- [x] **TODO-122** | **v1.6.0** | Make every category reachable
+  - **Status**: Completed
+  - **Description**: `HomeScreen` is hardcoded to `useCategoryFeed("Top")` and both tab layouts pointed `SectionScreen` at `category: "Local"`, so Business, Sports and Culture were fetched only by `AiService` for the digest and had no browsable entry point. Added a category picker over `getAllCategories()`, rendered in the skeleton, error and empty branches too so a failing category isn't a trap. `useCategoryFeed` now clears the previous category's articles on switch, seeding from cache, so stories never render under the wrong heading. Discover's search icon became a compass; five phantom `TabParamList` entries no `ArticleCategory` ever had were deleted.
+  - **Definition of Done**: `npx tsc --noEmit` clean; suite green.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-123** | **v1.6.0** | Restore the feed source list against a live probe
+  - **Status**: Completed
+  - **Description**: Probed all 28 configured feeds; 12 returned items. WESA was never broken — its feeds are at `<section>.rss`, not `<section>/rss`. Added seven verified news-outlet sources, removed eight dead domains, rewrote every health note with a date and the real failure mode (bot-block vs. empty feed vs. dead domain, which the old blanket "Non-feed response" conflated). Enabled sources 12 → 19; Culture 1 → 5, closing ADR-0005's open follow-up. Added `npm run audit:feeds` and a config-guard test that fails if any category drops below two enabled sources.
+  - **Definition of Done**: `npm run audit:feeds` reports all enabled sources healthy; suite green.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-124** | **v1.6.0** | Report empty feeds honestly
+  - **Status**: Completed
+  - **Description**: `repository.ts` returned `{ snapshot: null, failure: null }` for a feed that parsed but carried no items — invisible to every caller, so the category silently shrank instead of surfacing cached-state and retry messaging. TribLive's section feeds are exactly this shape. Closes the long-open "feed failures surface honest error states instead of silent empty success" acceptance criterion.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-125** | **v1.6.0** | Parse image captions and photo credits
+  - **Status**: Completed
+  - **Description**: The hero image carried no caption or credit despite media RSS providing `media:description`/`media:title`/`media:credit`; body images only picked up `<figure><figcaption>`, missing the WordPress `wp-caption` markup most of these publishers emit; credits arriving as their own paragraph rendered as stranded body copy; and figcaption text skipped the entity decoding every other text path applied. New `src/utils/photoCredit.ts` owns the heuristics (replacing a copy inside `ArticleScreen`) and splits "Caption. (Photo: Jane Doe/AP)" into its two halves.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-126** | **v1.6.0** | Make settings controls do what they say, or remove them
+  - **Status**: Completed
+  - **Description**: The reading-speed slider had no effect — `AbridgedReader` held a local `useState(300)` and never read `readingSpeed`. `APP_BUILD` was pinned at "1" while app.json shipped 36, so bug reports named the wrong build. Quiet Hours suppressed notifications in an app with no notification system; the Welcome Back Digest toggle was read by nothing. The iOS 26 demo screen was registered in production builds. Sources settings explained how to add custom feeds directly under a card saying custom feeds were coming soon.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-127** | **v1.6.0** | Rebuild onboarding and fix the What's New flow
+  - **Status**: Completed
+  - **Description**: `RootNavigator` passed `startSlideId: "whats-new"`, no slide had that id, and unknown ids were silently ignored — every returning reader got the full first-run flow. Now branches on the `mode` param that existed for this and was never read, calling `markVersionSeen` rather than re-running onboarding completion. First run rebuilt around four slides that each do something, including a new one introducing the sections TODO-122 made reachable. Settings → About's two onboarding links pointed at slide ids that have never existed.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-128** | **v1.6.0** | Reader-facing release notes
+  - **Status**: Completed
+  - **Description**: `src/config/releaseNotes.ts`, shown in What's New and reachable from Settings → About. Deliberately separate from CHANGELOG.md, which is engineer-facing. A version with no entry falls back to a generic card rather than blocking a release; the release process doc now asks for an entry per release.
+  - **Completed**: September 5, 2026
+
+
+---
+
 ## 📋 Version Roadmap
 
 ### 🚀 v1.1.0 (Current) — Build & Branding Complete
@@ -506,7 +552,7 @@ TODO-112 were already used by the Fraunces/serif-typeface work (see `e85fd96`/`6
 
 This sprint is considered complete only when:
 - [ ] All audit branches land with passing tests and type-checks
-- [ ] Feed failures surface honest error states instead of silent empty success
+- [x] Feed failures surface honest error states instead of silent empty success (TODO-124)
 - [ ] Features validated on iOS and Android
 - [ ] CHANGELOG updated with all v1.2.0 entries
 - [ ] ACHIEVED.md documents completion

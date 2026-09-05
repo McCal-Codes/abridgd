@@ -6,6 +6,27 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- Every category is now reachable. Business, Sports, and Culture were fetched only for the daily digest — Home is hardcoded to "Top" and both tab layouts pointed the section screen at "Local" — so three of five categories had no browsable entry point. The section screen now has a category picker across all five, rendered in the empty and error states too so a failing category isn't a dead end. (TODO-122)
+- Image captions and photo credits are parsed from feeds. The hero image carried neither despite media RSS providing `media:description`/`media:title`/`media:credit`, and body images only picked up captions from `<figure><figcaption>`, missing the WordPress `wp-caption` markup most of these publishers actually emit. Credits that arrive as their own paragraph are now attached to the image above them instead of rendering as stranded body copy. (TODO-125)
+- `npm run audit:feeds` re-probes every configured feed with the app's own fetch headers and fails only when an enabled source is unhealthy. Manual by design — third-party feed flakiness in PR CI would redden builds for reasons unrelated to the diff. (TODO-123)
+- `src/config/releaseNotes.ts`: reader-facing release notes, shown in What's New and linked from Settings → About. Separate from this changelog, which is written for engineers. (TODO-128)
+
+### Changed
+- Rebuilt the RSS source list against a live probe of all 28 configured feeds, which found 12 returning items. WESA was never broken — its feeds live at `<section>.rss`, not `<section>/rss`. Added seven verified news-outlet sources (Post-Gazette A&E and Sports, Pittsburgh Union Progress, The Allegheny Front, WQED, Table Magazine), removed eight dead domains, and rewrote every health note with a date and the real failure mode. Enabled sources 12 → 19; Culture 1 → 5. (TODO-123)
+- Rebuilt onboarding around four slides that each do something: the brief, the five sections (new — nothing told readers sections existed), the reader demo, and the grounding choice. Dropped the settings-preview slide, which showed a picture of settings and changed nothing, and the trust slide, whose three points are now a line under the final action. (TODO-127)
+- The "Discover" tab's magnifying-glass icon is now a compass. It browses; it never searched.
+- Sources settings explained how to add custom feeds directly beneath a card saying custom feeds were coming soon. Replaced with copy about what the toggles actually do.
+
+### Fixed
+- What's New never worked. `RootNavigator` passed `startSlideId: "whats-new"`, no slide had that id, and unknown ids were silently ignored — so every returning reader was walked through the full first-run flow, "No account required" included, as if they had never opened the app. It now branches on the `mode` param that existed for this and was never read, and marks the version seen without re-running onboarding completion. (TODO-127)
+- The reading-speed slider did nothing. `AbridgedReader` held a local `useState(300)` and never read the saved `readingSpeed`, so the setting had no effect and the reader reset to 300 WPM every time. (TODO-126)
+- A feed that parses but returns zero items now reports a failure instead of `{ snapshot: null, failure: null }`, which no caller could see. TribLive's section feeds are exactly this shape, so a category quietly shrank rather than surfacing the cached-state and retry messaging that already existed. (TODO-124)
+- Settings → About's two onboarding links passed slide ids (`"whats-new-profile"`, `"practice"`) that have never existed, dropping readers on slide one of onboarding.
+- `APP_BUILD` was pinned at `"1"` while app.json shipped build 36, so every bug report named the wrong build. It now reads from `expo-constants`.
+- Removed Quiet Hours, which suppressed notifications in an app with no notification system, and the Welcome Back Digest toggle, which nothing read.
+- The iOS 26 demo screen and its Debug entry point are now dev-only; the route was registered in production builds.
+
 ## [1.5.0] - 2026-08-25
 
 _Note: 1.4.2 and 1.4.3 shipped without their own dated entries — this section is everything

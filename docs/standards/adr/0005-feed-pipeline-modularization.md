@@ -1,6 +1,6 @@
 # ADR-0005: Feed Pipeline Modularization and Per-Source Caching
 
-Last Updated: 2026-07-01
+Last Updated: 2026-09-05
 
 **Date:** 2026-07-01
 **Status:** Accepted
@@ -63,6 +63,25 @@ Per the June 25, 2026 probe, City Paper and WESA Arts (Culture) are both disable
 **Negative:**
 - More moving pieces (7 files instead of 1) — mitigated by the facade keeping the external API surface unchanged.
 - Culture is single-source until a replacement is added (see trade-off above).
+
+## 2026-09-05 source refresh
+
+The "Culture is single-source until a replacement is added" trade-off above is closed. A live
+re-probe of every configured feed found 12 of 28 returning items, and that WESA's feeds had
+simply moved path shape (`<section>.rss`, not `<section>/rss`) rather than breaking. Seven
+verified news-outlet sources were added and eight dead domains removed, taking enabled sources
+from 12 to 19 and Culture from 1 to 5.
+
+Two follow-ons from that probe:
+
+- `scripts/audit/feed-health.js` (`npm run audit:feeds`) re-runs the probe on demand using the
+  same headers as `src/services/feed/transport.ts`, so its results match what the app sees. It
+  is deliberately not part of PR CI — third-party feed flakiness would redden builds for reasons
+  unrelated to the diff.
+- `repository.ts` now reports a parsed-but-empty feed as a failure. It previously returned
+  `{ snapshot: null, failure: null }`, which no caller could see, so a category quietly shrank
+  instead of surfacing the cached-state and retry messaging this ADR's design already provides.
+  TribLive's section feeds are exactly this shape.
 
 ## Links
 

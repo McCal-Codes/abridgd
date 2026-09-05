@@ -153,6 +153,16 @@ existing entries for the format.
 
 ---
 
+### Write the reader-facing release notes
+
+Add an entry for the new version to `src/config/releaseNotes.ts` before tagging. This is what
+readers see in the What's New flow after they update, and it is deliberately not CHANGELOG.md —
+the changelog is written for engineers and says things like "appVersionSource was remote in
+eas.json". Three to five concrete lines, in a reader's language, naming what changed for them.
+
+A version with no entry falls back to a generic card rather than blocking the release, so this
+never gates a ship — but the update lands without anything to say for itself.
+
 ## Quick reference (once you know the steps)
 
 ```bash
