@@ -65,7 +65,7 @@ export const RSS_FEEDS: Record<ArticleCategory, FeedSource[]> = {
     { name: "NEXTpittsburgh", url: "https://www.nextpittsburgh.com/feed/", health: "healthy" },
     {
       name: "Pgh Business Times",
-      url: "http://feeds.bizjournals.com/bizj/pittsburgh",
+      url: "https://feeds.bizjournals.com/bizj/pittsburgh",
       defaultEnabled: false,
       health: "pending-replacement",
       healthNote: "2026-09-05: HTTP 403 bot-block on both the legacy and bizjournals.com URLs.",

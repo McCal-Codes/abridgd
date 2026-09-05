@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [1.5.6] - 2026-09-05
 
 ### Fixed
+- In-article images with relative or inline sources never loaded. The URL normalizer prefixed anything not starting with "http" with "https:", turning `/images/a.jpg` into `https:/images/a.jpg` and mangling `data:` URIs — both rendered as the "Image unavailable" placeholder. Relative paths now resolve against the article's own origin, which is what the publisher meant. (TODO-139)
 - Article links from feeds are opened only when they use `http` or `https`. `Linking.openURL` was handed the `<link>` value straight out of third-party RSS, so a hostile or compromised feed could supply `tel:`, `sms:`, or another app's custom scheme and iOS would act on it. (TODO-138)
 - The photo viewer had no way out that wasn't a gesture. Its only dismissal was a backdrop tap, and the image added this release covers most of it — but the decisive part is that drag-to-dismiss is not an action VoiceOver can perform, so a screen-reader user had no way to close the viewer at all. There is a labelled Close button now. (TODO-138)
 - Body paragraphs were being deleted from articles. The photo-credit heuristic had no length bound on its leading patterns, so a paragraph opening "Courtesy of the Heinz History Center, the exhibit will run through..." was folded into the preceding image as its credit and dropped from the article entirely. Explicit attribution phrases are now bounded at 120 characters and bare wire-service names — which legitimately open sentences — at 60. (TODO-137)
@@ -20,6 +21,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Dropped two `console.log` calls from the full-story fetch path, which logged the URL of every article opened. (TODO-135)
 
 ### Changed
+- Removed `EXPO_PUBLIC_PERPLEXITY_API_KEY` from `.env`. The key lives in `expo-secure-store` and nothing reads the environment variable, so it was never bundled — but `EXPO_PUBLIC_*` values are inlined wherever they are referenced, so leaving it there meant one added reference would ship it inside the IPA. (TODO-139)
+- The feed config's https guard now covers disabled sources too, and the one remaining `http://` URL was switched. A disabled source is a candidate for re-enabling, and ATS would block it the moment it was. (TODO-139)
+- Jest no longer scans git worktrees under `.claude/`, which were adding another branch's copy of every test file to local runs. (TODO-139)
 - Performance pass on the feed and article surfaces. `SavedArticlesContext` rebuilt its functions and value object every render, and every article card now subscribes to it for swipe-to-save, so a feed of cards all lost memoization together; `isArticleSaved` scanned the saved array linearly per card per render; `useCategoryFeed` re-merged and re-sorted the whole category cache on every render for a value only its state initializers use; `ArticleBodyImage` fetched each photo twice, once to measure and once to render; and the three article feeds ran on FlatList's default windowing, which is tuned for short lists rather than 25-30 image-bearing cards. `removeClippedSubviews` was considered and left out: it is the one windowing option React Native documents as able to drop content, and these cards carry shadows and an absolutely-positioned swipe panel. (TODO-136)
 
 ## [1.5.5] - 2026-09-05

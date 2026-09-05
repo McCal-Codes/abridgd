@@ -7,11 +7,9 @@ describe("feedConfig", () => {
   it.each(categories)("%s sources all have well-formed https URLs", (category) => {
     RSS_FEEDS[category].forEach((source) => {
       expect(() => new URL(source.url)).not.toThrow();
-      // http://feeds.bizjournals.com is grandfathered in as a disabled source; anything
-      // enabled must be https so it isn't blocked by ATS on device.
-      if (source.defaultEnabled !== false) {
-        expect(source.url.startsWith("https://")).toBe(true);
-      }
+      // Every source, not just the enabled ones: a disabled entry is a candidate for
+      // re-enabling, and an http:// URL would be blocked by ATS the moment it was.
+      expect(source.url.startsWith("https://")).toBe(true);
     });
   });
 

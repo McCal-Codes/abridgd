@@ -356,6 +356,12 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `ArticleScreen` passed `article.link` — text from third-party RSS — to `Linking.openURL` with no scheme check, so a hostile feed could reach the dialer or open another app via its custom scheme. Feed-derived URLs now go through `openExternalUrl`, which allows `http`/`https` only and reports refusal rather than silently doing nothing. Separately, `ZoomModal`'s only dismissal was a backdrop tap, and the full-bleed `ZoomableImage` added this release covers nearly all of it; a VoiceOver user cannot drag-to-dismiss, so the viewer was inescapable for them. Added a labelled Close button, and taught the reanimated test mock about `useAnimatedRef`/`measure` so `ZoomModal` can be tested at all — that gap is why the missing control went unnoticed.
   - **Completed**: September 5, 2026
 
+- [x] **TODO-139** | **v1.5.6** | Close the remaining review follow-ups
+  - **Status**: Completed
+  - **Description**: `normalizeUri` in `ArticleScreen` prefixed any non-http src with `https:`, so root-relative paths became `https:/images/a.jpg` and `data:` URIs were mangled — both showed the "Image unavailable" placeholder. Replaced with `resolveMediaUri`, which resolves relative paths against the article's origin and is deliberately string-based, since React Native's URL constructor appends a trailing slash that would corrupt every resolved path. Also removed the stale `EXPO_PUBLIC_PERPLEXITY_API_KEY` from `.env` (never bundled, because nothing referenced it, but one reference away from being), extended the feed https guard to disabled sources, and stopped Jest scanning `.claude/worktrees`, which was adding another branch's tests to local runs.
+  - **Completed**: September 5, 2026
+
+
 
 
 

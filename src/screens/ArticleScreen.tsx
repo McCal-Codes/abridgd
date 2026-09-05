@@ -44,6 +44,7 @@ import { logSensitiveArticleResponse, logArticleEmotion } from "../services/User
 import { EmotionPicker } from "../components/EmotionPicker";
 import { isPhotoCredit } from "../utils/photoCredit";
 import { openExternalUrl } from "../utils/externalLinks";
+import { resolveMediaUri } from "../utils/mediaUri";
 import { resolveRestoreOffset } from "../utils/readingPosition";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
@@ -224,13 +225,6 @@ export const ArticleScreen: React.FC = () => {
   }, []);
 
   const VideoComponent = VideoModule?.Video ?? null;
-
-  const normalizeUri = (uri?: string) => {
-    if (!uri) return uri;
-    if (uri.startsWith("http:")) return uri.replace("http:", "https:");
-    if (!uri.startsWith("http")) return `https:${uri}`;
-    return uri;
-  };
 
   const parsedContent = useMemo(() => {
     const nodes = parseHtmlContent(bodyContent);
@@ -708,10 +702,16 @@ export const ArticleScreen: React.FC = () => {
                 return null; // Skip images entirely in text-only mode
               }
 
+              // Feed bodies carry relative and data URLs, which the old inline normalizer
+              // turned into unloadable strings; anything unresolvable is skipped rather than
+              // rendered as a permanent "Image unavailable" box.
+              const imageUri = resolveMediaUri(node.src, article.link);
+              if (!imageUri) return null;
+
               return (
                 <View key={index} style={styles.imageContainer}>
                   <ArticleBodyImage
-                    uri={normalizeUri(node.src)!}
+                    uri={imageUri}
                     caption={node.caption}
                     credit={node.credit}
                     compressed={imageLoadingMode === "compressed"}
@@ -721,7 +721,8 @@ export const ArticleScreen: React.FC = () => {
             } else if (node.type === "video" && node.src) {
               if (imageLoadingMode === "text-only") return null;
 
-              const uri = normalizeUri(node.src)!;
+              const uri = resolveMediaUri(node.src, article.link);
+              if (!uri) return null;
               const canInline = !!VideoComponent;
               return (
                 <View key={index} style={styles.videoContainer}>
