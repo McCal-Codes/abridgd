@@ -88,7 +88,6 @@ export const fetchFullArticleBody = async (url: string): Promise<FullStoryConten
                  if (apiRes.ok) {
                      const data = await apiRes.json();
                      if (Array.isArray(data) && data.length > 0 && data[0].content?.rendered) {
-                         console.log('Successfully fetched TribLive content via API');
                          return { body: data[0].content.rendered };
                      }
                  }
@@ -97,7 +96,6 @@ export const fetchFullArticleBody = async (url: string): Promise<FullStoryConten
              }
         }
 
-        console.log(`Fetching full content for: ${url}`);
         const proxyUrl = PROXY_URL + encodeURIComponent(url);
 
         // Try direct first to allow native to bypass proxy blocks, then proxy as fallback.

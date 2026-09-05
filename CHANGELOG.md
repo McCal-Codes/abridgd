@@ -6,6 +6,15 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+- A latent crash in the new swipe and zoom gestures. Both called a plain component-scope helper from inside Reanimated gesture callbacks, which run on the UI thread — calling a non-worklet there throws at runtime, so it type-checked, passed tests, and would have failed the first time a finger touched the screen. Present in build 37. (TODO-135)
+- The Abridged reader recreated its word timer five times a second. The effect re-runs per word (each word's length adjusts its own display time), so `setInterval` was torn down and rebuilt every tick and never actually repeated; it is a `setTimeout` now, which is what it always was. (TODO-135)
+- Leaving an article within half a second of finishing it fired the reader's completion handler — which saves the article and writes progress — against an unmounted component. Closing the grounding overlay mid-breath did the same with its phase timers. Both are cleaned up now. (TODO-135)
+- Dropped two `console.log` calls from the full-story fetch path, which logged the URL of every article opened. (TODO-135)
+
+### Changed
+- Performance pass on the feed and article surfaces. `SavedArticlesContext` rebuilt its functions and value object every render, and every article card now subscribes to it for swipe-to-save, so a feed of cards all lost memoization together; `isArticleSaved` scanned the saved array linearly per card per render; `useCategoryFeed` re-merged and re-sorted the whole category cache on every render for a value only its state initializers use; `ArticleBodyImage` fetched each photo twice, once to measure and once to render; and the three article feeds ran on FlatList's default windowing, which is tuned for short lists rather than 25-30 image-bearing cards. (TODO-136)
+
 ## [1.5.5] - 2026-09-05
 
 ### Added

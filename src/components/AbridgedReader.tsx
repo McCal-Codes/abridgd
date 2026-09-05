@@ -26,6 +26,7 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
   // slider wrote to `readingSpeed` and nothing ever read it, so that control did nothing.
   const [wpm, setWpm] = useState(readingSpeed);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const completionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setWpm(readingSpeed);
@@ -85,27 +86,40 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
       const lengthMultiplier = currentWordLength > 12 ? 1.3 : currentWordLength > 8 ? 1.15 : 1.0;
       const msPerWord = baseMs * lengthMultiplier;
 
-      timerRef.current = setInterval(() => {
+      // A timeout, not an interval: this effect re-runs on every word (currentIndex is a
+      // dependency, because each word's length adjusts its own display time), so the interval
+      // was being torn down and recreated five times a second and never got to repeat.
+      timerRef.current = setTimeout(() => {
         setCurrentIndex((prev) => {
           if (prev >= words.length - 1) {
             setIsPlaying(false);
-            // Call onComplete callback when reading finishes
+            // Small delay so the final word stays on screen before the completion handler runs.
             if (onComplete) {
-              setTimeout(() => onComplete(), 500); // Small delay to show final word
+              completionTimerRef.current = setTimeout(() => onComplete(), 500);
             }
             return prev;
           }
           return prev + 1;
         });
       }, msPerWord);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+    } else if (timerRef.current) {
+      clearTimeout(timerRef.current);
     }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, wpm, words.length, currentIndex]);
+  }, [isPlaying, wpm, words.length, currentIndex, onComplete]);
+
+  // The completion delay outlives the effect above, so it needs its own cleanup: without it,
+  // leaving the article within half a second of finishing fires onComplete — which saves the
+  // article and updates progress — against an unmounted component.
+  useEffect(
+    () => () => {
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+    },
+    [],
+  );
 
   const currentWord = words[currentIndex] || "Ready";
 

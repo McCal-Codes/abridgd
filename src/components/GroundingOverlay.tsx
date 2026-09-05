@@ -86,10 +86,16 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
       );
     }
 
+    // The phase timers are nested inside the interval, so they outlive it unless tracked:
+    // closing the overlay mid-breath left them to fire setInstruction after unmount.
+    const phaseTimers: NodeJS.Timeout[] = [];
+
     const interval = setInterval(() => {
       setInstruction("Inhale...");
-      setTimeout(() => setInstruction("Hold..."), breathDuration);
-      setTimeout(() => setInstruction("Exhale..."), breathDuration + holdDuration);
+      phaseTimers.push(setTimeout(() => setInstruction("Hold..."), breathDuration));
+      phaseTimers.push(
+        setTimeout(() => setInstruction("Exhale..."), breathDuration + holdDuration),
+      );
     }, totalCycleDuration);
 
     const autoCloseTimer = setTimeout(
@@ -102,6 +108,7 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
     return () => {
       clearInterval(interval);
       clearTimeout(autoCloseTimer);
+      phaseTimers.forEach(clearTimeout);
     };
   }, [groundingBreathDuration, groundingCycles, reduceMotion]);
 
