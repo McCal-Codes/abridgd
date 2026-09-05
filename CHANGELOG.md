@@ -6,9 +6,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-09-05
+
 ### Fixed
 - Article links from feeds are opened only when they use `http` or `https`. `Linking.openURL` was handed the `<link>` value straight out of third-party RSS, so a hostile or compromised feed could supply `tel:`, `sms:`, or another app's custom scheme and iOS would act on it. (TODO-138)
-- The photo viewer had no way out that wasn't a gesture. Its only dismissal was a backdrop tap, and the full-screen image added this release covers nearly all of that backdrop — so a VoiceOver user, who cannot perform drag-to-dismiss, could not close it at all. There is a labelled Close button now. (TODO-138)
+- The photo viewer had no way out that wasn't a gesture. Its only dismissal was a backdrop tap, and the image added this release covers most of it — but the decisive part is that drag-to-dismiss is not an action VoiceOver can perform, so a screen-reader user had no way to close the viewer at all. There is a labelled Close button now. (TODO-138)
 - Body paragraphs were being deleted from articles. The photo-credit heuristic had no length bound on its leading patterns, so a paragraph opening "Courtesy of the Heinz History Center, the exhibit will run through..." was folded into the preceding image as its credit and dropped from the article entirely. Explicit attribution phrases are now bounded at 120 characters and bare wire-service names — which legitimately open sentences — at 60. (TODO-137)
 - Pull-to-refresh announced the wrong outcome to VoiceOver. It read `articles` and `error` from the handler's render closure after awaiting the refresh, so those still held pre-refresh values: a failed refresh announced "12 stories loaded". `refresh()` now returns what it actually did. (TODO-137)
 - A category where every source is genuinely quiet showed a network error with a Retry button that could not help. Empty-but-valid feeds are still recorded as failures so they cannot pass as silent successes, but they no longer count toward the error state — that case is "You're caught up". (TODO-137)
@@ -21,6 +23,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Performance pass on the feed and article surfaces. `SavedArticlesContext` rebuilt its functions and value object every render, and every article card now subscribes to it for swipe-to-save, so a feed of cards all lost memoization together; `isArticleSaved` scanned the saved array linearly per card per render; `useCategoryFeed` re-merged and re-sorted the whole category cache on every render for a value only its state initializers use; `ArticleBodyImage` fetched each photo twice, once to measure and once to render; and the three article feeds ran on FlatList's default windowing, which is tuned for short lists rather than 25-30 image-bearing cards. `removeClippedSubviews` was considered and left out: it is the one windowing option React Native documents as able to drop content, and these cards carry shadows and an absolutely-positioned swipe panel. (TODO-136)
 
 ## [1.5.5] - 2026-09-05
+
+_Built as iOS build 37 and never distributed: a crash in the new gesture code was found before it
+went anywhere. The fixes, and everything below, ship as 1.5.6 instead._
 
 ### Added
 - Swipe left on any article card to save or unsave it, with the action panel building as you drag and a haptic when it commits. Saved's empty state has instructed readers to do this since long before any gesture existed on a card. (TODO-132)

@@ -336,22 +336,22 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `ZoomModal` only animated scale 0.1 to 1 as it opened, so TODO-131's tap-to-zoom opened a photo full screen and offered no way to look closer — maps, charts and small print were unreadable. `ZoomableImage` adds pinch, pan while zoomed, double-tap to toggle, and a drag-down flick to dismiss. Apollo's media viewer was the most praised thing about it; this is the part worth having in a reader.
   - **Completed**: September 5, 2026
 
-- [x] **TODO-135** | **Unreleased** | Fix the worklet crash and three timer leaks
+- [x] **TODO-135** | **v1.5.6** | Fix the worklet crash and three timer leaks
   - **Status**: Completed
   - **Description**: `ZoomableImage` and `ArticleCard` called a plain `settle` helper from inside Reanimated gesture callbacks; a non-worklet called on the UI thread throws at runtime, so this type-checked and passed tests while being a first-touch crash. Shipped in build 37. Also: `AbridgedReader` used `setInterval` for a timer its own effect recreated every word, its completion handler could fire after unmount, `GroundingOverlay` never cleared the phase timers nested inside its interval, and the full-story fetch logged every article URL to the console.
   - **Completed**: September 5, 2026
 
-- [x] **TODO-136** | **Unreleased** | Performance pass on feed and article surfaces
+- [x] **TODO-136** | **v1.5.6** | Performance pass on feed and article surfaces
   - **Status**: Completed
   - **Description**: `SavedArticlesContext` recreated its functions and value each render while every `ArticleCard` now subscribes to it, so a whole feed lost memoization at once and each card rebuilt its pan gesture; `isArticleSaved` was an O(cards x saved) linear scan; `useCategoryFeed` called `getCachedCategory` — which filters sources and merges and sorts the category cache — on every render for a value only its state initializers read; `ArticleBodyImage` fetched every photo twice via `Image.getSize` before rendering it; the three article feeds used FlatList's default windowing; and `ScrollContext` rebuilt its value object around a ref-stable Animated.Value.
   - **Completed**: September 5, 2026
 
-- [x] **TODO-137** | **Unreleased** | Fix three defects found in review of this branch
+- [x] **TODO-137** | **v1.5.6** | Fix three defects found in review of this branch
   - **Status**: Completed
   - **Description**: A diff review over the branch turned up three real failures in code added this session. The photo-credit heuristic dropped the `length < 140` guard the ArticleScreen code it replaced had, so `foldCreditsIntoImages` deleted body paragraphs that opened with "Courtesy of"/"Associated Press" — verified against a 170-character paragraph that vanished from the parsed output. Pull-to-refresh read `articles`/`error` from a stale render closure and announced the opposite of what happened. And a genuinely quiet category raised a network error instead of the caught-up state, because empty-but-valid feeds counted toward the throw condition.
   - **Completed**: September 5, 2026
 
-- [x] **TODO-138** | **Unreleased** | Close two findings from the security and accessibility review
+- [x] **TODO-138** | **v1.5.6** | Close two findings from the security and accessibility review
   - **Status**: Completed
   - **Description**: `ArticleScreen` passed `article.link` — text from third-party RSS — to `Linking.openURL` with no scheme check, so a hostile feed could reach the dialer or open another app via its custom scheme. Feed-derived URLs now go through `openExternalUrl`, which allows `http`/`https` only and reports refusal rather than silently doing nothing. Separately, `ZoomModal`'s only dismissal was a backdrop tap, and the full-bleed `ZoomableImage` added this release covers nearly all of it; a VoiceOver user cannot drag-to-dismiss, so the viewer was inescapable for them. Added a labelled Close button, and taught the reanimated test mock about `useAnimatedRef`/`measure` so `ZoomModal` can be tested at all — that gap is why the missing control went unnoticed.
   - **Completed**: September 5, 2026
