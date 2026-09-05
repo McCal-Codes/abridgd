@@ -14,6 +14,8 @@ const MAX_ASPECT_RATIO = 3; // very wide/short images are clamped so they don't 
 interface ArticleBodyImageProps {
   uri: string;
   caption?: string;
+  /** Photo attribution, rendered under the caption in a quieter style. */
+  credit?: string;
   compressed?: boolean;
 }
 
@@ -23,7 +25,12 @@ interface ArticleBodyImageProps {
  * the image fails to load — broken/hotlink-blocked/CORS-blocked images are common enough
  * across these RSS sources that silent failure reads as a bug.
  */
-export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({ uri, caption, compressed }) => {
+export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
+  uri,
+  caption,
+  credit,
+  compressed,
+}) => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
@@ -76,6 +83,11 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({ uri, caption
         onError={() => setFailed(true)}
       />
       {caption ? <Text style={styles.caption}>{caption}</Text> : null}
+      {credit ? (
+        <Text style={[styles.caption, styles.credit]} accessibilityLabel={`Photo credit: ${credit}`}>
+          {credit}
+        </Text>
+      ) : null}
     </View>
   );
 };
@@ -109,6 +121,12 @@ const createStyles = (colors: ThemeColors) =>
       fontFamily: typography.fontFamily.sans,
       fontSize: 13,
       color: colors.textSecondary,
+    },
+    credit: {
+      marginTop: 2,
+      fontSize: 12,
+      fontStyle: "normal",
+      opacity: 0.8,
     },
     caption: {
       marginTop: spacing.sm,

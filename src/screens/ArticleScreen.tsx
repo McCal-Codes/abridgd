@@ -43,15 +43,11 @@ import {
 } from "../utils/sensitivity";
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
+import { isPhotoCredit } from "../utils/photoCredit";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
-
-// Matches common photo-credit phrasing: "Photo:", "Credit:", "Photo by ...", wire-service
-// attributions ("AP Photo", "Getty Images", "Associated Press"), and "Photo/Courtesy of" lines.
-const CREDIT_PATTERN =
-  /^(photo|credit|courtesy|image)s?[:\s]|\b(AP Photo|Getty Images?|Associated Press|Photo by|Photo courtesy|Courtesy of)\b/i;
 
 export const ArticleScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -244,10 +240,24 @@ export const ArticleScreen: React.FC = () => {
 
     const extraImages = (article.mediaImages || [])
       .filter((src) => src && !existingSources.has(src))
-      .map((src) => ({ type: "image" as const, src, caption: undefined }));
+      .map((src) => ({
+        type: "image" as const,
+        src,
+        // The feed's media block describes the hero image specifically, so only that one
+        // inherits the caption and credit parsed off the item.
+        caption: src === article.imageUrl ? article.imageCaption : undefined,
+        credit: src === article.imageUrl ? article.imageCredit : undefined,
+      }));
 
     return [...nodes, ...extraVideos, ...extraImages];
-  }, [article.mediaImages, article.mediaVideos, bodyContent]);
+  }, [
+    article.mediaImages,
+    article.mediaVideos,
+    article.imageUrl,
+    article.imageCaption,
+    article.imageCredit,
+    bodyContent,
+  ]);
 
   // Auto-save article when reading completes (if enabled)
   const handleReaderComplete = async () => {
@@ -651,12 +661,9 @@ export const ArticleScreen: React.FC = () => {
 
           {parsedContent.map((node, index) => {
             if (node.type === "text" && node.text) {
-              // Check for credit pattern (Credits often start with "Photo:"/"Credit:" or name a
-              // wire service/photo agency). A naive heuristic, but covers far more real-world
-              // patterns than checking only "Photo:"/"Credit:" prefixes.
-              const isCredit =
-                node.text.length < 140 &&
-                CREDIT_PATTERN.test(node.text);
+                // Most credits are folded into their image by the content parser; this catches
+              // the ones that ended up too far from any image to attach.
+              const isCredit = isPhotoCredit(node.text);
 
               if (isCredit) {
                 return (
@@ -688,6 +695,7 @@ export const ArticleScreen: React.FC = () => {
                   <ArticleBodyImage
                     uri={normalizeUri(node.src)!}
                     caption={node.caption}
+                    credit={node.credit}
                     compressed={imageLoadingMode === "compressed"}
                   />
                 </View>

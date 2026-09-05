@@ -78,12 +78,27 @@ describe("feed repository", () => {
     });
   });
 
-  it("does not throw when a source legitimately returns zero items (no failure recorded)", async () => {
+  it("reports a well-formed but empty feed as a failure rather than a silent success", async () => {
+    // Publishers do ship these: TribLive's section feeds return a valid rss+xml document
+    // with no items. Treating that as success made the category quietly shrink with no
+    // error state anywhere in the UI.
     const EMPTY_FEED = `<?xml version="1.0"?><rss><channel></channel></rss>`;
     mockFetchFeedXml.mockResolvedValue({ response: buildResponse(EMPTY_FEED), error: null });
 
-    const result = await fetchCategory("Top" as ArticleCategory);
-    expect(result.articles).toHaveLength(0);
+    await expect(fetchCategory("Top" as ArticleCategory)).rejects.toMatchObject({
+      name: "FeedLoadError",
+    });
+  });
+
+  it("keeps cached stories when a source starts returning an empty feed", async () => {
+    mockFetchFeedXml.mockResolvedValue({ response: buildResponse(SAMPLE_FEED), error: null });
+    await fetchCategory("Top" as ArticleCategory);
+
+    const EMPTY_FEED = `<?xml version="1.0"?><rss><channel></channel></rss>`;
+    mockFetchFeedXml.mockResolvedValue({ response: buildResponse(EMPTY_FEED), error: null });
+
+    const result = await fetchCategory("Top" as ArticleCategory, { forceRefresh: true });
+    expect(result.articles).toHaveLength(1);
   });
 
   it("dedupes concurrent fetches for the same source", async () => {

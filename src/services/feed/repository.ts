@@ -130,8 +130,19 @@ const fetchSingleSource = async (
     const articles = parsed.items.map((raw) => normalizeFeedItem(raw, category, source.name, provenance()));
 
     if (articles.length === 0) {
+      // A feed that parses but carries no items is a failure, not a quiet success. Several
+      // publishers (TribLive's section feeds) serve a well-formed but empty document, and
+      // reporting null/null here made that indistinguishable from "nothing new" — the
+      // category just silently shrank instead of surfacing cached-state and retry messaging.
       await touchSourceAttempt(category, source.name, now);
-      return { snapshot: null, failure: null };
+      return {
+        snapshot: null,
+        failure: {
+          sourceName: source.name,
+          code: ErrorCode.RSS_PARSE_FAILED,
+          message: "Feed returned no stories.",
+        },
+      };
     }
 
     const snapshot: FeedCacheSnapshot = {

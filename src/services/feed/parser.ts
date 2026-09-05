@@ -1,6 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { Article, ArticleCategory } from "../../types/Article";
-import { RawFeedItem, ProvenanceContext } from "./types";
+import { FastXmlTextNode, RawFeedItem, ProvenanceContext } from "./types";
+import { splitCaptionAndCredit } from "../../utils/photoCredit";
 import { calculateReadTime, extractMediaFromHtml, sanitizeText } from "./htmlUtils";
 
 const SUMMARY_MAX_LENGTH = 150;
@@ -47,13 +48,20 @@ const parseDeclaredWidth = (val: unknown): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-type ImageCandidate = { url: string; width: number; priority: number };
+type ImageCandidate = {
+  url: string;
+  width: number;
+  priority: number;
+  /** Caption/credit declared alongside this specific image in the feed's media block. */
+  caption?: string;
+  credit?: string;
+};
 
 /** Picks the best imageUrl among candidates: prefer the largest declared width when any
  * candidate reports one, otherwise fall back to source priority (media:content is
  * purpose-built article media; enclosure is often reused for a generic/low-res thumbnail
  * on WordPress-based sources, so it ranks below media:content and itunes:image). */
-const pickBestImage = (candidates: ImageCandidate[]): string | undefined => {
+const pickBestImage = (candidates: ImageCandidate[]): ImageCandidate | undefined => {
   if (!candidates.length) return undefined;
   const withWidth = candidates.filter((c) => c.width > 0);
   const pool = withWidth.length ? withWidth : candidates;
@@ -61,7 +69,7 @@ const pickBestImage = (candidates: ImageCandidate[]): string | undefined => {
     if (!best) return c;
     if (c.width !== best.width) return c.width > best.width ? c : best;
     return c.priority < best.priority ? c : best;
-  }).url;
+  });
 };
 
 const xmlParser = new XMLParser({
@@ -136,7 +144,15 @@ export const normalizeFeedItem = (
         mediaVideos.add(url);
       } else {
         mediaImages.add(url);
-        imageCandidates.push({ url, width: parseDeclaredWidth(mc?.["@_width"]), priority: 0 });
+        imageCandidates.push({
+          url,
+          width: parseDeclaredWidth(mc?.["@_width"]),
+          priority: 0,
+          caption:
+            textOf(mc?.["media:description"] as FastXmlTextNode | undefined) ||
+            textOf(mc?.["media:title"] as FastXmlTextNode | undefined),
+          credit: textOf(mc?.["media:credit"] as FastXmlTextNode | undefined),
+        });
       }
     });
   }
@@ -147,7 +163,8 @@ export const normalizeFeedItem = (
     imageCandidates.push({ url, width: 0, priority: 1 });
   }
 
-  imageUrl = pickBestImage(imageCandidates);
+  const bestImage = pickBestImage(imageCandidates);
+  imageUrl = bestImage?.url;
 
   // Fallback: Try to find an image in the description or content
   if (!imageUrl) {
@@ -172,6 +189,20 @@ export const normalizeFeedItem = (
   if (imageUrl && imageUrl.startsWith("http:")) {
     imageUrl = imageUrl.replace("http:", "https:");
   }
+
+  // Caption/credit for the hero image: prefer what was declared on the chosen media entry,
+  // fall back to the item-level media block. A caption with the attribution tacked onto the
+  // end ("...at the rally. (Photo: Jane Doe/AP)") gets split so the credit can be styled as one.
+  const declaredCaption =
+    bestImage?.caption || textOf(item["media:description"]) || textOf(item["media:title"]);
+  const declaredCredit = bestImage?.credit || textOf(item["media:credit"]);
+  const splitCaption = splitCaptionAndCredit(declaredCaption);
+  const imageCaption = imageUrl ? splitCaption.caption : undefined;
+  const imageCredit = imageUrl
+    ? splitCaptionAndCredit(declaredCredit).credit ||
+      splitCaptionAndCredit(declaredCredit).caption ||
+      splitCaption.credit
+    : undefined;
 
   const bodyMedia = extractMediaFromHtml(content || textOf(item.description) || "");
   bodyMedia.images.forEach((img) => mediaImages.add(img));
@@ -203,6 +234,8 @@ export const normalizeFeedItem = (
     publishedAt,
     category,
     imageUrl,
+    imageCaption,
+    imageCredit,
     mediaImages: Array.from(mediaImages),
     mediaVideos: Array.from(mediaVideos),
     readTimeMinutes: calculateReadTime(summaryText),
