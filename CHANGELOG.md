@@ -6,7 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-09-05
+
 ### Added
+- Swipe left on any article card to save or unsave it, with the action panel building as you drag and a haptic when it commits. Saved's empty state has instructed readers to do this since long before any gesture existed on a card. (TODO-132)
 - Articles reopen where you stopped reading. `scrollPixels` was written on every scroll and never read back, so Continue Reading took you to the story and dropped you at the top. A finished article still starts at the beginning. (TODO-133)
 - Tap any in-article photo to open it full screen, then pinch, double-tap or drag to examine it, and flick down to close. `ZoomModal` was built for this and used only by the demo screen, so a reading app had no way to look closely at a photo — and the modal itself only animated its scale on open, so "zoomed" meant "full screen and no closer". The viewer mounts only while open, rather than keeping a Modal alive per image. (TODO-131, TODO-134)
 - A documented Dynamic Type policy in `theme/typography.ts`. React Native already scales text with the system setting, so the risk was unbounded scaling breaking layout, not missing support: reading content stays uncapped, while chrome that sits beside a control or must hold one line (tab labels, badges, card meta rows, settings row labels) is capped generously rather than left to reach iOS's ~300%. (TODO-130)

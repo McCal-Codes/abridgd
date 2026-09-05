@@ -17,14 +17,14 @@ export interface ReleaseNote {
  * missing entry is handled gracefully but wastes the moment.
  */
 export const RELEASE_NOTES: Record<string, Omit<ReleaseNote, "version">> = {
-  "1.6.0": {
-    headline: "Every section, actually reachable",
+  "1.5.5": {
+    headline: "Every section, and where you left off",
     items: [
-      "Business, Sports, and Culture are browsable at last — Discover now switches between all five sections.",
-      "Rebuilt the source list against live feeds: 19 working sources, up from 12. Culture went from one to five.",
-      "Photo captions and credits now come through from the feeds instead of being dropped or stranded mid-article.",
-      "The reading-speed slider actually changes reading speed. It never did before.",
-      "A section that fails to load says so, instead of quietly showing fewer stories.",
+      "Business, Sports and Culture are browsable at last — Discover switches between all five sections.",
+      "19 working sources, up from 12. Culture went from one to five.",
+      "Swipe left on any story to save it, and pick up articles where you stopped reading.",
+      "Pinch, double-tap and drag photos to look closer, with captions and credits carried over from the source.",
+      "The reading-speed slider changes reading speed. It never did before.",
     ],
   },
   "1.5.0": {
