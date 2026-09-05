@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ImageOff } from "lucide-react-native";
+import { ZoomModal } from "./ZoomModal";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { spacing } from "../theme/spacing";
@@ -35,6 +36,7 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
   const styles = useThemedStyles(createStyles);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
 
   useEffect(() => {
     setFailed(false);
@@ -71,22 +73,42 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
 
   return (
     <View>
-      <Image
-        testID="article-body-image"
-        source={{ uri }}
-        style={
-          compressed
-            ? [styles.image, styles.imageCompressed]
-            : [styles.image, aspectRatio ? { aspectRatio } : { height: LOADING_HEIGHT }]
-        }
-        resizeMode={compressed ? "center" : "cover"}
-        onError={() => setFailed(true)}
-      />
+      <Pressable
+        onPress={() => setZoomed(true)}
+        accessibilityRole="imagebutton"
+        accessibilityLabel={caption ? `Photo: ${caption}` : "Photo"}
+        accessibilityHint="Opens the photo full screen"
+      >
+        <Image
+          testID="article-body-image"
+          source={{ uri }}
+          style={
+            compressed
+              ? [styles.image, styles.imageCompressed]
+              : [styles.image, aspectRatio ? { aspectRatio } : { height: LOADING_HEIGHT }]
+          }
+          resizeMode={compressed ? "center" : "cover"}
+          onError={() => setFailed(true)}
+        />
+      </Pressable>
       {caption ? <Text style={styles.caption}>{caption}</Text> : null}
       {credit ? (
         <Text style={[styles.caption, styles.credit]} accessibilityLabel={`Photo credit: ${credit}`}>
           {credit}
         </Text>
+      ) : null}
+
+      {/* Mounted only while open: an article can hold a dozen images, and a dozen always-mounted
+          Modals is a dozen render trees kept alive for a view nobody has asked for yet. */}
+      {zoomed ? (
+        <ZoomModal visible onClose={() => setZoomed(false)}>
+          <Image
+            source={{ uri }}
+            style={[styles.zoomedImage, aspectRatio ? { aspectRatio } : null]}
+            resizeMode="contain"
+            accessibilityLabel={caption || "Photo"}
+          />
+        </ZoomModal>
       ) : null}
     </View>
   );
@@ -98,6 +120,10 @@ const createStyles = (colors: ThemeColors) =>
       width: "100%",
       borderRadius: 12,
       backgroundColor: colors.border,
+    },
+    zoomedImage: {
+      width: "100%",
+      maxHeight: "80%",
     },
     imageCompressed: {
       height: COMPRESSED_HEIGHT,

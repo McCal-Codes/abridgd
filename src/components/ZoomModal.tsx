@@ -10,7 +10,7 @@ import Animated, {
   useAnimatedRef,
 } from "react-native-reanimated";
 import { GlassSurface } from "./GlassSurface";
-import { useTheme } from "../theme/ThemeContext";
+import { useThemeOptional } from "../theme/ThemeContext";
 
 interface ZoomModalProps {
   visible: boolean;
@@ -34,7 +34,7 @@ export const ZoomModal: React.FC<ZoomModalProps> = ({
   blur = true,
   blurIntensity = 30,
 }) => {
-  const { colors } = useTheme();
+  const { colors } = useThemeOptional();
   const containerRef = useAnimatedRef<Animated.View>();
 
   // Animation values
