@@ -18,12 +18,18 @@ interface AbridgedReaderProps {
 export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", onComplete }) => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
-  const { rsvpHighlightColor, rsvpAnchorStrategy } = useSettings();
+  const { rsvpHighlightColor, rsvpAnchorStrategy, readingSpeed, setReadingSpeed } = useSettings();
   const [words, setWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [wpm, setWpm] = useState(300);
+  // Seeded from the saved reading speed rather than a hardcoded 300: the Reading Settings
+  // slider wrote to `readingSpeed` and nothing ever read it, so that control did nothing.
+  const [wpm, setWpm] = useState(readingSpeed);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setWpm(readingSpeed);
+  }, [readingSpeed]);
 
   useEffect(() => {
     if (!content) {
@@ -213,6 +219,10 @@ export const AbridgedReader: React.FC<AbridgedReaderProps> = ({ content = "", on
             try {
               await Haptics.selectionAsync();
             } catch {}
+          }}
+          // Persisting on every tick would hammer AsyncStorage while the thumb is moving.
+          onSlidingComplete={(v) => {
+            void setReadingSpeed(v);
           }}
           minimumTrackTintColor={colors.primary}
           maximumTrackTintColor={colors.border}

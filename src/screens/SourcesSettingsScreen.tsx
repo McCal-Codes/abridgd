@@ -130,8 +130,9 @@ export const SourcesSettingsScreen: React.FC = () => {
 
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
-            💡 Tip: You can add any RSS or Atom feed. Make sure the URL ends with /feed, /rss, or
-            .xml
+            💡 Turning a source off hides its stories everywhere — the feed, sections, and the
+            daily digest. Sources marked unavailable stopped publishing a working feed; they stay
+            listed so they can be switched back on if that changes.
           </Text>
         </View>
       </ScrollView>

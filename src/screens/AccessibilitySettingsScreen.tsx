@@ -20,12 +20,6 @@ export const AccessibilitySettingsScreen: React.FC = () => {
     setAnimationScale,
     hapticIntensity,
     setHapticIntensity,
-    quietHoursEnabled,
-    setQuietHoursEnabled,
-    quietHoursStart,
-    setQuietHoursStart,
-    quietHoursEnd,
-    setQuietHoursEnd,
   } = useSettings();
 
   return (
@@ -116,39 +110,6 @@ export const AccessibilitySettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Quiet Hours */}
-        <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Quiet Hours</Text>
-              <Text style={styles.toggleDesc}>
-                Suppress notifications during focus time or sleep.
-              </Text>
-            </View>
-            <Switch
-              value={quietHoursEnabled}
-              onValueChange={setQuietHoursEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
-
-          {quietHoursEnabled && (
-            <View style={styles.timeRow}>
-              <View style={styles.timeInput}>
-                <Text style={styles.timeLabel}>Start Time</Text>
-                <Text style={styles.timeValue}>{quietHoursStart}</Text>
-              </View>
-              <Text style={styles.timeSeparator}>→</Text>
-              <View style={styles.timeInput}>
-                <Text style={styles.timeLabel}>End Time</Text>
-                <Text style={styles.timeValue}>{quietHoursEnd}</Text>
-              </View>
-            </View>
-          )}
-          <Text style={styles.quietHoursNote}>
-            💡 Tip: Set quiet hours from 10 PM to 8 AM for better sleep hygiene.
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -245,42 +206,5 @@ const createStyles = (colors: ThemeColors) =>
   },
   pillTextSelected: {
     color: colors.primary,
-  },
-  timeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  timeInput: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  timeLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  timeValue: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  timeSeparator: {
-    fontSize: 18,
-    color: colors.textSecondary,
-  },
-  quietHoursNote: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: "italic",
   },
   });

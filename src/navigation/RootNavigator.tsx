@@ -335,11 +335,13 @@ export const RootNavigator = () => {
               title: "Debug & Advanced",
             }}
           />
-          <Stack.Screen
-            name="iOS26Demo"
-            component={IOS26DemoScreen}
-            options={{ headerShown: false }}
-          />
+          {__DEV__ && (
+            <Stack.Screen
+              name="iOS26Demo"
+              component={IOS26DemoScreen}
+              options={{ headerShown: false }}
+            />
+          )}
           <Stack.Screen
             name="Achievements"
             component={AchievementsScreen}

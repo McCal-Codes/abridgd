@@ -38,8 +38,6 @@ export const DigestSettingsScreen: React.FC = () => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const {
-    isWelcomeBackEnabled,
-    setIsWelcomeBackEnabled,
     digestSummaryMode,
     setDigestSummaryMode,
     isContinueReadingEnabled,
@@ -93,18 +91,6 @@ export const DigestSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Launch & Start</Text>
           <Text style={styles.sectionDesc}>Decide what appears first when you open the app.</Text>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Welcome Back Digest</Text>
-              <Text style={styles.toggleDesc}>See what you missed when you open the app.</Text>
-            </View>
-            <Switch
-              value={isWelcomeBackEnabled}
-              onValueChange={setIsWelcomeBackEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextContainer}>

@@ -150,7 +150,6 @@ export const DebugSettingsScreen: React.FC = () => {
           await settings.setIsReaderEnabled(true);
           await settings.setIsGroundingEnabled(true);
           await settings.setIsSummarizationEnabled(false);
-          await settings.setIsWelcomeBackEnabled(true);
           await settings.setDigestSummaryMode("fact-based");
           await settings.setGroundingBreathDuration(4);
           await settings.setGroundingCycles(5);
@@ -287,18 +286,22 @@ export const DebugSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Experiments</Text>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary + "15" }]}
-            onPress={() => navigation.navigate("iOS26Demo")}
-          >
-            <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "20" }]}>
-              <Star size={20} color={colors.primary} />
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>iOS 26 UI Demo</Text>
-              <Text style={styles.actionDesc}>Glass buttons, toolbars, transitions</Text>
-            </View>
-          </TouchableOpacity>
+          {/* The iOS26Demo route is registered only in dev builds, so this entry point
+              has to match or it navigates nowhere in a release build. */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.primary + "15" }]}
+              onPress={() => navigation.navigate("iOS26Demo")}
+            >
+              <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + "20" }]}>
+                <Star size={20} color={colors.primary} />
+              </View>
+              <View style={styles.actionTextContainer}>
+                <Text style={styles.actionTitle}>iOS 26 UI Demo</Text>
+                <Text style={styles.actionDesc}>Glass buttons, toolbars, transitions</Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={[
