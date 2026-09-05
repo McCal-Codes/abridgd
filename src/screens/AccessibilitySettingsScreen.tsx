@@ -7,6 +7,7 @@ import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import { Clock, Volume2 } from "lucide-react-native";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 export const AccessibilitySettingsScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -32,29 +33,19 @@ export const AccessibilitySettingsScreen: React.FC = () => {
         </Text>
 
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Reduce Motion</Text>
-              <Text style={styles.toggleDesc}>Limit animations for motion-sensitive users.</Text>
-            </View>
-            <Switch
-              value={reduceMotion}
-              onValueChange={setReduceMotion}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Reduce Motion"
+            description="Limit animations for motion-sensitive users."
+            value={reduceMotion}
+            onValueChange={setReduceMotion}
+          />
 
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Enable Animations</Text>
-              <Text style={styles.toggleDesc}>Turn off to keep the experience static.</Text>
-            </View>
-            <Switch
-              value={animationsEnabled}
-              onValueChange={setAnimationsEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Enable Animations"
+            description="Turn off to keep the experience static."
+            value={animationsEnabled}
+            onValueChange={setAnimationsEnabled}
+          />
         </View>
 
         <View style={styles.section}>
@@ -65,6 +56,8 @@ export const AccessibilitySettingsScreen: React.FC = () => {
               <TouchableOpacity
                 key={`anim-scale-${scale}`}
                 style={[styles.pill, animationScale === scale && styles.pillSelected]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: animationScale === scale }}
                 onPress={() => setAnimationScale(scale)}
               >
                 <Text
@@ -93,6 +86,8 @@ export const AccessibilitySettingsScreen: React.FC = () => {
               <TouchableOpacity
                 key={intensity}
                 style={[styles.pill, hapticIntensity === intensity && styles.pillSelected]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: hapticIntensity === intensity }}
                 onPress={() =>
                   setHapticIntensity(intensity as "off" | "subtle" | "normal" | "strong")
                 }

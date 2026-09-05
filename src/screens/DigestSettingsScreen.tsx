@@ -15,6 +15,7 @@ import { spacing } from "../theme/spacing";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 const DIGEST_MODES: { label: string; value: DigestSummaryMode; description: string }[] = [
   {
@@ -92,17 +93,12 @@ export const DigestSettingsScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Launch & Start</Text>
           <Text style={styles.sectionDesc}>Decide what appears first when you open the app.</Text>
 
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Continue Reading on Launch</Text>
-              <Text style={styles.toggleDesc}>Jump back into in-progress articles first.</Text>
-            </View>
-            <Switch
-              value={isContinueReadingEnabled}
-              onValueChange={setIsContinueReadingEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Continue Reading on Launch"
+            description="Jump back into in-progress articles first."
+            value={isContinueReadingEnabled}
+            onValueChange={setIsContinueReadingEnabled}
+          />
 
           <Text style={[styles.sectionDesc, styles.launchLabelCopy]}>Launch destination</Text>
           <View style={styles.launchGrid}>
@@ -110,6 +106,7 @@ export const DigestSettingsScreen: React.FC = () => {
               <TouchableOpacity
                 key={tab.id}
                 style={[styles.launchOption, defaultTab === tab.id && styles.launchOptionSelected]}
+                accessibilityState={{ selected: defaultTab === tab.id }}
                 onPress={() => setDefaultTab(tab.id)}
                 accessibilityRole="button"
                 accessibilityLabel={`Launch to ${tab.label}`}

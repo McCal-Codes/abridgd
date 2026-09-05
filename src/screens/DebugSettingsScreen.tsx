@@ -340,7 +340,13 @@ export const DebugSettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.settingRow}>
+          <View
+            style={styles.settingRow}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel="Experimental navbar"
+            accessibilityState={{ checked: settings.experimentalIOS26NavBar }}
+          >
             <Text style={styles.settingLabel}>Experimental navbar</Text>
             <Switch
               value={settings.experimentalIOS26NavBar}
@@ -351,14 +357,26 @@ export const DebugSettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Developer Toggles</Text>
-          <View style={styles.settingRow}>
+          <View
+            style={styles.settingRow}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel="Enable advanced height controls"
+            accessibilityState={{ checked: settings.enableAdvancedHeightControls }}
+          >
             <Text style={styles.settingLabel}>Enable advanced height controls</Text>
             <Switch
               value={settings.enableAdvancedHeightControls}
               onValueChange={(v) => settings.setEnableAdvancedHeightControls(v)}
             />
           </View>
-          <View style={styles.settingRow}>
+          <View
+            style={styles.settingRow}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel="Force subscription gating"
+            accessibilityState={{ checked: settings.subscriptionFeaturesLocked }}
+          >
             <Text style={styles.settingLabel}>Force subscription gating</Text>
             <Switch
               value={settings.subscriptionFeaturesLocked}
@@ -374,7 +392,13 @@ export const DebugSettingsScreen: React.FC = () => {
               }
             />
           </View>
-          <View style={styles.settingRow}>
+          <View
+            style={styles.settingRow}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel="Verbose Logging"
+            accessibilityState={{ checked: verboseLogging }}
+          >
             <Text style={styles.settingLabel}>Verbose Logging</Text>
             <Switch
               value={verboseLogging}

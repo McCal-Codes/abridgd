@@ -39,6 +39,7 @@ import { ArticleCategory } from "../types/Article";
 import { useSettings } from "../context/SettingsContext";
 import type { LucideIcon } from "lucide-react-native";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 interface TabOption {
   id: string;
@@ -507,6 +508,8 @@ export const TabBarSettingsScreen: React.FC = () => {
 
           <View style={styles.layoutOptions}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: tabLayout === "minimal" }}
               style={[styles.layoutOption, tabLayout === "minimal" && styles.layoutOptionSelected]}
               onPress={() => setTabLayout("minimal")}
             >
@@ -528,6 +531,8 @@ export const TabBarSettingsScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: tabLayout === "comprehensive" }}
               style={[
                 styles.layoutOption,
                 tabLayout === "comprehensive" && styles.layoutOptionSelected,
@@ -585,6 +590,8 @@ export const TabBarSettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>Style</Text>
             <View style={styles.optionRow}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBarStyle === "floating" }}
                 style={[
                   styles.smallOption,
                   tabBarStyle === "floating" && styles.smallOptionSelected,
@@ -601,6 +608,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBarStyle === "compact" }}
                 style={[
                   styles.smallOption,
                   tabBarStyle === "compact" && styles.smallOptionSelected,
@@ -617,6 +626,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBarStyle === "standard" }}
                 style={[
                   styles.smallOption,
                   tabBarStyle === "standard" && styles.smallOptionSelected,
@@ -635,15 +646,18 @@ export const TabBarSettingsScreen: React.FC = () => {
             </View>
           </View>
 
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Show Labels</Text>
-            <Switch value={showTabLabels} onValueChange={(v) => setShowTabLabels(v)} />
-          </View>
+          <SettingsToggleRow
+            label="Show Labels"
+            value={showTabLabels}
+            onValueChange={(v) => setShowTabLabels(v)}
+          />
 
           <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>Icon Size</Text>
             <View style={styles.optionRow}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabIconSize === 20 }}
                 style={[styles.smallOption, tabIconSize === 20 && styles.smallOptionSelected]}
                 onPress={() => setTabIconSize(20)}
               >
@@ -657,6 +671,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabIconSize === 25 }}
                 style={[styles.smallOption, tabIconSize === 25 && styles.smallOptionSelected]}
                 onPress={() => setTabIconSize(25)}
               >
@@ -670,6 +686,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabIconSize === 30 }}
                 style={[styles.smallOption, tabIconSize === 30 && styles.smallOptionSelected]}
                 onPress={() => setTabIconSize(30)}
               >
@@ -696,10 +714,11 @@ export const TabBarSettingsScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Background Blur</Text>
-            <Switch value={tabBarBlur} onValueChange={(v) => setTabBarBlur(v)} />
-          </View>
+          <SettingsToggleRow
+            label="Background Blur"
+            value={tabBarBlur}
+            onValueChange={(v) => setTabBarBlur(v)}
+          />
 
           <View style={styles.settingRow}>
             <Text style={styles.settingLabel}>Docked Height</Text>
@@ -744,6 +763,8 @@ export const TabBarSettingsScreen: React.FC = () => {
               <View style={styles.optionRow}>
                 {[1, 2, 4].map((s) => (
                   <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: dockedHeightStep === s }}
                     key={`dock-step-${s}`}
                     style={[
                       styles.smallOption,
@@ -817,6 +838,8 @@ export const TabBarSettingsScreen: React.FC = () => {
               <View style={styles.optionRow}>
                 {[1, 2, 4].map((s) => (
                   <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: hiddenHeightStep === s }}
                     key={`hidden-step-${s}`}
                     style={[
                       styles.smallOption,
@@ -883,6 +906,8 @@ export const TabBarSettingsScreen: React.FC = () => {
               <View style={styles.optionRow}>
                 {[1, 2, 4].map((s) => (
                   <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: floatingHeightStep === s }}
                     key={`float-step-${s}`}
                     style={[
                       styles.smallOption,
@@ -904,7 +929,13 @@ export const TabBarSettingsScreen: React.FC = () => {
             </View>
           )}
 
-          <View style={styles.settingRow}>
+          <View
+            style={styles.settingRow}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel="Allow content under tab bar"
+            accessibilityState={{ checked: allowContentUnderTabBar }}
+          >
             <Text style={styles.settingLabel}>Allow content under tab bar</Text>
             <Switch
               value={allowContentUnderTabBar}
@@ -916,6 +947,8 @@ export const TabBarSettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>Badge Style</Text>
             <View style={styles.optionRow}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBadgeStyle === "count" }}
                 style={[
                   styles.smallOption,
                   tabBadgeStyle === "count" && styles.smallOptionSelected,
@@ -932,6 +965,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBadgeStyle === "dot" }}
                 style={[styles.smallOption, tabBadgeStyle === "dot" && styles.smallOptionSelected]}
                 onPress={() => setTabBadgeStyle("dot")}
               >
@@ -945,6 +980,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBadgeStyle === "none" }}
                 style={[styles.smallOption, tabBadgeStyle === "none" && styles.smallOptionSelected]}
                 onPress={() => setTabBadgeStyle("none")}
               >
@@ -964,6 +1001,8 @@ export const TabBarSettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>Indicator</Text>
             <View style={styles.optionRow}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabIndicatorStyle === "bubble" }}
                 style={[
                   styles.smallOption,
                   tabIndicatorStyle === "bubble" && styles.smallOptionSelected,
@@ -980,6 +1019,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabIndicatorStyle === "underline" }}
                 style={[
                   styles.smallOption,
                   tabIndicatorStyle === "underline" && styles.smallOptionSelected,
@@ -996,6 +1037,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabIndicatorStyle === "none" }}
                 style={[
                   styles.smallOption,
                   tabIndicatorStyle === "none" && styles.smallOptionSelected,

@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Switch, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
@@ -90,18 +99,34 @@ export const SourcesSettingsScreen: React.FC = () => {
                 const isEnabled = isSourceEnabled(overrides, category, source.name, defaultEnabled);
 
                 return (
-                  <View key={sourceKey} style={styles.sourceRow}>
+                  <Pressable
+                    key={sourceKey}
+                    style={styles.sourceRow}
+                    onPress={() => toggleSource(category, source.name, defaultEnabled)}
+                    accessible
+                    accessibilityRole="switch"
+                    accessibilityLabel={source.name}
+                    accessibilityHint={
+                      defaultEnabled
+                        ? `Show stories from ${source.name} in ${category}`
+                        : source.healthNote || "This source is not currently publishing a working feed"
+                    }
+                    accessibilityState={{ checked: isEnabled }}
+                  >
                     <View style={styles.sourceInfo}>
                       <Text style={styles.sourceName}>{source.name}</Text>
                       <View style={styles.metaRow}>
                         <Text style={styles.sourceUrl} numberOfLines={1}>
                           {source.url}
                         </Text>
-                        {!defaultEnabled && <Text style={styles.defaultOff}>Default off</Text>}
+                        {!defaultEnabled && <Text style={styles.defaultOff}>Unavailable</Text>}
                       </View>
                       {!defaultEnabled && (
                         <Text style={styles.defaultOffNote}>
-                          Temporarily disabled while the feed is down; toggle on if it recovers.
+                          {/* The config's own dated note, rather than a blanket "feed is down" —
+                              a bot-block and a dead domain are worth telling apart. */}
+                          {source.healthNote ||
+                            "This source stopped publishing a working feed. Toggle it on if that changes."}
                         </Text>
                       )}
                     </View>
@@ -109,8 +134,9 @@ export const SourcesSettingsScreen: React.FC = () => {
                       value={isEnabled}
                       onValueChange={() => toggleSource(category, source.name, defaultEnabled)}
                       trackColor={{ false: colors.border, true: colors.primary }}
+                      importantForAccessibility="no-hide-descendants"
                     />
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
