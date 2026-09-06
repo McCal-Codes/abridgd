@@ -162,6 +162,61 @@ describe("normalizeFeedItem", () => {
     expect(a.id).not.toBe(b.id);
   });
 
+  // RN's URL polyfill concatenates rather than resolving, so these are handled explicitly.
+  describe("image URL resolution", () => {
+    it("resolves root-relative image URLs against the article link", () => {
+      const item = {
+        title: "Rel",
+        link: "https://news.example.com/2026/03/story",
+        description: '<img src="/wp-content/photo.jpg">',
+      };
+      const article = normalizeFeedItem(item, "Top", "Source", provenance);
+      expect(article.imageUrl).toBe("https://news.example.com/wp-content/photo.jpg");
+    });
+
+    it("resolves protocol-relative image URLs to https", () => {
+      const item = {
+        title: "Proto",
+        link: "https://news.example.com/a",
+        description: '<img src="//img.example.com/photo.jpg">',
+      };
+      const article = normalizeFeedItem(item, "Top", "Source", provenance);
+      expect(article.imageUrl).toBe("https://img.example.com/photo.jpg");
+    });
+
+    it("upgrades http image URLs to https", () => {
+      const item = {
+        title: "Insecure",
+        link: "https://news.example.com/a",
+        enclosure: { "@_url": "http://img.example.com/photo.jpg", "@_type": "image/jpeg" },
+      };
+      const article = normalizeFeedItem(item, "Top", "Source", provenance);
+      expect(article.imageUrl).toBe("https://img.example.com/photo.jpg");
+    });
+
+    it("drops tracking beacons from every extraction path", () => {
+      const item = {
+        title: "Beacon",
+        link: "https://news.example.com/a",
+        enclosure: { "@_url": "https://feeds.feedburner.com/~ff/beacon.gif", "@_type": "image/gif" },
+        description: '<figure><img src="https://example.com/pixel.gif"></figure>',
+      };
+      const article = normalizeFeedItem(item, "Top", "Source", provenance);
+      expect(article.imageUrl).toBeUndefined();
+      expect(article.mediaImages).toHaveLength(0);
+    });
+
+    it("reads media:thumbnail, the only image some Arc feeds carry", () => {
+      const item = {
+        title: "Arc",
+        link: "https://wpxi.com/a",
+        "media:thumbnail": { "@_url": "https://wpxi.com/img/hero.jpg", "@_width": "800" },
+      };
+      const article = normalizeFeedItem(item, "Top", "Source", provenance);
+      expect(article.imageUrl).toBe("https://wpxi.com/img/hero.jpg");
+    });
+  });
+
   it("extracts author from dc:creator", () => {
     const item = { title: "A", link: "https://a", description: "desc", "dc:creator": "Jane Doe" };
     const article = normalizeFeedItem(item, "Top", "Source", provenance);
