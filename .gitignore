@@ -40,6 +40,10 @@ yarn-error.*
 ios/
 android/
 
+# Downloaded build artifacts. A universal APK is ~116MB, far too large for git;
+# fetch from the EAS build page instead.
+packages/apks/
+
 # EAS Build
 .eas/
 .eas-builds/
