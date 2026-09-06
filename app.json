@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mccalmedia.abridged",
-      "buildNumber": "38",
+      "buildNumber": "39",
       "entitlements": {
         "com.apple.developer.applesignin": [
           "Default"
@@ -32,7 +32,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.mccalmedia.abridged",
-      "versionCode": 38,
+      "versionCode": 39,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.VIBRATE"
