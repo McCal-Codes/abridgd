@@ -12,7 +12,8 @@
       },
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "development"
     },
     "development-simulator": {
       "extends": "development",
@@ -30,7 +31,8 @@
       },
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "preview"
     },
     "preview-simulator": {
       "extends": "preview",
@@ -57,7 +59,8 @@
             "android/.gradle"
           ]
         }
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
