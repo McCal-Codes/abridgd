@@ -223,6 +223,11 @@ export const RootNavigator = () => {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerTitleAlign: "left",
+            // Every screen already renders its own serif H1 in content, matching
+            // HeroHeader on the tab screens. Showing `title` here too printed the
+            // same string twice on all nine settings screens. Each route keeps its
+            // `title` because iOS uses it for the *back* label on the next screen.
+            headerTitle: "",
           }}
         >
           <Stack.Screen

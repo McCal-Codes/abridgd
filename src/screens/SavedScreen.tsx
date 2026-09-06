@@ -102,7 +102,6 @@ export const SavedScreen: React.FC = () => {
   const [sortBy, setSortBy] = React.useState<
     "newest" | "oldest" | "progress" | "length" | "source"
   >("newest");
-  const { top: insetTop } = useSafeAreaInsets();
   const insets = useSafeAreaInsets();
   const { getProgress } = useReadingProgressOptional();
   const {
@@ -354,12 +353,30 @@ export const SavedScreen: React.FC = () => {
     outputRange: [30, 0],
   });
 
+  /**
+   * Quiet scope in the header rather than a persistent filter chip, per
+   * docs/standards/navigation-ios26.md. Shows the filtered count when filters
+   * narrow the list, so the number always matches what is on screen.
+   */
+  const savedCountSubtitle = React.useMemo(() => {
+    const total = savedArticles.length;
+    const shown = filteredArticles.length;
+    const isFiltered = shown !== total;
+
+    const count = isFiltered
+      ? `${shown} of ${total}`
+      : `${total} ${total === 1 ? "article" : "articles"}`;
+
+    const updated = lastUpdated ? formatUpdatedAgo(lastUpdated) : null;
+    return updated ? `${count} · ${updated}` : count;
+  }, [savedArticles.length, filteredArticles.length, lastUpdated]);
+
   return (
     <View style={styles.container}>
-      <View style={[styles.headerContainer, { paddingTop: insetTop + spacing.sm }]}>
+      <View style={[styles.headerContainer, { paddingTop: spacing.sm }]}>
         <HeroHeader
           title="Saved"
-          subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
+          subtitle={savedCountSubtitle}
           Icon={Bookmark}
         />
         <View style={styles.topActions}>
