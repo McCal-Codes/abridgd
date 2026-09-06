@@ -328,7 +328,7 @@ export const RootNavigator = () => {
             component={TabBarSettingsScreen}
             options={{
               headerShown: true,
-              title: "Tab Bar Studio",
+              title: "Tab Bar",
             }}
           />
           <Stack.Screen

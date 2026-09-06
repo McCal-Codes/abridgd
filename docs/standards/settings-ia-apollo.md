@@ -1,6 +1,6 @@
 # Abridged — Settings Information Architecture (Apollo)
-Version 1.0  
-Last Updated: January 20, 2026  
+Version 1.1  
+Last Updated: September 6, 2026  
 Status: Canonical (use for all Settings work)
 
 ## Purpose
@@ -21,7 +21,7 @@ Settings
 ├─ Digest & Launch
 ├─ Grounding & Focus
 ├─ Navigation
-│  └─ Tab Bar Studio
+│  └─ Tab Bar
 ├─ Accessibility
 ├─ App Info
 └─ Debug & Advanced
@@ -47,12 +47,14 @@ Seven entries only. Anything else is bloat.
 
 ### Navigation
 **Question:** “How do I move around the app?”  
-**Includes:** Default navigation behavior (if not in Digest & Launch), entry point to Tab Bar Studio only. Keep this screen thin.
+**Includes:** Default navigation behavior (if not in Digest & Launch), entry point to Tab Bar only. Keep this screen thin.
 
-### Navigation → Tab Bar Studio
-**Definition:** A studio (power tool), not a settings list.  
-**Includes:** Default tab on launch, Live preview, Presets (iOS 26 Floating/Docked/Compact), Tab style philosophy (Minimal vs Comprehensive), Tab bar appearance (Floating/Compact/Standard, Show labels, Icon size), Advanced appearance (collapsed by default: heights, indicators, badges, content under tab bar), Active tabs (reorder/remove), Available tabs (add).  
-**Rules:** Presets are starting points; advanced collapses by default; preview is mandatory.
+### Navigation → Tab Bar
+**Definition:** A short settings list with a live preview at the top.  
+**Includes:** Live preview, Tab style philosophy (Minimal vs Comprehensive), Default tab on launch, Appearance (Floating/Compact/Standard, Show labels), Active tabs (reorder/remove), Available tabs (add).  
+**Rules:** The preview is mandatory and must reflect the user's actual tabs and their order. Reordering uses visible, labelled controls — never a drag affordance that isn't wired up.
+
+**Superseded (2026-09-06):** this was previously specified as a "Tab Bar Studio" power tool with presets, icon-size control, and a collapsed Advanced group covering heights, indicators, badges and content-under-tab-bar. In practice the advanced group never collapsed, its height controls were gated behind a *debug* toggle on another screen, the preview rendered the first four available tabs rather than the user's own, and an experimental navbar flag had leaked in from Debug. The controls were removed rather than repaired: a news reader does not need pixel-level tab bar tuning, and the surface cost 1,542 lines to maintain. The underlying settings keys remain at fixed defaults so the bar renders unchanged.
 
 ### Accessibility
 **Question:** “How does the app adapt to my needs?”  
@@ -76,7 +78,7 @@ Seven entries only. Anything else is bloat.
 ## Demotions / Renames / Guards
 - **Customization** junk drawer is dissolved: reading controls → Reading Experience; grounding → Grounding & Focus; animation toggles → Accessibility; appearance items that aren’t built stay out.
 - **Sources** belong with Reading Experience when presented inside Settings. If a dedicated Sources flow replaces it, remove the Settings entry rather than adding an eighth top-level item.
-- **Navigation controls** live in Tab Bar Studio; keep Navigation list minimal.
+- **Navigation controls** live in Tab Bar; keep the Navigation list minimal.
 - **Duplicate entries** allowed only for RSVP tutorial (App Info + Reading Experience) when it improves recall.
 - **Debug-only features** stay in Debug & Advanced—never leak into user-facing screens.
 
@@ -85,7 +87,7 @@ Seven entries only. Anything else is bloat.
 - `ReadingSettingsScreen.tsx` → Reading Experience.  
 - `DigestSettingsScreen.tsx` → Digest & Launch.  
  - `CustomizationSettingsScreen.tsx` has been decomposed: see `GroundingFocusSettingsScreen.tsx`, `AccessibilitySettingsScreen.tsx`, and updated `ReadingSettingsScreen.tsx`.  
-- `TabBarSettingsScreen.tsx` → Navigation → Tab Bar Studio.  
+- `TabBarSettingsScreen.tsx` → Navigation → Tab Bar.  
 - `DebugSettingsScreen.tsx` → Debug & Advanced.  
 - `SourcesSettingsScreen.tsx` is housed under Reading Experience until a dedicated sources flow exists outside Settings.
 
