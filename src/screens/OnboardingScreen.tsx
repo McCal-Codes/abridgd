@@ -3,7 +3,9 @@ import {
   FlatList,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TouchableOpacity,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -70,7 +72,7 @@ const SLIDES: OnboardingSlide[] = [
     id: "make-it-yours",
     title: "Make It Yours",
     description:
-      "Keep the default if it feels right. Tune speed, focus, haptics, and grounding later when you know what you want.",
+      "Set it now or keep the defaults — either is fine. Everything here lives in Settings too, so nothing is locked in.",
     preview: "settings",
     Icon: Sliders,
   },
@@ -292,30 +294,104 @@ const BriefPreview: React.FC = () => {
   );
 };
 
+const READING_SPEEDS = [
+  { label: "Calm", value: 250 },
+  { label: "Steady", value: 350 },
+  { label: "Brisk", value: 450 },
+];
+
+/**
+ * A real settings panel, not a mockup.
+ *
+ * This previously rendered switch-shaped Views and a fixed slider fill with no
+ * handlers attached, on a slide titled "Make It Yours" - so the one screen
+ * promising personalisation was the one where nothing responded to touch. Its
+ * sibling previews are static too, but they draw content (article lines, trust
+ * checkmarks) rather than controls, so they never invited a tap.
+ *
+ * Every control here writes straight to SettingsContext and persists, so a
+ * choice made during onboarding is the choice the app opens with.
+ */
 const SettingsPreview: React.FC = () => {
   const styles = useThemedStyles(createStyles);
+  const {
+    isGroundingEnabled,
+    setIsGroundingEnabled,
+    hapticIntensity,
+    setHapticIntensity,
+    isReaderEnabled,
+    setIsReaderEnabled,
+    readingSpeed,
+    setReadingSpeed,
+  } = useSettings();
+
+  const toggles = [
+    {
+      key: "grounding",
+      label: "Grounding cue",
+      value: isGroundingEnabled,
+      onChange: (next: boolean) => setIsGroundingEnabled(next),
+    },
+    {
+      key: "haptics",
+      label: "Haptics",
+      // hapticIntensity is a scale, not a boolean; "normal" is the default the
+      // rest of the app treats as on.
+      value: hapticIntensity !== "off",
+      onChange: (next: boolean) => setHapticIntensity(next ? "normal" : "off"),
+    },
+    {
+      key: "reader",
+      label: "Reader focus",
+      value: isReaderEnabled,
+      onChange: (next: boolean) => setIsReaderEnabled(next),
+    },
+  ];
 
   return (
     <View style={styles.previewCard}>
       <Text style={styles.previewEyebrow} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
         Reading Settings
       </Text>
+
       <View style={styles.settingPreviewRow}>
         <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
           RSVP speed
         </Text>
-        <View style={styles.settingPreviewTrack}>
-          <View style={styles.settingPreviewFill} />
+        <View style={styles.speedChipRow}>
+          {READING_SPEEDS.map((speed) => {
+            const selected = readingSpeed === speed.value;
+            return (
+              <TouchableOpacity
+                key={speed.value}
+                style={[styles.speedChip, selected && styles.speedChipSelected]}
+                onPress={() => setReadingSpeed(speed.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${speed.label} reading speed, ${speed.value} words per minute`}
+              >
+                <Text
+                  style={[styles.speedChipText, selected && styles.speedChipTextSelected]}
+                  maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}
+                >
+                  {speed.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
-      {["Grounding cue", "Haptics", "Reader focus"].map((item, index) => (
-        <View key={item} style={styles.settingPreviewRow}>
+
+      {toggles.map((toggle) => (
+        <View key={toggle.key} style={styles.settingPreviewRow}>
           <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
-            {item}
+            {toggle.label}
           </Text>
-          <View style={[styles.settingPreviewToggle, index === 1 && styles.settingPreviewToggleOff]}>
-            <View style={[styles.settingPreviewKnob, index === 1 && styles.settingPreviewKnobOff]} />
-          </View>
+          <Switch
+            value={toggle.value}
+            onValueChange={toggle.onChange}
+            accessibilityLabel={toggle.label}
+          />
         </View>
       ))}
     </View>
@@ -935,41 +1011,31 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       flexShrink: 1,
     },
-    settingPreviewTrack: {
-      width: 118,
-      maxWidth: "42%",
-      height: 8,
-      borderRadius: 999,
-      backgroundColor: colors.border,
-      overflow: "hidden",
+    speedChipRow: {
+      flexDirection: "row",
+      gap: 6,
     },
-    settingPreviewFill: {
-      width: "58%",
-      height: "100%",
-      borderRadius: 999,
-      backgroundColor: colors.primary,
-    },
-    settingPreviewToggle: {
-      width: 42,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
+    speedChip: {
+      minHeight: 32,
+      paddingHorizontal: 10,
       justifyContent: "center",
-      alignItems: "flex-end",
-      paddingHorizontal: 3,
-    },
-    settingPreviewToggleOff: {
-      backgroundColor: colors.border,
-      alignItems: "flex-start",
-    },
-    settingPreviewKnob: {
-      width: 18,
-      height: 18,
-      borderRadius: 9,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.border,
       backgroundColor: colors.surface,
     },
-    settingPreviewKnobOff: {
-      backgroundColor: colors.background,
+    speedChipSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.tintTransparent,
+    },
+    speedChipText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    speedChipTextSelected: {
+      color: colors.primary,
     },
     trustPreviewRow: {
       flexDirection: "row",
