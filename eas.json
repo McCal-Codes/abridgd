@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 12.0.0",
+    "version": ">= 16.28.0",
     "appVersionSource": "local"
   },
   "build": {
@@ -44,7 +44,18 @@
         "buildConfiguration": "Release",
         "cache": {
           "key": "abridged-ios-cache-v1",
-          "customPaths": ["ios/Pods"]
+          "customPaths": [
+            "ios/Pods"
+          ]
+        }
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "cache": {
+          "key": "abridged-android-cache-v1",
+          "customPaths": [
+            "android/.gradle"
+          ]
         }
       }
     }

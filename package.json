@@ -10,15 +10,19 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build:ipa": "eas build --platform ios --profile production",
-    "build:ipa:quick": "eas build --platform ios --profile preview",
-    "build:ipa:submit": "eas build --platform ios --profile production --auto-submit",
-    "build:apk": "eas build --platform android --profile preview",
+    "build": "node scripts/build/eas-build.js",
+    "build:ios": "node scripts/build/eas-build.js ios production",
+    "build:ios:preview": "node scripts/build/eas-build.js ios preview",
+    "build:android": "node scripts/build/eas-build.js android production",
+    "build:android:preview": "node scripts/build/eas-build.js android preview",
+    "build:all": "node scripts/build/eas-build.js all production",
+    "build:all:preview": "node scripts/build/eas-build.js all preview",
     "repo:health": "node scripts/audit/repo-health.js",
     "version:check": "node scripts/audit/version-check.js",
     "audit:ai-leak": "node scripts/audit/ai-leak-check.js",
     "eas:workflow:run": "eas workflow:run",
-    "lint:docs": "node docs/scripts/doc-lint.js"
+    "lint:docs": "node docs/scripts/doc-lint.js",
+    "doctor": "npx expo-doctor"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",
@@ -64,7 +68,6 @@
     "@types/react": "~19.1.0",
     "babel-jest": "^29.7.0",
     "babel-preset-expo": "^54.0.9",
-    "eas-cli": "^16.28.0",
     "jest": "^29.7.0",
     "jest-expo": "~54.0.17",
     "typescript": "~5.9.2"

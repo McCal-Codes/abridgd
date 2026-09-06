@@ -59,9 +59,9 @@
 			}
 		},
 		{
-			"label": "Export iOS IPA",
+			"label": "Build iOS (EAS)",
 			"type": "shell",
-			"command": "./scripts/build/build-ipa.sh export",
+			"command": "npm run build:ios",
 			"group": "build",
 			"presentation": {
 				"echo": true,

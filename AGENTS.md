@@ -21,7 +21,7 @@ Operating notes for AI/automation working in this repo. Follow these to stay ali
 - Stack: Expo 54, React Native 0.81, React 19, TypeScript.
 - Entry: `index.ts` → `src/App.tsx`.
 - Node: prefer 20.x (see `.nvmrc`/README). Install with `npm install`.
-- Common scripts: `npm start` (Expo), `npm test`, `npm run test:watch`, `npm run test:coverage`, `npm run build:ipa`, `npm run build:ipa:quick`, `npm run repo:health`, `npm run lint:docs`.
+- Common scripts: `npm start` (Expo), `npm test`, `npm run test:watch`, `npm run test:coverage`, `npm run build:ios`, `npm run build:ios:preview`, `npm run repo:health`, `npm run lint:docs`.
 
 ### Standards quicklinks
 - Standards home: `docs/standards/README.md`

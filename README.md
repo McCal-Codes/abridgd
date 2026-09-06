@@ -74,9 +74,9 @@ From the Expo prompt:
 - `npm test` - run the Jest test suite
 - `npm run test:coverage` - generate coverage output
 - `npm run repo:health` - run the repository health audit
-- `npm run build:ipa` - start a production EAS iOS build
-- `npm run build:ipa:quick` - start a preview EAS iOS build
-- `npm run build:ipa:submit` - start a production EAS iOS build and auto-submit it to TestFlight
+- `npm run build:ios` - start a production EAS iOS build
+- `npm run build:ios:preview` - start a preview EAS iOS build
+- `npm run build:ios -- --auto-submit` - start a production EAS iOS build and auto-submit it to TestFlight
 
 ## Install a Build
 
@@ -102,16 +102,16 @@ Requirements:
 Build commands:
 
 ```bash
-npm run build:ipa
+npm run build:ios
 ```
 
 or
 
 ```bash
-npm run build:ipa:submit
+npm run build:ios -- --auto-submit
 ```
 
-Use `npm run build:ipa:quick` when you want a faster preview/internal build instead of the production profile.
+Use `npm run build:ios:preview` when you want a faster preview/internal build instead of the production profile.
 
 If you need a manual local Xcode archive path instead, generate or maintain a native `ios/` project first and then follow the advanced guide below.
 

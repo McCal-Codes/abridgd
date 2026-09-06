@@ -225,13 +225,13 @@ This checks for:
 **Standard build:**
 
 ```bash
-npm run build:ipa
+npm run build:ios
 ```
 
 **Quick build (development signing):**
 
 ```bash
-npm run build:ipa:quick
+npm run build:ios:preview
 ```
 
 See `scripts/README.md` for detailed build script documentation.

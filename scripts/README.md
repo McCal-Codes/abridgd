@@ -6,7 +6,7 @@ Operational power tools for the Abridged project. Organized by intent to prevent
 
 ```
 scripts/
-  build/          → iOS build automation
+  build/          → iOS and Android build automation (EAS)
   debug/          → Article scraper debugging & feed validation
   test/           → Feed and API testing utilities
   audit/          → Repo health checks (future)
@@ -16,43 +16,30 @@ scripts/
 
 ## Build Scripts (`scripts/build/`)
 
-### `build-ipa.sh`
+### `eas-build.js`
 
-**Purpose:** Full-featured iOS IPA build workflow with signing support.
+**Purpose:** Wrapper around `eas build` for both platforms. Validates the
+platform and profile against `eas.json` before anything is uploaded, then
+prints the app identity, version and resulting artifact type.
 
-**When to use:** For complete, signed builds with archiving and export options.
-
-**Usage:**
-```bash
-npm run build:ipa                    # Standard build
-npm run build:ipa clean              # Clean artifacts first
-npm run build:ipa archive            # Archive build
-./scripts/build/build-ipa.sh export  # Export archived build
-```
-
-**What it does:**
-- Checks for signing credentials (ExportOptions.plist)
-- Runs Xcode build for iOS
-- Creates `.xcarchive` artifact
-- Exports signed IPA file
-
----
-
-### `build-ipa-quick.sh`
-
-**Purpose:** Rapid, no-frills iOS IPA build. Minimal checks, fast iteration.
-
-**When to use:** Local development testing, quick validation builds.
+**When to use:** Any cloud build, iOS or Android.
 
 **Usage:**
 ```bash
-./scripts/build/build-ipa-quick.sh
+npm run build:ios              # production .ipa
+npm run build:ios:preview      # internal-distribution .ipa
+npm run build:android          # production .aab for Play
+npm run build:android:preview  # sideloadable .apk
+npm run build:all              # both platforms, production
+npm run build -- android preview --clear-cache   # explicit form, extra eas flags
 ```
 
 **What it does:**
-- Creates/validates ExportOptions.plist (development method)
-- Builds directly without archiving
-- Exports IPA to `ios/ipas/`
+- Rejects unknown platforms and profiles before a round trip to EAS
+- Reports which artifact each platform will produce on the chosen profile
+- Passes any additional arguments straight through to `eas build`
+
+Builds run on EAS in the cloud; no local Xcode or Android SDK is required.
 
 ---
 
@@ -157,8 +144,9 @@ Planned:
 
 | Task | Command |
 |------|---------|
-| Build iOS IPA (standard) | `npm run build:ipa` |
-| Build iOS IPA (quick) | `./scripts/build/build-ipa-quick.sh` |
+| Build iOS IPA | `npm run build:ios` |
+| Build Android AAB | `npm run build:android` |
+| Build Android APK (preview) | `npm run build:android:preview` |
 | Debug feeds (live) | `node scripts/debug/debug-live-scrapers.js` |
 | Debug WTAE parsing | `node scripts/debug/debug-wtae.js` |
 | Test TribLive API | `node scripts/test/test-triblive-api.js` |
