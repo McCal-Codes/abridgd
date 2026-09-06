@@ -22,7 +22,10 @@
     "audit:ai-leak": "node scripts/audit/ai-leak-check.js",
     "eas:workflow:run": "eas workflow:run",
     "lint:docs": "node docs/scripts/doc-lint.js",
-    "doctor": "npx expo-doctor"
+    "doctor": "npx expo-doctor",
+    "update": "node scripts/build/publish-update.js",
+    "update:preview": "node scripts/build/publish-update.js preview",
+    "update:production": "node scripts/build/publish-update.js production"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",
