@@ -57,7 +57,7 @@ const AppContent = () => {
   );
 };
 
-export default function App() {
+export default Sentry.wrap(function App() {
   const [fontsLoaded, fontError] = useFonts({
     Fraunces_400Regular,
     Fraunces_500Medium,
@@ -84,4 +84,4 @@ export default function App() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
-}
+});

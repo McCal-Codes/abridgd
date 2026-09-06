@@ -52,9 +52,16 @@
     },
     "plugins": [
       "expo-font",
-      "@sentry/react-native",
       "expo-secure-store",
-      "./plugins/withFoldableConfigChanges"
+      "./plugins/withFoldableConfigChanges",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "abridgd",
+          "organization": "mccal-media"
+        }
+      ]
     ],
     "extra": {
       "eas": {

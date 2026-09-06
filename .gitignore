@@ -63,3 +63,5 @@ npm-cache/
 # Ignore VSCode heap snapshots
 vscode-profile-*.heapsnapshot
 *.heapsnapshot
+
+.env.local
