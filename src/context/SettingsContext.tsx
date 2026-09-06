@@ -212,7 +212,10 @@ const defaultSettingsContext: SettingsContextType = {
   setHiddenHeightStep: async (_n: number) => {},
   floatingHeightStep: 2,
   setFloatingHeightStep: async (_n: number) => {},
-  tabBarDockedHeight: 56,
+  // Must match the state initializer below and LiquidTabBar's Math.max(92, ...)
+  // floor. Screens pad their lists by this value, so a lower default hides
+  // content behind the bar.
+  tabBarDockedHeight: 92,
   setTabBarDockedHeight: async (_n: number) => {},
   tabBarHiddenHeight: 64,
   setTabBarHiddenHeight: async (_n: number) => {},

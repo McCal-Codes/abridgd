@@ -38,7 +38,6 @@
       }
     },
     "production": {
-      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release",
         "cache": {
