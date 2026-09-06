@@ -1,5 +1,5 @@
 # Abridged — Settings Information Architecture (Apollo)
-Version 1.1  
+Version 1.2  
 Last Updated: September 6, 2026  
 Status: Canonical (use for all Settings work)
 
@@ -18,6 +18,8 @@ Lock the Settings experience to a single, intent-based structure. Use this as th
 ```
 Settings
 ├─ Reading Experience
+├─ News Sources
+├─ Data & Performance
 ├─ Digest & Launch
 ├─ Grounding & Focus
 ├─ Navigation
@@ -26,13 +28,31 @@ Settings
 ├─ App Info
 └─ Debug & Advanced
 ```
-Seven entries only. Anything else is bloat.
+Nine entries. The bar is that each one answers a distinct question a reader
+would actually ask — not a fixed count.
+
+**Amended 2026-09-06.** This previously specified seven and called anything
+further "bloat". Two entries had already diverged in practice:
+
+- **News Sources** was promoted from inside Reading Experience. Which outlets
+  the feed pulls from is a decision readers make on its own terms, not while
+  adjusting RSVP speed, and burying it one level down made the app's most
+  editorially significant setting the hardest to find. The doc previously said a
+  dedicated Sources flow should *replace* the Reading entry rather than add a
+  top-level one; promoting it and removing the Reading entry point does exactly
+  that, just at the top level rather than outside Settings.
+- **Data & Performance** was never sanctioned and arrived without an ADR. It is
+  recorded here because the doc should describe the app that exists. It remains
+  the weakest entry: roughly half the screen is static tip cards with no
+  controls, and its cache figure is hardcoded. A candidate for folding into
+  Debug & Advanced rather than defending.
 
 ## Screen Definitions (exact)
 
 ### Reading Experience
 **Question:** “How do I read in this app?”  
-**Includes:** Reader enabled, Reader mode (RSVP/standard), Reader focus color, Reader font size, Reader focus position (Early/Standard/Center — hide raw %), Reader speed controls, RSVP tutorial (revisit), Sources/feeds management lives here if it remains in Settings.  
+**Includes:** Reader enabled, Reader mode (RSVP/standard), Reader focus color, Reader font size, Reader focus position (Early/Standard/Center — hide raw %), Reader speed controls, RSVP tutorial (revisit).
+**Excludes (2026-09-06):** source management, now its own top-level entry.  
 **Excludes:** Grounding, animations, app-wide appearance.
 
 ### Digest & Launch
@@ -77,7 +97,7 @@ Seven entries only. Anything else is bloat.
 
 ## Demotions / Renames / Guards
 - **Customization** junk drawer is dissolved: reading controls → Reading Experience; grounding → Grounding & Focus; animation toggles → Accessibility; appearance items that aren’t built stay out.
-- **Sources** belong with Reading Experience when presented inside Settings. If a dedicated Sources flow replaces it, remove the Settings entry rather than adding an eighth top-level item.
+- **Sources** are a top-level entry as of 2026-09-06. The Reading Experience entry point was removed so there is exactly one path to the screen.
 - **Navigation controls** live in Tab Bar; keep the Navigation list minimal.
 - **Duplicate entries** allowed only for RSVP tutorial (App Info + Reading Experience) when it improves recall.
 - **Debug-only features** stay in Debug & Advanced—never leak into user-facing screens.
@@ -89,7 +109,7 @@ Seven entries only. Anything else is bloat.
  - `CustomizationSettingsScreen.tsx` has been decomposed: see `GroundingFocusSettingsScreen.tsx`, `AccessibilitySettingsScreen.tsx`, and updated `ReadingSettingsScreen.tsx`.  
 - `TabBarSettingsScreen.tsx` → Navigation → Tab Bar.  
 - `DebugSettingsScreen.tsx` → Debug & Advanced.  
-- `SourcesSettingsScreen.tsx` is housed under Reading Experience until a dedicated sources flow exists outside Settings.
+- `SourcesSettingsScreen.tsx` → News Sources, reached from the Settings root.
 
 ## Enforcement
 - Use this IA for new work, refactors, and reviews.  

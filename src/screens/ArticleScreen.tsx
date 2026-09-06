@@ -23,6 +23,7 @@ import { RootStackParamList } from "../navigation/types";
 import { summarizeArticle } from "../services/AiService";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
+import { openExternalUrl } from "../utils/openExternalUrl";
 import { useSettings } from "../context/SettingsContext";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { ScaleButton } from "../components/ScaleButton";
@@ -730,7 +731,7 @@ export const ArticleScreen: React.FC = () => {
                     </Text>
                   )}
                   {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
-                  <ScaleButton style={styles.videoOpenButton} onPress={() => Linking.openURL(uri)}>
+                  <ScaleButton style={styles.videoOpenButton} onPress={() => void openExternalUrl(uri)}>
                     <Text style={styles.videoOpenText}>Open video in browser</Text>
                   </ScaleButton>
                 </View>
@@ -759,7 +760,7 @@ export const ArticleScreen: React.FC = () => {
                   try {
                     await Haptics.selectionAsync();
                   } catch {}
-                  Linking.openURL(article.link!);
+                  void openExternalUrl(article.link);
                 }}
               >
                 <Text style={styles.sourceButtonText}>Read Full Story on Web</Text>
