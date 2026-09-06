@@ -95,6 +95,14 @@ jest.mock("react-native-gesture-handler", () => {
       onUpdate: jest.fn(() => chain),
       onEnd: jest.fn(() => chain),
       onFinalize: jest.fn(() => chain),
+      // The article's Pan constrains its axes so it does not steal vertical
+      // scrolls from the ScrollView it wraps; the mock has to model that.
+      activeOffsetX: jest.fn(() => chain),
+      activeOffsetY: jest.fn(() => chain),
+      failOffsetX: jest.fn(() => chain),
+      failOffsetY: jest.fn(() => chain),
+      simultaneousWithExternalGesture: jest.fn(() => chain),
+      enabled: jest.fn(() => chain),
     };
     return chain;
   };
