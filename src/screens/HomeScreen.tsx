@@ -294,7 +294,7 @@ export const HomeScreen: React.FC = () => {
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={renderArticle}
-          ListHeaderComponent={() => (
+          ListHeaderComponent={
             <>
               {renderHeroHeader()}
               {error && articles.length > 0 ? (
@@ -318,7 +318,7 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </View>
             </>
-          )}
+          }
           contentContainerStyle={[
             styles.listContent,
             {
