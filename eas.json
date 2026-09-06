@@ -11,7 +11,13 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "cache": {
+          "key": "abridged-android-cache-v1",
+          "customPaths": [
+            "android/.gradle"
+          ]
+        }
       },
       "channel": "development"
     },
@@ -27,7 +33,13 @@
         "simulator": false
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "cache": {
+          "key": "abridged-android-cache-v1",
+          "customPaths": [
+            "android/.gradle"
+          ]
+        }
       },
       "channel": "preview"
     },
