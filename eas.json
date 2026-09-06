@@ -23,9 +23,6 @@
     },
     "preview": {
       "distribution": "internal",
-      "env": {
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      },
       "ios": {
         "simulator": false
       },
