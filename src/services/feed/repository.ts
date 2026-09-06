@@ -196,8 +196,24 @@ const mergeCategoryFromCache = (category: ArticleCategory, sourceNames: string[]
   // in the same merge are still serving old, stale-while-revalidate-eligible snapshots.
   const fetchedTimes = snapshots.map((snapshot) => snapshot.fetchedAt);
   const lastUpdated = fetchedTimes.length ? Math.max(...fetchedTimes) : null;
-  const oldestUpdated = fetchedTimes.length ? Math.min(...fetchedTimes) : null;
-  const stale = oldestUpdated !== null && Date.now() - oldestUpdated > SOFT_TTL_MS;
+
+  /**
+   * Staleness is measured from the last *attempt*, not the last success.
+   *
+   * touchSourceAttempt deliberately leaves fetchedAt frozen for a failing source so it
+   * keeps serving last-known-good articles. Using fetchedAt here meant any permanently
+   * broken source pinned oldestUpdated in the past forever: `stale` was always true while
+   * the refetch gate below (which uses lastUpdated, the max) stayed satisfied. The result
+   * was a "showing cached" banner that never cleared and a refresh spinner on every mount,
+   * with no network call actually happening. The registry currently has a default-enabled
+   * source in exactly this state, so this is live rather than theoretical.
+   *
+   * A source that was tried recently and failed is not stale-while-revalidate eligible —
+   * trying it again would not help. A source nobody has tried recently genuinely is.
+   */
+  const attemptTimes = snapshots.map((snapshot) => snapshot.attemptedAt || snapshot.fetchedAt);
+  const oldestAttempt = attemptTimes.length ? Math.min(...attemptTimes) : null;
+  const stale = oldestAttempt !== null && Date.now() - oldestAttempt > SOFT_TTL_MS;
   return { articles, stale, lastUpdated };
 };
 

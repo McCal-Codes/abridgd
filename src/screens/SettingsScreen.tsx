@@ -9,6 +9,7 @@ import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import {
   BookOpen,
+  Rss,
   Newspaper,
   HeartPulse,
   Compass,
@@ -37,7 +38,7 @@ export const SettingsScreen: React.FC = () => {
   const menuItems: SettingsMenuItem[] = [
     {
       title: "Reading Experience",
-      description: "RSVP, font, speed, focus, sources",
+      description: "RSVP, font, speed, focus",
       icon: <BookOpen size={24} color={colors.primary} />,
       screen: "ReadingSettings",
     },
@@ -46,6 +47,12 @@ export const SettingsScreen: React.FC = () => {
       description: "Image quality, battery, data saver",
       icon: <Zap size={24} color={colors.primary} />,
       screen: "DataPerformanceSettings",
+    },
+    {
+      title: "News Sources",
+      description: "Choose which outlets your feed pulls from",
+      icon: <Rss size={24} color={colors.primary} />,
+      screen: "SourcesSettings",
     },
     {
       title: "Digest & Launch",

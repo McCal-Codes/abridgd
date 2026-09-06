@@ -256,16 +256,6 @@ export const ReadingSettingsScreen: React.FC = () => {
           <AbridgedReader content="I hope you are having a wonderful day, and by the way, I truly believe that almost anything tastes better when it is served as chicken on a stick." />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sources</Text>
-          <Text style={styles.sectionDesc}>Manage feeds used by the reader.</Text>
-          <TouchableOpacity
-            style={styles.linkCard}
-            onPress={() => (navigation as any).navigate("SourcesSettings")}
-          >
-            <Text style={styles.linkCardText}>Open News Sources</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -467,19 +457,6 @@ const createStyles = (colors: ThemeColors) =>
   },
   strategyContainer: {
     gap: spacing.sm,
-  },
-  linkCard: {
-    padding: spacing.md,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  linkCardText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.primary,
   },
   lineHeightRow: {
     flexDirection: "row",
