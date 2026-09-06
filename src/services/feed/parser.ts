@@ -88,6 +88,54 @@ export const parseFeedXml = (xml: string): { items: RawFeedItem[]; isAtom: boole
   return { items: itemsArray.filter(Boolean) as RawFeedItem[], isAtom };
 };
 
+/**
+ * RSS gives `<link>` as text; Atom gives `<link rel="alternate" href="...">`, which
+ * fast-xml-parser turns into an attribute object - or an array of them when a feed also
+ * declares self/replies links. Without this, `article.link` was an object: "Read Full
+ * Story" called Linking.openURL with it, and full-story enrichment hashed it as a string.
+ */
+const extractLink = (val: RawFeedItem["link"]): string | undefined => {
+  if (!val) return undefined;
+  if (typeof val === "string") return val.trim() || undefined;
+
+  const candidates = Array.isArray(val) ? val : [val];
+  const alternate = candidates.find((entry) => entry?.["@_rel"] === "alternate");
+  const untyped = candidates.find((entry) => !entry?.["@_rel"]);
+  const href = (alternate || untyped || candidates[0])?.["@_href"];
+  return typeof href === "string" && href.trim() ? href.trim() : undefined;
+};
+
+/**
+ * `new Date()` handles ISO-8601 per spec, but RFC-822 - the format RSS actually mandates -
+ * is implementation-defined, and Hermes' fallback parser is narrower than V8's. Alphabetic
+ * zones (EST, PDT) are the usual casualty. Normalise those to a numeric offset so the
+ * engine's ISO path can take them.
+ */
+const RFC822_ZONES: Record<string, string> = {
+  UT: "+0000", GMT: "+0000", Z: "+0000",
+  EST: "-0500", EDT: "-0400",
+  CST: "-0600", CDT: "-0500",
+  MST: "-0700", MDT: "-0600",
+  PST: "-0800", PDT: "-0700",
+};
+
+const parseFeedDate = (raw?: string): number => {
+  if (!raw) return NaN;
+  const value = String(raw).trim();
+  if (!value) return NaN;
+
+  const direct = new Date(value).getTime();
+  if (!Number.isNaN(direct)) return direct;
+
+  const zoneMatch = value.match(/\s([A-Z]{2,3})$/);
+  if (zoneMatch && RFC822_ZONES[zoneMatch[1]]) {
+    const retried = new Date(value.replace(/\s[A-Z]{2,3}$/, ` ${RFC822_ZONES[zoneMatch[1]]}`)).getTime();
+    if (!Number.isNaN(retried)) return retried;
+  }
+
+  return NaN;
+};
+
 const extractId = (val: RawFeedItem["guid"]): string | undefined => {
   if (!val) return undefined;
   if (typeof val === "string") return val;
@@ -104,7 +152,7 @@ export const normalizeFeedItem = (
   provenance: ProvenanceContext,
 ): Article => {
   const content = sanitizeContentField(item["content:encoded"] || item.content || item.description || "");
-  const summaryText = sanitizeText(item.description || item.title || "");
+  const summaryText = sanitizeText(item.description || item.summary || item.title || "");
   const headline = sanitizeText(textOf(item.title)?.trim() || "Untitled");
 
   // Extract image from enclosure, media:content, or itunes:image. Candidates are scored
@@ -179,15 +227,31 @@ export const normalizeFeedItem = (
 
   const author = extractAuthorName(item["dc:creator"]) || extractAuthorName(item.author);
 
-  const articleId =
-    extractId(item.guid) ||
-    extractId(item.id) ||
-    (typeof item.link === "string" ? item.link : undefined) ||
-    Math.random().toString(36).substring(2, 9);
+  const link = extractLink(item.link);
 
-  const dateSource = item.pubDate || item.published || item.updated;
-  const parsedDate = dateSource ? new Date(dateSource).getTime() : NaN;
-  const publishedAt = Number.isNaN(parsedDate) ? Date.now() : parsedDate;
+  /**
+   * The id keys saved articles and reading progress, so it has to be stable across
+   * refreshes. It previously fell back to Math.random(), which minted a new id every
+   * parse - silently detaching a reader's progress and saved state whenever a feed
+   * lacked guid/id/link. Headline plus source is a deterministic last resort.
+   *
+   * Namespaced by source because raw guids are not unique across publishers: integer
+   * guids are common on WordPress, so two outlets could collide and cross-contaminate
+   * each other's reading progress.
+   */
+  const rawId = extractId(item.guid) || extractId(item.id) || link || `${headline}`;
+  const articleId = `${sourceName}::${rawId}`;
+
+  const dateSource = item.pubDate || item.published || item.updated || item["dc:date"];
+  const parsedDate = parseFeedDate(dateSource);
+
+  /**
+   * Unparseable dates sort last, not first. The previous fallback was Date.now(), which
+   * meant one source with a format the engine could not read had its entire item list
+   * stacked above every genuinely-dated article - and the value was persisted, so it
+   * survived restarts.
+   */
+  const publishedAt = Number.isNaN(parsedDate) ? 0 : parsedDate;
   const timestamp = Number.isNaN(parsedDate)
     ? "Recently"
     : new Date(parsedDate).toLocaleDateString();
@@ -207,7 +271,7 @@ export const normalizeFeedItem = (
     mediaVideos: Array.from(mediaVideos),
     readTimeMinutes: calculateReadTime(summaryText),
     isSensitive: false,
-    link: item.link,
+    link,
     provenance: {
       sourceName,
       sourceDomain: provenance.sourceDomain,

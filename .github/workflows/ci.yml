@@ -79,6 +79,11 @@ jobs:
       - name: Run TypeScript check
         run: npx tsc --noEmit
 
+      # Validates the Expo config schema and native dependency versions against
+      # the installed SDK. Catches config drift that only surfaces at build time.
+      - name: Run Expo doctor
+        run: npm run doctor
+
       - name: Check for console.logs (warnings only)
         run: |
           echo "Checking for console statements..."
@@ -102,6 +107,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Blocking on purpose. This previously carried continue-on-error, which
+      # meant a broken bundle for either platform passed CI silently.
       - name: Check if project builds
         run: npx expo export --platform all --output-dir dist-check
-        continue-on-error: true

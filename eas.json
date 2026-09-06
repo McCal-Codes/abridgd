@@ -1,12 +1,25 @@
 {
   "cli": {
-    "version": ">= 12.0.0",
+    "version": ">= 16.28.0",
     "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
+      "android": {
+        "buildType": "apk",
+        "cache": {
+          "key": "abridged-android-cache-v1",
+          "customPaths": [
+            "android/.gradle"
+          ]
+        }
+      },
+      "channel": "development"
     },
     "development-simulator": {
       "extends": "development",
@@ -18,23 +31,44 @@
       "distribution": "internal",
       "ios": {
         "simulator": false
-      }
+      },
+      "android": {
+        "buildType": "apk",
+        "cache": {
+          "key": "abridged-android-cache-v1",
+          "customPaths": [
+            "android/.gradle"
+          ]
+        }
+      },
+      "channel": "preview"
     },
     "preview-simulator": {
-      "distribution": "internal",
+      "extends": "preview",
       "ios": {
         "simulator": true
       }
     },
     "production": {
-      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release",
         "cache": {
           "key": "abridged-ios-cache-v1",
-          "customPaths": ["ios/Pods"]
+          "customPaths": [
+            "ios/Pods"
+          ]
         }
-      }
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "cache": {
+          "key": "abridged-android-cache-v1",
+          "customPaths": [
+            "android/.gradle"
+          ]
+        }
+      },
+      "channel": "production"
     }
   },
   "submit": {

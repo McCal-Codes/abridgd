@@ -141,6 +141,10 @@ jest.mock("react-native-gesture-handler", () => {
   const React = require("react");
   const { View } = require("react-native");
 
+  // Mirrors RNGH's builder API. The axis constraints matter as much as the
+  // callbacks: a Pan wrapping a ScrollView needs activeOffsetX/failOffsetY to
+  // avoid stealing vertical scrolls on Android, so leaving them off the mock
+  // meant the tests could not exercise the configuration that ships.
   const createChain = () => {
     const chain = {
       onBegin: jest.fn(() => chain),
@@ -148,6 +152,12 @@ jest.mock("react-native-gesture-handler", () => {
       onUpdate: jest.fn(() => chain),
       onEnd: jest.fn(() => chain),
       onFinalize: jest.fn(() => chain),
+      activeOffsetX: jest.fn(() => chain),
+      activeOffsetY: jest.fn(() => chain),
+      failOffsetX: jest.fn(() => chain),
+      failOffsetY: jest.fn(() => chain),
+      simultaneousWithExternalGesture: jest.fn(() => chain),
+      enabled: jest.fn(() => chain),
     };
     return chain;
   };

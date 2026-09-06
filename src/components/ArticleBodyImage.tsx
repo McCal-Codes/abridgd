@@ -72,7 +72,10 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({ uri, caption
             ? [styles.image, styles.imageCompressed]
             : [styles.image, aspectRatio ? { aspectRatio } : { height: LOADING_HEIGHT }]
         }
-        resizeMode={compressed ? "center" : "cover"}
+        // "center" does not scale, so a 1200px RSS photo rendered at native size
+        // inside the compressed box - showing a crop of the middle few hundred
+        // pixels rather than the photo. "contain" fits it to the box instead.
+        resizeMode={compressed ? "contain" : "cover"}
         onError={() => setFailed(true)}
       />
       {caption ? <Text style={styles.caption}>{caption}</Text> : null}

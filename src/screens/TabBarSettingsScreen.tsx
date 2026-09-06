@@ -1,40 +1,23 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Modal,
-  Pressable,
-  Platform,
-  ActionSheetIOS,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
-import { GlassButton } from "../components/GlassButton";
 import { allowedTabs } from "../navigation/tabs";
 import {
-  GripVertical,
-  Check,
+  ChevronUp,
+  ChevronDown,
   Home,
   Search,
   Bookmark,
   Star,
   Flame,
   MapPin,
-  Newspaper,
   User,
   Layers,
   Smartphone,
-  Star as Sparkles,
-  Minimize2,
-  Square,
 } from "lucide-react-native";
-import { Switch } from "react-native";
 import { ArticleCategory } from "../types/Article";
 import { useSettings } from "../context/SettingsContext";
 import type { LucideIcon } from "lucide-react-native";
@@ -61,7 +44,7 @@ const getAvailableTabs = (layout: "minimal" | "comprehensive"): TabOption[] => {
 };
 
 export const TabBarSettingsScreen: React.FC = () => {
-  const { colors, isDark } = useThemeOptional();
+  const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const {
     activeTabs,
@@ -75,31 +58,11 @@ export const TabBarSettingsScreen: React.FC = () => {
     showTabLabels,
     setShowTabLabels,
     tabIconSize,
-    setTabIconSize,
-    tabBarBlur,
-    setTabBarBlur,
     allowContentUnderTabBar,
-    setAllowContentUnderTabBar,
     tabBadgeStyle,
-    setTabBadgeStyle,
     tabIndicatorStyle,
-    setTabIndicatorStyle,
     tabBarDockedHeight,
-    setTabBarDockedHeight,
-    tabBarHiddenHeight,
-    setTabBarHiddenHeight,
     tabBarFloatingHeight,
-    setTabBarFloatingHeight,
-    modalPresentationStyle,
-    enableAdvancedHeightControls,
-    dockedHeightStep,
-    hiddenHeightStep,
-    floatingHeightStep,
-    setDockedHeightStep,
-    setHiddenHeightStep,
-    setFloatingHeightStep,
-    experimentalIOS26NavBar,
-    setExperimentalIOS26NavBar,
   } = useSettings();
   const [selectedTabs, setSelectedTabs] = useState<string[]>(activeTabs);
   const insets = useSafeAreaInsets();
@@ -108,44 +71,6 @@ export const TabBarSettingsScreen: React.FC = () => {
     insets.bottom + (allowContentUnderTabBar ? tabBarDockedHeight || 92 : 0) + spacing.lg,
   );
 
-  const [presetModalVisible, setPresetModalVisible] = useState(false);
-  const [presetModalType, setPresetModalType] = useState<"docked" | "hidden" | "floating" | null>(
-    null,
-  );
-
-  const dockedTemplates = [
-    { label: "Compact", value: 92 },
-    { label: "Default", value: 100 },
-    { label: "Spacious", value: 110 },
-  ];
-
-  const floatingTemplates = [
-    { label: "Slim", value: 48 },
-    { label: "Default", value: 64 },
-    { label: "Comfortable", value: 80 },
-  ];
-
-  const getDockedTemplateLabel = (val: number) =>
-    dockedTemplates.find((t) => t.value === val)?.label || "Custom";
-  const getFloatingTemplateLabel = (val: number) =>
-    floatingTemplates.find((t) => t.value === val)?.label || "Custom";
-  const getHiddenTemplateLabel = (val: number) => {
-    const base = tabBarDockedHeight || 92;
-    const choices = [base + 8, base + 16, base + 32];
-    const labels = ["Compact", "Default", "Tall"];
-    const idx = choices.indexOf(val);
-    return idx >= 0 ? labels[idx] : "Custom";
-  };
-
-  const openPresetMenu = (type: "docked" | "hidden" | "floating") => {
-    setPresetModalType(type);
-    setPresetModalVisible(true);
-  };
-
-  const closePresetMenu = () => {
-    setPresetModalVisible(false);
-    setPresetModalType(null);
-  };
 
   const AVAILABLE_TABS = getAvailableTabs(tabLayout);
 
@@ -161,7 +86,13 @@ export const TabBarSettingsScreen: React.FC = () => {
     const isStandardPreview = tabBarStyle === "standard";
     const height = isStandardPreview ? tabBarDockedHeight || 92 : tabBarFloatingHeight || 64;
 
-    const previewTabs = AVAILABLE_TABS.slice(0, 4);
+    // The preview is the one mandatory element of the studio, so it has to
+    // reflect the edits made directly below it. It previously rendered the
+    // first four *available* tabs, ignoring which tabs were active and in
+    // what order, so add/remove/reorder appeared to do nothing.
+    const previewTabs = selectedTabs
+      .map((id) => AVAILABLE_TABS.find((tab) => tab.id === id))
+      .filter((tab): tab is (typeof AVAILABLE_TABS)[number] => Boolean(tab));
 
     return (
       <>
@@ -209,121 +140,6 @@ export const TabBarSettingsScreen: React.FC = () => {
             ) : null}
           </View>
         </View>
-        {/* Preset selection modal */}
-        <Modal
-          visible={presetModalVisible}
-          transparent
-          animationType={presetModalType === "hidden" ? "slide" : "fade"}
-          onRequestClose={closePresetMenu}
-        >
-          {(() => {
-            const modalPref = modalPresentationStyle || "auto";
-            const isBottom =
-              modalPref === "bottom" || (modalPref === "auto" && presetModalType === "hidden");
-            return (
-              <Pressable
-                style={[styles.modalOverlay, isBottom ? null : styles.modalOverlayCenter]}
-                onPress={closePresetMenu}
-              >
-                <Pressable
-                  style={[
-                    styles.modalContent,
-                    isBottom
-                      ? { paddingBottom: insets.bottom + spacing.md }
-                      : styles.modalContentCenter,
-                  ]}
-                  onPress={() => {
-                    /* consume touches so overlay doesn't immediately close */
-                  }}
-                >
-                  {presetModalType === "docked" && (
-                    <>
-                      {dockedTemplates.map((t) => (
-                        <TouchableOpacity
-                          key={`modal-d-${t.value}`}
-                          style={styles.modalOption}
-                          onPress={() => {
-                            setTabBarDockedHeight(t.value);
-                            closePresetMenu();
-                          }}
-                        >
-                          <View style={styles.modalOptionLeft}>
-                            <Text style={styles.modalOptionText}>{t.label}</Text>
-                          </View>
-                          {t.value === (tabBarDockedHeight || 92) ? (
-                            <Check size={18} color={colors.primary} />
-                          ) : null}
-                        </TouchableOpacity>
-                      ))}
-                    </>
-                  )}
-                  {presetModalType === "hidden" &&
-                    (() => {
-                      const base = tabBarDockedHeight || 92;
-                      const opts = [
-                        { label: "Compact", value: base + 8 },
-                        { label: "Default", value: base + 16 },
-                        { label: "Tall", value: base + 32 },
-                      ];
-                      return opts.map((t) => (
-                        <TouchableOpacity
-                          key={`modal-h-${t.value}`}
-                          style={styles.modalOption}
-                          onPress={() => {
-                            setTabBarHiddenHeight(t.value);
-                            closePresetMenu();
-                          }}
-                        >
-                          <View style={styles.modalOptionLeft}>
-                            <Text style={styles.modalOptionText}>{t.label}</Text>
-                          </View>
-                          {t.value === (tabBarHiddenHeight || (tabBarDockedHeight || 92) + 16) ? (
-                            <Check size={18} color={colors.primary} />
-                          ) : null}
-                        </TouchableOpacity>
-                      ));
-                    })()}
-                  {presetModalType === "floating" && (
-                    <>
-                      {floatingTemplates.map((t) => (
-                        <TouchableOpacity
-                          key={`modal-f-${t.value}`}
-                          style={styles.modalOption}
-                          onPress={() => {
-                            setTabBarFloatingHeight(t.value);
-                            closePresetMenu();
-                          }}
-                        >
-                          <View style={styles.modalOptionLeft}>
-                            <Text style={styles.modalOptionText}>{t.label}</Text>
-                          </View>
-                          {t.value === (tabBarFloatingHeight || 64) ? (
-                            <Check size={18} color={colors.primary} />
-                          ) : null}
-                        </TouchableOpacity>
-                      ))}
-                    </>
-                  )}
-                  {isBottom ? (
-                    <TouchableOpacity
-                      style={[styles.modalOption, styles.modalCancelBottom]}
-                      onPress={closePresetMenu}
-                    >
-                      <Text style={[styles.modalOptionText, styles.modalCancelText]}>Cancel</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      style={[styles.modalOption, styles.modalCancel]}
-                      onPress={closePresetMenu}
-                    >
-                      <Text style={[styles.modalOptionText, styles.modalCancelText]}>Cancel</Text>
-                    </TouchableOpacity>
-                  )}
-                </Pressable>
-              </Pressable>
-            );
-          })()}
-        </Modal>
       </>
     );
   };
@@ -368,135 +184,20 @@ export const TabBarSettingsScreen: React.FC = () => {
     setActiveTabs(newTabs); // Persist immediately
   };
 
-  const promptReorder = (index: number) => {
-    const hasUp = index > 0;
-    const hasDown = index < selectedTabs.length - 1;
-    if (!hasUp && !hasDown) return;
-
-    const handleMoveUp = () => moveTab(index, index - 1);
-    const handleMoveDown = () => moveTab(index, index + 1);
-
-    if (Platform.OS === "ios") {
-      const options = [
-        ...(hasUp ? ["Move Up"] : []),
-        ...(hasDown ? ["Move Down"] : []),
-        "Cancel",
-      ];
-      const cancelButtonIndex = options.length - 1;
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          title: "Reorder Tab",
-          options,
-          cancelButtonIndex,
-          userInterfaceStyle: isDark ? "dark" : "light",
-        },
-        (buttonIndex) => {
-          if (hasUp && buttonIndex === 0) return handleMoveUp();
-          if (hasUp && hasDown && buttonIndex === 1) return handleMoveDown();
-          if (!hasUp && hasDown && buttonIndex === 0) return handleMoveDown();
-        },
-      );
-      return;
-    }
-
-    const buttons = [];
-    if (hasUp) {
-      buttons.push({ text: "Move Up", onPress: handleMoveUp });
-    }
-    if (hasDown) {
-      buttons.push({ text: "Move Down", onPress: handleMoveDown });
-    }
-    buttons.push({ text: "Cancel", style: "cancel" as const });
-    Alert.alert("Reorder Tab", "Tap where you want to move this tab.", buttons);
-  };
 
   const getTabInfo = (tabId: string) => AVAILABLE_TABS.find((t) => t.id === tabId);
-
-  const applyFloatingPreset = () => {
-    setTabBarStyle("floating");
-    setTabBarBlur(true);
-    setTabBarFloatingHeight(64);
-    setShowTabLabels(true);
-  };
-
-  const applyStandardPreset = () => {
-    setTabBarStyle("standard");
-    setTabBarBlur(false);
-    setTabBarDockedHeight(100);
-    setShowTabLabels(true);
-  };
-
-  const applyCompactPreset = () => {
-    setTabBarStyle("compact");
-    setTabBarBlur(true);
-    setTabBarFloatingHeight(54);
-    setShowTabLabels(false);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}>
-        <Text style={styles.header}>Tab Bar Studio</Text>
+        <Text style={styles.header}>Tab Bar</Text>
         <Text style={styles.description}>
-          Shape the bottom navigation to match iOS 26-inspired chrome. Pick presets, tweak spacing,
-          and reorder tabs.
+          Choose which tabs appear, what order they sit in, and how the bar looks.
         </Text>
 
         {/* Preview always on top for instant feedback */}
         <PreviewBar />
 
-        {/* Quick presets */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Presets</Text>
-          <Text style={styles.sectionDesc}>Start from a style, then fine-tune below</Text>
-          <View style={styles.presetGrid}>
-            <View style={styles.presetCard}>
-              <View style={styles.presetCardHeader}>
-                <Sparkles size={18} color={colors.primary} />
-                <Text style={styles.presetCardTitle}>iOS 26 Floating</Text>
-              </View>
-              <Text style={styles.presetCardDesc}>Blurred capsule, labels on</Text>
-              <GlassButton
-                label="Apply"
-                onPress={applyFloatingPreset}
-                icon={<Sparkles size={16} color={colors.text} />}
-                prominence="tinted"
-                compact
-                style={styles.presetButton}
-              />
-            </View>
-            <View style={styles.presetCard}>
-              <View style={styles.presetCardHeader}>
-                <Square size={18} color={colors.textSecondary} />
-                <Text style={styles.presetCardTitle}>Standard Docked</Text>
-              </View>
-              <Text style={styles.presetCardDesc}>Solid bar, comfortable height</Text>
-              <GlassButton
-                label="Apply"
-                onPress={applyStandardPreset}
-                icon={<Check size={16} color={colors.text} />}
-                prominence="standard"
-                compact
-                style={styles.presetButton}
-              />
-            </View>
-            <View style={styles.presetCard}>
-              <View style={styles.presetCardHeader}>
-                <Minimize2 size={18} color={colors.textSecondary} />
-                <Text style={styles.presetCardTitle}>Compact Minimal</Text>
-              </View>
-              <Text style={styles.presetCardDesc}>Slim, labels off, tinted blur</Text>
-              <GlassButton
-                label="Apply"
-                onPress={applyCompactPreset}
-                icon={<Minimize2 size={16} color={colors.text} />}
-                prominence="filled"
-                compact
-                style={styles.presetButton}
-              />
-            </View>
-          </View>
-        </View>
 
         {/* LAYOUT STYLE SELECTOR */}
         <View style={styles.section}>
@@ -640,400 +341,52 @@ export const TabBarSettingsScreen: React.FC = () => {
             <Switch value={showTabLabels} onValueChange={(v) => setShowTabLabels(v)} />
           </View>
 
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Icon Size</Text>
-            <View style={styles.optionRow}>
-              <TouchableOpacity
-                style={[styles.smallOption, tabIconSize === 20 && styles.smallOptionSelected]}
-                onPress={() => setTabIconSize(20)}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabIconSize === 20 && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Small
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.smallOption, tabIconSize === 25 && styles.smallOptionSelected]}
-                onPress={() => setTabIconSize(25)}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabIconSize === 25 && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Medium
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.smallOption, tabIconSize === 30 && styles.smallOptionSelected]}
-                onPress={() => setTabIconSize(30)}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabIconSize === 30 && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Large
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>
-              Experimental iOS 26 Navbar
-              <Text style={styles.betaBadge}> BETA</Text>
-            </Text>
-            <Switch
-              value={experimentalIOS26NavBar}
-              onValueChange={(v) => setExperimentalIOS26NavBar(v)}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Background Blur</Text>
-            <Switch value={tabBarBlur} onValueChange={(v) => setTabBarBlur(v)} />
-          </View>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Docked Height</Text>
-            {enableAdvancedHeightControls ? (
-              <View style={styles.heightControlRow}>
-                <TouchableOpacity
-                  style={styles.heightBtn}
-                  onPress={() =>
-                    setTabBarDockedHeight(
-                      Math.max(92, (tabBarDockedHeight || 92) - (dockedHeightStep || 2)),
-                    )
-                  }
-                >
-                  <Text style={styles.heightBtnText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.heightValue}>{tabBarDockedHeight || 92}px</Text>
-                <TouchableOpacity
-                  style={styles.heightBtn}
-                  onPress={() =>
-                    setTabBarDockedHeight((tabBarDockedHeight || 92) + (dockedHeightStep || 2))
-                  }
-                >
-                  <Text style={styles.heightBtnText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.optionRow}>
-                <TouchableOpacity
-                  style={styles.smallOption}
-                  onPress={() => openPresetMenu("docked")}
-                >
-                  <Text style={styles.smallOptionText}>
-                    {getDockedTemplateLabel(tabBarDockedHeight || 92)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          {enableAdvancedHeightControls && (
-            <View style={[styles.settingRow, { marginTop: spacing.xs }]}>
-              <Text style={styles.settingLabel}>Docked step</Text>
-              <View style={styles.optionRow}>
-                {[1, 2, 4].map((s) => (
-                  <TouchableOpacity
-                    key={`dock-step-${s}`}
-                    style={[
-                      styles.smallOption,
-                      dockedHeightStep === s && styles.smallOptionSelected,
-                    ]}
-                    onPress={() => setDockedHeightStep(s)}
-                  >
-                    <Text
-                      style={[
-                        styles.smallOptionText,
-                        dockedHeightStep === s && styles.smallOptionTextSelected,
-                      ]}
-                    >
-                      {s}px
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Hidden/Collapsed Height</Text>
-            {enableAdvancedHeightControls ? (
-              <View style={styles.heightControlRow}>
-                <TouchableOpacity
-                  style={styles.heightBtn}
-                  onPress={() =>
-                    setTabBarHiddenHeight(
-                      Math.max(
-                        tabBarDockedHeight || 92,
-                        (tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8) -
-                          (hiddenHeightStep || 2),
-                      ),
-                    )
-                  }
-                >
-                  <Text style={styles.heightBtnText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.heightValue}>
-                  {tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8}px
-                </Text>
-                <TouchableOpacity
-                  style={styles.heightBtn}
-                  onPress={() =>
-                    setTabBarHiddenHeight(
-                      (tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8) +
-                        (hiddenHeightStep || 2),
-                    )
-                  }
-                >
-                  <Text style={styles.heightBtnText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.optionRow}>
-                <TouchableOpacity
-                  style={styles.smallOption}
-                  onPress={() => openPresetMenu("hidden")}
-                >
-                  <Text style={styles.smallOptionText}>
-                    {getHiddenTemplateLabel(tabBarHiddenHeight || (tabBarDockedHeight || 92) + 8)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          {enableAdvancedHeightControls && (
-            <View style={[styles.settingRow, { marginTop: spacing.xs }]}>
-              <Text style={styles.settingLabel}>Hidden step</Text>
-              <View style={styles.optionRow}>
-                {[1, 2, 4].map((s) => (
-                  <TouchableOpacity
-                    key={`hidden-step-${s}`}
-                    style={[
-                      styles.smallOption,
-                      hiddenHeightStep === s && styles.smallOptionSelected,
-                    ]}
-                    onPress={() => setHiddenHeightStep(s)}
-                  >
-                    <Text
-                      style={[
-                        styles.smallOptionText,
-                        hiddenHeightStep === s && styles.smallOptionTextSelected,
-                      ]}
-                    >
-                      {s}px
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Floating Height</Text>
-            {enableAdvancedHeightControls ? (
-              <View style={styles.heightControlRow}>
-                <TouchableOpacity
-                  style={styles.heightBtn}
-                  onPress={() =>
-                    setTabBarFloatingHeight(
-                      Math.max(48, (tabBarFloatingHeight || 64) - (floatingHeightStep || 2)),
-                    )
-                  }
-                >
-                  <Text style={styles.heightBtnText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.heightValue}>{tabBarFloatingHeight || 64}px</Text>
-                <TouchableOpacity
-                  style={styles.heightBtn}
-                  onPress={() =>
-                    setTabBarFloatingHeight(
-                      (tabBarFloatingHeight || 64) + (floatingHeightStep || 2),
-                    )
-                  }
-                >
-                  <Text style={styles.heightBtnText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.optionRow}>
-                <TouchableOpacity
-                  style={styles.smallOption}
-                  onPress={() => openPresetMenu("floating")}
-                >
-                  <Text style={styles.smallOptionText}>
-                    {getFloatingTemplateLabel(tabBarFloatingHeight || 64)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          {enableAdvancedHeightControls && (
-            <View style={[styles.settingRow, { marginTop: spacing.xs }]}>
-              <Text style={styles.settingLabel}>Floating step</Text>
-              <View style={styles.optionRow}>
-                {[1, 2, 4].map((s) => (
-                  <TouchableOpacity
-                    key={`float-step-${s}`}
-                    style={[
-                      styles.smallOption,
-                      floatingHeightStep === s && styles.smallOptionSelected,
-                    ]}
-                    onPress={() => setFloatingHeightStep(s)}
-                  >
-                    <Text
-                      style={[
-                        styles.smallOptionText,
-                        floatingHeightStep === s && styles.smallOptionTextSelected,
-                      ]}
-                    >
-                      {s}px
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Allow content under tab bar</Text>
-            <Switch
-              value={allowContentUnderTabBar}
-              onValueChange={(v) => setAllowContentUnderTabBar(v)}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Badge Style</Text>
-            <View style={styles.optionRow}>
-              <TouchableOpacity
-                style={[
-                  styles.smallOption,
-                  tabBadgeStyle === "count" && styles.smallOptionSelected,
-                ]}
-                onPress={() => setTabBadgeStyle("count")}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabBadgeStyle === "count" && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Count
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.smallOption, tabBadgeStyle === "dot" && styles.smallOptionSelected]}
-                onPress={() => setTabBadgeStyle("dot")}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabBadgeStyle === "dot" && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Dot
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.smallOption, tabBadgeStyle === "none" && styles.smallOptionSelected]}
-                onPress={() => setTabBadgeStyle("none")}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabBadgeStyle === "none" && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  None
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Indicator</Text>
-            <View style={styles.optionRow}>
-              <TouchableOpacity
-                style={[
-                  styles.smallOption,
-                  tabIndicatorStyle === "bubble" && styles.smallOptionSelected,
-                ]}
-                onPress={() => setTabIndicatorStyle("bubble")}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabIndicatorStyle === "bubble" && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Bubble
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.smallOption,
-                  tabIndicatorStyle === "underline" && styles.smallOptionSelected,
-                ]}
-                onPress={() => setTabIndicatorStyle("underline")}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabIndicatorStyle === "underline" && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  Underline
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.smallOption,
-                  tabIndicatorStyle === "none" && styles.smallOptionSelected,
-                ]}
-                onPress={() => setTabIndicatorStyle("none")}
-              >
-                <Text
-                  style={[
-                    styles.smallOptionText,
-                    tabIndicatorStyle === "none" && styles.smallOptionTextSelected,
-                  ]}
-                >
-                  None
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
 
         {/* ACTIVE TABS */}
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>Active Tabs ({selectedTabs.length}/5)</Text>
-            <Text style={styles.sectionDesc}>Tap and hold to reorder • Tap to remove</Text>
+            <Text style={styles.sectionDesc}>Use the arrows to reorder</Text>
 
             <View style={styles.tabList}>
               {selectedTabs.map((tabId, index) => {
               const tab = getTabInfo(tabId);
               if (!tab) return null;
 
+              const canMoveUp = index > 0;
+              const canMoveDown = index < selectedTabs.length - 1;
+
               return (
-                <Pressable
-                  key={tabId}
-                  style={styles.activeTabRow}
-                  onLongPress={() => promptReorder(index)}
-                  delayLongPress={180}
-                >
-                  <View style={styles.dragHandle}>
-                    <GripVertical size={20} color={colors.textSecondary} />
+                <View key={tabId} style={styles.activeTabRow}>
+                  <View style={styles.reorderControls}>
+                    <TouchableOpacity
+                      style={styles.reorderButton}
+                      onPress={() => moveTab(index, index - 1)}
+                      disabled={!canMoveUp}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Move ${tab.label} up`}
+                      accessibilityState={{ disabled: !canMoveUp }}
+                      hitSlop={6}
+                    >
+                      <ChevronUp
+                        size={18}
+                        color={canMoveUp ? colors.text : colors.tertiaryLabel}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.reorderButton}
+                      onPress={() => moveTab(index, index + 1)}
+                      disabled={!canMoveDown}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Move ${tab.label} down`}
+                      accessibilityState={{ disabled: !canMoveDown }}
+                      hitSlop={6}
+                    >
+                      <ChevronDown
+                        size={18}
+                        color={canMoveDown ? colors.text : colors.tertiaryLabel}
+                      />
+                    </TouchableOpacity>
                   </View>
                   <View style={styles.tabInfo}>
                     <tab.Icon size={20} color={colors.primary} />
@@ -1042,10 +395,15 @@ export const TabBarSettingsScreen: React.FC = () => {
                   <View style={styles.tabPosition}>
                     <Text style={styles.positionText}>{index + 1}</Text>
                   </View>
-                  <TouchableOpacity style={styles.removeButton} onPress={() => toggleTab(tabId)}>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => toggleTab(tabId)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${tab.label} tab`}
+                  >
                     <Text style={styles.removeButtonText}>Remove</Text>
                   </TouchableOpacity>
-                </Pressable>
+                </View>
               );
             })}
             </View>
@@ -1133,8 +491,14 @@ const createStyles = (colors: ThemeColors) =>
     borderWidth: 1,
     borderColor: colors.border,
   },
-  dragHandle: {
+  reorderControls: {
     marginRight: spacing.sm,
+  },
+  reorderButton: {
+    width: 28,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   tabInfo: {
     flex: 1,

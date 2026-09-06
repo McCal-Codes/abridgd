@@ -140,7 +140,9 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
           },
         ]}
         // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
-        tint={Platform.OS === "ios" ? (isDark ? "dark" : "light") : "light"}
+        // Was hardcoded to "light" on Android, so the bar rendered a light
+        // blur over a dark UI - wrong on exactly the platform being targeted.
+        tint={isDark ? "dark" : "light"}
       >
         {/* Glass morphism background with subtle gradient */}
         <View style={styles.gradientWrapper} pointerEvents="none">
@@ -334,12 +336,19 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
       const layout = tabLayouts[route.key];
       if (!layout) return;
 
-      const horizontalPadding = tabIndicatorStyle === "bubble" ? 16 : 12;
       const verticalPadding = tabIndicatorStyle === "bubble" ? 10 : 0;
       const minWidth = tabIndicatorStyle === "bubble" ? 28 : 24;
       const minHeight = tabIndicatorStyle === "bubble" ? 24 : 4;
 
-      const targetWidth = Math.max(layout.width - horizontalPadding, minWidth);
+      // `layout` measures the tab button, which is flex:1 — so its width is the
+      // whole cell (bar width / tab count), not the icon. Deriving the
+      // indicator from it stretched the highlight across the entire cell, and
+      // got wider still as the bar grew. Size it to the icon instead; iconWrap
+      // exists for exactly this reason (see its comment), and the badge was
+      // already fixed the same way. Centering below still works because the
+      // icon is centered within the button.
+      const icon = tabIconSize || 25;
+      const targetWidth = Math.max(icon + (tabIndicatorStyle === "bubble" ? 20 : 8), minWidth);
       const targetHeight =
         tabIndicatorStyle === "bubble"
           ? Math.max(layout.height - verticalPadding, minHeight)
@@ -393,6 +402,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
     [
       routes,
       tabIndicatorStyle,
+      tabIconSize,
       tabLayouts,
       indicatorHeight,
       indicatorWidth,

@@ -137,7 +137,7 @@ export const SectionScreen: React.FC = () => {
           ]}
           ListHeaderComponent={
             <>
-              <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+              <View style={[styles.headerContainer, { paddingTop: spacing.sm }]}>
                 <HeroHeader
                   title={category}
                   subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}
