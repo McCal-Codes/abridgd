@@ -1,0 +1,62 @@
+name: Deploy Site
+
+# Publishes marketing/ to GitHub Pages. Uses the Actions source rather than a
+# gh-pages branch, so the site's source stays on master next to the app it
+# describes and there is no second branch to keep in sync.
+#
+# One-time setup: Settings → Pages → Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "marketing/**"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time. Queued runs between the in-flight one and the newest
+# are skipped, but the in-flight one is never cancelled — per GitHub's own
+# starter workflow, a production deployment should be allowed to finish.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required pages exist
+        run: |
+          set -euo pipefail
+          # privacy.html is a Google Play submission requirement, and appInfo.ts
+          # links to both from inside the app. A deploy that drops either would
+          # break a store listing rather than just a page.
+          for page in index.html privacy.html terms.html; do
+            if [ ! -f "marketing/$page" ]; then
+              echo "marketing/$page is missing — the app and the store listing both link to it."
+              exit 1
+            fi
+          done
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: marketing
+
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · Abridgd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #121212;
+    --muted: #555;
+    --paper: #F9F9F7;
+    --rule: #E0E0E0;
+    --accent: #0097A7;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    padding: 20px 0;
+    margin-bottom: 48px;
+  }
+  .masthead .wrap { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .wordmark { font-family: var(--serif); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
+  .wordmark a { color: inherit; text-decoration: none; }
+  .tag { font-size: 13px; color: var(--muted); }
+  h1 { font-family: var(--serif); font-size: 40px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .updated { color: var(--muted); font-size: 15px; margin: 0 0 40px; }
+  h2 { font-family: var(--serif); font-size: 24px; margin: 40px 0 12px; letter-spacing: -0.01em; }
+  p, li { color: #222; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  a { color: var(--accent); }
+  .lede {
+    font-size: 19px;
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin: 0 0 40px;
+  }
+  footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 64px;
+    padding: 24px 0 48px;
+    font-size: 14px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  footer a { color: inherit; }
+  @media (max-width: 600px) { h1 { font-size: 32px; } body { font-size: 16px; } }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wrap">
+    <span class="wordmark"><a href="./index.html">Abridgd</a></span>
+    <span class="tag">Privacy</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>Privacy</h1>
+  <p class="updated">Last updated 6 September 2026</p>
+
+  <p class="lede">Abridgd has no accounts, no analytics, and no advertising. Almost everything the app knows about you never leaves your device.</p>
+
+  <h2>What stays on your device</h2>
+  <p>Your saved articles, reading progress, profile name, and every setting are stored locally on your phone. There is no Abridgd server, and no copy of any of it is sent anywhere. Deleting the app deletes all of it.</p>
+
+  <h2>What leaves your device</h2>
+  <p>Three things, and only these:</p>
+  <ul>
+    <li><strong>Requests to news publishers.</strong> The app fetches RSS feeds directly from the outlets you have enabled. Those publishers see a normal web request, including your IP address, exactly as visiting their site would.</li>
+    <li><strong>Requests through a relay, in some cases.</strong> When a publisher's feed cannot be fetched directly, the request is routed through a third-party relay service so it can be read. Those services see the feed address being requested and your IP address. They do not receive anything about you or your reading.</li>
+    <li><strong>Crash reports.</strong> If the app crashes, a diagnostic report is sent to Sentry, our error-tracking provider. It contains device model, operating system version, app version, and a technical stack trace. It does not contain your articles, your reading history, or any identifier we could use to contact you.</li>
+  </ul>
+
+  <h2>Article summaries</h2>
+  <p>Summarising an article is optional and off unless you turn it on and supply your own Perplexity API key. That key is stored in your device's secure keystore and is never transmitted to us. When the feature is on, the article text you are summarising is sent to Perplexity under your own key and subject to their privacy policy.</p>
+
+  <h2>Signing in</h2>
+  <p>Signing in is optional; the app is fully usable without it. If you use Sign in with Apple, the identifier Apple returns is stored on your device to label your profile. It is not transmitted anywhere.</p>
+
+  <h2>What we never do</h2>
+  <ul>
+    <li>No advertising, and no ad or marketing trackers of any kind.</li>
+    <li>No analytics, behavioural tracking, or profiling.</li>
+    <li>No selling or sharing of personal information.</li>
+    <li>No location collection.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>Abridgd is not directed at children under 13 and does not knowingly collect information from them.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes materially, the date above changes and the updated policy appears here.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about privacy: <a href="mailto:contact@mcc-cal.com">contact@mcc-cal.com</a></p>
+</div>
+
+<div class="wrap">
+  <footer>
+    <span class="wordmark"><a href="./index.html">Abridgd</a></span>
+    <span><a href="./terms.html">Terms</a></span>
+  </footer>
+</div>
+
+</body>
+</html>
