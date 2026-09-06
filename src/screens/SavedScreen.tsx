@@ -589,6 +589,8 @@ export const SavedScreen: React.FC = () => {
           data={sortedArticles}
           keyExtractor={(item) => item.id}
           renderItem={renderSavedResult}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentContainerStyle={[
             styles.listContent,
             {

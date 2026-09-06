@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 export const typography = {
   fontFamily: {
     // Fraunces (SIL OFL, loaded via @expo-google-fonts/fraunces in App.tsx).
@@ -8,8 +10,11 @@ export const typography = {
     serifMedium: 'Fraunces_500Medium',
     serifSemibold: 'Fraunces_600SemiBold',
     serifBold: 'Fraunces_700Bold',
-    sans: 'System',
-    mono: 'Courier', // or 'Menlo', 'Monospace'
+    // "System" and "Courier" are iOS family names. Android resolves neither:
+    // it silently falls back to the default face, so `mono` in particular was
+    // not monospaced at all. Android's equivalents are the generic aliases.
+    sans: Platform.select({ ios: 'System', default: 'sans-serif' }),
+    mono: Platform.select({ ios: 'Menlo', default: 'monospace' }),
   },
   size: {
     xs: 12,

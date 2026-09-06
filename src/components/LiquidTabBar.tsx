@@ -140,7 +140,9 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
           },
         ]}
         // @ts-ignore: BlurView props vary; if it's a View fallback, props ignored
-        tint={Platform.OS === "ios" ? (isDark ? "dark" : "light") : "light"}
+        // Was hardcoded to "light" on Android, so the bar rendered a light
+        // blur over a dark UI - wrong on exactly the platform being targeted.
+        tint={isDark ? "dark" : "light"}
       >
         {/* Glass morphism background with subtle gradient */}
         <View style={styles.gradientWrapper} pointerEvents="none">
