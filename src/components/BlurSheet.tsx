@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Dimensions, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Dimensions, Pressable, Platform, BackHandler } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -55,6 +55,20 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
+
+  /**
+   * This is an absolutely positioned View rather than a Modal, so Android's
+   * hardware back was falling through to the navigator and popping the article
+   * underneath instead of closing the sheet.
+   */
+  React.useEffect(() => {
+    if (!visible) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [visible, onClose]);
 
   // Detent heights
   const mediumHeight = SCREEN_HEIGHT * 0.5;
@@ -170,7 +184,14 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
 
       {/* Sheet */}
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, sheetStyle]} accessibilityViewIsModal>
+        {/* backgroundColor here, not just on the absoluteFill child below:
+            Android derives the elevation shadow from the view's own background,
+            so without one the elevation:10 above rendered nothing and the sheet
+            read as flat against the article. */}
+        <Animated.View
+          style={[styles.sheet, { backgroundColor: colors.surface }, sheetStyle]}
+          accessibilityViewIsModal
+        >
           {/* Dynamic background with blur/transparency effect */}
           <Animated.View style={[StyleSheet.absoluteFill, backgroundStyle]}>
             {blur && Platform.OS === "ios" ? (
@@ -204,7 +225,7 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
           </View>
 
           {/* Content */}
-          <View style={styles.content}>{children}</View>
+          <View style={[styles.content, { paddingBottom: insets.bottom + 16 }]}>{children}</View>
         </Animated.View>
       </GestureDetector>
     </View>
@@ -244,4 +265,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  // Bottom inset is applied inline rather than here so it can read the live
+  // value; without it sheet content ran under the Android navigation bar.
 });

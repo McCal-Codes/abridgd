@@ -1,5 +1,14 @@
 import React from "react";
-import { View, FlatList, StyleSheet, Text, TextInput, Pressable, Animated } from "react-native";
+import {
+  View,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  Pressable,
+  Animated,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../context/SettingsContext";
 import { typography } from "../theme/typography";
@@ -457,6 +466,7 @@ export const SavedScreen: React.FC = () => {
         ]}
         pointerEvents={showFilters ? "auto" : "none"}
       >
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.filterHeader}>
           <Text style={styles.filterTitle}>Filters</Text>
           <Text style={styles.filterCount}>
@@ -581,6 +591,7 @@ export const SavedScreen: React.FC = () => {
             })}
           </View>
         </View>
+        </ScrollView>
       </Animated.View>
 
       {savedArticles.length > 0 || hasActiveFiltersOrSearch ? (
@@ -787,6 +798,12 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.textSecondary,
   },
   filterContainer: {
+    // Five filter groups render at full intrinsic height as a flex sibling of
+    // the list. With more than a handful of sources the panel outgrew the
+    // viewport: the list compressed to nothing and the panel's own bottom rows
+    // (Sort) were clipped with no way to reach them. Cap it and let the
+    // contents scroll inside.
+    maxHeight: "55%",
     paddingHorizontal: spacing.gutter,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
