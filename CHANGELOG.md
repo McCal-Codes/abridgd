@@ -6,6 +6,43 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-09-06
+
+First release with Android builds alongside iOS.
+
+### Added
+- Android support. The app now builds and runs on Android, distributed as an APK while the Play Store listing is in progress.
+- **News Sources** is now its own entry in Settings, rather than being buried inside Reading Experience.
+- Saved shows how many articles you have in the header — and how many the current filters match, so the number always agrees with the list.
+- Over-the-air updates, so feed fixes can reach you in minutes instead of waiting on a store review.
+- Crash reporting is now actually running. It never was before, which meant every crash since launch went unrecorded.
+
+### Changed
+- The onboarding "Make It Yours" screen now works. Grounding, haptics, reader focus and reading speed were drawn as controls but did nothing; they are real settings now, and what you choose there is what the app opens with.
+- Tab Bar settings are considerably simpler. Heights, indicator styles, badge styles and icon size are gone, along with the preset picker. The preview at the top now shows your actual tabs in your actual order, which it did not before.
+- Reordering tabs uses up and down arrows instead of a hidden long-press, and they are labelled for screen readers.
+- Settings screens no longer print their title twice.
+
+### Fixed
+- **Articles would not scroll on Android.** A swipe gesture was intercepting vertical drags before the article could scroll.
+- Roughly 118pt of empty space at the top of Home, Saved and Section, from safe-area padding being applied twice.
+- Content hidden behind the tab bar, from a default height that disagreed with the bar's real height.
+- Missing article thumbnails from several sources, whose images are published as relative links that were never resolved.
+- Tracking pixels and share icons rendering as full-width images at the end of articles.
+- Compressed images showing a crop of the middle of the photo instead of the photo.
+- Saved articles and reading progress silently detaching from articles on refresh.
+- Articles from sources with unusual date formats pinning themselves above everything else in the feed.
+- A "showing cached stories" notice that never cleared once a source went down.
+- The tab bar highlight being sized to the whole tab rather than the icon.
+- The post-article feedback prompt ignoring the Android back button.
+- Needing two taps for any button below a text field on Android.
+- Monospaced text not being monospaced on Android, and haptics not firing there at all.
+- The tab bar rendering a light blur over a dark interface on Android.
+
+### Security
+- Links from feeds are now checked before opening. Only web addresses are followed.
+
+
 ## [1.5.0] - 2026-08-25
 
 _Note: 1.4.2 and 1.4.3 shipped without their own dated entries — this section is everything
