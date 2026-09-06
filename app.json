@@ -3,7 +3,7 @@
     "name": "Abridgd",
     "slug": "abridged",
     "scheme": "abridged",
-    "version": "0.5.6",
+    "version": "1.5.6",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mccalmedia.abridged",
-      "buildNumber": "37",
+      "buildNumber": "38",
       "entitlements": {
         "com.apple.developer.applesignin": [
           "Default"
@@ -32,7 +32,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.mccalmedia.abridged",
-      "versionCode": 37,
+      "versionCode": 38,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.VIBRATE"
