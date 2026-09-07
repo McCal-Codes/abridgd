@@ -6,7 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-## [1.5.6] - 2026-09-05
+## [1.5.7] - 2026-09-06
 
 ### Fixed
 - In-article images with relative or inline sources never loaded. The URL normalizer prefixed anything not starting with "http" with "https:", turning `/images/a.jpg` into `https:/images/a.jpg` and mangling `data:` URIs — both rendered as the "Image unavailable" placeholder. Relative paths now resolve against the article's own origin, which is what the publisher meant. (TODO-139)
@@ -26,10 +26,47 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Jest no longer scans git worktrees under `.claude/`, which were adding another branch's copy of every test file to local runs. (TODO-139)
 - Performance pass on the feed and article surfaces. `SavedArticlesContext` rebuilt its functions and value object every render, and every article card now subscribes to it for swipe-to-save, so a feed of cards all lost memoization together; `isArticleSaved` scanned the saved array linearly per card per render; `useCategoryFeed` re-merged and re-sorted the whole category cache on every render for a value only its state initializers use; `ArticleBodyImage` fetched each photo twice, once to measure and once to render; and the three article feeds ran on FlatList's default windowing, which is tuned for short lists rather than 25-30 image-bearing cards. `removeClippedSubviews` was considered and left out: it is the one windowing option React Native documents as able to drop content, and these cards carry shadows and an absolutely-positioned swipe panel. (TODO-136)
 
+## [1.5.6] - 2026-09-06
+
+First release with Android builds alongside iOS.
+
+### Added
+- Android support. The app now builds and runs on Android, distributed as an APK while the Play Store listing is in progress.
+- **News Sources** is now its own entry in Settings, rather than being buried inside Reading Experience.
+- Saved shows how many articles you have in the header — and how many the current filters match, so the number always agrees with the list.
+- Over-the-air updates, so feed fixes can reach you in minutes instead of waiting on a store review.
+- Crash reporting is now actually running. It never was before, which meant every crash since launch went unrecorded.
+
+### Changed
+- The onboarding "Make It Yours" screen now works. Grounding, haptics, reader focus and reading speed were drawn as controls but did nothing; they are real settings now, and what you choose there is what the app opens with.
+- Tab Bar settings are considerably simpler. Heights, indicator styles, badge styles and icon size are gone, along with the preset picker. The preview at the top now shows your actual tabs in your actual order, which it did not before.
+- Reordering tabs uses up and down arrows instead of a hidden long-press, and they are labelled for screen readers.
+- Settings screens no longer print their title twice.
+
+### Fixed
+- **Articles would not scroll on Android.** A swipe gesture was intercepting vertical drags before the article could scroll.
+- Roughly 118pt of empty space at the top of Home, Saved and Section, from safe-area padding being applied twice.
+- Content hidden behind the tab bar, from a default height that disagreed with the bar's real height.
+- Missing article thumbnails from several sources, whose images are published as relative links that were never resolved.
+- Tracking pixels and share icons rendering as full-width images at the end of articles.
+- Compressed images showing a crop of the middle of the photo instead of the photo.
+- Saved articles and reading progress silently detaching from articles on refresh.
+- Articles from sources with unusual date formats pinning themselves above everything else in the feed.
+- A "showing cached stories" notice that never cleared once a source went down.
+- The tab bar highlight being sized to the whole tab rather than the icon.
+- The post-article feedback prompt ignoring the Android back button.
+- Needing two taps for any button below a text field on Android.
+- Monospaced text not being monospaced on Android, and haptics not firing there at all.
+- The tab bar rendering a light blur over a dark interface on Android.
+
+### Security
+- Links from feeds are now checked before opening. Only web addresses are followed.
+
 ## [1.5.5] - 2026-09-05
 
 _Built as iOS build 37 and never distributed: a crash in the new gesture code was found before it
-went anywhere. The fixes, and everything below, ship as 1.5.6 instead._
+went anywhere. The fixes, and everything below, ship as 1.5.7 instead — 1.5.6 was taken by the
+Android release that landed from master in the meantime._
 
 ### Added
 - Swipe left on any article card to save or unsave it, with the action panel building as you drag and a haptic when it commits. Saved's empty state has instructed readers to do this since long before any gesture existed on a card. (TODO-132)

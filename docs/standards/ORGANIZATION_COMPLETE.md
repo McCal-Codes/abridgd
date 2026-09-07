@@ -135,8 +135,8 @@ src/
 | Command | Purpose |
 |---------|---------|
 | `npm run repo:health` | Check repo organization health |
-| `npm run build:ipa` | Build signed iOS IPA (full) |
-| `npm run build:ipa:quick` | Quick dev build |
+| `npm run build:ios` | Build signed iOS IPA (full) |
+| `npm run build:ios:preview` | Quick dev build |
 | `node scripts/debug/debug-live-scrapers.js` | Test live feeds |
 | `node scripts/debug/debug-wtae.js` | Debug WTAE parsing |
 | `node scripts/test/test-triblive-api.js` | Test TribLive API |

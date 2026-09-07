@@ -23,7 +23,17 @@ export const EmotionPicker: React.FC<EmotionPickerProps> = ({ visible, onSelect,
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    // onRequestClose is required on Android; without it the hardware back
+    // button does nothing and this prompt is a dead end unless the user finds
+    // "Skip for now". statusBarTranslucent lets the dim backdrop cover the
+    // status bar under edge-to-edge.
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onDismiss}
+    >
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.title}>How did this article make you feel?</Text>

@@ -295,8 +295,8 @@ A feature is "done" when:
 
 ### 14.2 iOS Build Process
 - Build scripts located in `scripts/build/`
-- IPA generation: `npm run build:ipa`
-- Quick builds: `npm run build:ipa:quick`
+- IPA generation: `npm run build:ios`
+- Quick builds: `npm run build:ios:preview`
 - Archive location: `ios/abridged.xcarchive/`
 - Export location: `ios/ipas/Versions/`
 

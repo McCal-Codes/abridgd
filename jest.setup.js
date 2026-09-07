@@ -131,8 +131,11 @@ jest.mock("react-native-gesture-handler", () => {
   const React = require("react");
   const { View } = require("react-native");
 
-  // Mirrors the real builder's fluent API: every configuration method returns the gesture, so
-  // a chain missing one method here fails only at test time, not on device.
+  // Mirrors RNGH's builder API. Every configuration method returns the gesture, so a chain
+  // missing one method here fails only at test time, not on device. The axis constraints
+  // matter as much as the callbacks: a Pan wrapping a ScrollView needs activeOffsetX and
+  // failOffsetY to avoid stealing vertical scrolls on Android, so leaving them off the mock
+  // meant the tests could not exercise the configuration that ships.
   const createChain = () => {
     const chain = {};
     [

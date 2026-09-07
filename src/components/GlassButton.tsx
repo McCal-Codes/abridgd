@@ -42,9 +42,9 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   const handlePress = () => {
     if (disabled) return;
 
-    if (Platform.OS === "ios") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    // expo-haptics works on Android too, and VIBRATE is declared in the
+    // manifest; gating this to iOS just meant Android users got no feedback.
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onPress();
   };
 

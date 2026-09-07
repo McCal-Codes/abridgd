@@ -44,7 +44,6 @@ import {
   User,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
-import { GlassStackHeader } from "../components/GlassStackHeader";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -225,15 +224,14 @@ export const RootNavigator = () => {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerTitleAlign: "left",
-            // GlassStackHeader was built for this and then wired into nothing, leaving 14
-            // screens on the stock header. One renderer here covers all of them.
-            header: ({ navigation, options, back }) => (
-              <GlassStackHeader
-                title={typeof options.title === "string" ? options.title : ""}
-                canGoBack={!!back}
-                onBack={navigation.goBack}
-              />
-            ),
+            // Every screen already renders its own serif H1 in content, matching HeroHeader on
+            // the tab screens. Showing `title` here too printed the same string twice on all
+            // nine settings screens. Each route keeps its `title` because iOS uses it for the
+            // *back* label on the next screen.
+            //
+            // GlassStackHeader stays unwired for now: swapping in a custom JS header would
+            // reintroduce the duplicate title and give up the native back label this relies on.
+            headerTitle: "",
           }}
         >
           <Stack.Screen
@@ -334,7 +332,7 @@ export const RootNavigator = () => {
             component={TabBarSettingsScreen}
             options={{
               headerShown: true,
-              title: "Tab Bar Studio",
+              title: "Tab Bar",
             }}
           />
           <Stack.Screen

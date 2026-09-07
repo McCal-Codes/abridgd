@@ -3,7 +3,9 @@ import {
   FlatList,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TouchableOpacity,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -13,7 +15,9 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   BookOpen,
   Compass,
+  CheckCircle,
   PauseCircle,
+  Sliders,
   Wind,
 } from "lucide-react-native";
 import { ScaleButton } from "../components/ScaleButton";
@@ -36,16 +40,16 @@ type OnboardingSlide = {
   demo?: boolean;
   demoText?: string;
   grounding?: boolean;
-  preview?: "brief" | "sections";
+  preview?: "brief" | "sections" | "settings" | "trust";
   Icon: typeof BookOpen;
 };
 
 const SLIDES: OnboardingSlide[] = [
   {
     id: "welcome",
-    title: "Local news, abridged",
+    title: "A calmer way into the news",
     description:
-      "A short brief of what happened in Pittsburgh, from newsrooms that cover it. Read the summary, or open the whole story. Either way it ends.",
+      "Start with a short brief. Keep reading when you want more. No need to build the whole app in your head on day one.",
     preview: "brief",
     Icon: BookOpen,
   },
@@ -58,28 +62,40 @@ const SLIDES: OnboardingSlide[] = [
     Icon: Compass,
   },
   {
-    id: "reader",
-    title: "One word at a time",
+    id: "rsvp-demo",
+    title: "Give Your Eyes a Break",
     description:
-      "The Abridged reader holds each word in the same spot so your eyes stop hunting across the line. Try it here — tap play, and drag the speed wherever it feels right.",
+      "Doomscrolling is exhausting. Our RSVP reader shows you one word at a time, locked in place. It is surprisingly calm, like a massage for your brain.",
     demo: true,
     demoText:
-      "City council approved the riverfront plan on Tuesday after two years of hearings, clearing the way for construction to begin next spring.",
+      "We hope you find this reading experience to be incredibly peaceful and kind to your eyes, and if you are ever feeling hungry, remember that almost everything is better as chicken on a stick.",
     Icon: PauseCircle,
   },
   {
     id: "grounding",
-    title: "A breath before the hard ones",
+    title: "Optional grounding",
     description:
-      "Some stories land heavy. Turn on a short breathing cue before those, or skip it entirely — you can change this later in Settings.",
+      "For heavy stories, add a quiet breathing cue before you read. Skip it now, change it later in Settings > Reading.",
     grounding: true,
     Icon: Wind,
   },
+  {
+    id: "make-it-yours",
+    title: "Make It Yours",
+    description:
+      "Set it now or keep the defaults — either is fine. Everything here lives in Settings too, so nothing is locked in.",
+    preview: "settings",
+    Icon: Sliders,
+  },
+  {
+    id: "ready",
+    title: "Welcome Home",
+    description:
+      "No account required. No tracking. No clutter. Just a simpler place to catch up, and settings when you want them.",
+    preview: "trust",
+    Icon: CheckCircle,
+  },
 ];
-
-/** Shown under the final slide's actions. These were a whole slide of their own, which spent
- * a full screen telling readers about the absence of things. */
-const TRUST_POINTS = ["No account", "No tracking", "Nothing to configure"];
 
 const BREATH_SEGMENTS = [
   { label: "In", flex: 4, color: "#3FA2A7" },
@@ -289,6 +305,24 @@ const BriefPreview: React.FC = () => {
   );
 };
 
+const READING_SPEEDS = [
+  { label: "Calm", value: 250 },
+  { label: "Steady", value: 350 },
+  { label: "Brisk", value: 450 },
+];
+
+/**
+ * A real settings panel, not a mockup.
+ *
+ * This previously rendered switch-shaped Views and a fixed slider fill with no
+ * handlers attached, on a slide titled "Make It Yours" - so the one screen
+ * promising personalisation was the one where nothing responded to touch. Its
+ * sibling previews are static too, but they draw content (article lines, trust
+ * checkmarks) rather than controls, so they never invited a tap.
+ *
+ * Every control here writes straight to SettingsContext and persists, so a
+ * choice made during onboarding is the choice the app opens with.
+ */
 const SectionsPreview: React.FC = () => {
   const styles = useThemedStyles(createStyles);
   const categories = getAllCategories();
@@ -318,6 +352,109 @@ const SectionsPreview: React.FC = () => {
         <View key={item} style={styles.previewLineRow}>
           <View style={styles.previewDot} />
           <Text style={styles.previewLineText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            {item}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const SettingsPreview: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+  const {
+    isGroundingEnabled,
+    setIsGroundingEnabled,
+    hapticIntensity,
+    setHapticIntensity,
+    isReaderEnabled,
+    setIsReaderEnabled,
+    readingSpeed,
+    setReadingSpeed,
+  } = useSettings();
+
+  const toggles = [
+    {
+      key: "grounding",
+      label: "Grounding cue",
+      value: isGroundingEnabled,
+      onChange: (next: boolean) => setIsGroundingEnabled(next),
+    },
+    {
+      key: "haptics",
+      label: "Haptics",
+      // hapticIntensity is a scale, not a boolean; "normal" is the default the
+      // rest of the app treats as on.
+      value: hapticIntensity !== "off",
+      onChange: (next: boolean) => setHapticIntensity(next ? "normal" : "off"),
+    },
+    {
+      key: "reader",
+      label: "Reader focus",
+      value: isReaderEnabled,
+      onChange: (next: boolean) => setIsReaderEnabled(next),
+    },
+  ];
+
+  return (
+    <View style={styles.previewCard}>
+      <Text style={styles.previewEyebrow} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+        Reading Settings
+      </Text>
+
+      <View style={styles.settingPreviewRow}>
+        <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+          RSVP speed
+        </Text>
+        <View style={styles.speedChipRow}>
+          {READING_SPEEDS.map((speed) => {
+            const selected = readingSpeed === speed.value;
+            return (
+              <TouchableOpacity
+                key={speed.value}
+                style={[styles.speedChip, selected && styles.speedChipSelected]}
+                onPress={() => setReadingSpeed(speed.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${speed.label} reading speed, ${speed.value} words per minute`}
+              >
+                <Text
+                  style={[styles.speedChipText, selected && styles.speedChipTextSelected]}
+                  maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}
+                >
+                  {speed.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {toggles.map((toggle) => (
+        <View key={toggle.key} style={styles.settingPreviewRow}>
+          <Text style={styles.settingPreviewLabel} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            {toggle.label}
+          </Text>
+          <Switch
+            value={toggle.value}
+            onValueChange={toggle.onChange}
+            accessibilityLabel={toggle.label}
+          />
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const TrustPreview: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.previewCard}>
+      {["No account required", "No tracking", "Change settings anytime"].map((item) => (
+        <View key={item} style={styles.trustPreviewRow}>
+          <CheckCircle size={18} color={styles.trustIcon.color} strokeWidth={2} />
+          <Text style={styles.trustPreviewText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
             {item}
           </Text>
         </View>
@@ -475,6 +612,14 @@ export const OnboardingScreen: React.FC = () => {
             <SectionsPreview />
           ) : null}
 
+          {item.preview === "settings" ? (
+            <SettingsPreview />
+          ) : null}
+
+          {item.preview === "trust" ? (
+            <TrustPreview />
+          ) : null}
+
           {!item.demo && !item.grounding && !item.preview ? (
             <View style={styles.placeholder}>
               <item.Icon size={72} color={colors.text} strokeWidth={1.5} />
@@ -573,14 +718,6 @@ export const OnboardingScreen: React.FC = () => {
                 </Text>
               </View>
             </ScaleButton>
-
-            <View style={styles.trustRow} testID="onboarding-trust">
-              {TRUST_POINTS.map((point) => (
-                <Text key={point} style={styles.trustText} maxFontSizeMultiplier={1.4}>
-                  {point}
-                </Text>
-              ))}
-            </View>
           </View>
         ) : (
           <View style={styles.progressActions}>
@@ -908,6 +1045,33 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 22,
       color: colors.text,
     },
+    sectionChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+    sectionChip: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    sectionChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    sectionChipText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    sectionChipTextActive: {
+      color: colors.background,
+      fontWeight: "600",
+    },
     previewDivider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: colors.border,
@@ -930,6 +1094,61 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.text,
       flex: 1,
       flexShrink: 1,
+    },
+    settingPreviewRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+      minHeight: 36,
+    },
+    settingPreviewLabel: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 15,
+      color: colors.text,
+      flex: 1,
+      flexShrink: 1,
+    },
+    speedChipRow: {
+      flexDirection: "row",
+      gap: 6,
+    },
+    speedChip: {
+      minHeight: 32,
+      paddingHorizontal: 10,
+      justifyContent: "center",
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    speedChipSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.tintTransparent,
+    },
+    speedChipText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    speedChipTextSelected: {
+      color: colors.primary,
+    },
+    trustPreviewRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    trustPreviewText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 16,
+      color: colors.text,
+      flex: 1,
+      flexShrink: 1,
+    },
+    trustIcon: {
+      color: colors.primary,
     },
     placeholder: {
       height: 200,
@@ -1038,46 +1257,7 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: "600",
       textAlign: "center",
     },
-    sectionChipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  sectionChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  sectionChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  sectionChipText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  sectionChipTextActive: {
-    color: colors.background,
-    fontWeight: "600",
-  },
-  trustRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  trustText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  srOnly: {
+    srOnly: {
       position: "absolute",
       height: 0,
       width: 0,

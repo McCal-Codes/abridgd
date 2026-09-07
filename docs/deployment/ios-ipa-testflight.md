@@ -7,7 +7,7 @@ For Abridged, the normal IPA path is an EAS cloud build. That keeps releases wor
 ## Recommended options
 
 - GitHub Actions: run `Release iOS Build`
-- Local CLI: `npm run build:ipa` or `npm run build:ipa:submit`
+- Local CLI: `npm run build:ios` or `npm run build:ios -- --auto-submit`
 - Manual native archive: only if you have generated or maintain a local `ios/` project yourself
 
 ## 1) EAS build from GitHub Actions
@@ -33,19 +33,19 @@ Required secrets and setup:
 ```bash
 npx eas login
 npm ci
-npm run build:ipa
+npm run build:ios
 ```
 
 For a direct TestFlight submission:
 
 ```bash
-npm run build:ipa:submit
+npm run build:ios -- --auto-submit
 ```
 
 For a quicker internal build:
 
 ```bash
-npm run build:ipa:quick
+npm run build:ios:preview
 ```
 
 ## 3) After the build finishes

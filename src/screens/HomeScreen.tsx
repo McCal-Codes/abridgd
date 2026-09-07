@@ -210,7 +210,9 @@ export const HomeScreen: React.FC = () => {
   );
 
   const renderHeroHeader = () => (
-    <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+    // RootNavigator already wraps the stack in SafeAreaView edges={["top",...]},
+    // so adding insets.top here stacked a second full top inset on top of it.
+    <View style={[styles.headerContainer, { paddingTop: spacing.sm }]}>
       <HeroHeader
         title="Morning Brief"
         subtitle={
@@ -275,7 +277,7 @@ export const HomeScreen: React.FC = () => {
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={renderArticle}
-          ListHeaderComponent={() => (
+          ListHeaderComponent={
             <>
               {renderHeroHeader()}
               {error && articles.length > 0 ? (
@@ -299,7 +301,7 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </View>
             </>
-          )}
+          }
           contentContainerStyle={[
             styles.listContent,
             {

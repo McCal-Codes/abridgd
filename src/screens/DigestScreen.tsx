@@ -218,6 +218,10 @@ const createStyles = (colors: ThemeColors) =>
       paddingBottom: spacing.xs,
     },
     loadingContainer: {
+      // FunLoadingIndicator is flex:1, so inside an auto-height parent it
+      // collapsed to nothing and the tab showed a blank gap while loading.
+      // A minimum height gives it something to fill.
+      minHeight: 220,
       paddingVertical: spacing.xl,
       alignItems: "center",
       justifyContent: "center",

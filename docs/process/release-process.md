@@ -186,6 +186,39 @@ For an urgent production fix, follow [push-policy.md](../push-policy.md)'s hotfi
 branch/merge part, then still run the full Layer 3 release flow (version bump is almost always a
 PATCH) — hotfixes still need a tag and a release to reach TestFlight through the automated path.
 
+## Over-the-air updates (EAS Update)
+
+A separate path from a release, for a different job. See
+[ADR-0006](../standards/adr/0006-over-the-air-updates.md) for why it exists.
+
+**The rule: an update fixes what is broken. It does not ship what is new.** Features go through a
+release so they get review, a version number, and a changelog entry. A broken feed parser does not
+need to wait for either.
+
+```bash
+npm run update:preview -- -m "Fix Culture feed parser"      # verify on internal builds first
+npm run update:production -- -m "Fix Culture feed parser"
+```
+
+Both export with source maps, upload them to Sentry, then publish — in that order, so no user ever
+runs code that cannot be symbolicated. Publishing to `production` is refused outright if Sentry is
+not configured.
+
+For anything with real blast radius, stage it:
+
+```bash
+npx eas update --branch production --rollout-percentage 10   # then widen
+npx eas update:revert-update-rollout                         # or back it out
+```
+
+Only one update can be rolled out on a branch at a time, so resolve a staged rollout before the
+next push.
+
+**What an update cannot fix.** `runtimeVersion` uses the `fingerprint` policy, so anything touching
+the native runtime — a new Expo module, permissions, `app.json` native keys, an SDK upgrade, the
+icon or splash — changes the fingerprint, and the update is withheld from existing binaries rather
+than delivered and fatal. Those need a build. JS, styling, copy, and navigation do not.
+
 ## External references
 
 - [Semantic Versioning 2.0.0](https://semver.org/)

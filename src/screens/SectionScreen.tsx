@@ -148,7 +148,7 @@ export const SectionScreen: React.FC = () => {
   // needs a way out to a different one.
   const renderHeader = () => (
     <>
-      <View style={[styles.headerContainer, { paddingTop: insets.top + spacing.sm }]}>
+      <View style={[styles.headerContainer, { paddingTop: spacing.sm }]}>
         <HeroHeader
           title={category}
           subtitle={lastUpdated ? formatUpdatedAgo(lastUpdated) : undefined}

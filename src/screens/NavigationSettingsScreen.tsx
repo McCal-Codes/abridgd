@@ -23,19 +23,19 @@ export const NavigationSettingsScreen: React.FC = () => {
         </Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tab Bar Studio</Text>
+          <Text style={styles.sectionTitle}>Tab Bar</Text>
           <Text style={styles.sectionDesc}>Live preview, presets, and advanced appearance.</Text>
           <TouchableOpacity
             style={styles.card}
             onPress={() => (navigation as any).navigate("TabBarSettings")}
             accessibilityRole="button"
-            accessibilityLabel="Open Tab Bar Studio"
+            accessibilityLabel="Open Tab Bar"
           >
             <View style={styles.cardIcon}>
               <Layout color={colors.primary} size={22} />
             </View>
             <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>Open Tab Bar Studio</Text>
+              <Text style={styles.cardTitle}>Customize Tab Bar</Text>
               <Text style={styles.cardSubtitle}>Edit tabs, presets, labels, icon size, and more.</Text>
             </View>
             <ChevronRight size={18} color={colors.textSecondary} />
@@ -45,11 +45,11 @@ export const NavigationSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Default Navigation</Text>
           <Text style={styles.sectionDesc}>
-            Default tab on launch lives inside Tab Bar Studio to keep all tab decisions together.
+            Default tab on launch lives in Tab Bar settings, with the rest of the tab decisions.
           </Text>
           <View style={styles.infoRow}>
             <Compass color={colors.textSecondary} size={18} />
-            <Text style={styles.infoText}>Open Tab Bar Studio to pick your default tab.</Text>
+            <Text style={styles.infoText}>Open Tab Bar to pick your default tab.</Text>
           </View>
         </View>
       </ScrollView>

@@ -96,6 +96,124 @@ export const parseFeedXml = (xml: string): { items: RawFeedItem[]; isAtom: boole
   return { items: itemsArray.filter(Boolean) as RawFeedItem[], isAtom };
 };
 
+/**
+ * RSS gives `<link>` as text; Atom gives `<link rel="alternate" href="...">`, which
+ * fast-xml-parser turns into an attribute object - or an array of them when a feed also
+ * declares self/replies links. Without this, `article.link` was an object: "Read Full
+ * Story" called Linking.openURL with it, and full-story enrichment hashed it as a string.
+ */
+const extractLink = (val: RawFeedItem["link"]): string | undefined => {
+  if (!val) return undefined;
+  if (typeof val === "string") return val.trim() || undefined;
+
+  const candidates = Array.isArray(val) ? val : [val];
+  const alternate = candidates.find((entry) => entry?.["@_rel"] === "alternate");
+  const untyped = candidates.find((entry) => !entry?.["@_rel"]);
+  const href = (alternate || untyped || candidates[0])?.["@_href"];
+  return typeof href === "string" && href.trim() ? href.trim() : undefined;
+};
+
+/**
+ * `new Date()` handles ISO-8601 per spec, but RFC-822 - the format RSS actually mandates -
+ * is implementation-defined, and Hermes' fallback parser is narrower than V8's. Alphabetic
+ * zones (EST, PDT) are the usual casualty. Normalise those to a numeric offset so the
+ * engine's ISO path can take them.
+ */
+const RFC822_ZONES: Record<string, string> = {
+  UT: "+0000", GMT: "+0000", Z: "+0000",
+  EST: "-0500", EDT: "-0400",
+  CST: "-0600", CDT: "-0500",
+  MST: "-0700", MDT: "-0600",
+  PST: "-0800", PDT: "-0700",
+};
+
+const parseFeedDate = (raw?: string): number => {
+  if (!raw) return NaN;
+  const value = String(raw).trim();
+  if (!value) return NaN;
+
+  const direct = new Date(value).getTime();
+  if (!Number.isNaN(direct)) return direct;
+
+  const zoneMatch = value.match(/\s([A-Z]{2,3})$/);
+  if (zoneMatch && RFC822_ZONES[zoneMatch[1]]) {
+    const retried = new Date(value.replace(/\s[A-Z]{2,3}$/, ` ${RFC822_ZONES[zoneMatch[1]]}`)).getTime();
+    if (!Number.isNaN(retried)) return retried;
+  }
+
+  return NaN;
+};
+
+/**
+ * Feed markup routinely carries relative (`/wp-content/x.jpg`) and protocol-relative
+ * (`//img.host/x.jpg`) image URLs, and nothing resolved them - so those thumbnails
+ * silently disappeared. The one downstream normaliser turned `/x.jpg` into `https:/x.jpg`,
+ * a single slash and invalid.
+ *
+ * Deliberately not using `new URL(value, base)`: React Native's URL polyfill does naive
+ * string concatenation rather than real resolution, so `new URL("/x.jpg",
+ * "https://a.com/article/123")` yields ".../article/123/x.jpg" and protocol-relative
+ * inputs come out worse. This resolves the three shapes feeds actually use.
+ */
+export const resolveFeedUrl = (raw?: string, base?: string): string | undefined => {
+  if (!raw) return undefined;
+  const value = String(raw).trim();
+  if (!value || value.startsWith("data:")) return undefined;
+
+  if (/^https?:\/\//i.test(value)) {
+    return value.replace(/^http:\/\//i, "https://");
+  }
+
+  if (value.startsWith("//")) return `https:${value}`;
+
+  const origin = base?.match(/^https?:\/\/[^/?#]+/i)?.[0]?.replace(/^http:\/\//i, "https://");
+  if (!origin) return undefined;
+
+  if (value.startsWith("/")) return `${origin}${value}`;
+
+  // Path-relative. Resolve against the base's directory, not its origin.
+  const basePath = base!.replace(/^https?:\/\/[^/?#]+/i, "").split(/[?#]/)[0];
+  const dir = basePath.slice(0, basePath.lastIndexOf("/") + 1) || "/";
+  return `${origin}${dir}${value}`;
+};
+
+/**
+ * Tracking beacons, share icons and avatars are not article images. Only the plain-<img>
+ * fallback filtered any of this, and only on the substring "pixel", so FeedBurner beacons
+ * and 1x1 GIFs reached the renderer as full-width body images.
+ */
+const TRACKING_HINTS = [
+  "pixel",
+  "emoji",
+  "gravatar",
+  "/avatar",
+  "feedburner",
+  "feeds.feedburner",
+  "beacon",
+  "/stat?",
+  "spacer.gif",
+  "blank.gif",
+  "doubleclick",
+  "scorecardresearch",
+];
+
+export const isLikelyTrackingImage = (url?: string): boolean => {
+  if (!url) return true;
+  const lower = url.toLowerCase();
+  if (lower.startsWith("data:")) return true;
+  if (TRACKING_HINTS.some((hint) => lower.includes(hint))) return true;
+  // Declared 1x1 in the query string, the usual beacon shape.
+  if (/[?&](w|width|h|height)=1(?:&|$)/.test(lower)) return true;
+  return false;
+};
+
+/** Accepts a candidate only if it resolves and does not look like a beacon. */
+const acceptImage = (raw: string | undefined, base?: string): string | undefined => {
+  const resolved = resolveFeedUrl(raw, base);
+  if (!resolved || isLikelyTrackingImage(resolved)) return undefined;
+  return resolved;
+};
+
 const extractId = (val: RawFeedItem["guid"]): string | undefined => {
   if (!val) return undefined;
   if (typeof val === "string") return val;
@@ -112,8 +230,11 @@ export const normalizeFeedItem = (
   provenance: ProvenanceContext,
 ): Article => {
   const content = sanitizeContentField(item["content:encoded"] || item.content || item.description || "");
-  const summaryText = sanitizeText(item.description || item.title || "");
+  const summaryText = sanitizeText(item.description || item.summary || item.title || "");
   const headline = sanitizeText(textOf(item.title)?.trim() || "Untitled");
+  const link = extractLink(item.link);
+  // Images resolve against the article URL when present, else the source's own domain.
+  const imageBase = link || (provenance.sourceDomain ? `https://${provenance.sourceDomain}` : undefined);
 
   // Extract image from enclosure, media:content, or itunes:image. Candidates are scored
   // by declared width (falling back to source priority) rather than "whichever resolves
@@ -124,12 +245,15 @@ export const normalizeFeedItem = (
   const imageCandidates: ImageCandidate[] = [];
 
   if (item.enclosure && item.enclosure["@_url"]) {
-    const url = item.enclosure["@_url"];
     if (item.enclosure["@_type"]?.startsWith("video")) {
-      mediaVideos.add(url);
+      const video = resolveFeedUrl(item.enclosure["@_url"], imageBase);
+      if (video) mediaVideos.add(video);
     } else {
-      mediaImages.add(url);
-      imageCandidates.push({ url, width: parseDeclaredWidth(item.enclosure["@_width"]), priority: 2 });
+      const url = acceptImage(item.enclosure["@_url"], imageBase);
+      if (url) {
+        mediaImages.add(url);
+        imageCandidates.push({ url, width: parseDeclaredWidth(item.enclosure["@_width"]), priority: 2 });
+      }
     }
   }
 
@@ -137,30 +261,51 @@ export const normalizeFeedItem = (
   if (mediaContent) {
     const contents = Array.isArray(mediaContent) ? mediaContent : [mediaContent];
     contents.forEach((mc) => {
-      const url = mc?.["@_url"];
-      if (!url) return;
       const type = mc?.["@_type"];
       if (typeof type === "string" && type.startsWith("video")) {
-        mediaVideos.add(url);
+        const video = resolveFeedUrl(mc?.["@_url"], imageBase);
+        if (video) mediaVideos.add(video);
       } else {
-        mediaImages.add(url);
-        imageCandidates.push({
-          url,
-          width: parseDeclaredWidth(mc?.["@_width"]),
-          priority: 0,
-          caption:
-            textOf(mc?.["media:description"] as FastXmlTextNode | undefined) ||
-            textOf(mc?.["media:title"] as FastXmlTextNode | undefined),
-          credit: textOf(mc?.["media:credit"] as FastXmlTextNode | undefined),
-        });
+        const url = acceptImage(mc?.["@_url"], imageBase);
+        if (url) {
+          mediaImages.add(url);
+          imageCandidates.push({
+            url,
+            width: parseDeclaredWidth(mc?.["@_width"]),
+            priority: 0,
+            caption:
+              textOf(mc?.["media:description"] as FastXmlTextNode | undefined) ||
+              textOf(mc?.["media:title"] as FastXmlTextNode | undefined),
+            credit: textOf(mc?.["media:credit"] as FastXmlTextNode | undefined),
+          });
+        }
       }
     });
   }
 
-  if (item["itunes:image"] && item["itunes:image"]["@_href"]) {
-    const url = item["itunes:image"]["@_href"];
-    mediaImages.add(url);
-    imageCandidates.push({ url, width: 0, priority: 1 });
+  if (item["itunes:image"]) {
+    const url = acceptImage(item["itunes:image"]["@_href"], imageBase);
+    if (url) {
+      mediaImages.add(url);
+      imageCandidates.push({ url, width: 0, priority: 1 });
+    }
+  }
+
+  /**
+   * media:thumbnail is the only image element some Arc-based publisher feeds carry -
+   * WPXI among them - and it was not read at all, so those articles fell through to the
+   * regex <img> scrape or showed nothing.
+   */
+  const mediaThumbnail = item["media:thumbnail"];
+  if (mediaThumbnail) {
+    const thumbs = Array.isArray(mediaThumbnail) ? mediaThumbnail : [mediaThumbnail];
+    thumbs.forEach((thumb) => {
+      const url = acceptImage(thumb?.["@_url"], imageBase);
+      if (url) {
+        mediaImages.add(url);
+        imageCandidates.push({ url, width: parseDeclaredWidth(thumb?.["@_width"]), priority: 1 });
+      }
+    });
   }
 
   const bestImage = pickBestImage(imageCandidates);
@@ -171,16 +316,22 @@ export const normalizeFeedItem = (
     const rawContent = content || textOf(item.description) || "";
     const figureMatch = rawContent.match(/<figure[^>]*>.*?<img[^>]+src="([^">]+)".*?<\/figure>/s);
 
+    // The <figure> branch previously took its match unconditionally, so a beacon
+    // wrapped in a figure became the article's hero image.
     if (figureMatch) {
-      imageUrl = figureMatch[1];
-    } else {
+      const candidate = acceptImage(figureMatch[1], imageBase);
+      if (candidate) {
+        imageUrl = candidate;
+        mediaImages.add(candidate);
+      }
+    }
+
+    if (!imageUrl) {
       const imgMatch = rawContent.match(/<img[^>]+src="([^">]+)"/);
-      if (imgMatch) {
-        const candidate = imgMatch[1];
-        if (!candidate.includes("pixel") && !candidate.includes("emoji")) {
-          imageUrl = candidate;
-          mediaImages.add(candidate);
-        }
+      const candidate = acceptImage(imgMatch?.[1], imageBase);
+      if (candidate) {
+        imageUrl = candidate;
+        mediaImages.add(candidate);
       }
     }
   }
@@ -204,21 +355,47 @@ export const normalizeFeedItem = (
       splitCaption.credit
     : undefined;
 
+  /**
+   * extractMediaFromHtml returns every <img src> in the body, unfiltered, and
+   * ArticleScreen appends any of these not already in the parsed body as extra image
+   * blocks at the end of the article - so beacons, gravatars and share icons rendered
+   * as a stack of images (or "Image unavailable" placeholders) below the text.
+   */
   const bodyMedia = extractMediaFromHtml(content || textOf(item.description) || "");
-  bodyMedia.images.forEach((img) => mediaImages.add(img));
-  bodyMedia.videos.forEach((vid) => mediaVideos.add(vid));
+  bodyMedia.images.forEach((img) => {
+    const resolved = acceptImage(img, imageBase);
+    if (resolved) mediaImages.add(resolved);
+  });
+  bodyMedia.videos.forEach((vid) => {
+    const resolved = resolveFeedUrl(vid, imageBase);
+    if (resolved) mediaVideos.add(resolved);
+  });
 
   const author = extractAuthorName(item["dc:creator"]) || extractAuthorName(item.author);
 
-  const articleId =
-    extractId(item.guid) ||
-    extractId(item.id) ||
-    (typeof item.link === "string" ? item.link : undefined) ||
-    Math.random().toString(36).substring(2, 9);
+  /**
+   * The id keys saved articles and reading progress, so it has to be stable across
+   * refreshes. It previously fell back to Math.random(), which minted a new id every
+   * parse - silently detaching a reader's progress and saved state whenever a feed
+   * lacked guid/id/link. Headline plus source is a deterministic last resort.
+   *
+   * Namespaced by source because raw guids are not unique across publishers: integer
+   * guids are common on WordPress, so two outlets could collide and cross-contaminate
+   * each other's reading progress.
+   */
+  const rawId = extractId(item.guid) || extractId(item.id) || link || `${headline}`;
+  const articleId = `${sourceName}::${rawId}`;
 
-  const dateSource = item.pubDate || item.published || item.updated;
-  const parsedDate = dateSource ? new Date(dateSource).getTime() : NaN;
-  const publishedAt = Number.isNaN(parsedDate) ? Date.now() : parsedDate;
+  const dateSource = item.pubDate || item.published || item.updated || item["dc:date"];
+  const parsedDate = parseFeedDate(dateSource);
+
+  /**
+   * Unparseable dates sort last, not first. The previous fallback was Date.now(), which
+   * meant one source with a format the engine could not read had its entire item list
+   * stacked above every genuinely-dated article - and the value was persisted, so it
+   * survived restarts.
+   */
+  const publishedAt = Number.isNaN(parsedDate) ? 0 : parsedDate;
   const timestamp = Number.isNaN(parsedDate)
     ? "Recently"
     : new Date(parsedDate).toLocaleDateString();
@@ -240,7 +417,7 @@ export const normalizeFeedItem = (
     mediaVideos: Array.from(mediaVideos),
     readTimeMinutes: calculateReadTime(summaryText),
     isSensitive: false,
-    link: item.link,
+    link,
     provenance: {
       sourceName,
       sourceDomain: provenance.sourceDomain,

@@ -1,15 +1,7 @@
-import Constants from "expo-constants";
-
 // App-level constants used across the app
 export const APP_NAME = "Abridgd";
-export const APP_VERSION = "1.5.6";
-
-/** Read from the built app rather than hand-maintained: this was pinned at "1" while
- * app.json shipped buildNumber 36, so every bug report named the wrong build. */
-export const APP_BUILD =
-  Constants.expoConfig?.ios?.buildNumber ??
-  Constants.expoConfig?.android?.versionCode?.toString() ??
-  "unknown";
+export const APP_VERSION = "1.5.7";
+export const APP_BUILD = "39";
 
 // Update this to your real contact email before shipping
 export const CONTACT_EMAIL = "contact@mcc-cal.com";

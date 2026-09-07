@@ -15,7 +15,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import {
   BookOpen,
@@ -30,6 +30,7 @@ import { GlassButton } from "../components/GlassButton";
 import { SignInWithApple } from "../components/SignInWithApple";
 import { Skeleton } from "../components/Skeleton";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useSettings } from "../context/SettingsContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { HeroHeader } from "../components/HeroHeader";
@@ -95,6 +96,18 @@ const ProfileScreen: React.FC = () => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { tabBarStyle, tabBarDockedHeight, tabBarFloatingHeight } = useSettings();
+
+  /**
+   * Every other tab screen clears the floating tab bar; Profile used a static
+   * 72pt, which is less than the bar's own height before insets. Its version
+   * footer and danger-zone copy sat permanently behind the bar.
+   */
+  const tabBarClearance =
+    (tabBarStyle === "floating" ? tabBarFloatingHeight || 64 : tabBarDockedHeight || 92) +
+    insets.bottom +
+    spacing.lg;
 
   const {
     activeProfile,
@@ -239,7 +252,11 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.headerContainer, { paddingTop: spacing.md }]}>
           <HeroHeader title="Profile" subtitle="Reading and account basics" Icon={User} />
         </View>

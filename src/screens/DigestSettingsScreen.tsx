@@ -83,8 +83,8 @@ export const DigestSettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.header}>Digest Settings</Text>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.header}>Digest & Launch</Text>
         <Text style={styles.description}>
           Control what greets you on launch and how Abridged builds summaries.
         </Text>

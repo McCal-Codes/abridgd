@@ -35,9 +35,9 @@ npx eas build --platform ios --profile production --auto-submit
 Useful variants:
 
 ```bash
-npm run build:ipa
-npm run build:ipa:quick
-npm run build:ipa:submit
+npm run build:ios
+npm run build:ios:preview
+npm run build:ios -- --auto-submit
 ```
 
 ## Release checklist

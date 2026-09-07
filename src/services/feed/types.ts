@@ -19,14 +19,22 @@ export type FastXmlAttributeNode = {
 
 export type FastXmlAuthorNode = FastXmlTextNode | { name?: FastXmlTextNode };
 
+/** Atom's `<link rel="alternate" href="...">` parses to an attribute object, or to an
+ * array of them when a feed declares alternate/self/replies. RSS's `<link>` is plain text. */
+export type FastXmlLinkNode =
+  | string
+  | { "@_href"?: string; "@_rel"?: string; "@_type"?: string }
+  | Array<{ "@_href"?: string; "@_rel"?: string; "@_type"?: string }>;
+
 export interface RawFeedItem {
   title?: FastXmlTextNode;
-  link?: string;
+  link?: FastXmlLinkNode;
   guid?: FastXmlTextNode;
   id?: FastXmlTextNode;
   pubDate?: string;
   published?: string;
   updated?: string;
+  "dc:date"?: string;
   description?: FastXmlTextNode;
   content?: FastXmlTextNode;
   "content:encoded"?: FastXmlTextNode;
@@ -37,6 +45,7 @@ export interface RawFeedItem {
   "media:title"?: FastXmlTextNode;
   "media:credit"?: FastXmlTextNode;
   "itunes:image"?: FastXmlAttributeNode;
+  "media:thumbnail"?: FastXmlAttributeNode | FastXmlAttributeNode[];
   author?: FastXmlAuthorNode;
   "dc:creator"?: FastXmlTextNode;
 }

@@ -146,5 +146,7 @@ Load-bearing decisions are documented in `adr/`:
 | [0002](adr/0002-rss-parsing-approach.md) | RSS Parsing and Content Extraction | Accepted |
 | [0003](adr/0003-state-management.md) | State Management (React Context API) | Accepted |
 | [0004](adr/0004-theming-and-semantic-colors.md) | Theming and Semantic Colors | Accepted |
+| [0005](adr/0005-feed-pipeline-modularization.md) | Feed Pipeline Modularization and Per-Source Caching | Accepted |
+| [0006](adr/0006-over-the-air-updates.md) | Over-the-Air Updates via EAS Update | Proposed |
 
 Each ADR includes context, decision, consequences, and alternatives considered.

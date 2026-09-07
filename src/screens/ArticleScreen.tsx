@@ -22,6 +22,7 @@ import { RootStackParamList } from "../navigation/types";
 import { summarizeArticle } from "../services/AiService";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
+import { openExternalUrl } from "../utils/openExternalUrl";
 import { useSettings } from "../context/SettingsContext";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { ScaleButton } from "../components/ScaleButton";
@@ -43,7 +44,6 @@ import {
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
 import { isPhotoCredit } from "../utils/photoCredit";
-import { openExternalUrl } from "../utils/externalLinks";
 import { resolveMediaUri } from "../utils/mediaUri";
 import { resolveRestoreOffset } from "../utils/readingPosition";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
@@ -347,6 +347,15 @@ export const ArticleScreen: React.FC = () => {
   };
 
   const swipeGesture = Gesture.Pan()
+    // This gesture wraps the article's ScrollView. Unconstrained, RNGH activates
+    // a Pan on the first pixel of movement in any direction and wins arbitration
+    // against the native scroll view on Android, so vertical drags moved the
+    // whole screen sideways instead of scrolling. iOS usually resolves this in
+    // the scroll view's favour, which is why it only showed up on Android.
+    // activeOffsetX defers activation until the drag is clearly horizontal;
+    // failOffsetY yields outright once it is clearly vertical.
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-10, 10])
     .onUpdate((event) => {
       // Only allow swipe from left edge for back navigation
       if (event.translationX > 0 && event.translationX < 200) {
@@ -486,7 +495,15 @@ export const ArticleScreen: React.FC = () => {
     );
 
     return (
-      <View style={styles.warningContainer}>
+      // Scrollable rather than a fixed centred column: this screen carries a
+      // 32sp heading, two paragraphs and two tall buttons, so on a short device
+      // or at a large font scale the actions fell off the bottom with no way to
+      // reach them - leaving the article unopenable. flexGrow keeps it centred
+      // whenever it does fit.
+      <ScrollView
+        style={styles.warningScroll}
+        contentContainerStyle={styles.warningContainer}
+      >
         <View style={styles.warningContent}>
           <Text style={styles.warningTitle} accessibilityRole="header">{tonePreset.heading}</Text>
           <Text style={styles.warningText}>{warningSummaryCopy}</Text>
@@ -506,7 +523,7 @@ export const ArticleScreen: React.FC = () => {
             </>
           )}
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -1067,8 +1084,12 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     fontSize: typography.size.md,
     fontWeight: "600",
   },
-  warningContainer: {
+  warningScroll: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  warningContainer: {
+    flexGrow: 1,
     backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",

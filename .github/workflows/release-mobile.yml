@@ -1,0 +1,283 @@
+name: Release Mobile Build
+
+# Builds iOS and/or Android through EAS and optionally attaches the artifacts
+# to a GitHub release. Replaces the iOS-only release-ios.yml; the two platforms
+# share every step except the artifact extension, which is read off the EAS
+# artifact URL rather than mapped from platform + profile (iOS is always .ipa,
+# Android is .aab on production and .apk on preview).
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+      profile:
+        description: EAS build profile to use
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - preview
+      auto_submit:
+        description: Submit finished production builds to the app store
+        required: true
+        default: false
+        type: boolean
+      wait_for_build:
+        description: Wait for the EAS cloud build to finish before the workflow exits
+        required: true
+        default: true
+        type: boolean
+      attach_to_release:
+        description: Download the finished artifacts and attach them to a GitHub release
+        required: true
+        default: false
+        type: boolean
+      release_tag:
+        description: Existing release tag to attach the artifacts to, for example v1.5.0
+        required: false
+  release:
+    types:
+      - published
+
+# Serialize runs per ref. Two releases racing on the same tag would each
+# auto-increment the build number independently and collide on submission,
+# so queue rather than cancel - an in-flight release build is never safe to kill.
+concurrency:
+  group: release-mobile-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    name: Resolve build settings
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    outputs:
+      platforms: ${{ steps.settings.outputs.platforms }}
+      checkout_ref: ${{ steps.settings.outputs.checkout_ref }}
+      profile: ${{ steps.settings.outputs.profile }}
+      auto_submit: ${{ steps.settings.outputs.auto_submit }}
+      wait_for_build: ${{ steps.settings.outputs.wait_for_build }}
+      attach_to_release: ${{ steps.settings.outputs.attach_to_release }}
+      release_tag: ${{ steps.settings.outputs.release_tag }}
+    steps:
+      - name: Resolve build settings
+        id: settings
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+            {
+              echo "platforms=[\"ios\",\"android\"]"
+              echo "checkout_ref=$tag"
+              echo "profile=production"
+              echo "auto_submit=false"
+              echo "wait_for_build=true"
+              echo "attach_to_release=true"
+              echo "release_tag=$tag"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          platform="${{ inputs.platform }}"
+          profile="${{ inputs.profile }}"
+          auto_submit="${{ inputs.auto_submit }}"
+          wait_for_build="${{ inputs.wait_for_build }}"
+          attach_to_release="${{ inputs.attach_to_release }}"
+          release_tag="${{ inputs.release_tag }}"
+
+          case "$platform" in
+            all)     platforms='["ios","android"]' ;;
+            ios)     platforms='["ios"]' ;;
+            android) platforms='["android"]' ;;
+            *)       echo "Unknown platform: $platform"; exit 1 ;;
+          esac
+
+          if [ "$attach_to_release" = "true" ] && [ -z "$release_tag" ]; then
+            echo "release_tag is required when attach_to_release is true."
+            exit 1
+          fi
+
+          if [ "$auto_submit" = "true" ] && [ "$profile" != "production" ]; then
+            echo "auto_submit can only be used with the production profile."
+            exit 1
+          fi
+
+          checkout_ref="${release_tag:-${GITHUB_REF_NAME}}"
+
+          {
+            echo "platforms=$platforms"
+            echo "checkout_ref=$checkout_ref"
+            echo "profile=$profile"
+            echo "auto_submit=$auto_submit"
+            echo "wait_for_build=$wait_for_build"
+            echo "attach_to_release=$attach_to_release"
+            echo "release_tag=$release_tag"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate Expo token
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "Missing EXPO_TOKEN repository secret."
+            exit 1
+          fi
+
+      - name: Validate GitHub release
+        if: steps.settings.outputs.attach_to_release == 'true'
+        run: gh release view "${{ steps.settings.outputs.release_tag }}"
+
+  build:
+    name: EAS ${{ matrix.platform }} build
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    strategy:
+      # One platform failing should not cancel the other; a usable iOS build is
+      # still worth having when Android breaks, and vice versa.
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.setup.outputs.platforms) }}
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.checkout_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      # Handles Expo auth and raises Ubuntu's fs.inotify limits (Metro bundling
+      # otherwise hits ENOSPC). eas-cli is installed here rather than as a
+      # project dependency, which expo-doctor explicitly flags; the acceptable
+      # version is pinned once in eas.json's `cli.version`, which EAS CLI
+      # enforces itself, so no version string is duplicated here.
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Print release metadata
+        run: |
+          set -euo pipefail
+          echo "Platform:          ${{ matrix.platform }}"
+          echo "Package version:   $(node -p "require('./package.json').version")"
+          echo "Checkout ref:      ${{ needs.setup.outputs.checkout_ref }}"
+          echo "Requested profile: ${{ needs.setup.outputs.profile }}"
+          echo "Auto-submit:       ${{ needs.setup.outputs.auto_submit }}"
+          echo "Wait for build:    ${{ needs.setup.outputs.wait_for_build }}"
+          echo "Attach to release: ${{ needs.setup.outputs.attach_to_release }}"
+          echo "Release tag:       ${{ needs.setup.outputs.release_tag || 'n/a' }}"
+
+      - name: Run EAS build
+        id: eas_build
+        run: |
+          set -euo pipefail
+
+          wait_for_build="${{ needs.setup.outputs.wait_for_build }}"
+          attach_to_release="${{ needs.setup.outputs.attach_to_release }}"
+
+          if [ "$attach_to_release" = "true" ]; then
+            wait_for_build="true"
+          fi
+
+          cmd=(npx eas build --platform "${{ matrix.platform }}" --profile "${{ needs.setup.outputs.profile }}" --non-interactive --json)
+
+          if [ "$wait_for_build" = "true" ]; then
+            cmd+=(--wait)
+          fi
+
+          if [ "${{ needs.setup.outputs.auto_submit }}" = "true" ]; then
+            cmd+=(--auto-submit)
+          fi
+
+          printf 'Running: %q ' "${cmd[@]}"
+          echo
+
+          build_json="$("${cmd[@]}")"
+          printf '%s\n' "$build_json" > eas-build.json
+
+          # The parser derives artifact filename, asset label and the build
+          # page URL from app.json, so no app-specific string lives in this file.
+          node scripts/ci/parse-eas-build-output.js \
+            eas-build.json "${{ needs.setup.outputs.release_tag }}" > eas-build-outputs.txt
+          cat eas-build-outputs.txt >> "$GITHUB_OUTPUT"
+
+          if [ "$attach_to_release" = "true" ] && ! grep -q '^archive_url=' eas-build-outputs.txt; then
+            echo "Build completed, but no applicationArchiveUrl was returned."
+            exit 1
+          fi
+
+      - name: Download artifact
+        if: needs.setup.outputs.attach_to_release == 'true'
+        id: artifact
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          artifact_path="dist/${{ steps.eas_build.outputs.artifact_filename }}"
+          curl --fail --show-error --location \
+            "${{ steps.eas_build.outputs.archive_url }}" --output "$artifact_path"
+          echo "artifact_path=$artifact_path" >> "$GITHUB_OUTPUT"
+          echo "artifact_size=$(du -h "$artifact_path" | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact to workflow run
+        if: needs.setup.outputs.attach_to_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.eas_build.outputs.artifact_name }}
+          path: ${{ steps.artifact.outputs.artifact_path }}
+
+      - name: Upload artifact to GitHub release
+        if: needs.setup.outputs.attach_to_release == 'true'
+        run: |
+          gh release upload "${{ needs.setup.outputs.release_tag }}" \
+            "${{ steps.artifact.outputs.artifact_path }}#${{ steps.eas_build.outputs.asset_label }}" \
+            --clobber
+
+      - name: Write build summary
+        if: always() && steps.eas_build.outputs.build_id != ''
+        run: |
+          {
+            echo "## ${{ steps.eas_build.outputs.platform_label }} — ${{ steps.eas_build.outputs.app_version }} (${{ steps.eas_build.outputs.app_build_version }})"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Profile | \`${{ steps.eas_build.outputs.profile }}\` |"
+            echo "| Status | ${{ steps.eas_build.outputs.status }} |"
+            echo "| Build time | ${{ steps.eas_build.outputs.duration_minutes }} min |"
+            echo "| Artifact | ${{ steps.artifact.outputs.artifact_size || 'not downloaded' }} |"
+            echo "| Expires | ${{ steps.eas_build.outputs.expires_at }} |"
+            echo
+            if [ "${{ steps.eas_build.outputs.distribution }}" = "internal" ]; then
+              echo "**[Install on device](${{ steps.eas_build.outputs.build_page_url }})** — open on the target device to install directly."
+            else
+              echo "[Build details](${{ steps.eas_build.outputs.build_page_url }})"
+            fi
+            echo
+            echo "[Download artifact](${{ steps.eas_build.outputs.archive_url }})"
+          } >> "$GITHUB_STEP_SUMMARY"

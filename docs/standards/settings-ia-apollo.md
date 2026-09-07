@@ -1,6 +1,6 @@
 # Abridged — Settings Information Architecture (Apollo)
-Version 1.0  
-Last Updated: January 20, 2026  
+Version 1.2  
+Last Updated: September 6, 2026  
 Status: Canonical (use for all Settings work)
 
 ## Purpose
@@ -18,21 +18,41 @@ Lock the Settings experience to a single, intent-based structure. Use this as th
 ```
 Settings
 ├─ Reading Experience
+├─ News Sources
+├─ Data & Performance
 ├─ Digest & Launch
 ├─ Grounding & Focus
 ├─ Navigation
-│  └─ Tab Bar Studio
+│  └─ Tab Bar
 ├─ Accessibility
 ├─ App Info
 └─ Debug & Advanced
 ```
-Seven entries only. Anything else is bloat.
+Nine entries. The bar is that each one answers a distinct question a reader
+would actually ask — not a fixed count.
+
+**Amended 2026-09-06.** This previously specified seven and called anything
+further "bloat". Two entries had already diverged in practice:
+
+- **News Sources** was promoted from inside Reading Experience. Which outlets
+  the feed pulls from is a decision readers make on its own terms, not while
+  adjusting RSVP speed, and burying it one level down made the app's most
+  editorially significant setting the hardest to find. The doc previously said a
+  dedicated Sources flow should *replace* the Reading entry rather than add a
+  top-level one; promoting it and removing the Reading entry point does exactly
+  that, just at the top level rather than outside Settings.
+- **Data & Performance** was never sanctioned and arrived without an ADR. It is
+  recorded here because the doc should describe the app that exists. It remains
+  the weakest entry: roughly half the screen is static tip cards with no
+  controls, and its cache figure is hardcoded. A candidate for folding into
+  Debug & Advanced rather than defending.
 
 ## Screen Definitions (exact)
 
 ### Reading Experience
 **Question:** “How do I read in this app?”  
-**Includes:** Reader enabled, Reader mode (RSVP/standard), Reader focus color, Reader font size, Reader focus position (Early/Standard/Center — hide raw %), Reader speed controls, RSVP tutorial (revisit), Sources/feeds management lives here if it remains in Settings.  
+**Includes:** Reader enabled, Reader mode (RSVP/standard), Reader focus color, Reader font size, Reader focus position (Early/Standard/Center — hide raw %), Reader speed controls, RSVP tutorial (revisit).
+**Excludes (2026-09-06):** source management, now its own top-level entry.  
 **Excludes:** Grounding, animations, app-wide appearance.
 
 ### Digest & Launch
@@ -47,12 +67,14 @@ Seven entries only. Anything else is bloat.
 
 ### Navigation
 **Question:** “How do I move around the app?”  
-**Includes:** Default navigation behavior (if not in Digest & Launch), entry point to Tab Bar Studio only. Keep this screen thin.
+**Includes:** Default navigation behavior (if not in Digest & Launch), entry point to Tab Bar only. Keep this screen thin.
 
-### Navigation → Tab Bar Studio
-**Definition:** A studio (power tool), not a settings list.  
-**Includes:** Default tab on launch, Live preview, Presets (iOS 26 Floating/Docked/Compact), Tab style philosophy (Minimal vs Comprehensive), Tab bar appearance (Floating/Compact/Standard, Show labels, Icon size), Advanced appearance (collapsed by default: heights, indicators, badges, content under tab bar), Active tabs (reorder/remove), Available tabs (add).  
-**Rules:** Presets are starting points; advanced collapses by default; preview is mandatory.
+### Navigation → Tab Bar
+**Definition:** A short settings list with a live preview at the top.  
+**Includes:** Live preview, Tab style philosophy (Minimal vs Comprehensive), Default tab on launch, Appearance (Floating/Compact/Standard, Show labels), Active tabs (reorder/remove), Available tabs (add).  
+**Rules:** The preview is mandatory and must reflect the user's actual tabs and their order. Reordering uses visible, labelled controls — never a drag affordance that isn't wired up.
+
+**Superseded (2026-09-06):** this was previously specified as a "Tab Bar Studio" power tool with presets, icon-size control, and a collapsed Advanced group covering heights, indicators, badges and content-under-tab-bar. In practice the advanced group never collapsed, its height controls were gated behind a *debug* toggle on another screen, the preview rendered the first four available tabs rather than the user's own, and an experimental navbar flag had leaked in from Debug. The controls were removed rather than repaired: a news reader does not need pixel-level tab bar tuning, and the surface cost 1,542 lines to maintain. The underlying settings keys remain at fixed defaults so the bar renders unchanged.
 
 ### Accessibility
 **Question:** “How does the app adapt to my needs?”  
@@ -75,8 +97,8 @@ Seven entries only. Anything else is bloat.
 
 ## Demotions / Renames / Guards
 - **Customization** junk drawer is dissolved: reading controls → Reading Experience; grounding → Grounding & Focus; animation toggles → Accessibility; appearance items that aren’t built stay out.
-- **Sources** belong with Reading Experience when presented inside Settings. If a dedicated Sources flow replaces it, remove the Settings entry rather than adding an eighth top-level item.
-- **Navigation controls** live in Tab Bar Studio; keep Navigation list minimal.
+- **Sources** are a top-level entry as of 2026-09-06. The Reading Experience entry point was removed so there is exactly one path to the screen.
+- **Navigation controls** live in Tab Bar; keep the Navigation list minimal.
 - **Duplicate entries** allowed only for RSVP tutorial (App Info + Reading Experience) when it improves recall.
 - **Debug-only features** stay in Debug & Advanced—never leak into user-facing screens.
 
@@ -85,9 +107,9 @@ Seven entries only. Anything else is bloat.
 - `ReadingSettingsScreen.tsx` → Reading Experience.  
 - `DigestSettingsScreen.tsx` → Digest & Launch.  
  - `CustomizationSettingsScreen.tsx` has been decomposed: see `GroundingFocusSettingsScreen.tsx`, `AccessibilitySettingsScreen.tsx`, and updated `ReadingSettingsScreen.tsx`.  
-- `TabBarSettingsScreen.tsx` → Navigation → Tab Bar Studio.  
+- `TabBarSettingsScreen.tsx` → Navigation → Tab Bar.  
 - `DebugSettingsScreen.tsx` → Debug & Advanced.  
-- `SourcesSettingsScreen.tsx` is housed under Reading Experience until a dedicated sources flow exists outside Settings.
+- `SourcesSettingsScreen.tsx` → News Sources, reached from the Settings root.
 
 ## Enforcement
 - Use this IA for new work, refactors, and reviews.  
