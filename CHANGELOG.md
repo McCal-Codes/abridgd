@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+- Glass surfaces were flat on Android. `GlassSurface` gated blur behind `Platform.OS === "ios"` on the claim that Android's BlurView support was uneven — which was never measured and contradicted `LiquidTabBar`, which has rendered BlurView on Android since the Android pipeline landed. expo-blur does support Android: `experimentalBlurMethod` defaults to `'none'`, so it renders a tinted translucent surface rather than a real blur. Every glass surface now behaves the same on both platforms.
+
 ## [1.5.7] - 2026-09-07
 
 ### Fixed

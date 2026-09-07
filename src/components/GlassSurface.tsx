@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, StyleProp, View, ViewStyle } from "react-native";
+import { StyleProp, View, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSettings } from "../context/SettingsContext";
 import { useThemeOptional } from "../theme/ThemeContext";
@@ -48,9 +48,16 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
 
   const pick = (value?: GlassTone) => (value ? (isDark ? value.dark : value.light) : undefined);
 
-  // Android's BlurView support is uneven enough that a flat surface reads better than a
-  // half-rendered one, so it takes the same path as reduced transparency.
-  const useBlur = Platform.OS === "ios" && !reduceTransparency;
+  // Both platforms. expo-blur does support Android — `experimentalBlurMethod` defaults to
+  // 'none', so BlurView there renders as a tinted translucent surface rather than a real
+  // blur, which is exactly what LiquidTabBar has been shipping on Android since the Android
+  // pipeline landed. Gating this to iOS left every other glass surface flat while the tab bar
+  // was translucent, on the platform the app had just started targeting.
+  //
+  // Turning on a real Android blur is a one-word change — experimentalBlurMethod=
+  // "dimezisBlurView" — deliberately not made here: it is flagged experimental upstream and
+  // has not been looked at on an Android device.
+  const useBlur = !reduceTransparency;
 
   if (!useBlur) {
     const fallback = pick(opaqueTone) ?? pick(tone);
