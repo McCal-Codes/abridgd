@@ -3,16 +3,8 @@ import { StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft } from "lucide-react-native";
 import { NavigationHeader } from "./NavigationHeader";
+import { GlassSurface } from "./GlassSurface";
 import { useTheme } from "../theme/ThemeContext";
-
-let BlurView: any = null;
-try {
-  // Optional dependency; fallback to a plain View if unavailable
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  BlurView = require("expo-blur").BlurView;
-} catch (e) {
-  BlurView = null;
-}
 
 type GlassStackHeaderProps = {
   title: string;
@@ -27,7 +19,7 @@ type GlassStackHeaderProps = {
 
 /**
  * Glassy, iOS 26-inspired stack header with subtitle support and safe-area padding.
- * - Uses blur when available (Expo BlurView), otherwise falls back to a translucent surface.
+ * - Renders through GlassSurface, so it honors the Reduce Transparency setting.
  * - Ensures 44pt hit targets for back/right affordances.
  * - Designed to be used as the `header` renderer in React Navigation.
  */
@@ -39,16 +31,12 @@ export const GlassStackHeader: React.FC<GlassStackHeaderProps> = ({
   rightSlot,
   containerStyle,
   tintColor,
-  disableBlur = true,
+  disableBlur = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
   const iconColor = tintColor || colors.text;
-  const Surface = !disableBlur && BlurView ? BlurView : View;
-  const surfaceProps =
-    !disableBlur && BlurView ? { intensity: 30, tint: isDark ? "dark" : "light" } : {};
-
   const renderBack = () => {
     if (!canGoBack) return <View style={styles.iconPlaceholder} />;
     return (
@@ -66,13 +54,22 @@ export const GlassStackHeader: React.FC<GlassStackHeaderProps> = ({
 
   return (
     <View style={[{ paddingTop: insets.top + 12 }, containerStyle]}>
-      <Surface style={styles.surface} {...surfaceProps}>
+      <GlassSurface
+        style={styles.surface}
+        intensity={disableBlur ? 0 : 30}
+        tone={
+          disableBlur
+            ? undefined
+            : { light: "rgba(255, 255, 255, 0.75)", dark: "rgba(28, 28, 30, 0.75)" }
+        }
+        opaqueTone={{ light: colors.background, dark: colors.background }}
+      >
         <View style={styles.contentRow}>
           {renderBack()}
           <NavigationHeader title={title} subtitle={subtitle} titleAlign="left" />
           {rightSlot ? rightSlot : <View style={styles.iconPlaceholder} />}
         </View>
-      </Surface>
+      </GlassSurface>
     </View>
   );
 };

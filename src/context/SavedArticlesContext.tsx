@@ -1,4 +1,13 @@
-import React, { createContext, useState, ReactNode, useEffect, useMemo, useRef, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useContext,
+} from "react";
 import { Article } from "../types/Article";
 import {
   loadArticlesFromStorage,
@@ -113,7 +122,10 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
     }
   }, [savedArticles, isLoading, storageKey]);
 
-  const saveArticle = (article: Article) => {
+  // Every ArticleCard now consumes this context for swipe-to-save, so a feed is dozens of
+  // subscribers. Recreating these functions each render made every one of them a new prop
+  // identity, which defeated ArticleCard's React.memo and rebuilt each card's pan gesture.
+  const saveArticle = useCallback((article: Article) => {
     setSavedArticles((prevArticles) => {
       // Avoid duplicates
       if (prevArticles.some((a) => a.id === article.id)) {
@@ -124,9 +136,9 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
       trackSavedAction();
       return next;
     });
-  };
+  }, [syncProfileSavedArticles, trackSavedAction]);
 
-  const unsaveArticle = (articleId: string) => {
+  const unsaveArticle = useCallback((articleId: string) => {
     setSavedArticles((prevArticles) => {
       const next = prevArticles.filter((article) => article.id !== articleId);
       if (next.length !== prevArticles.length) {
@@ -134,25 +146,47 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
       }
       return next;
     });
-  };
+  }, [syncProfileSavedArticles]);
 
-  const isArticleSaved = (articleId: string) => {
-    return savedArticles.some((article) => article.id === articleId);
-  };
-
-  return (
-    <SavedArticlesContext.Provider
-      value={{ savedArticles, saveArticle, unsaveArticle, isArticleSaved, isLoading, error }}
-    >
-      {children}
-    </SavedArticlesContext.Provider>
+  // A linear scan per card per render is O(cards x saved); a feed of 25 with 200 saved
+  // articles was 5,000 comparisons every time anything re-rendered.
+  const savedIds = useMemo(
+    () => new Set(savedArticles.map((article) => article.id)),
+    [savedArticles],
   );
+
+  const isArticleSaved = useCallback((articleId: string) => savedIds.has(articleId), [savedIds]);
+
+  const value = useMemo(
+    () => ({ savedArticles, saveArticle, unsaveArticle, isArticleSaved, isLoading, error }),
+    [savedArticles, saveArticle, unsaveArticle, isArticleSaved, isLoading, error],
+  );
+
+  return <SavedArticlesContext.Provider value={value}>{children}</SavedArticlesContext.Provider>;
 };
 
 export const useSavedArticles = () => {
   const context = useContext(SavedArticlesContext);
   if (context === undefined) {
     throw new Error("useSavedArticles must be used within a SavedArticlesProvider");
+  }
+  return context;
+};
+
+/** Safe no-op variant, matching useReadingProgressOptional. Lets presentational components —
+ * ArticleCard's swipe-to-save, in particular — reach saved state without every render tree
+ * that mounts a card being obliged to provide the context. */
+export const useSavedArticlesOptional = (): SavedArticlesContextType => {
+  const context = useContext(SavedArticlesContext);
+  if (context === undefined) {
+    return {
+      savedArticles: [],
+      saveArticle: (_article: Article) => {},
+      unsaveArticle: (_articleId: string) => {},
+      isArticleSaved: (_articleId: string) => false,
+      isLoading: false,
+      error: null,
+    } as SavedArticlesContextType;
   }
   return context;
 };

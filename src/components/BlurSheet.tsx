@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Dimensions, Pressable, Platform, BackHandler } from "react-native";
+import { View, StyleSheet, Dimensions, Pressable, BackHandler } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,7 +10,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { BlurView } from "expo-blur";
+import { GlassSurface } from "./GlassSurface";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeContext";
 import { useReduceMotion } from "../hooks/useReduceMotion";
@@ -52,7 +52,7 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
   blur = true,
   blurIntensity = 30,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
 
@@ -167,14 +167,12 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
       {/* Backdrop */}
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
         <Animated.View style={[StyleSheet.absoluteFill, backdropOpacity]}>
-          {blur && Platform.OS === "ios" ? (
-            <BlurView
+          {blur ? (
+            <GlassSurface
               intensity={blurIntensity}
-              tint={isDark ? "dark" : "light"}
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: isDark ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.2)" },
-              ]}
+              tone={{ light: "rgba(0, 0, 0, 0.2)", dark: "rgba(0, 0, 0, 0.3)" }}
+              opaqueTone={{ light: "rgba(0, 0, 0, 0.4)", dark: "rgba(0, 0, 0, 0.5)" }}
+              style={StyleSheet.absoluteFill}
             />
           ) : (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0, 0, 0, 0.4)" }]} />
@@ -194,19 +192,12 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
         >
           {/* Dynamic background with blur/transparency effect */}
           <Animated.View style={[StyleSheet.absoluteFill, backgroundStyle]}>
-            {blur && Platform.OS === "ios" ? (
-              <BlurView
+            {blur ? (
+              <GlassSurface
                 intensity={blurIntensity * 0.8}
-                tint={isDark ? "dark" : "light"}
-                style={[
-                  StyleSheet.absoluteFill,
-                  styles.sheetBackground,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(28, 28, 30, 0.95)"
-                      : "rgba(255, 255, 255, 0.95)",
-                  },
-                ]}
+                tone={{ light: "rgba(255, 255, 255, 0.95)", dark: "rgba(28, 28, 30, 0.95)" }}
+                opaqueTone={{ light: colors.background, dark: colors.background }}
+                style={[StyleSheet.absoluteFill, styles.sheetBackground]}
               />
             ) : (
               <View

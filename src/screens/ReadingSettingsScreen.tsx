@@ -9,6 +9,7 @@ import { Sliders } from "lucide-react-native";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { useNavigation } from "@react-navigation/native";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 export const ReadingSettingsScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -61,61 +62,33 @@ export const ReadingSettingsScreen: React.FC = () => {
         </Text>
 
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Abridged Reader</Text>
-              <Text style={styles.toggleDesc}>
-                Rapid Serial Visual Presentation mode for faster reading.
-              </Text>
-            </View>
-            <Switch
-              value={isReaderEnabled}
-              onValueChange={setIsReaderEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Abridged Reader"
+            description="Rapid Serial Visual Presentation mode for faster reading."
+            value={isReaderEnabled}
+            onValueChange={setIsReaderEnabled}
+          />
 
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>AI Summarization</Text>
-              <Text style={styles.toggleDesc}>
-                Automatically generate concise summaries of articles.
-              </Text>
-            </View>
-            <Switch
-              value={isSummarizationEnabled}
-              onValueChange={setIsSummarizationEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="AI Summarization"
+            description="Automatically generate concise summaries of articles."
+            value={isSummarizationEnabled}
+            onValueChange={setIsSummarizationEnabled}
+          />
 
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Continue Reading on Home</Text>
-              <Text style={styles.toggleDesc}>
-                Show in-progress articles at the top of Home. Off by default.
-              </Text>
-            </View>
-            <Switch
-              value={isContinueReadingEnabled}
-              onValueChange={setIsContinueReadingEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Continue Reading on Home"
+            description="Show in-progress articles at the top of Home. Off by default."
+            value={isContinueReadingEnabled}
+            onValueChange={setIsContinueReadingEnabled}
+          />
 
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Auto-Save on Completion</Text>
-              <Text style={styles.toggleDesc}>
-                Automatically save articles when read to the end in RSVP mode.
-              </Text>
-            </View>
-            <Switch
-              value={autoSaveOnComplete}
-              onValueChange={setAutoSaveOnComplete}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Auto-Save on Completion"
+            description="Automatically save articles when read to the end in RSVP mode."
+            value={autoSaveOnComplete}
+            onValueChange={setAutoSaveOnComplete}
+          />
         </View>
 
         <View style={styles.section}>
@@ -151,6 +124,8 @@ export const ReadingSettingsScreen: React.FC = () => {
           <View style={styles.strategyContainer}>
             {STRATEGIES.map((s) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: rsvpAnchorStrategy === s.value }}
                 key={s.value}
                 style={[styles.chip, rsvpAnchorStrategy === s.value && styles.chipSelected]}
                 onPress={() => setRsvpAnchorStrategy(s.value)}

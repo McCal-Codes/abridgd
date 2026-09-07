@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Linking,
   AccessibilityInfo,
 } from "react-native";
 import Animated, {
@@ -44,15 +43,13 @@ import {
 } from "../utils/sensitivity";
 import { logSensitiveArticleResponse, logArticleEmotion } from "../services/UserBehaviorLogger";
 import { EmotionPicker } from "../components/EmotionPicker";
+import { isPhotoCredit } from "../utils/photoCredit";
+import { resolveMediaUri } from "../utils/mediaUri";
+import { resolveRestoreOffset } from "../utils/readingPosition";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 type ArticleScreenRouteProp = RouteProp<RootStackParamList, "Article">;
-
-// Matches common photo-credit phrasing: "Photo:", "Credit:", "Photo by ...", wire-service
-// attributions ("AP Photo", "Getty Images", "Associated Press"), and "Photo/Courtesy of" lines.
-const CREDIT_PATTERN =
-  /^(photo|credit|courtesy|image)s?[:\s]|\b(AP Photo|Getty Images?|Associated Press|Photo by|Photo courtesy|Courtesy of)\b/i;
 
 export const ArticleScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -77,6 +74,11 @@ export const ArticleScreen: React.FC = () => {
 
   // Reading progress state
   const [readStartTime] = useState(Date.now());
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  // Reading position was written on every scroll and never read back, so "Continue Reading"
+  // took you to the article and dropped you at the top. Restore once, on the first layout
+  // that is actually tall enough to hold the saved offset.
+  const restoredScrollRef = React.useRef(false);
   const readingTimeIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const lastProgressSyncRef = React.useRef({
     completionPercentage: -1,
@@ -224,13 +226,6 @@ export const ArticleScreen: React.FC = () => {
 
   const VideoComponent = VideoModule?.Video ?? null;
 
-  const normalizeUri = (uri?: string) => {
-    if (!uri) return uri;
-    if (uri.startsWith("http:")) return uri.replace("http:", "https:");
-    if (!uri.startsWith("http")) return `https:${uri}`;
-    return uri;
-  };
-
   const parsedContent = useMemo(() => {
     const nodes = parseHtmlContent(bodyContent);
     const existingSources = new Set(
@@ -245,10 +240,24 @@ export const ArticleScreen: React.FC = () => {
 
     const extraImages = (article.mediaImages || [])
       .filter((src) => src && !existingSources.has(src))
-      .map((src) => ({ type: "image" as const, src, caption: undefined }));
+      .map((src) => ({
+        type: "image" as const,
+        src,
+        // The feed's media block describes the hero image specifically, so only that one
+        // inherits the caption and credit parsed off the item.
+        caption: src === article.imageUrl ? article.imageCaption : undefined,
+        credit: src === article.imageUrl ? article.imageCredit : undefined,
+      }));
 
     return [...nodes, ...extraVideos, ...extraImages];
-  }, [article.mediaImages, article.mediaVideos, bodyContent]);
+  }, [
+    article.mediaImages,
+    article.mediaVideos,
+    article.imageUrl,
+    article.imageCaption,
+    article.imageCredit,
+    bodyContent,
+  ]);
 
   // Auto-save article when reading completes (if enabled)
   const handleReaderComplete = async () => {
@@ -523,7 +532,19 @@ export const ArticleScreen: React.FC = () => {
     articleContent = (
       <Animated.View style={[{ flex: 1 }, animatedStyle]}>
         <ScrollView
+          ref={scrollViewRef}
           style={styles.container}
+          onContentSizeChange={(_width, height) => {
+            if (restoredScrollRef.current) return;
+
+            const decision = resolveRestoreOffset(getProgress?.(article.id), height);
+            if (decision.action === "wait") return;
+
+            restoredScrollRef.current = true;
+            if (decision.action === "restore") {
+              scrollViewRef.current?.scrollTo({ y: decision.offset, animated: false });
+            }
+          }}
           contentContainerStyle={[
             styles.content,
             {
@@ -669,12 +690,9 @@ export const ArticleScreen: React.FC = () => {
 
           {parsedContent.map((node, index) => {
             if (node.type === "text" && node.text) {
-              // Check for credit pattern (Credits often start with "Photo:"/"Credit:" or name a
-              // wire service/photo agency). A naive heuristic, but covers far more real-world
-              // patterns than checking only "Photo:"/"Credit:" prefixes.
-              const isCredit =
-                node.text.length < 140 &&
-                CREDIT_PATTERN.test(node.text);
+                // Most credits are folded into their image by the content parser; this catches
+              // the ones that ended up too far from any image to attach.
+              const isCredit = isPhotoCredit(node.text);
 
               if (isCredit) {
                 return (
@@ -701,11 +719,18 @@ export const ArticleScreen: React.FC = () => {
                 return null; // Skip images entirely in text-only mode
               }
 
+              // Feed bodies carry relative and data URLs, which the old inline normalizer
+              // turned into unloadable strings; anything unresolvable is skipped rather than
+              // rendered as a permanent "Image unavailable" box.
+              const imageUri = resolveMediaUri(node.src, article.link);
+              if (!imageUri) return null;
+
               return (
                 <View key={index} style={styles.imageContainer}>
                   <ArticleBodyImage
-                    uri={normalizeUri(node.src)!}
+                    uri={imageUri}
                     caption={node.caption}
+                    credit={node.credit}
                     compressed={imageLoadingMode === "compressed"}
                   />
                 </View>
@@ -713,7 +738,8 @@ export const ArticleScreen: React.FC = () => {
             } else if (node.type === "video" && node.src) {
               if (imageLoadingMode === "text-only") return null;
 
-              const uri = normalizeUri(node.src)!;
+              const uri = resolveMediaUri(node.src, article.link);
+              if (!uri) return null;
               const canInline = !!VideoComponent;
               return (
                 <View key={index} style={styles.videoContainer}>
@@ -731,7 +757,10 @@ export const ArticleScreen: React.FC = () => {
                     </Text>
                   )}
                   {node.caption && <Text style={styles.caption}>{node.caption}</Text>}
-                  <ScaleButton style={styles.videoOpenButton} onPress={() => void openExternalUrl(uri)}>
+                  <ScaleButton
+                    style={styles.videoOpenButton}
+                    onPress={() => void openExternalUrl(uri)}
+                  >
                     <Text style={styles.videoOpenText}>Open video in browser</Text>
                   </ScaleButton>
                 </View>

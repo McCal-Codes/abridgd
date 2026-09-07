@@ -7,6 +7,7 @@ import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
 import { HardDrive, Zap, Wifi } from "lucide-react-native";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 export const DataPerformanceSettingsScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -44,20 +45,12 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
 
         {/* Data Saver Mode */}
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Data Saver Mode</Text>
-              <Text style={styles.toggleDesc}>
-                Reduces data usage by compressing images and disabling prefetching. Improves battery
-                life on slower connections.
-              </Text>
-            </View>
-            <Switch
-              value={dataSaverMode}
-              onValueChange={setDataSaverMode}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Data Saver Mode"
+            description="Reduces data usage by compressing images and disabling prefetching. Improves battery life on slower connections."
+            value={dataSaverMode}
+            onValueChange={setDataSaverMode}
+          />
         </View>
 
         {/* Image Loading Mode */}
@@ -68,6 +61,8 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
           <View style={styles.optionRow}>
             <TouchableOpacity
               style={[styles.optionCard, imageLoadingMode === "full" && styles.optionCardSelected]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: imageLoadingMode === "full" }}
               onPress={() => setImageLoadingMode("full")}
             >
               <View style={styles.optionIcon}>
@@ -93,6 +88,8 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
                 styles.optionCard,
                 imageLoadingMode === "compressed" && styles.optionCardSelected,
               ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: imageLoadingMode === "compressed" }}
               onPress={() => setImageLoadingMode("compressed")}
             >
               <View style={styles.optionIcon}>
@@ -118,6 +115,8 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
                 styles.optionCard,
                 imageLoadingMode === "text-only" && styles.optionCardSelected,
               ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: imageLoadingMode === "text-only" }}
               onPress={() => setImageLoadingMode("text-only")}
             >
               <View style={styles.optionIcon}>

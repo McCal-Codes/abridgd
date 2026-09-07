@@ -39,7 +39,7 @@ import {
   Newspaper,
   Bookmark,
   Home,
-  Search,
+  Compass,
   Star,
   User,
 } from "lucide-react-native";
@@ -62,10 +62,11 @@ export const getTabConfig = (layout: "minimal" | "comprehensive"): Record<string
     minimal: {
       home: { name: "Home", component: HomeScreen, Icon: Home },
       discover: {
+        // Landing category only - SectionScreen's picker browses every configured category.
         name: "Discover",
         component: SectionScreen,
         params: { category: "Local" },
-        Icon: Search,
+        Icon: Compass,
       },
       saved: { name: "Saved", component: SavedScreen, Icon: Bookmark },
       digest: { name: "Digest", component: DigestScreen, Icon: Star },
@@ -206,7 +207,7 @@ export const RootNavigator = () => {
   }
 
   const initialRouteName = hasCompletedOnboarding && !shouldShowWhatsNew ? "Main" : "Onboarding";
-  const onboardingParams = shouldShowWhatsNew ? { startSlideId: "whats-new" } : undefined;
+  const onboardingParams = shouldShowWhatsNew ? ({ mode: "whatsNew" } as const) : undefined;
 
   return (
     <SafeAreaView
@@ -223,10 +224,13 @@ export const RootNavigator = () => {
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
             headerTitleAlign: "left",
-            // Every screen already renders its own serif H1 in content, matching
-            // HeroHeader on the tab screens. Showing `title` here too printed the
-            // same string twice on all nine settings screens. Each route keeps its
-            // `title` because iOS uses it for the *back* label on the next screen.
+            // Every screen already renders its own serif H1 in content, matching HeroHeader on
+            // the tab screens. Showing `title` here too printed the same string twice on all
+            // nine settings screens. Each route keeps its `title` because iOS uses it for the
+            // *back* label on the next screen.
+            //
+            // GlassStackHeader stays unwired for now: swapping in a custom JS header would
+            // reintroduce the duplicate title and give up the native back label this relies on.
             headerTitle: "",
           }}
         >
@@ -339,11 +343,13 @@ export const RootNavigator = () => {
               title: "Debug & Advanced",
             }}
           />
-          <Stack.Screen
-            name="iOS26Demo"
-            component={IOS26DemoScreen}
-            options={{ headerShown: false }}
-          />
+          {__DEV__ && (
+            <Stack.Screen
+              name="iOS26Demo"
+              component={IOS26DemoScreen}
+              options={{ headerShown: false }}
+            />
+          )}
           <Stack.Screen
             name="Achievements"
             component={AchievementsScreen}

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { spacing } from "../theme/spacing";
-import { typography } from "../theme/typography";
+import { fontScaleLimit, typography } from "../theme/typography";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import type { LucideIcon } from "lucide-react-native";
@@ -26,10 +26,16 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
     <View style={styles.container}>
       <View style={styles.row}>
         {Icon ? <Icon size={24} color={colors.primary} /> : null}
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
       </View>
       {subtitle ? (
-        <Text style={styles.subtitle} testID={subtitleTestID}>
+        <Text
+          style={styles.subtitle}
+          testID={subtitleTestID}
+          maxFontSizeMultiplier={fontScaleLimit.meta}
+        >
           {subtitle}
         </Text>
       ) : null}

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ImageOff } from "lucide-react-native";
+import { ZoomModal } from "./ZoomModal";
+import { ZoomableImage } from "./ZoomableImage";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { spacing } from "../theme/spacing";
@@ -14,6 +16,8 @@ const MAX_ASPECT_RATIO = 3; // very wide/short images are clamped so they don't 
 interface ArticleBodyImageProps {
   uri: string;
   caption?: string;
+  /** Photo attribution, rendered under the caption in a quieter style. */
+  credit?: string;
   compressed?: boolean;
 }
 
@@ -23,35 +27,29 @@ interface ArticleBodyImageProps {
  * the image fails to load — broken/hotlink-blocked/CORS-blocked images are common enough
  * across these RSS sources that silent failure reads as a bug.
  */
-export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({ uri, caption, compressed }) => {
+export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({
+  uri,
+  caption,
+  credit,
+  compressed,
+}) => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
 
   useEffect(() => {
     setFailed(false);
     setAspectRatio(null);
+  }, [uri]);
 
-    if (compressed) return; // compressed mode intentionally keeps a fixed, smaller footprint
-
-    let cancelled = false;
-    Image.getSize(
-      uri,
-      (width, height) => {
-        if (cancelled || !width || !height) return;
-        const ratio = Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, width / height));
-        setAspectRatio(ratio);
-      },
-      () => {
-        if (!cancelled) setFailed(true);
-      },
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, [uri, compressed]);
+  /** Clamped so a very tall image can't dominate the article and a very wide one can't
+   * collapse to a sliver. */
+  const applyDimensions = (width: number, height: number) => {
+    if (!width || !height) return;
+    setAspectRatio(Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, width / height)));
+  };
 
   if (failed) {
     return (
@@ -64,21 +62,53 @@ export const ArticleBodyImage: React.FC<ArticleBodyImageProps> = ({ uri, caption
 
   return (
     <View>
-      <Image
-        testID="article-body-image"
-        source={{ uri }}
-        style={
-          compressed
-            ? [styles.image, styles.imageCompressed]
-            : [styles.image, aspectRatio ? { aspectRatio } : { height: LOADING_HEIGHT }]
-        }
-        // "center" does not scale, so a 1200px RSS photo rendered at native size
-        // inside the compressed box - showing a crop of the middle few hundred
-        // pixels rather than the photo. "contain" fits it to the box instead.
-        resizeMode={compressed ? "contain" : "cover"}
-        onError={() => setFailed(true)}
-      />
+      <Pressable
+        onPress={() => setZoomed(true)}
+        accessibilityRole="imagebutton"
+        accessibilityLabel={caption ? `Photo: ${caption}` : "Photo"}
+        accessibilityHint="Opens the photo full screen"
+      >
+        <Image
+          testID="article-body-image"
+          source={{ uri }}
+          style={
+            compressed
+              ? [styles.image, styles.imageCompressed]
+              : [styles.image, aspectRatio ? { aspectRatio } : { height: LOADING_HEIGHT }]
+          }
+          // "center" does not scale, so a 1200px RSS photo rendered at native size inside the
+          // compressed box - showing a crop of the middle few hundred pixels rather than the
+          // photo. "contain" fits it to the box instead.
+          resizeMode={compressed ? "contain" : "cover"}
+          // Sized from the image that is already loading. Image.getSize used to run first,
+          // which meant every in-article photo was fetched twice — once to measure, once to
+          // render — on an article that can carry a dozen of them.
+          onLoad={(event) => {
+            if (compressed) return; // compressed mode keeps a fixed, smaller footprint
+            const { width, height } = event.nativeEvent.source;
+            applyDimensions(width, height);
+          }}
+          onError={() => setFailed(true)}
+        />
+      </Pressable>
       {caption ? <Text style={styles.caption}>{caption}</Text> : null}
+      {credit ? (
+        <Text style={[styles.caption, styles.credit]} accessibilityLabel={`Photo credit: ${credit}`}>
+          {credit}
+        </Text>
+      ) : null}
+
+      {/* Mounted only while open: an article can hold a dozen images, and a dozen always-mounted
+          Modals is a dozen render trees kept alive for a view nobody has asked for yet. */}
+      {zoomed ? (
+        <ZoomModal visible onClose={() => setZoomed(false)}>
+          <ZoomableImage
+            uri={uri}
+            accessibilityLabel={caption || "Photo"}
+            onDismiss={() => setZoomed(false)}
+          />
+        </ZoomModal>
+      ) : null}
     </View>
   );
 };
@@ -112,6 +142,12 @@ const createStyles = (colors: ThemeColors) =>
       fontFamily: typography.fontFamily.sans,
       fontSize: 13,
       color: colors.textSecondary,
+    },
+    credit: {
+      marginTop: 2,
+      fontSize: 12,
+      fontStyle: "normal",
+      opacity: 0.8,
     },
     caption: {
       marginTop: spacing.sm,

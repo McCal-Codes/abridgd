@@ -1,14 +1,36 @@
 import { parse } from "node-html-parser";
 import { decodeHtmlEntities } from "./htmlEntities";
+import { isPhotoCredit, splitCaptionAndCredit } from "./photoCredit";
 
 interface ContentNode {
   type: "text" | "image" | "header" | "video";
   text?: string;
   src?: string;
   caption?: string;
+  /** Photo attribution, kept separate from the caption so it can be styled as a credit. */
+  credit?: string;
   level?: string;
   poster?: string;
 }
+
+/** WordPress powers most of the feeds this app reads, and it emits captions as
+ * `<div class="wp-caption"><img><p class="wp-caption-text">…</p></div>` rather than a
+ * `<figure><figcaption>`. Matching only on figure meant losing captions on the majority
+ * of sources. */
+const WP_CAPTION_CLASS = /(^|\s)wp-caption(\s|$)/;
+const CAPTION_TEXT_CLASS = /(caption-text|wp-caption-text|image-caption|photo-caption|credit)/i;
+
+const captionFromNode = (node: any): string | undefined => {
+  const text = node?.text;
+  if (!text || !text.trim()) return undefined;
+  return text.trim();
+};
+
+/** Builds an image node with caption and credit split apart. */
+const buildImageNode = (src: string, rawCaption?: string): ContentNode => {
+  const { caption, credit } = splitCaptionAndCredit(rawCaption);
+  return { type: "image", src, caption, credit };
+};
 
 export const parseHtmlContent = (html: string): ContentNode[] => {
   if (!html) return [];
@@ -49,13 +71,12 @@ export const parseHtmlContent = (html: string): ContentNode[] => {
       }
     } else if (tag === "figure") {
       const img = node.querySelector("img");
-      const captionNode = node.querySelector("figcaption");
+      const captionNode = node.querySelector("figcaption") || node.querySelector(".wp-caption-text");
 
       if (img) {
         const src = img.attributes.src;
-        const caption = captionNode ? captionNode.text : undefined;
         if (src) {
-          nodes.push({ type: "image", src, caption });
+          nodes.push(buildImageNode(src, captionFromNode(captionNode)));
         }
       }
     } else if (["h1", "h2", "h3", "h4"].includes(tag)) {
@@ -90,6 +111,18 @@ export const parseHtmlContent = (html: string): ContentNode[] => {
       // fast-html-parser's structured text might be better here to preserve line breaks?
       // Let's manually join children to preserve spacing if needed.
 
+      const className = node.attributes?.class || "";
+
+      // A caption paragraph that follows its image (WordPress's `wp-caption-text`) belongs to
+      // that image, not to the body copy.
+      const previous = nodes[nodes.length - 1];
+      if (CAPTION_TEXT_CLASS.test(className) && previous?.type === "image" && !previous.caption) {
+        const { caption, credit } = splitCaptionAndCredit(node.text);
+        previous.caption = caption;
+        previous.credit = credit ?? previous.credit;
+        return;
+      }
+
       // Also check if P contains an IMG (WordPress does this)
       const nestedImg = node.querySelector("img");
       if (nestedImg) {
@@ -105,7 +138,16 @@ export const parseHtmlContent = (html: string): ContentNode[] => {
         nodes.push({ type: "text", text: decodeEntities(text.trim()) });
       }
     } else if (tag === "div") {
-      // Just recurse for divs
+      const className = node.attributes?.class || "";
+      if (WP_CAPTION_CLASS.test(className)) {
+        const img = node.querySelector("img");
+        const captionNode =
+          node.querySelector(".wp-caption-text") || node.querySelector("figcaption");
+        if (img?.attributes?.src) {
+          nodes.push(buildImageNode(img.attributes.src, captionFromNode(captionNode)));
+          return; // consumed: don't also walk the img and caption as loose children
+        }
+      }
       node.childNodes.forEach(walk);
     }
     // Generic recursion for other containers
@@ -116,7 +158,31 @@ export const parseHtmlContent = (html: string): ContentNode[] => {
 
   root.childNodes.forEach(walk);
 
-  return nodes;
+  return foldCreditsIntoImages(nodes);
+};
+
+/** Publishers routinely emit the attribution as a bare paragraph right after the image
+ * ("AP Photo/Gene J. Puskar"). Rendering it as body copy stranded it from the photo it
+ * belongs to, so attach it to the preceding image instead. */
+const foldCreditsIntoImages = (nodes: ContentNode[]): ContentNode[] => {
+  const folded: ContentNode[] = [];
+
+  nodes.forEach((node) => {
+    const previous = folded[folded.length - 1];
+    if (
+      node.type === "text" &&
+      node.text &&
+      previous?.type === "image" &&
+      !previous.credit &&
+      isPhotoCredit(node.text)
+    ) {
+      previous.credit = node.text.trim();
+      return;
+    }
+    folded.push(node);
+  });
+
+  return folded;
 };
 
 // fast-html-parser might not decode entities automatically in .text?

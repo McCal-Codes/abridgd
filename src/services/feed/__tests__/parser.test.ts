@@ -330,3 +330,55 @@ describe("normalizeRss2JsonItem", () => {
     expect(article.imageUrl).toBe("https://img/enc.jpg");
   });
 });
+
+describe("normalizeFeedItem image caption and credit", () => {
+  const provenance = { sourceDomain: "example.com", sourceLastRefreshedAt: null };
+
+  it("reads caption and credit off the chosen media:content entry", () => {
+    const article = normalizeFeedItem(
+      {
+        title: "Story",
+        "media:content": {
+          "@_url": "https://x.test/hero.jpg",
+          "@_width": "1200",
+          "media:description": "Fans gather on the North Shore.",
+          "media:credit": "AP Photo/Gene J. Puskar",
+        },
+      } as never,
+      "Top",
+      "Example",
+      provenance,
+    );
+
+    expect(article.imageCaption).toBe("Fans gather on the North Shore.");
+    expect(article.imageCredit).toBe("AP Photo/Gene J. Puskar");
+  });
+
+  it("falls back to item-level media metadata and splits an inline credit", () => {
+    const article = normalizeFeedItem(
+      {
+        title: "Story",
+        enclosure: { "@_url": "https://x.test/hero.jpg" },
+        "media:description": "The bridge at dusk (Photo: Jane Doe)",
+      } as never,
+      "Top",
+      "Example",
+      provenance,
+    );
+
+    expect(article.imageCaption).toBe("The bridge at dusk");
+    expect(article.imageCredit).toBe("Photo: Jane Doe");
+  });
+
+  it("leaves caption and credit undefined when the feed carries no media metadata", () => {
+    const article = normalizeFeedItem(
+      { title: "Story", enclosure: { "@_url": "https://x.test/hero.jpg" } } as never,
+      "Top",
+      "Example",
+      provenance,
+    );
+
+    expect(article.imageCaption).toBeUndefined();
+    expect(article.imageCredit).toBeUndefined();
+  });
+});

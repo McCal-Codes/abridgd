@@ -6,6 +6,26 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.5.7] - 2026-09-07
+
+### Fixed
+- In-article images with relative or inline sources never loaded. The URL normalizer prefixed anything not starting with "http" with "https:", turning `/images/a.jpg` into `https:/images/a.jpg` and mangling `data:` URIs — both rendered as the "Image unavailable" placeholder. Relative paths now resolve against the article's own origin, which is what the publisher meant. (TODO-139)
+- Article links from feeds are opened only when they use `http` or `https`. `Linking.openURL` was handed the `<link>` value straight out of third-party RSS, so a hostile or compromised feed could supply `tel:`, `sms:`, or another app's custom scheme and iOS would act on it. (TODO-138)
+- The photo viewer had no way out that wasn't a gesture. Its only dismissal was a backdrop tap, and the image added this release covers most of it — but the decisive part is that drag-to-dismiss is not an action VoiceOver can perform, so a screen-reader user had no way to close the viewer at all. There is a labelled Close button now. (TODO-138)
+- Body paragraphs were being deleted from articles. The photo-credit heuristic had no length bound on its leading patterns, so a paragraph opening "Courtesy of the Heinz History Center, the exhibit will run through..." was folded into the preceding image as its credit and dropped from the article entirely. Explicit attribution phrases are now bounded at 120 characters and bare wire-service names — which legitimately open sentences — at 60. (TODO-137)
+- Pull-to-refresh announced the wrong outcome to VoiceOver. It read `articles` and `error` from the handler's render closure after awaiting the refresh, so those still held pre-refresh values: a failed refresh announced "12 stories loaded". `refresh()` now returns what it actually did. (TODO-137)
+- A category where every source is genuinely quiet showed a network error with a Retry button that could not help. Empty-but-valid feeds are still recorded as failures so they cannot pass as silent successes, but they no longer count toward the error state — that case is "You're caught up". (TODO-137)
+- A latent crash in the new swipe and zoom gestures. Both called a plain component-scope helper from inside Reanimated gesture callbacks, which run on the UI thread — calling a non-worklet there throws at runtime, so it type-checked, passed tests, and would have failed the first time a finger touched the screen. Present in build 37. (TODO-135)
+- The Abridged reader recreated its word timer five times a second. The effect re-runs per word (each word's length adjusts its own display time), so `setInterval` was torn down and rebuilt every tick and never actually repeated; it is a `setTimeout` now, which is what it always was. (TODO-135)
+- Leaving an article within half a second of finishing it fired the reader's completion handler — which saves the article and writes progress — against an unmounted component. Closing the grounding overlay mid-breath did the same with its phase timers. Both are cleaned up now. (TODO-135)
+- Dropped two `console.log` calls from the full-story fetch path, which logged the URL of every article opened. (TODO-135)
+
+### Changed
+- Removed `EXPO_PUBLIC_PERPLEXITY_API_KEY` from `.env`. The key lives in `expo-secure-store` and nothing reads the environment variable, so it was never bundled — but `EXPO_PUBLIC_*` values are inlined wherever they are referenced, so leaving it there meant one added reference would ship it inside the IPA. (TODO-139)
+- The feed config's https guard now covers disabled sources too, and the one remaining `http://` URL was switched. A disabled source is a candidate for re-enabling, and ATS would block it the moment it was. (TODO-139)
+- Jest no longer scans git worktrees under `.claude/`, which were adding another branch's copy of every test file to local runs. (TODO-139)
+- Performance pass on the feed and article surfaces. `SavedArticlesContext` rebuilt its functions and value object every render, and every article card now subscribes to it for swipe-to-save, so a feed of cards all lost memoization together; `isArticleSaved` scanned the saved array linearly per card per render; `useCategoryFeed` re-merged and re-sorted the whole category cache on every render for a value only its state initializers use; `ArticleBodyImage` fetched each photo twice, once to measure and once to render; and the three article feeds ran on FlatList's default windowing, which is tuned for short lists rather than 25-30 image-bearing cards. `removeClippedSubviews` was considered and left out: it is the one windowing option React Native documents as able to drop content, and these cards carry shadows and an absolutely-positioned swipe panel. (TODO-136)
+
 ## [1.5.6] - 2026-09-06
 
 First release with Android builds alongside iOS.
@@ -42,6 +62,45 @@ First release with Android builds alongside iOS.
 ### Security
 - Links from feeds are now checked before opening. Only web addresses are followed.
 
+## [1.5.5] - 2026-09-05
+
+_Built as iOS build 37 and never distributed: a crash in the new gesture code was found before it
+went anywhere. The fixes, and everything below, ship as 1.5.7 instead — 1.5.6 was taken by the
+Android release that landed from master in the meantime._
+
+### Added
+- Swipe left on any article card to save or unsave it, with the action panel building as you drag and a haptic when it commits. Saved's empty state has instructed readers to do this since long before any gesture existed on a card. (TODO-132)
+- Articles reopen where you stopped reading. `scrollPixels` was written on every scroll and never read back, so Continue Reading took you to the story and dropped you at the top. A finished article still starts at the beginning. (TODO-133)
+- Tap any in-article photo to open it full screen, then pinch, double-tap or drag to examine it, and flick down to close. `ZoomModal` was built for this and used only by the demo screen, so a reading app had no way to look closely at a photo — and the modal itself only animated its scale on open, so "zoomed" meant "full screen and no closer". The viewer mounts only while open, rather than keeping a Modal alive per image. (TODO-131, TODO-134)
+- A documented Dynamic Type policy in `theme/typography.ts`. React Native already scales text with the system setting, so the risk was unbounded scaling breaking layout, not missing support: reading content stays uncapped, while chrome that sits beside a control or must hold one line (tab labels, badges, card meta rows, settings row labels) is capped generously rather than left to reach iOS's ~300%. (TODO-130)
+- Every category is now reachable. Business, Sports, and Culture were fetched only for the daily digest — Home is hardcoded to "Top" and both tab layouts pointed the section screen at "Local" — so three of five categories had no browsable entry point. The section screen now has a category picker across all five, rendered in the empty and error states too so a failing category isn't a dead end. (TODO-122)
+- Image captions and photo credits are parsed from feeds. The hero image carried neither despite media RSS providing `media:description`/`media:title`/`media:credit`, and body images only picked up captions from `<figure><figcaption>`, missing the WordPress `wp-caption` markup most of these publishers actually emit. Credits that arrive as their own paragraph are now attached to the image above them instead of rendering as stranded body copy. (TODO-125)
+- `npm run audit:feeds` re-probes every configured feed with the app's own fetch headers and fails only when an enabled source is unhealthy. Manual by design — third-party feed flakiness in PR CI would redden builds for reasons unrelated to the diff. (TODO-123)
+- `src/config/releaseNotes.ts`: reader-facing release notes, shown in What's New and linked from Settings → About. Separate from this changelog, which is written for engineers. (TODO-128)
+
+### Changed
+- Rebuilt the RSS source list against a live probe of all 28 configured feeds, which found 12 returning items. WESA was never broken — its feeds live at `<section>.rss`, not `<section>/rss`. Added seven verified news-outlet sources (Post-Gazette A&E and Sports, Pittsburgh Union Progress, The Allegheny Front, WQED, Table Magazine), removed eight dead domains, and rewrote every health note with a date and the real failure mode. Enabled sources 12 → 19; Culture 1 → 5. (TODO-123)
+- Rebuilt onboarding around four slides that each do something: the brief, the five sections (new — nothing told readers sections existed), the reader demo, and the grounding choice. Dropped the settings-preview slide, which showed a picture of settings and changed nothing, and the trust slide, whose three points are now a line under the final action. (TODO-127)
+- The "Discover" tab's magnifying-glass icon is now a compass. It browses; it never searched.
+- All 14 stack screens now use `GlassStackHeader`, which was built for exactly this and wired into nothing, leaving every screen on the stock header. (TODO-129)
+- Deduplicated three byte-identical copies of `formatUpdatedAgo` (Home, Section, Saved) and two of `FeedStatusBanner` (Home, Section) into shared modules. (TODO-129)
+- Sources settings explained how to add custom feeds directly beneath a card saying custom feeds were coming soon. Replaced with copy about what the toggles actually do.
+
+### Fixed
+- Pull-to-refresh was silent for screen-reader users on Home, Section and Saved — the spinner and the changed list are both purely visual. It now announces how many stories loaded, or that the refresh failed and cached stories are still showing. (TODO-130)
+- Screen titles now carry a header role, so VoiceOver's rotor can navigate between them. (TODO-130)
+- Settings toggles were unreachable by screen reader: every settings screen hand-built its rows as a plain View holding unassociated text next to a bare `Switch`, so VoiceOver read the label and the control as separate items, the description not at all, and only the switch thumb was tappable. Sixteen rows across six screens now use a shared `SettingsToggleRow` where the whole row is the control, announcing label, description and checked state. Another 25 option pills (`TabBarSettingsScreen` alone had 40 controls and zero accessibility props) now report their selected state. (TODO-130)
+- Sources settings showed the same "Temporarily disabled while the feed is down" line for every unavailable source. It now shows that source's own dated health note, so a bot-block and a dead domain read differently. (TODO-130)
+- Article cards were invisible to VoiceOver: no role, no label, so the most-tapped element in the app announced as six unrelated text fragments and no control. Each card is now one button labelled with its headline, source, time and byline. The meta row is also capped against Dynamic Type so it wraps instead of pushing the thumbnail off the card at the largest accessibility sizes. (TODO-130)
+- `ScaleButton` applied its accessibility-role default only in the production branch, not the Jest one, so role-based queries could pass in tests and fail on device. (TODO-130)
+- Reduce Transparency only worked on the tab bar. Every other glass surface — the stack header, article toolbar, sheets, modals, glass buttons — inlined its own `BlurView` with its own intensity and hardcoded rgba fallback, so the accessibility setting shipped in 1.5.0 was honored by one surface out of six. They now all render through a single `GlassSurface` component that decides blur in one place. (TODO-129)
+- What's New never worked. `RootNavigator` passed `startSlideId: "whats-new"`, no slide had that id, and unknown ids were silently ignored — so every returning reader was walked through the full first-run flow, "No account required" included, as if they had never opened the app. It now branches on the `mode` param that existed for this and was never read, and marks the version seen without re-running onboarding completion. (TODO-127)
+- The reading-speed slider did nothing. `AbridgedReader` held a local `useState(300)` and never read the saved `readingSpeed`, so the setting had no effect and the reader reset to 300 WPM every time. (TODO-126)
+- A feed that parses but returns zero items now reports a failure instead of `{ snapshot: null, failure: null }`, which no caller could see. TribLive's section feeds are exactly this shape, so a category quietly shrank rather than surfacing the cached-state and retry messaging that already existed. (TODO-124)
+- Settings → About's two onboarding links passed slide ids (`"whats-new-profile"`, `"practice"`) that have never existed, dropping readers on slide one of onboarding.
+- `APP_BUILD` was pinned at `"1"` while app.json shipped build 36, so every bug report named the wrong build. It now reads from `expo-constants`.
+- Removed Quiet Hours, which suppressed notifications in an app with no notification system, and the Welcome Back Digest toggle, which nothing read.
+- The iOS 26 demo screen and its Debug entry point are now dev-only; the route was registered in production builds.
 
 ## [1.5.0] - 2026-08-25
 

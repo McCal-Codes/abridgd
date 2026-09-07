@@ -38,8 +38,6 @@ interface SettingsContextType {
   setIsGroundingEnabled: (enabled: boolean) => Promise<void>;
   isSummarizationEnabled: boolean;
   setIsSummarizationEnabled: (enabled: boolean) => Promise<void>;
-  isWelcomeBackEnabled: boolean;
-  setIsWelcomeBackEnabled: (enabled: boolean) => Promise<void>;
   isContinueReadingEnabled: boolean;
   setIsContinueReadingEnabled: (enabled: boolean) => Promise<void>;
   subscriptionFeaturesLocked: boolean;
@@ -133,12 +131,6 @@ interface SettingsContextType {
   setImageLoadingMode: (mode: ImageLoadingMode) => Promise<void>;
   dataSaverMode: boolean;
   setDataSaverMode: (enabled: boolean) => Promise<void>;
-  quietHoursEnabled: boolean;
-  setQuietHoursEnabled: (enabled: boolean) => Promise<void>;
-  quietHoursStart: string;
-  setQuietHoursStart: (time: string) => Promise<void>;
-  quietHoursEnd: string;
-  setQuietHoursEnd: (time: string) => Promise<void>;
   hapticIntensity: HapticIntensity;
   setHapticIntensity: (intensity: HapticIntensity) => Promise<void>;
 }
@@ -162,8 +154,6 @@ const defaultSettingsContext: SettingsContextType = {
   setIsGroundingEnabled: async (_b: boolean) => {},
   isSummarizationEnabled: false,
   setIsSummarizationEnabled: async (_b: boolean) => {},
-  isWelcomeBackEnabled: true,
-  setIsWelcomeBackEnabled: async (_b: boolean) => {},
   isContinueReadingEnabled: false,
   setIsContinueReadingEnabled: async (_b: boolean) => {},
   subscriptionFeaturesLocked: false,
@@ -253,12 +243,6 @@ const defaultSettingsContext: SettingsContextType = {
   setImageLoadingMode: async (_m: ImageLoadingMode) => {},
   dataSaverMode: false,
   setDataSaverMode: async (_b: boolean) => {},
-  quietHoursEnabled: false,
-  setQuietHoursEnabled: async (_b: boolean) => {},
-  quietHoursStart: "22:00",
-  setQuietHoursStart: async (_t: string) => {},
-  quietHoursEnd: "08:00",
-  setQuietHoursEnd: async (_t: string) => {},
   hapticIntensity: "normal",
   setHapticIntensity: async (_i: HapticIntensity) => {},
 };
@@ -290,7 +274,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isReaderEnabled, setIsReaderEnabledState] = useState(true);
   const [isGroundingEnabled, setIsGroundingEnabledState] = useState(true);
   const [isSummarizationEnabled, setIsSummarizationEnabledState] = useState(false);
-  const [isWelcomeBackEnabled, setIsWelcomeBackEnabledState] = useState(true);
   const [isContinueReadingEnabled, setIsContinueReadingEnabledState] = useState(false);
   const [subscriptionFeaturesLocked, setSubscriptionFeaturesLockedState] = useState(false);
   const [lastAppVisit, setLastAppVisit] = useState<number | null>(null);
@@ -350,9 +333,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [lineHeight, setLineHeightState] = useState(1.5);
   const [imageLoadingMode, setImageLoadingModeState] = useState<ImageLoadingMode>("full");
   const [dataSaverMode, setDataSaverModeState] = useState(false);
-  const [quietHoursEnabled, setQuietHoursEnabledState] = useState(false);
-  const [quietHoursStart, setQuietHoursStartState] = useState("22:00");
-  const [quietHoursEnd, setQuietHoursEndState] = useState("08:00");
   const [hapticIntensity, setHapticIntensityState] = useState<HapticIntensity>("normal");
 
   const tabBarHeight = useMemo(() => {
@@ -404,7 +384,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const readerEnabled = await AsyncStorage.getItem("isReaderEnabled");
       const groundingEnabled = await AsyncStorage.getItem("isGroundingEnabled");
       const summarizationEnabled = await AsyncStorage.getItem("isSummarizationEnabled");
-      const welcomeBackEnabled = await AsyncStorage.getItem("isWelcomeBackEnabled");
       const continueReadingEnabled = await AsyncStorage.getItem("isContinueReadingEnabled");
       const lastVisit = await AsyncStorage.getItem("lastAppVisit");
       const savedDigestMode = await AsyncStorage.getItem("digestSummaryMode");
@@ -458,7 +437,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (groundingEnabled !== null) setIsGroundingEnabledState(groundingEnabled === "true");
       if (summarizationEnabled !== null)
         setIsSummarizationEnabledState(summarizationEnabled === "true");
-      if (welcomeBackEnabled !== null) setIsWelcomeBackEnabledState(welcomeBackEnabled === "true");
       if (continueReadingEnabled !== null)
         setIsContinueReadingEnabledState(continueReadingEnabled === "true");
       if (anchorStrategy && ["early", "standard", "center"].includes(anchorStrategy)) {
@@ -607,21 +585,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setDataSaverModeState(savedDataSaverMode === "true");
       }
 
-      const savedQuietHoursEnabled = await AsyncStorage.getItem("quietHoursEnabled");
-      if (savedQuietHoursEnabled !== null) {
-        setQuietHoursEnabledState(savedQuietHoursEnabled === "true");
-      }
-
-      const savedQuietHoursStart = await AsyncStorage.getItem("quietHoursStart");
-      if (savedQuietHoursStart) {
-        setQuietHoursStartState(savedQuietHoursStart);
-      }
-
-      const savedQuietHoursEnd = await AsyncStorage.getItem("quietHoursEnd");
-      if (savedQuietHoursEnd) {
-        setQuietHoursEndState(savedQuietHoursEnd);
-      }
-
       const savedHapticIntensity = await AsyncStorage.getItem("hapticIntensity");
       if (
         savedHapticIntensity &&
@@ -720,14 +683,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const setIsWelcomeBackEnabled = async (enabled: boolean) => {
-    try {
-      await AsyncStorage.setItem("isWelcomeBackEnabled", enabled.toString());
-      setIsWelcomeBackEnabledState(enabled);
-    } catch (e) {
-      logSettingError("save welcome back enabled state", e);
-    }
-  };
 
   const setIsContinueReadingEnabled = async (enabled: boolean) => {
     try {
@@ -1118,32 +1073,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const setQuietHoursEnabled = async (enabled: boolean) => {
-    try {
-      await AsyncStorage.setItem("quietHoursEnabled", enabled.toString());
-      setQuietHoursEnabledState(enabled);
-    } catch (e) {
-      logSettingError("save quiet hours enabled", e);
-    }
-  };
 
-  const setQuietHoursStart = async (time: string) => {
-    try {
-      await AsyncStorage.setItem("quietHoursStart", time);
-      setQuietHoursStartState(time);
-    } catch (e) {
-      logSettingError("save quiet hours start", e);
-    }
-  };
 
-  const setQuietHoursEnd = async (time: string) => {
-    try {
-      await AsyncStorage.setItem("quietHoursEnd", time);
-      setQuietHoursEndState(time);
-    } catch (e) {
-      logSettingError("save quiet hours end", e);
-    }
-  };
 
   const setHapticIntensity = async (intensity: HapticIntensity) => {
     try {
@@ -1184,8 +1115,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsGroundingEnabled,
         isSummarizationEnabled,
         setIsSummarizationEnabled,
-        isWelcomeBackEnabled,
-        setIsWelcomeBackEnabled,
         isContinueReadingEnabled,
         setIsContinueReadingEnabled,
         subscriptionFeaturesLocked,
@@ -1274,12 +1203,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setImageLoadingMode,
         dataSaverMode,
         setDataSaverMode,
-        quietHoursEnabled,
-        setQuietHoursEnabled,
-        quietHoursStart,
-        setQuietHoursStart,
-        quietHoursEnd,
-        setQuietHoursEnd,
         hapticIntensity,
         setHapticIntensity,
       }}

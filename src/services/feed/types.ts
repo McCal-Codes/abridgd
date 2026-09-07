@@ -41,6 +41,9 @@ export interface RawFeedItem {
   summary?: FastXmlTextNode;
   enclosure?: FastXmlAttributeNode;
   "media:content"?: FastXmlAttributeNode | FastXmlAttributeNode[];
+  "media:description"?: FastXmlTextNode;
+  "media:title"?: FastXmlTextNode;
+  "media:credit"?: FastXmlTextNode;
   "itunes:image"?: FastXmlAttributeNode;
   "media:thumbnail"?: FastXmlAttributeNode | FastXmlAttributeNode[];
   author?: FastXmlAuthorNode;

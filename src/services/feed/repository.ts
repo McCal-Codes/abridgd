@@ -130,8 +130,19 @@ const fetchSingleSource = async (
     const articles = parsed.items.map((raw) => normalizeFeedItem(raw, category, source.name, provenance()));
 
     if (articles.length === 0) {
+      // A feed that parses but carries no items is a failure, not a quiet success. Several
+      // publishers (TribLive's section feeds) serve a well-formed but empty document, and
+      // reporting null/null here made that indistinguishable from "nothing new" — the
+      // category just silently shrank instead of surfacing cached-state and retry messaging.
       await touchSourceAttempt(category, source.name, now);
-      return { snapshot: null, failure: null };
+      return {
+        snapshot: null,
+        failure: {
+          sourceName: source.name,
+          code: ErrorCode.RSS_FEED_EMPTY,
+          message: "Feed returned no stories.",
+        },
+      };
     }
 
     const snapshot: FeedCacheSnapshot = {
@@ -252,9 +263,14 @@ export const fetchCategory = async (
   const failures = results.map((result) => result.failure).filter((failure): failure is FeedFetchFailure => Boolean(failure));
   const freshResult = mergeCategoryFromCache(category, sourceNames);
 
-  if (freshResult.articles.length === 0 && failures.length > 0) {
+  // An empty-but-valid feed is reported as a failure so it can't pass as a silent success,
+  // but it isn't an error to show the reader: if every source simply had nothing new, that is
+  // the "You're caught up" state, not a network problem with a Retry button that can't help.
+  const hardFailures = failures.filter((failure) => failure.code !== ErrorCode.RSS_FEED_EMPTY);
+
+  if (freshResult.articles.length === 0 && hardFailures.length > 0) {
     // No source has ever succeeded (cache is empty) and every live attempt just failed too.
-    throw createFeedLoadError(category, failures);
+    throw createFeedLoadError(category, hardFailures);
   }
 
   if (failures.length > 0) {

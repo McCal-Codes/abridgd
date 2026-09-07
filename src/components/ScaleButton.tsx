@@ -55,9 +55,17 @@ export const ScaleButton: React.FC<ScaleButtonProps> = ({
   };
 
   if (isTestEnv) {
-    // Simplify for Jest: avoid Animated.View
+    // Simplify for Jest: avoid Animated.View. The accessibility defaults have to match the
+    // real branch below, or role-based queries pass in tests and fail on device.
     return (
-      <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} {...restProps}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        accessibilityRole={restProps.accessibilityRole || "button"}
+        accessible={restProps.accessible ?? true}
+        {...restProps}
+      >
         <View style={style}>{children}</View>
       </Pressable>
     );

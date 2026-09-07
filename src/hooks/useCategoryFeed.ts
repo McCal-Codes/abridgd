@@ -15,7 +15,15 @@ export interface CategoryFeedState {
   /** True when the currently-shown data is older than the soft cache TTL. */
   stale: boolean;
   lastUpdated: Date | null;
-  refresh: () => Promise<void>;
+  /** Resolves with what the refresh actually did. Callers that report the outcome can't read
+   * it off `articles`/`error` afterwards: those are captured in the handler's render closure
+   * and still hold pre-refresh values when the await returns. */
+  refresh: () => Promise<RefreshOutcome>;
+}
+
+export interface RefreshOutcome {
+  count: number;
+  failed: boolean;
 }
 
 const getErrorMessage = (error: unknown, fallback: string): string =>
@@ -30,7 +38,10 @@ const toDate = (timestamp: number | null): Date | null => (timestamp ? new Date(
  * (`refresh()`) is the only path that forces a live fetch regardless of freshness.
  */
 export const useCategoryFeed = (category: ArticleCategory): CategoryFeedState => {
-  const initialCache = getCachedCategory(category);
+  // Lazy: getCachedCategory filters sources, reads preferences, then merges and sorts every
+  // cached article for the category. It ran on every render of Home and Section while only
+  // ever being used by the state initializers below, which run once.
+  const [initialCache] = useState(() => getCachedCategory(category));
 
   const [articles, setArticles] = useState<Article[]>(initialCache?.articles ?? []);
   const [loading, setLoading] = useState<boolean>(!initialCache);
@@ -46,22 +57,37 @@ export const useCategoryFeed = (category: ArticleCategory): CategoryFeedState =>
     setLastUpdated(toDate(result.lastUpdated));
   }, []);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<RefreshOutcome> => {
     setRefreshing(true);
     setError(null);
     try {
       const result = await fetchCategory(categoryRef.current, { forceRefresh: true });
       applyResult(result);
+      return { count: result.articles.length, failed: false };
     } catch (e) {
       setError(getErrorMessage(e, "Failed to refresh."));
+      return { count: 0, failed: true };
     } finally {
       setRefreshing(false);
     }
   }, [applyResult]);
 
   useEffect(() => {
+    const categoryChanged = categoryRef.current !== category;
     categoryRef.current = category;
     let cancelled = false;
+
+    if (categoryChanged) {
+      // Switching categories in place (the Section screen's category picker): drop the
+      // previous category's articles immediately so they never render under the new
+      // heading, seeding from cache when we have it.
+      const cachedForNext = getCachedCategory(category);
+      setArticles(cachedForNext?.articles ?? []);
+      setStale(cachedForNext?.stale ?? false);
+      setLastUpdated(toDate(cachedForNext?.lastUpdated ?? null));
+      setLoading(!cachedForNext);
+      setError(null);
+    }
 
     const bootstrap = async () => {
       await ensureHydrated();

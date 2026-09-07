@@ -49,55 +49,39 @@ jest.mock("react-native-safe-area-context", () => {
   };
 });
 
-// Mock lucide-react-native icons
+// Mock lucide-react-native icons.
+//
+// A Proxy rather than a hand-maintained list: the previous allowlist meant any icon nobody had
+// remembered to add resolved to undefined, and React only complains when that branch actually
+// renders — so a missing entry surfaced as "Element type is invalid" in an unrelated test.
 jest.mock("lucide-react-native", () => {
   const React = require("react");
   const { View } = require("react-native");
-  const createMockIcon = () =>
-    React.forwardRef((props, ref) =>
+
+  const createMockIcon = (name) => {
+    const Icon = React.forwardRef((props, ref) =>
       React.createElement(View, { ref, ...props, testID: "lucide-icon" }, null),
     );
-
-  return {
-    // ArticleScreen icons
-    Waypoints: createMockIcon(),
-    Zap: createMockIcon(),
-    Bookmark: createMockIcon(),
-    Info: createMockIcon(),
-    // Other icons used in the app
-    Flame: createMockIcon(),
-    MapPin: createMockIcon(),
-    Briefcase: createMockIcon(),
-    Trophy: createMockIcon(),
-    Palette: createMockIcon(),
-    Newspaper: createMockIcon(),
-    Settings: createMockIcon(),
-    Home: createMockIcon(),
-    Search: createMockIcon(),
-    Star: createMockIcon(),
-    BookOpen: createMockIcon(),
-    Rss: createMockIcon(),
-    Layout: createMockIcon(),
-    Bug: createMockIcon(),
-    ChevronRight: createMockIcon(),
-    ArrowRight: createMockIcon(),
-    Plus: createMockIcon(),
-    Trash2: createMockIcon(),
-    RefreshCw: createMockIcon(),
-    Database: createMockIcon(),
-    FileText: createMockIcon(),
-    GripVertical: createMockIcon(),
-    Check: createMockIcon(),
-    PauseCircle: createMockIcon(),
-    Wind: createMockIcon(),
-    Sliders: createMockIcon(),
-    CheckCircle: createMockIcon(),
-    RotateCcw: createMockIcon(),
-    Undo2: createMockIcon(),
-    Sparkles: createMockIcon(),
-    ArrowRightCircle: createMockIcon(),
-    ImageOff: createMockIcon(),
+    Icon.displayName = name;
+    return Icon;
   };
+
+  const cache = new Map();
+
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        if (typeof prop !== "string") return undefined;
+        // Let Jest and the module system see through to the real module semantics.
+        if (prop === "__esModule") return true;
+        if (prop === "default") return undefined;
+        if (!cache.has(prop)) cache.set(prop, createMockIcon(prop));
+        return cache.get(prop);
+      },
+      has: () => true,
+    },
+  );
 });
 
 // Mock react-native-worklets
@@ -133,6 +117,12 @@ jest.mock("react-native-reanimated", () => {
     withSpring: jest.fn((value) => value),
     interpolate: jest.fn(() => 0),
     runOnJS: jest.fn((fn) => fn),
+    runOnUI: jest.fn((fn) => fn),
+    // Layout-measurement APIs. Without these, any component using them (ZoomModal) throws on
+    // import and simply can't be tested — which is how its missing close button went unnoticed.
+    useAnimatedRef: jest.fn(() => ({ current: null })),
+    measure: jest.fn(() => null),
+    useDerivedValue: jest.fn((fn) => ({ value: fn() })),
     Easing: { ease: jest.fn() },
   };
 });
@@ -141,24 +131,42 @@ jest.mock("react-native-gesture-handler", () => {
   const React = require("react");
   const { View } = require("react-native");
 
-  // Mirrors RNGH's builder API. The axis constraints matter as much as the
-  // callbacks: a Pan wrapping a ScrollView needs activeOffsetX/failOffsetY to
-  // avoid stealing vertical scrolls on Android, so leaving them off the mock
+  // Mirrors RNGH's builder API. Every configuration method returns the gesture, so a chain
+  // missing one method here fails only at test time, not on device. The axis constraints
+  // matter as much as the callbacks: a Pan wrapping a ScrollView needs activeOffsetX and
+  // failOffsetY to avoid stealing vertical scrolls on Android, so leaving them off the mock
   // meant the tests could not exercise the configuration that ships.
   const createChain = () => {
-    const chain = {
-      onBegin: jest.fn(() => chain),
-      onStart: jest.fn(() => chain),
-      onUpdate: jest.fn(() => chain),
-      onEnd: jest.fn(() => chain),
-      onFinalize: jest.fn(() => chain),
-      activeOffsetX: jest.fn(() => chain),
-      activeOffsetY: jest.fn(() => chain),
-      failOffsetX: jest.fn(() => chain),
-      failOffsetY: jest.fn(() => chain),
-      simultaneousWithExternalGesture: jest.fn(() => chain),
-      enabled: jest.fn(() => chain),
-    };
+    const chain = {};
+    [
+      "onBegin",
+      "onStart",
+      "onUpdate",
+      "onEnd",
+      "onFinalize",
+      "onTouchesDown",
+      "onTouchesUp",
+      "activeOffsetX",
+      "activeOffsetY",
+      "failOffsetX",
+      "failOffsetY",
+      "minDistance",
+      "maxPointers",
+      "minPointers",
+      "enabled",
+      "shouldCancelWhenOutside",
+      "simultaneousWithExternalGesture",
+      "requireExternalGestureToFail",
+      "hitSlop",
+      "runOnJS",
+      "numberOfTaps",
+      "maxDuration",
+      "maxDelay",
+      "minDuration",
+      "averageTouches",
+    ].forEach((method) => {
+      chain[method] = jest.fn(() => chain);
+    });
     return chain;
   };
 
@@ -167,6 +175,12 @@ jest.mock("react-native-gesture-handler", () => {
     GestureDetector: ({ children }) => React.createElement(React.Fragment, null, children),
     Gesture: {
       Pan: createChain,
+      Tap: createChain,
+      Pinch: createChain,
+      LongPress: createChain,
+      Simultaneous: createChain,
+      Race: createChain,
+      Exclusive: createChain,
     },
     PanGestureHandler: ({ children }) => React.createElement(View, {}, children),
     State: {},

@@ -44,6 +44,10 @@ export interface Article {
   publishedAt: number; // Unix timestamp for when article was published
   category: ArticleCategory;
   imageUrl?: string;
+  /** Caption for `imageUrl`, from media RSS (`media:description`/`media:title`). */
+  imageCaption?: string;
+  /** Attribution for `imageUrl`, from `media:credit` or split out of the caption text. */
+  imageCredit?: string;
   mediaImages?: string[];
   mediaVideos?: string[];
   readTimeMinutes: number;

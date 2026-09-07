@@ -17,10 +17,28 @@ jest.mock("react-native-reanimated", () => {
     withSpring: (v: any) => v,
     withTiming: (v: any) => v,
     runOnJS: (fn: any) => fn,
+    // useAnimatedStyle here actually invokes the worklet, so every helper the card's animated
+    // styles call has to exist.
+    interpolate: (value: number) => value,
     FadeInDown: { duration: () => ({ springify: () => ({}) }) },
     Easing: { linear: () => {} },
   };
 });
+
+let mockSaved = false;
+const mockSaveArticle = jest.fn();
+const mockUnsaveArticle = jest.fn();
+
+jest.mock("../../context/SavedArticlesContext", () => ({
+  useSavedArticlesOptional: () => ({
+    savedArticles: [],
+    saveArticle: mockSaveArticle,
+    unsaveArticle: mockUnsaveArticle,
+    isArticleSaved: () => mockSaved,
+    isLoading: false,
+    error: null,
+  }),
+}));
 
 jest.mock("../ArticleProgressIndicator", () => ({
   ArticleProgressIndicator: ({ articleId, size }: any) => {
@@ -79,5 +97,72 @@ describe("ArticleCard", () => {
     fireEvent(image, "onError");
 
     expect(queryByTestId("article-thumbnail")).toBeNull();
+  });
+});
+
+describe("ArticleCard accessibility", () => {
+  const fixture = {
+    id: "article-a11y",
+    headline: "Council approves riverfront plan",
+    summary: "Summary text",
+    source: "Post-Gazette",
+    timestamp: "2h ago",
+    publishedAt: Date.now(),
+    category: "Local" as const,
+    readTimeMinutes: 3,
+    body: "",
+  };
+
+  it("announces as one button carrying headline, source, time and byline", () => {
+    const article = { ...fixture, author: "Jane Doe" };
+
+    const { getByRole } = render(<ArticleCard article={article} onPress={jest.fn()} />);
+
+    const card = getByRole("button");
+    expect(card.props.accessibilityLabel).toBe(
+      "Council approves riverfront plan, Post-Gazette, 2h ago, By Jane Doe",
+    );
+    expect(card.props.accessibilityHint).toBe("Opens the full story");
+  });
+
+  it("omits the byline from the label when the story has no author", () => {
+    const article = { ...fixture, author: undefined };
+
+    const { getByRole } = render(<ArticleCard article={article} onPress={jest.fn()} />);
+
+    expect(getByRole("button").props.accessibilityLabel).not.toContain("By ");
+  });
+});
+
+describe("ArticleCard swipe-to-save", () => {
+  const fixture = {
+    id: "article-swipe",
+    headline: "Council approves riverfront plan",
+    summary: "Summary text",
+    source: "Post-Gazette",
+    timestamp: "2h ago",
+    publishedAt: Date.now(),
+    category: "Local" as const,
+    readTimeMinutes: 3,
+    body: "",
+  };
+
+  afterEach(() => {
+    mockSaved = false;
+  });
+
+  it("offers Save on a card that isn't saved yet", () => {
+    const { getByText } = render(<ArticleCard article={fixture} onPress={jest.fn()} />);
+
+    // Saved's empty state has told readers to swipe cards since long before a gesture existed.
+    expect(getByText("Save")).toBeTruthy();
+  });
+
+  it("offers Unsave once the article is saved", () => {
+    mockSaved = true;
+
+    const { getByText } = render(<ArticleCard article={fixture} onPress={jest.fn()} />);
+
+    expect(getByText("Unsave")).toBeTruthy();
   });
 });

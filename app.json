@@ -3,7 +3,7 @@
     "name": "Abridgd",
     "slug": "abridged",
     "scheme": "abridged",
-    "version": "1.5.6",
+    "version": "1.5.7",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

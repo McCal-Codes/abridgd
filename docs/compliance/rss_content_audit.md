@@ -1,6 +1,6 @@
 # RSS Content Use Audit
 
-Last Updated: 2026-08-08
+Last Updated: 2026-09-05
 
 **Correction (2026-08-08):** Sections 2, 3, and 6 below previously stated the app never scrapes HTML and never displays full articles. That was inaccurate — `src/services/FullStoryService.ts` does fetch and extract full article HTML from the publisher's own page (via per-publisher CSS selectors, plus a TribLive-specific WordPress REST API path) to power the in-app "Abridged Reader" view, and caches the extracted text for 24 hours (`src/services/fullStoryCache.ts`). The sections below have been rewritten to describe this accurately rather than scaling the feature back, since it's a deliberate, user-facing reading feature, not an oversight. See the updated risk assessment in Section 10.
 **App:** Abridgd
@@ -219,7 +219,39 @@ Consistent with the publisher-first posture in Sections 7–8, the app periodica
 | Culture | City Paper |
 | Culture | WESA Arts |
 
-**Known follow-up:** disabling City Paper and WESA Arts leaves Pittsburgh Mag as the only enabled Culture source. This was a deliberate choice — the app does not keep a verified-broken source enabled just to pad a category's source count — but it is a single point of failure worth resolving by sourcing a second healthy Culture feed in a future pass. See [ADR-0005](../standards/adr/0005-feed-pipeline-modularization.md) for the caching/reliability design this rests on.
+**2026-09-05 source health probe** — every configured URL was re-probed with the app's own
+fetch headers (`npm run audit:feeds`, which reads the same list from `src/data/feedConfig.ts`).
+12 of 28 sources were returning items. Results, by failure mode:
+
+| Mode | Sources |
+| --- | --- |
+| Wrong URL shape (feed alive at a different path) | WESA, WESA Arts |
+| HTTP 200 serving HTML instead of a feed | CBS Pittsburgh, Penguins |
+| Valid rss+xml carrying zero items | TribLive Business, TribLive Sports |
+| HTTP 403 bot-block (loads in a browser) | New Pittsburgh Courier, City Paper, Pgh Business Times |
+| HTTP 404 | Pirates, TechVibe Radio, InnovatePGH, Pittsburgh Independent, City Cast |
+| DNS/connection dead | The Incline, Pittsburgh Mom Collective |
+| HTTP 200, empty body | Pitt Panthers |
+
+**Resolution.** WESA was never broken — its feeds live at `<section>.rss`, not `<section>/rss`;
+correcting the path restored both the Top-section and Arts feeds. Sources whose domain or path
+is gone with no successor were removed outright (The Incline, Mom Collective, TechVibe,
+InnovatePGH, Pittsburgh Independent, City Cast, Pirates, Pitt Panthers) rather than left in the
+config as permanent dead weight. Seven verified news-outlet feeds were added: Post-Gazette A&E
+and Sports, Pittsburgh Union Progress, The Allegheny Front, WQED, and Table Magazine. Enabled
+sources went from 12 to 19.
+
+Bot-blocked and empty-feed sources stay listed and disabled with a dated note naming the actual
+failure, since a 403 may lift and an empty feed may refill — unlike a dead domain, those are
+worth re-probing.
+
+**Closed follow-up:** the 2026-06-25 probe left Pittsburgh Mag as the only enabled Culture
+source, flagged then as a single point of failure to resolve. Culture now runs on five verified
+sources (Pittsburgh Mag, WESA Arts, Post-Gazette A&E, WQED, Table Magazine). A test in
+`src/data/__tests__/feedConfig.test.ts` now fails the build if any category drops below two
+enabled sources, so this cannot silently recur. See
+[ADR-0005](../standards/adr/0005-feed-pipeline-modularization.md) for the caching/reliability
+design this rests on.
 
 **Risk Level:** Low (this section documents operational reliability, not a new legal/compliance exposure)
 

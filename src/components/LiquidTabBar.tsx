@@ -1,4 +1,5 @@
 import React from "react";
+import { fontScaleLimit } from "../theme/typography";
 import {
   Animated,
   StyleSheet,
@@ -503,7 +504,9 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                     <View style={[styles.badgeDot, { backgroundColor: colors.primary }]} />
                   ) : (
                     <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.badgeText}>{badge.value}</Text>
+                      <Text style={styles.badgeText} maxFontSizeMultiplier={fontScaleLimit.meta}>
+                        {badge.value}
+                      </Text>
                     </View>
                   )
                 ) : null}
@@ -517,6 +520,8 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
                       marginTop: isStandard ? 0 : styles.label.marginTop,
                     },
                   ]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={fontScaleLimit.meta}
                 >
                   {label}
                 </Text>

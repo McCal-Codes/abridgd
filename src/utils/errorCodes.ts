@@ -16,6 +16,9 @@ export enum ErrorCode {
   HTML_PARSE_FAILED = "ERR_2003",
   JSON_PARSE_FAILED = "ERR_2004",
   INVALID_ARTICLE_DATA = "ERR_2005",
+  /** Parsed cleanly and carried no items. A publisher-side condition, not a fault on our
+   * side, and not a reason to show the reader a retry prompt. */
+  RSS_FEED_EMPTY = "ERR_2006",
 
   // Storage Errors (3xxx)
   STORAGE_READ_FAILED = "ERR_3001",
@@ -97,6 +100,8 @@ export class ErrorHandler {
         return "Unable to read article content. The format may not be supported.";
       case ErrorCode.INVALID_ARTICLE_DATA:
         return "Article data is incomplete or corrupted.";
+      case ErrorCode.RSS_FEED_EMPTY:
+        return "This source has nothing new right now.";
 
       // Storage
       case ErrorCode.STORAGE_READ_FAILED:

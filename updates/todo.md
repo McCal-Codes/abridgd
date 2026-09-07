@@ -263,6 +263,112 @@ TODO-112 were already used by the Fraunces/serif-typeface work (see `e85fd96`/`6
 
 ---
 
+### Reachability, feeds, and onboarding (September 2026)
+
+Numbered from TODO-122; TODO-121 was taken by the v1.5.0 `rss-parser` removal above. This batch
+came out of an audit that started as a backlog groom and turned up shipped content readers could
+not reach, settings that did nothing, and an upgrade flow that treated returning readers as new.
+
+- [x] **TODO-122** | **v1.5.5** | Make every category reachable
+  - **Status**: Completed
+  - **Description**: `HomeScreen` is hardcoded to `useCategoryFeed("Top")` and both tab layouts pointed `SectionScreen` at `category: "Local"`, so Business, Sports and Culture were fetched only by `AiService` for the digest and had no browsable entry point. Added a category picker over `getAllCategories()`, rendered in the skeleton, error and empty branches too so a failing category isn't a trap. `useCategoryFeed` now clears the previous category's articles on switch, seeding from cache, so stories never render under the wrong heading. Discover's search icon became a compass; five phantom `TabParamList` entries no `ArticleCategory` ever had were deleted.
+  - **Definition of Done**: `npx tsc --noEmit` clean; suite green.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-123** | **v1.5.5** | Restore the feed source list against a live probe
+  - **Status**: Completed
+  - **Description**: Probed all 28 configured feeds; 12 returned items. WESA was never broken — its feeds are at `<section>.rss`, not `<section>/rss`. Added seven verified news-outlet sources, removed eight dead domains, rewrote every health note with a date and the real failure mode (bot-block vs. empty feed vs. dead domain, which the old blanket "Non-feed response" conflated). Enabled sources 12 → 19; Culture 1 → 5, closing ADR-0005's open follow-up. Added `npm run audit:feeds` and a config-guard test that fails if any category drops below two enabled sources.
+  - **Definition of Done**: `npm run audit:feeds` reports all enabled sources healthy; suite green.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-124** | **v1.5.5** | Report empty feeds honestly
+  - **Status**: Completed
+  - **Description**: `repository.ts` returned `{ snapshot: null, failure: null }` for a feed that parsed but carried no items — invisible to every caller, so the category silently shrank instead of surfacing cached-state and retry messaging. TribLive's section feeds are exactly this shape. Closes the long-open "feed failures surface honest error states instead of silent empty success" acceptance criterion.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-125** | **v1.5.5** | Parse image captions and photo credits
+  - **Status**: Completed
+  - **Description**: The hero image carried no caption or credit despite media RSS providing `media:description`/`media:title`/`media:credit`; body images only picked up `<figure><figcaption>`, missing the WordPress `wp-caption` markup most of these publishers emit; credits arriving as their own paragraph rendered as stranded body copy; and figcaption text skipped the entity decoding every other text path applied. New `src/utils/photoCredit.ts` owns the heuristics (replacing a copy inside `ArticleScreen`) and splits "Caption. (Photo: Jane Doe/AP)" into its two halves.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-126** | **v1.5.5** | Make settings controls do what they say, or remove them
+  - **Status**: Completed
+  - **Description**: The reading-speed slider had no effect — `AbridgedReader` held a local `useState(300)` and never read `readingSpeed`. `APP_BUILD` was pinned at "1" while app.json shipped 36, so bug reports named the wrong build. Quiet Hours suppressed notifications in an app with no notification system; the Welcome Back Digest toggle was read by nothing. The iOS 26 demo screen was registered in production builds. Sources settings explained how to add custom feeds directly under a card saying custom feeds were coming soon.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-127** | **v1.5.5** | Rebuild onboarding and fix the What's New flow
+  - **Status**: Completed
+  - **Description**: `RootNavigator` passed `startSlideId: "whats-new"`, no slide had that id, and unknown ids were silently ignored — every returning reader got the full first-run flow. Now branches on the `mode` param that existed for this and was never read, calling `markVersionSeen` rather than re-running onboarding completion. First run rebuilt around four slides that each do something, including a new one introducing the sections TODO-122 made reachable. Settings → About's two onboarding links pointed at slide ids that have never existed.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-128** | **v1.5.5** | Reader-facing release notes
+  - **Status**: Completed
+  - **Description**: `src/config/releaseNotes.ts`, shown in What's New and reachable from Settings → About. Deliberately separate from CHANGELOG.md, which is engineer-facing. A version with no entry falls back to a generic card rather than blocking a release; the release process doc now asks for an entry per release.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-129** | **v1.5.5** | One glass surface, and shared list helpers
+  - **Status**: Completed
+  - **Description**: `reduceTransparency` shipped in 1.5.0 honored by the tab bar alone; the other five glass surfaces each inlined their own `BlurView` with their own intensity and hardcoded fallback and checked nothing. All now route through `GlassSurface`. `GlassStackHeader` was wired in for the first time, replacing the stock header on all 14 stack screens. Also deduped three identical copies of `formatUpdatedAgo` and two of `FeedStatusBanner`.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-130** | **v1.5.5** | Accessibility pass: VoiceOver, Dynamic Type, touch targets
+  - **Status**: Completed
+  - **Description**: `ArticleCard` had zero accessibility props, so the most-tapped element in the app announced as six loose text fragments and no control. Settings screens hand-built toggle rows as unassociated text beside a bare `Switch` — `TabBarSettingsScreen` alone had 40 controls and no accessibility props. Shared `SettingsToggleRow`/`SettingsDisclosureRow` now make the whole row the control; 25 option pills report selected state; pull-to-refresh announces its result; screen titles carry a header role; `theme/typography.ts` carries a written Dynamic Type policy rather than per-file magic numbers.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-131** | **v1.5.5** | Tap an article photo to open it full screen
+  - **Status**: Completed
+  - **Description**: `ZoomModal` existed and was used only by the dev-only demo screen. In-article images are now image buttons that open it, and the viewer mounts only while open rather than keeping a Modal alive per image.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-132** | **v1.5.5** | Swipe an article card to save it
+  - **Status**: Completed
+  - **Description**: Saved's empty state has told readers to "swipe left on any article card to save it for later" for releases, while `ArticleCard` carried no gesture handler at all. Added with an action panel that builds as you drag, a haptic on commit, and a pan that only claims the gesture once it is clearly horizontal so list scrolling still wins. Found auditing against Apollo, whose swipe actions were its defining interaction.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-133** | **v1.5.5** | Reopen articles where reading stopped
+  - **Status**: Completed
+  - **Description**: `ArticleScreen` wrote `scrollPixels` on every scroll and nothing ever read it back — the tracking half of "resume where you left off" shipped, the resuming half did not, so Continue Reading opened articles at the top. `resolveRestoreOffset` waits for a layout tall enough to hold the offset (body text, images and full-story enrichment arrive in stages) and leaves a finished article at its beginning.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-134** | **v1.5.5** | A media viewer that can actually zoom
+  - **Status**: Completed
+  - **Description**: `ZoomModal` only animated scale 0.1 to 1 as it opened, so TODO-131's tap-to-zoom opened a photo full screen and offered no way to look closer — maps, charts and small print were unreadable. `ZoomableImage` adds pinch, pan while zoomed, double-tap to toggle, and a drag-down flick to dismiss. Apollo's media viewer was the most praised thing about it; this is the part worth having in a reader.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-135** | **v1.5.6** | Fix the worklet crash and three timer leaks
+  - **Status**: Completed
+  - **Description**: `ZoomableImage` and `ArticleCard` called a plain `settle` helper from inside Reanimated gesture callbacks; a non-worklet called on the UI thread throws at runtime, so this type-checked and passed tests while being a first-touch crash. Shipped in build 37. Also: `AbridgedReader` used `setInterval` for a timer its own effect recreated every word, its completion handler could fire after unmount, `GroundingOverlay` never cleared the phase timers nested inside its interval, and the full-story fetch logged every article URL to the console.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-136** | **v1.5.6** | Performance pass on feed and article surfaces
+  - **Status**: Completed
+  - **Description**: `SavedArticlesContext` recreated its functions and value each render while every `ArticleCard` now subscribes to it, so a whole feed lost memoization at once and each card rebuilt its pan gesture; `isArticleSaved` was an O(cards x saved) linear scan; `useCategoryFeed` called `getCachedCategory` — which filters sources and merges and sorts the category cache — on every render for a value only its state initializers read; `ArticleBodyImage` fetched every photo twice via `Image.getSize` before rendering it; the three article feeds used FlatList's default windowing; and `ScrollContext` rebuilt its value object around a ref-stable Animated.Value.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-137** | **v1.5.6** | Fix three defects found in review of this branch
+  - **Status**: Completed
+  - **Description**: A diff review over the branch turned up three real failures in code added this session. The photo-credit heuristic dropped the `length < 140` guard the ArticleScreen code it replaced had, so `foldCreditsIntoImages` deleted body paragraphs that opened with "Courtesy of"/"Associated Press" — verified against a 170-character paragraph that vanished from the parsed output. Pull-to-refresh read `articles`/`error` from a stale render closure and announced the opposite of what happened. And a genuinely quiet category raised a network error instead of the caught-up state, because empty-but-valid feeds counted toward the throw condition.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-138** | **v1.5.6** | Close two findings from the security and accessibility review
+  - **Status**: Completed
+  - **Description**: `ArticleScreen` passed `article.link` — text from third-party RSS — to `Linking.openURL` with no scheme check, so a hostile feed could reach the dialer or open another app via its custom scheme. Feed-derived URLs now go through `openExternalUrl`, which allows `http`/`https` only and reports refusal rather than silently doing nothing. Separately, `ZoomModal`'s only dismissal was a backdrop tap, and the full-bleed `ZoomableImage` added this release covers nearly all of it; a VoiceOver user cannot drag-to-dismiss, so the viewer was inescapable for them. Added a labelled Close button, and taught the reanimated test mock about `useAnimatedRef`/`measure` so `ZoomModal` can be tested at all — that gap is why the missing control went unnoticed.
+  - **Completed**: September 5, 2026
+
+- [x] **TODO-139** | **v1.5.6** | Close the remaining review follow-ups
+  - **Status**: Completed
+  - **Description**: `normalizeUri` in `ArticleScreen` prefixed any non-http src with `https:`, so root-relative paths became `https:/images/a.jpg` and `data:` URIs were mangled — both showed the "Image unavailable" placeholder. Replaced with `resolveMediaUri`, which resolves relative paths against the article's origin and is deliberately string-based, since React Native's URL constructor appends a trailing slash that would corrupt every resolved path. Also removed the stale `EXPO_PUBLIC_PERPLEXITY_API_KEY` from `.env` (never bundled, because nothing referenced it, but one reference away from being), extended the feed https guard to disabled sources, and stopped Jest scanning `.claude/worktrees`, which was adding another branch's tests to local runs.
+  - **Completed**: September 5, 2026
+
+
+
+
+
+
+
+---
+
 ## 📋 Version Roadmap
 
 ### 🚀 v1.1.0 (Current) — Build & Branding Complete
@@ -506,7 +612,7 @@ TODO-112 were already used by the Fraunces/serif-typeface work (see `e85fd96`/`6
 
 This sprint is considered complete only when:
 - [ ] All audit branches land with passing tests and type-checks
-- [ ] Feed failures surface honest error states instead of silent empty success
+- [x] Feed failures surface honest error states instead of silent empty success (TODO-124)
 - [ ] Features validated on iOS and Android
 - [ ] CHANGELOG updated with all v1.2.0 entries
 - [ ] ACHIEVED.md documents completion

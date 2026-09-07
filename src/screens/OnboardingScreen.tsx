@@ -14,12 +14,15 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BookOpen,
+  Compass,
   CheckCircle,
   PauseCircle,
   Sliders,
   Wind,
 } from "lucide-react-native";
 import { ScaleButton } from "../components/ScaleButton";
+import { getAllCategories } from "../services/feed/sourceRegistry";
+import { WhatsNewView } from "./onboarding/WhatsNewView";
 import { AbridgedReader } from "../components/AbridgedReader";
 import { useSettings, GroundingAnimationStyle } from "../context/SettingsContext";
 import { RootStackParamList } from "../navigation/types";
@@ -37,7 +40,7 @@ type OnboardingSlide = {
   demo?: boolean;
   demoText?: string;
   grounding?: boolean;
-  preview?: "brief" | "settings" | "trust";
+  preview?: "brief" | "sections" | "settings" | "trust";
   Icon: typeof BookOpen;
 };
 
@@ -49,6 +52,14 @@ const SLIDES: OnboardingSlide[] = [
       "Start with a short brief. Keep reading when you want more. No need to build the whole app in your head on day one.",
     preview: "brief",
     Icon: BookOpen,
+  },
+  {
+    id: "sections",
+    title: "Five sections, one place",
+    description:
+      "Top and Local for the day's news, then Business, Sports, and Culture when you want them. Every section pulls from several newsrooms, and you choose which ones.",
+    preview: "sections",
+    Icon: Compass,
   },
   {
     id: "rsvp-demo",
@@ -312,6 +323,43 @@ const READING_SPEEDS = [
  * Every control here writes straight to SettingsContext and persists, so a
  * choice made during onboarding is the choice the app opens with.
  */
+const SectionsPreview: React.FC = () => {
+  const styles = useThemedStyles(createStyles);
+  const categories = getAllCategories();
+
+  return (
+    <View style={styles.previewCard}>
+      <Text style={styles.previewEyebrow} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+        Sections
+      </Text>
+      <View style={styles.sectionChipRow}>
+        {categories.map((category, index) => (
+          <View
+            key={category}
+            style={[styles.sectionChip, index === 0 && styles.sectionChipActive]}
+          >
+            <Text
+              style={[styles.sectionChipText, index === 0 && styles.sectionChipTextActive]}
+              maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}
+            >
+              {category}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <View style={styles.previewDivider} />
+      {["WESA", "Post-Gazette", "PublicSource"].map((item) => (
+        <View key={item} style={styles.previewLineRow}>
+          <View style={styles.previewDot} />
+          <Text style={styles.previewLineText} maxFontSizeMultiplier={PREVIEW_TEXT_SCALE}>
+            {item}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
 const SettingsPreview: React.FC = () => {
   const styles = useThemedStyles(createStyles);
   const {
@@ -423,10 +471,12 @@ export const OnboardingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const {
     completeOnboarding,
+    markVersionSeen,
     groundingAnimationStyle,
     setGroundingAnimationStyle,
     reduceMotion,
   } = useSettings();
+  const mode = (route?.params?.mode as "firstRun" | "whatsNew" | undefined) ?? "firstRun";
   const [currentIndex, setCurrentIndex] = useState(0);
   const listRef = useRef<ScrollView>(null);
   const { width, height: screenHeight } = useWindowDimensions();
@@ -462,6 +512,12 @@ export const OnboardingScreen: React.FC = () => {
       }, 50);
 
       return () => clearTimeout(timeout);
+    }
+
+    // Silently ignoring an unknown id is how `startSlideId: "whats-new"` shipped: it matched
+    // no slide, so every returning reader got the first-run flow from slide one instead.
+    if (__DEV__) {
+      console.warn(`[Onboarding] startSlideId "${startId}" matches no slide.`);
     }
 
     return undefined;
@@ -552,6 +608,10 @@ export const OnboardingScreen: React.FC = () => {
             <BriefPreview />
           ) : null}
 
+          {item.preview === "sections" ? (
+            <SectionsPreview />
+          ) : null}
+
           {item.preview === "settings" ? (
             <SettingsPreview />
           ) : null}
@@ -569,6 +629,17 @@ export const OnboardingScreen: React.FC = () => {
       </View>
     );
   };
+
+  if (mode === "whatsNew") {
+    return (
+      <WhatsNewView
+        onDismiss={() => {
+          void markVersionSeen();
+          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -973,6 +1044,33 @@ const createStyles = (colors: ThemeColors) =>
       fontFamily: typography.fontFamily.serifBold,
       fontSize: 22,
       color: colors.text,
+    },
+    sectionChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+    sectionChip: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    sectionChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    sectionChipText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    sectionChipTextActive: {
+      color: colors.background,
+      fontWeight: "600",
     },
     previewDivider: {
       height: StyleSheet.hairlineWidth,

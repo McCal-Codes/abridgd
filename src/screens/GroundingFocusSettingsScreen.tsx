@@ -12,6 +12,7 @@ import {
   SensitiveTone,
 } from "../context/SettingsContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 const GROUNDING_COLORS = ["#A8C3B3", "#D8BFD8", "#B0C4DE", "#F5DEB3", "#D3D3D3"];
 
@@ -76,28 +77,18 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
         </Text>
 
         <View style={styles.section}>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Grounding</Text>
-              <Text style={styles.toggleDesc}>Enable breathing exercises for sensitive moments.</Text>
-            </View>
-            <Switch
-              value={isGroundingEnabled}
-              onValueChange={setIsGroundingEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>Grounding Prompts</Text>
-              <Text style={styles.toggleDesc}>Show gentle guidance during breaths.</Text>
-            </View>
-            <Switch
-              value={showGroundingPrompts}
-              onValueChange={setShowGroundingPrompts}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
+          <SettingsToggleRow
+            label="Grounding"
+            description="Enable breathing exercises for sensitive moments."
+            value={isGroundingEnabled}
+            onValueChange={setIsGroundingEnabled}
+          />
+          <SettingsToggleRow
+            label="Grounding Prompts"
+            description="Show gentle guidance during breaths."
+            value={showGroundingPrompts}
+            onValueChange={setShowGroundingPrompts}
+          />
         </View>
 
         <View style={styles.section}>
@@ -108,6 +99,8 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
           <View style={styles.chipRow}>
             {promptOptions.map((option) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: sensitivePromptLevel === option.value }}
                 key={option.value}
                 style={[styles.chip, sensitivePromptLevel === option.value && styles.chipSelected]}
                 onPress={() => setSensitivePromptLevel(option.value)}
@@ -129,6 +122,8 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
           <View style={styles.chipRow}>
             {actionOptions.map((option) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: sensitiveActionPreference === option.value }}
                 key={option.value}
                 style={[
                   styles.chip,
@@ -153,6 +148,8 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
           <View style={styles.chipRow}>
             {toneOptions.map((option) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: sensitiveTone === option.value }}
                 key={option.value}
                 style={[
                   styles.chip,
@@ -201,6 +198,8 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
           <View style={styles.optionRow}>
             {[4, 5, 6, 7, 8].map((duration) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: groundingBreathDuration === duration }}
                 key={duration}
                 style={[
                   styles.pill,
@@ -246,6 +245,8 @@ export const GroundingFocusSettingsScreen: React.FC = () => {
           <View style={styles.cardList}>
             {ANIMATION_STYLES.map((style) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: groundingAnimationStyle === style.value }}
                 key={style.value}
                 style={[
                   styles.card,

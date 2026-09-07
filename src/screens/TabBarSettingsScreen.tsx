@@ -22,6 +22,7 @@ import { ArticleCategory } from "../types/Article";
 import { useSettings } from "../context/SettingsContext";
 import type { LucideIcon } from "lucide-react-native";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
 interface TabOption {
   id: string;
@@ -208,6 +209,8 @@ export const TabBarSettingsScreen: React.FC = () => {
 
           <View style={styles.layoutOptions}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: tabLayout === "minimal" }}
               style={[styles.layoutOption, tabLayout === "minimal" && styles.layoutOptionSelected]}
               onPress={() => setTabLayout("minimal")}
             >
@@ -229,6 +232,8 @@ export const TabBarSettingsScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: tabLayout === "comprehensive" }}
               style={[
                 styles.layoutOption,
                 tabLayout === "comprehensive" && styles.layoutOptionSelected,
@@ -286,6 +291,8 @@ export const TabBarSettingsScreen: React.FC = () => {
             <Text style={styles.settingLabel}>Style</Text>
             <View style={styles.optionRow}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBarStyle === "floating" }}
                 style={[
                   styles.smallOption,
                   tabBarStyle === "floating" && styles.smallOptionSelected,
@@ -302,6 +309,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBarStyle === "compact" }}
                 style={[
                   styles.smallOption,
                   tabBarStyle === "compact" && styles.smallOptionSelected,
@@ -318,6 +327,8 @@ export const TabBarSettingsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: tabBarStyle === "standard" }}
                 style={[
                   styles.smallOption,
                   tabBarStyle === "standard" && styles.smallOptionSelected,
@@ -336,10 +347,11 @@ export const TabBarSettingsScreen: React.FC = () => {
             </View>
           </View>
 
-          <View style={styles.settingRow}>
-            <Text style={styles.settingLabel}>Show Labels</Text>
-            <Switch value={showTabLabels} onValueChange={(v) => setShowTabLabels(v)} />
-          </View>
+          <SettingsToggleRow
+            label="Show Labels"
+            value={showTabLabels}
+            onValueChange={(v) => setShowTabLabels(v)}
+          />
 
         </View>
 

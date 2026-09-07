@@ -20,9 +20,12 @@ import { typography } from "../theme/typography";
 import { ReadingProgress } from "../types/ReadingProgress";
 import * as Haptics from "expo-haptics";
 import { HeroHeader } from "../components/HeroHeader";
+import { FeedStatusBanner } from "../components/FeedStatusBanner";
 import { Home as HomeIcon } from "lucide-react-native";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { formatUpdatedAgo } from "../utils/relativeTime";
+import { announceRefreshResult } from "../utils/announce";
 
 type ContinueReadingItem = {
   article: Article;
@@ -38,31 +41,8 @@ const AnimatedFlatList: typeof FlatList =
     : FlatList) ||
   FlatList;
 
-const formatUpdatedAgo = (lastUpdated: Date | null): string | undefined => {
-  if (!lastUpdated) return undefined;
-  const diffMs = Date.now() - lastUpdated.getTime();
-  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
-  if (diffSeconds < 60) return "Updated just now";
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `Updated ${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `Updated ${diffDays}d ago`;
-};
-
 const isContinueReadingItem = (item: ContinueReadingItem | null): item is ContinueReadingItem => {
   return item !== null;
-};
-
-const FeedStatusBanner = ({ message }: { message: string }) => {
-  const styles = useThemedStyles(createStyles);
-
-  return (
-    <View style={styles.statusBanner} testID="home-feed-status">
-      <Text style={styles.statusBannerText}>{message}</Text>
-    </View>
-  );
 };
 
 const ContinueReadingSection = ({
@@ -291,6 +271,9 @@ export const HomeScreen: React.FC = () => {
       ) : (
         <AnimatedFlatList
           testID="home-list"
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={9}
           data={articles}
           keyExtractor={(item) => item.id}
           renderItem={renderArticle}
@@ -298,9 +281,9 @@ export const HomeScreen: React.FC = () => {
             <>
               {renderHeroHeader()}
               {error && articles.length > 0 ? (
-                <FeedStatusBanner message="Couldn't load fresh stories. Showing the last successful update." />
+                <FeedStatusBanner testID="home-feed-status" message="Couldn't load fresh stories. Showing the last successful update." />
               ) : stale ? (
-                <FeedStatusBanner message="Showing your last saved brief while we check for fresh stories." />
+                <FeedStatusBanner testID="home-feed-status" message="Showing your last saved brief while we check for fresh stories." />
               ) : null}
               {isContinueReadingEnabled && (
                 <ContinueReadingSection
@@ -342,7 +325,8 @@ export const HomeScreen: React.FC = () => {
             } catch {
               // noop if haptics unavailable
             }
-            await refresh();
+            const outcome = await refresh();
+            announceRefreshResult(outcome.count, outcome.failed);
           }}
         />
       )}
@@ -463,11 +447,6 @@ const createStyles = (colors: ThemeColors) =>
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-	  statusBannerText: {
-	    fontFamily: typography.fontFamily.sans,
-	    fontSize: typography.size.sm,
-	    color: colors.textSecondary,
-	  },
 	  sectionHeader: {
 	    paddingHorizontal: spacing.gutter,
 	    paddingTop: spacing.lg,

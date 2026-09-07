@@ -17,7 +17,7 @@ const baseFeedState = {
   error: null as string | null,
   stale: false,
   lastUpdated: null as Date | null,
-  refresh: jest.fn(),
+  refresh: jest.fn(async () => ({ count: 0, failed: false })),
 };
 
 jest.mock("../../context/SavedArticlesContext", () => ({
@@ -142,7 +142,7 @@ describe("HomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetSettings();
-    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, refresh: jest.fn() });
+    mockUseCategoryFeed.mockReturnValue({ ...baseFeedState, refresh: jest.fn(async () => ({ count: 0, failed: false })) });
     mockSavedArticlesContext = {
       savedArticles: [],
       saveArticle: jest.fn(),
@@ -314,6 +314,7 @@ describe("HomeScreen", () => {
         ...state,
         refresh: async () => {
           setState((prev: any) => ({ ...prev, articles: secondArticles }));
+          return { count: secondArticles.length, failed: false };
         },
       };
     });

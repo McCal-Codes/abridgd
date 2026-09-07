@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, StyleSheet } from 'react-native';
+import { GlassSurface } from './GlassSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -47,25 +47,21 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
     </View>
   );
 
-  if (blur && Platform.OS === 'ios') {
+  if (blur) {
     return (
-      <BlurView
+      <GlassSurface
         intensity={blurIntensity}
-        tint={isDark ? 'dark' : 'light'}
+        tone={{ light: 'rgba(255, 255, 255, 0.85)', dark: 'rgba(28, 28, 30, 0.85)' }}
+        opaqueTone={{ light: colors.background, dark: colors.background }}
         style={[
           styles.container,
           {
-            backgroundColor: isDark 
-              ? 'rgba(28, 28, 30, 0.85)'
-              : 'rgba(255, 255, 255, 0.85)',
-            borderTopColor: isDark
-              ? 'rgba(255, 255, 255, 0.1)'
-              : 'rgba(0, 0, 0, 0.1)',
+            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
           },
         ]}
       >
         {content}
-      </BlurView>
+      </GlassSurface>
     );
   }
 
