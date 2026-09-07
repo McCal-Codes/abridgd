@@ -6,7 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-## [1.5.7] - 2026-09-06
+## [1.5.7] - 2026-09-07
 
 ### Fixed
 - In-article images with relative or inline sources never loaded. The URL normalizer prefixed anything not starting with "http" with "https:", turning `/images/a.jpg` into `https:/images/a.jpg` and mangling `data:` URIs — both rendered as the "Image unavailable" placeholder. Relative paths now resolve against the article's own origin, which is what the publisher meant. (TODO-139)

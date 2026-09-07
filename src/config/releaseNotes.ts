@@ -17,6 +17,16 @@ export interface ReleaseNote {
  * missing entry is handled gracefully but wastes the moment.
  */
 export const RELEASE_NOTES: Record<string, Omit<ReleaseNote, "version">> = {
+  "1.5.7": {
+    headline: "Every section, and where you left off",
+    items: [
+      "Business, Sports and Culture are browsable at last — Discover switches between all five sections.",
+      "19 working sources, up from 12. Culture went from one to five.",
+      "Swipe left on any story to save it, and pick up articles where you stopped reading.",
+      "Pinch, double-tap and drag photos to look closer, with captions and credits carried over from the source.",
+      "The reading-speed slider changes reading speed. It never did before.",
+    ],
+  },
   "1.5.6": {
     headline: "Every section, and where you left off",
     items: [

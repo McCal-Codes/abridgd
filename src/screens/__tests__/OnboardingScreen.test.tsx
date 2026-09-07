@@ -56,13 +56,13 @@ describe("OnboardingScreen first-run flow", () => {
     const { getByTestId } = render(<OnboardingScreen />);
 
     expect(getByTestId("onboarding-progress-text")).toHaveTextContent(
-      "Onboarding progress: slide 1 of 4",
+      "Onboarding progress: slide 1 of 6",
     );
 
     fireEvent.press(getByTestId("onboarding-next"));
 
     expect(getByTestId("onboarding-progress-text")).toHaveTextContent(
-      "Onboarding progress: slide 2 of 4",
+      "Onboarding progress: slide 2 of 6",
     );
   });
 
@@ -72,6 +72,9 @@ describe("OnboardingScreen first-run flow", () => {
     const { getByTestId } = render(<OnboardingScreen />);
 
     fireEvent.press(getByTestId("onboarding-grounding-simple"));
+    // grounding sits at 4 of 6 after the merge; advance to the last slide to finish
+    fireEvent.press(getByTestId("onboarding-next"));
+    fireEvent.press(getByTestId("onboarding-next"));
     fireEvent.press(getByTestId("onboarding-finish"));
 
     await waitFor(() => {
@@ -91,7 +94,7 @@ describe("OnboardingScreen first-run flow", () => {
     const { getByTestId } = render(<OnboardingScreen />);
 
     expect(getByTestId("onboarding-progress-text")).toHaveTextContent(
-      "Onboarding progress: slide 1 of 4",
+      "Onboarding progress: slide 1 of 6",
     );
   });
 });
