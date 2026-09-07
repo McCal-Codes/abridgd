@@ -8,6 +8,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
+- [Fixed] Glass surfaces were flat on Android. `GlassSurface` gated blur behind `Platform.OS === "ios"` on the claim that Android's BlurView support was uneven — which was never measured and contradicted `LiquidTabBar`, which has rendered BlurView on Android since the Android pipeline landed. expo-blur does support Android: `experimentalBlurMethod` defaults to `'none'`, so it renders a tinted translucent surface rather than a real blur. Every glass surface now behaves the same on both platforms.
 
 ## [0.2.0-beta.1] - 2026-11-05
 

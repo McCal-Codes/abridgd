@@ -61,3 +61,24 @@ describe("GlassSurface", () => {
     expect(getByTestId("surface")).toHaveStyle({ backgroundColor: "#eeeeee" });
   });
 });
+
+describe("GlassSurface across platforms", () => {
+  it("renders the blur surface rather than a flat one when transparency is allowed", () => {
+    // expo-blur supports Android too — experimentalBlurMethod defaults to 'none', so it is a
+    // tinted translucent surface there rather than a real blur. LiquidTabBar has shipped that
+    // on Android since the Android pipeline landed; gating this component to iOS left every
+    // other glass surface flat on the platform the app had just started targeting.
+    mockReduceTransparency = false;
+
+    const { getByTestId } = render(
+      <GlassSurface
+        testID="surface"
+        tone={{ light: "rgba(255,255,255,0.85)", dark: "rgba(28,28,30,0.85)" }}
+        opaqueTone={{ light: "#ffffff", dark: "#000000" }}
+      />,
+    );
+
+    // The blur mock renders with the translucent tone; the opaque path would use #ffffff.
+    expect(getByTestId("surface")).toHaveStyle({ backgroundColor: "rgba(255,255,255,0.85)" });
+  });
+});
