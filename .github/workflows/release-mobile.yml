@@ -206,7 +206,12 @@ jobs:
             wait_for_build="true"
           fi
 
-          cmd=(npx eas build --platform "${{ matrix.platform }}" --profile "${{ needs.setup.outputs.profile }}" --non-interactive --json)
+          # `eas`, not `npx eas`: expo-github-action installs eas-cli globally, so the binary
+          # is already on PATH. npx finds no local install, then downloads the unrelated `eas`
+          # package that squats the name on npm — it ships no executable, so every release
+          # died with "could not determine executable to run", and npx was quietly pulling a
+          # stranger's package on the way there.
+          cmd=(eas build --platform "${{ matrix.platform }}" --profile "${{ needs.setup.outputs.profile }}" --non-interactive --json)
 
           if [ "$wait_for_build" = "true" ]; then
             cmd+=(--wait)
