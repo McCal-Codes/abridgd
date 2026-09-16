@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/icon.png" alt="Abridged app icon" width="128" height="128">
+  <img src="assets/icon.png" alt="Abridgd app icon" width="128" height="128">
 </p>
 
-<h1 align="center">Abridged</h1>
+<h1 align="center">Abridgd</h1>
 
 <p align="center">
   A calm, local-first news reader for Pittsburgh.
@@ -19,9 +19,9 @@
   <a href="./docs/README.md">Docs Index</a>
 </p>
 
-## Why Abridged
+## Why Abridgd
 
-Abridged is an iOS-first reading app that rethinks how local news should feel. Instead of endless feeds, aggressive alerts, and cluttered layouts, it focuses on a quieter experience: trusted local coverage, clear reading surfaces, intentional navigation, and a product that respects the reader's attention.
+Abridgd is an iOS-first reading app that rethinks how local news should feel. Instead of endless feeds, aggressive alerts, and cluttered layouts, it focuses on a quieter experience: trusted local coverage, clear reading surfaces, intentional navigation, and a product that respects the reader's attention.
 
 The project starts with Pittsburgh. The goal is simple: make it easier to catch up on what matters locally without the mental tax of modern news apps.
 
@@ -29,7 +29,7 @@ The project starts with Pittsburgh. The goal is simple: make it easier to catch 
 
 - Pittsburgh-focused coverage from multiple local news sources
 - A clean home feed, section views, and digest-style reading flows
-- Classic reading plus a faster Abridged reader mode for quick catch-ups
+- Classic reading plus a faster Abridgd reader mode for quick catch-ups
 - Saved articles, continue-reading state, and profile-aware preferences
 - Light and dark themes, reader controls, haptics, and accessibility-minded UI
 - Better resilience around feed errors, cached content, and refresh behavior
@@ -85,8 +85,8 @@ From the Expo prompt:
 This is the recommended path for testers and stakeholders.
 
 1. Install Apple's TestFlight app on your iPhone or iPad.
-2. Accept the latest Abridged invite or public testing link from the team.
-3. Open the TestFlight listing for Abridged and tap `Install`.
+2. Accept the latest Abridgd invite or public testing link from the team.
+3. Open the TestFlight listing for Abridgd and tap `Install`.
 4. Update in place as new builds are published.
 
 ### Build an IPA with EAS

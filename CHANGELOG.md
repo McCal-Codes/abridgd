@@ -8,6 +8,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
+- [Changed] On-screen text now uses the app's display name, Abridgd, in the reader toggle, Reading and Digest settings, and the reader tour link, matching `docs/standards/branding.md`. The README follows suit. Technical identifiers (`abridged`, `AbridgedReader`) are unchanged.
 
 ## [0.2.0-beta.1] - 2026-11-05
 
