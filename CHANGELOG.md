@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Changed
+- On-screen text now uses the app's display name, Abridgd, in the reader toggle, Reading and Digest settings, and the reader tour link, matching `docs/standards/branding.md`. The README follows suit. Technical identifiers (`abridged`, `AbridgedReader`) are unchanged.
+
 ## [1.5.7] - 2026-09-07
 
 ### Fixed

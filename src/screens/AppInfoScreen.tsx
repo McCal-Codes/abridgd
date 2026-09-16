@@ -70,7 +70,7 @@ export const AppInfoScreen: React.FC = () => {
               (navigation as any).navigate("Onboarding", { startSlideId: "reader" })
             }
           >
-            <Text style={styles.actionText}>Revisit the Abridged reader tour</Text>
+            <Text style={styles.actionText}>Revisit the Abridgd reader tour</Text>
             <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 

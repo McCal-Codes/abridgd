@@ -677,7 +677,7 @@ export const ArticleScreen: React.FC = () => {
                       isReaderExpanded && styles.abridgedActiveButtonText,
                     ]}
                   >
-                    {isReaderExpanded ? "Hide Abridged Reader" : "Abridged Reader"}
+                    {isReaderExpanded ? "Hide Abridgd Reader" : "Abridgd Reader"}
                   </Text>
                 </View>
               </ScaleButton>
