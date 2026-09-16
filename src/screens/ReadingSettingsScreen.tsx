@@ -63,7 +63,7 @@ export const ReadingSettingsScreen: React.FC = () => {
 
         <View style={styles.section}>
           <SettingsToggleRow
-            label="Abridged Reader"
+            label="Abridgd Reader"
             description="Rapid Serial Visual Presentation mode for faster reading."
             value={isReaderEnabled}
             onValueChange={setIsReaderEnabled}
@@ -227,7 +227,7 @@ export const ReadingSettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Previews</Text>
 
-          <Text style={styles.subsectionLabel}>Abridged Reader Preview</Text>
+          <Text style={styles.subsectionLabel}>Abridgd Reader Preview</Text>
           <AbridgedReader content="I hope you are having a wonderful day, and by the way, I truly believe that almost anything tastes better when it is served as chicken on a stick." />
         </View>
 
