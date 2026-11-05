@@ -385,7 +385,8 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
 - [x] **TODO-144** | **Unreleased** | Platform pass: dark mode, contrast, haptics, window size, privacy manifest
   - **Status**: Completed (checked in a web render of both themes; not yet run on a device)
   - **Description**: `userInterfaceStyle` automatic + `expo-system-ui` + a dark splash; light `tint`/`primary` darkened to `#00778A` and `tertiaryLabel` to `#6B6B70`, with `theme/__tests__/contrast.test.ts` asserting WCAG AA for every text token on every surface in both themes; every haptic goes through `src/utils/haptics.ts`, which honours `hapticIntensity`; `BlurSheet` and `GroundingOverlay` use `useWindowDimensions`; `x86_64` added to the Android ABIs; `ios.privacyManifests` declares crash and performance data. A prebuild confirmed `UIUserInterfaceStyle=Automatic`, `uiMode` in the activity's `configChanges`, `values-night`, `reactNativeArchitectures` with x86_64, and the generated `PrivacyInfo.xcprivacy`.
-  - **Not done yet**: a hard-coded colour sweep of the remaining 29 literals (SavedScreen, ArticleScreen, DigestScreen, ErrorBoundary, TabBarSettings), adaptive/monochrome Android icon and padded splash art (needs design assets), predictive back (needs an Android 16 device test), Sign in with Apple revocation, the Liquid Glass decision, and the tab-bar and large-screen work (Phase 3).
+  - **Also done**: the crash screen and emotion prompt are themed (the remaining literals in the codebase are shadow colours and text on dark overlays, which are fine in both themes); Sign in with Apple revocation is checked at launch and on foreground (`useAppleCredentialCheck`).
+  - **Not done yet**: adaptive/monochrome Android icon and padded splash art (needs design assets), predictive back (needs an Android 16 device test), the Liquid Glass decision, and the tab-bar and large-screen work (Phase 3).
 
 
 

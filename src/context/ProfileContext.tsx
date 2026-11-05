@@ -8,6 +8,7 @@ import { Buffer } from "buffer";
 import { clearSavedArticles, getSavedArticlesStorageKey } from "../utils/storage";
 import { clearAllReadingProgress, getReadingProgressStorageKey } from "../utils/readingProgressStorage";
 import { clearSavedEvents, getSavedEventsStorageKey } from "../features/events/savedEventsStorage";
+import { useAppleCredentialCheck } from "../hooks/useAppleCredentialCheck";
 
 // Ensure Buffer exists in React Native runtime
 const globalWithBuffer = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
@@ -536,6 +537,11 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     persistProfiles([fallback]);
     return fallback;
   }, [activeProfile, profiles, activateProfile, persistProfiles]);
+
+  // Sign the profile out if the person revokes Sign in with Apple in iOS Settings.
+  useAppleCredentialCheck(activeProfile?.appleUserId, () => {
+    signOut();
+  });
 
   const signInWithAppleProfile = useCallback(
     (user: { id: string; email?: string; displayName?: string }): Profile => {
