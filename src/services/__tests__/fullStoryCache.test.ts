@@ -98,3 +98,43 @@ describe("fullStoryCache", () => {
     expect(keysAfter).toHaveLength(0);
   });
 });
+
+describe("fullStoryCache bounds", () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+  });
+
+  it("does not serve a body cached for a different URL that hashes to the same key", async () => {
+    const { MAX_FULL_STORY_ENTRIES } = jest.requireActual("../fullStoryCache");
+    expect(MAX_FULL_STORY_ENTRIES).toBeGreaterThan(0);
+
+    (fetchFullArticleBody as jest.Mock).mockResolvedValue({ body: "<p>A</p>" });
+    await fetchAndCacheFullStory("https://example.com/a");
+
+    // Tamper the stored entry so its recorded URL differs from the one being requested,
+    // simulating a hash collision on the same storage key.
+    const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(KEY_PREFIX));
+    expect(keys).toHaveLength(1);
+    const raw = JSON.parse((await AsyncStorage.getItem(keys[0])) as string);
+    raw.url = "https://example.com/other";
+    await AsyncStorage.setItem(keys[0], JSON.stringify(raw));
+
+    expect(await getCachedFullStory("https://example.com/a")).toBeNull();
+  });
+
+  it("evicts the oldest entries beyond the cap", async () => {
+    const { pruneFullStoryCache } = jest.requireActual("../fullStoryCache");
+    for (let i = 0; i < 5; i++) {
+      await AsyncStorage.setItem(
+        `${KEY_PREFIX}k${i}`,
+        JSON.stringify({ url: `u${i}`, html: "x", fetchedAt: 1000 + i, schemaVersion: 1 }),
+      );
+    }
+
+    await pruneFullStoryCache(3);
+
+    const remaining = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(KEY_PREFIX)).sort();
+    expect(remaining).toEqual([`${KEY_PREFIX}k2`, `${KEY_PREFIX}k3`, `${KEY_PREFIX}k4`]);
+  });
+});

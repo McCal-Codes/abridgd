@@ -19,6 +19,7 @@ import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 import { ReadingProgressProvider } from "./context/ReadingProgressContext";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { runStorageHousekeeping } from "./services/storageHousekeeping";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -70,6 +71,15 @@ export default Sentry.wrap(function App() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
+
+  // Trim the feed and full-story caches once per launch, after the first screen has had a
+  // moment to render, so it never competes with startup reads.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      runStorageHousekeeping().catch(() => {});
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;
