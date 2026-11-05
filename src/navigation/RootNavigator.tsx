@@ -335,14 +335,16 @@ export const RootNavigator = () => {
               title: "Tab Bar",
             }}
           />
-          <Stack.Screen
-            name="DebugSettings"
-            component={DebugSettingsScreen}
-            options={{
-              headerShown: true,
-              title: "Debug & Advanced",
-            }}
-          />
+          {__DEV__ && (
+            <Stack.Screen
+              name="DebugSettings"
+              component={DebugSettingsScreen}
+              options={{
+                headerShown: true,
+                title: "Debug & Advanced",
+              }}
+            />
+          )}
           {__DEV__ && (
             <Stack.Screen
               name="iOS26Demo"

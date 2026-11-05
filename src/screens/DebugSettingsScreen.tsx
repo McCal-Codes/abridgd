@@ -23,6 +23,7 @@ import { useSettings } from "../context/SettingsContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Trash2, RefreshCw, Database, FileText, Check, Star, Activity } from "lucide-react-native";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { redactRecord, redactStorageEntries } from "../utils/redact";
 
 export const DebugSettingsScreen: React.FC = () => {
   const { colors } = useThemeOptional();
@@ -65,7 +66,7 @@ export const DebugSettingsScreen: React.FC = () => {
   const viewStoredSettings = async () => {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const items = await AsyncStorage.multiGet(keys);
+      const items = redactStorageEntries(await AsyncStorage.multiGet(keys));
       const settingsData = items.map(([key, value]) => `${key}: ${value}`).join("\n\n");
       Alert.alert("Stored Settings", settingsData || "No data stored");
     } catch (e) {
@@ -76,7 +77,7 @@ export const DebugSettingsScreen: React.FC = () => {
   const shareStoredSettings = async () => {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const items = await AsyncStorage.multiGet(keys);
+      const items = redactStorageEntries(await AsyncStorage.multiGet(keys));
       const settingsData =
         items.map(([key, value]) => `${key}: ${value}`).join("\n\n") || "No data stored";
       await Share.share({ message: settingsData, title: "Stored Settings" });
@@ -88,13 +89,15 @@ export const DebugSettingsScreen: React.FC = () => {
   const logSettingsToConsole = async () => {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const items = await AsyncStorage.multiGet(keys);
+      const items = redactStorageEntries(await AsyncStorage.multiGet(keys));
       const obj: Record<string, any> = {};
       items.forEach(([k, v]) => {
         obj[k] = v;
       });
+      // Redacted: console output is recorded as Sentry breadcrumbs, and the settings context
+      // holds the Perplexity API key.
       console.log("[DebugSettings] Settings snapshot:", obj);
-      console.log("[DebugSettings] Settings context:", settings);
+      console.log("[DebugSettings] Settings context:", redactRecord(settings as unknown as Record<string, unknown>));
       Alert.alert("Logged", "Settings dumped to console");
     } catch (e) {
       Alert.alert("Error", "Failed to log settings");

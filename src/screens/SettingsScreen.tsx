@@ -84,12 +84,18 @@ export const SettingsScreen: React.FC = () => {
       icon: <Info size={24} color={colors.primary} />,
       screen: "AppInfo",
     },
-    {
-      title: "Debug & Advanced",
-      description: "Developer tools and diagnostics",
-      icon: <Bug size={24} color={colors.primary} />,
-      screen: "DebugSettings",
-    },
+    // Developer tools only. The screen can dump and clear all stored data, so it is not
+    // reachable from release builds (the route is registered under the same flag).
+    ...(__DEV__
+      ? [
+          {
+            title: "Debug & Advanced",
+            description: "Developer tools and diagnostics",
+            icon: <Bug size={24} color={colors.primary} />,
+            screen: "DebugSettings" as const,
+          },
+        ]
+      : []),
   ];
 
   return (
