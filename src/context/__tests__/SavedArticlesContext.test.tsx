@@ -158,6 +158,28 @@ describe("SavedArticlesContext", () => {
     jest.useRealTimers();
   });
 
+  it("should never autosave over stored data when the load failed", async () => {
+    jest.useFakeTimers();
+    (storageUtils.loadArticlesFromStorage as jest.Mock).mockRejectedValue(new Error("Load failed"));
+
+    render(
+      <SavedArticlesProvider>
+        <TestComponent />
+      </SavedArticlesProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loading")).toHaveTextContent("loaded");
+    });
+
+    // Well past the 500ms debounce.
+    jest.advanceTimersByTime(2000);
+
+    expect(storageUtils.saveArticlesToStorage).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
+  });
+
   it("should handle save errors and update error state", async () => {
     jest.useFakeTimers();
 

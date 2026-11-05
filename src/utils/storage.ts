@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Article } from "../types/Article";
 import { compressToUTF16, decompressFromUTF16 } from "lz-string";
+import { StorageReadError, backupRawValue } from "./storageRecovery";
 
 // Schema versioning for future migrations
 const STORAGE_SCHEMA_VERSION = 2;
@@ -49,43 +50,69 @@ export const serializeArticles = (articles: Article[]): string => {
   return JSON.stringify(schema);
 };
 
+/** Raised by the strict parser when the stored text is damaged (not merely a newer schema). */
+class CorruptArticlesError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CorruptArticlesError";
+  }
+}
+
 /**
- * Deserialize articles from JSON with validation
+ * Strict parser. Throws `CorruptArticlesError` for damaged data and `StorageReadError` for a
+ * schema version this build does not know, so callers can tell "nothing saved" apart from
+ * "something saved that I could not read".
+ */
+const parseArticlesStrict = (data: string): Article[] => {
+  let schema: { version?: number };
+  try {
+    schema = JSON.parse(data) as { version?: number };
+  } catch (error) {
+    throw new CorruptArticlesError(`Saved articles are not valid JSON: ${String(error)}`);
+  }
+
+  const version = schema?.version;
+
+  // Backwards compatibility: handle legacy version 1
+  if (version === 1) {
+    return (schema as StorageSchemaV1).articles || [];
+  }
+
+  if (version === 2) {
+    const v2Schema = schema as StorageSchemaV2;
+    const payloadString = v2Schema.compressed
+      ? (decompressFromUTF16(v2Schema.payload) ?? "")
+      : v2Schema.payload;
+
+    if (!payloadString) {
+      throw new CorruptArticlesError("Failed to decompress payload or payload empty");
+    }
+
+    try {
+      const payload = JSON.parse(payloadString) as StoragePayloadV2;
+      return payload.articles || [];
+    } catch (error) {
+      throw new CorruptArticlesError(`Saved articles payload is damaged: ${String(error)}`);
+    }
+  }
+
+  throw new StorageReadError(
+    "unsupported-version",
+    `Schema version mismatch: expected 1 or ${STORAGE_SCHEMA_VERSION}, got ${String(version)}`,
+  );
+};
+
+/**
+ * Deserialize articles from JSON with validation.
+ *
+ * Lenient on purpose: any failure yields `[]`. Use `loadArticlesFromStorage` when the result
+ * will be written back, because it keeps "unreadable" distinct from "empty".
  */
 export const deserializeArticles = (data: string): Article[] => {
   try {
-    const schema = JSON.parse(data) as
-      | (StorageSchemaV1 & { version: 1 })
-      | (StorageSchemaV2 & { version: 2 })
-      | { version?: number };
-    const version = schema.version;
-
-    // Backwards compatibility: handle legacy version 1
-    if (version === 1) {
-      return (schema as StorageSchemaV1).articles || [];
-    }
-
-    if (version === 2) {
-      const v2Schema = schema as StorageSchemaV2;
-      const payloadString = v2Schema.compressed
-        ? (decompressFromUTF16(v2Schema.payload) ?? "")
-        : v2Schema.payload;
-
-      if (!payloadString) {
-        console.warn("Failed to decompress payload or payload empty");
-        return [];
-      }
-
-      const payload = JSON.parse(payloadString) as StoragePayloadV2;
-      return payload.articles || [];
-    }
-
-    console.warn(
-      `Schema version mismatch: expected 1 or ${STORAGE_SCHEMA_VERSION}, got ${String(version)}`,
-    );
-    return [];
+    return parseArticlesStrict(data);
   } catch (error) {
-    console.error("Failed to deserialize articles:", error);
+    console.warn("Failed to deserialize articles:", error);
     return [];
   }
 };
@@ -118,20 +145,26 @@ export const saveArticlesToStorage = async (
 };
 
 /**
- * Load articles from AsyncStorage with error handling
+ * Load articles from AsyncStorage with retry.
+ *
+ * - Nothing stored: resolves `[]`.
+ * - Stored but damaged: the raw value is copied to `<key>.bak`, then `[]` is returned so the
+ *   app can start fresh without losing the original bytes.
+ * - Written by a newer schema: the raw value is backed up and a `StorageReadError` is thrown.
+ * - Read kept failing: a `StorageReadError` is thrown. The stored data is probably fine, so
+ *   callers must not autosave an empty list over it.
  */
 export const loadArticlesFromStorage = async (
   retries = 3,
   delay = 100,
   storageKey: string = SAVED_ARTICLES_KEY,
 ): Promise<Article[]> => {
+  let raw: string | null = null;
+
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const data = await AsyncStorage.getItem(storageKey);
-      if (!data) {
-        return [];
-      }
-      return deserializeArticles(data);
+      raw = await AsyncStorage.getItem(storageKey);
+      break;
     } catch (error) {
       console.warn(`Load attempt ${attempt + 1}/${retries} failed:`, error);
 
@@ -140,11 +173,28 @@ export const loadArticlesFromStorage = async (
         await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, attempt)));
       } else {
         console.error(`Failed to load articles after ${retries} attempts: ${error}`);
-        return [];
+        throw new StorageReadError(
+          "transient",
+          `Failed to load saved articles after ${retries} attempts`,
+        );
       }
     }
   }
-  return [];
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    return parseArticlesStrict(raw);
+  } catch (error) {
+    await backupRawValue(storageKey, raw);
+    if (error instanceof StorageReadError) {
+      throw error;
+    }
+    console.error("Saved articles were unreadable; backed up and starting empty:", error);
+    return [];
+  }
 };
 
 /**

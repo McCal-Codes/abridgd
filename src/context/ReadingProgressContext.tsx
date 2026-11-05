@@ -92,7 +92,8 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
         console.error("Reading progress initialization error:", err);
         setError(errorMessage);
         setProgressData({});
-        setHydratedStorageKey(storageKey);
+        // Deliberately NOT marking this key as hydrated: the stored progress was not read, and
+        // the autosave below only runs for a hydrated key, so it cannot overwrite it with {}.
       } finally {
         if (!cancelled) {
           setIsLoading(false);
