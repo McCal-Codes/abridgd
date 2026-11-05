@@ -15,7 +15,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";

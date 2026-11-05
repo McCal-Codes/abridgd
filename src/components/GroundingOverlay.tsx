@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions, AccessibilityInfo } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions, AccessibilityInfo } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,8 +14,6 @@ import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ScaleButton } from "./ScaleButton";
 import { useReduceMotion } from "../hooks/useReduceMotion";
-
-const { width, height } = Dimensions.get("window");
 
 const HAPPY_PROMPTS = [
   {
@@ -49,6 +47,9 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
     useSettings();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
+  // Current window width (not a module-level Dimensions.get, which goes stale on rotation or
+  // unfolding), used for the halo and the message's max width.
+  const { width } = useWindowDimensions();
   const pulseScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.6);
   const sheetTranslate = useSharedValue(140);
@@ -152,12 +153,18 @@ export const GroundingOverlay: React.FC<GroundingOverlayProps> = ({
     <View style={styles.container}>
       <View style={styles.backgroundBase} />
       <View style={styles.backgroundTint} />
-      <Animated.View style={[styles.halo, haloStyle]} />
+      <Animated.View
+        style={[
+          styles.halo,
+          { width: width * 0.9, height: width * 0.9, borderRadius: (width * 0.9) / 2 },
+          haloStyle,
+        ]}
+      />
 
       <View style={styles.centerContent}>
         <Text style={styles.modeLabel}>Grounding Mode</Text>
         <Text style={styles.breatheText}>{instruction}</Text>
-        <Text style={styles.message}>{message}</Text>
+        <Text style={[styles.message, { maxWidth: width * 0.8 }]}>{message}</Text>
       </View>
 
       <Animated.View
@@ -186,9 +193,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   halo: {
-    width: width * 0.9,
-    height: width * 0.9,
-    borderRadius: (width * 0.9) / 2,
     position: "absolute",
   },
   backgroundBase: {
@@ -230,7 +234,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.75)",
     textAlign: "center",
     lineHeight: 24,
-    maxWidth: width * 0.8,
     marginTop: spacing.xs,
   },
   dialogueSheet: {

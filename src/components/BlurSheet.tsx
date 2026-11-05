@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Dimensions, Pressable, BackHandler } from "react-native";
+import { View, StyleSheet, useWindowDimensions, Pressable, BackHandler } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,8 +14,6 @@ import { GlassSurface } from "./GlassSurface";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeContext";
 import { useReduceMotion } from "../hooks/useReduceMotion";
-
-const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 // Worklet helper so gesture callbacks (which run on the UI thread) and the show/hide effect
 // share one place that decides spring-vs-instant based on the Reduce Motion preference.
@@ -70,6 +68,10 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
     return () => subscription.remove();
   }, [visible, onClose]);
 
+  // Read through the hook, not a module-level Dimensions.get: that value was captured once at
+  // import and went stale on rotation, unfolding a foldable, or multi-window resizing.
+  const { height: SCREEN_HEIGHT } = useWindowDimensions();
+
   // Detent heights
   const mediumHeight = SCREEN_HEIGHT * 0.5;
   const largeHeight = SCREEN_HEIGHT - insets.top - 20;
@@ -88,7 +90,7 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
     } else {
       translateY.value = animateSheetTo(SCREEN_HEIGHT, reduceMotion);
     }
-  }, [visible, currentDetent, reduceMotion]);
+  }, [visible, currentDetent, reduceMotion, SCREEN_HEIGHT]);
 
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
@@ -187,7 +189,7 @@ export const BlurSheet: React.FC<BlurSheetProps> = ({
             so without one the elevation:10 above rendered nothing and the sheet
             read as flat against the article. */}
         <Animated.View
-          style={[styles.sheet, { backgroundColor: colors.surface }, sheetStyle]}
+          style={[styles.sheet, { backgroundColor: colors.surface, height: SCREEN_HEIGHT }, sheetStyle]}
           accessibilityViewIsModal
         >
           {/* Dynamic background with blur/transparency effect */}
@@ -229,7 +231,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: "hidden",

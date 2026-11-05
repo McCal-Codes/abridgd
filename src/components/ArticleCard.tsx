@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Bookmark, BookmarkCheck } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { Article } from "../types/Article";
 import { fontScaleLimit, typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";

@@ -13,6 +13,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Add to calendar uses your phone's own new-event screen, so Abridgd asks for no calendar permission and never reads your calendar. If that screen is unavailable it opens a calendar link in the browser. (TODO-141)
 
 ### Fixed
+- Dark mode now actually follows the phone. The app was pinned to light (`userInterfaceStyle: "light"`), so the dark theme could never appear on iPhone and was inconsistent on Android. It now follows the system setting, with a matching dark splash screen, and Android no longer restarts the screen when the system theme changes. (TODO-144)
+- Light-mode text and controls were too faint. The teal used for text, icons and buttons was 3.3:1 against the background and 3.5:1 under white text, and the grey used for timestamps and captions was 3.1:1. They are now 4.9:1, 5.2:1 and 5.0:1 (WCAG AA needs 4.5:1), and a test checks every text colour against every surface in both themes. (TODO-144)
+- The Haptics setting did nothing. "Off" and "Subtle" were stored but the roughly 25 haptic calls never read them. Every haptic now goes through one module that honours the setting. (TODO-144)
+- Bottom sheets and the grounding overlay measured the screen once at launch, so they were the wrong size after rotating, unfolding a foldable, or resizing a window. They now follow the current window. (TODO-144)
 - Saved articles and reading progress could be wiped by a failed read. The loaders returned an empty value on a read error or an unrecognised schema, and the contexts' autosave then wrote that empty value over the stored data. Loaders now tell "empty" from "unreadable": a read failure or newer-schema data throws, damaged data is copied to `<key>.bak` before starting empty, and autosave stays off for any key whose data was not read. (TODO-140)
 - A saved comprehensive tab layout was reset on every launch. Settings validated the saved tabs and default tab against the initial "minimal" layout, because the persisted layout had not been applied yet, and wrote the stripped list back. The persisted layout is now read first. (TODO-140)
 - Native builds no longer send feed URLs or opened articles to third-party relays. corsproxy.io, allorigins.win and rss2json were fallbacks on every platform; there is no CORS on a device, so they are web-only now. (TODO-140)
@@ -24,6 +28,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - "Redo Onboarding Welcome" in App Info opened onboarding on a slide id that never existed. It now opens the welcome from the start, and "Revisit the Abridged reader tour" opens the reader step. (TODO-143)
 
 ### Changed
+- The Android build now includes x86_64, so the APK installs on standard emulators and Chromebooks, and iOS declares the crash and performance data Sentry collects in its privacy manifest. (TODO-144)
 - "Debug & Advanced" is a development-only screen. It could dump and clear all stored data, and it logged the settings object including the API key; it is hidden in release builds, and its dumps now redact keys, tokens, emails and Apple ids. (TODO-140)
 - Crash reports no longer record what was read: console breadcrumbs are dropped, network and navigation breadcrumbs keep only the host, `sendDefaultPii` is off, and the environment is tagged. (TODO-140)
 

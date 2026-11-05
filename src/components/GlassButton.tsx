@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, Text, View, Platform, StyleProp, ViewStyle } from "react-native";
 import { GlassSurface } from "./GlassSurface";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { useTheme } from "../theme/ThemeContext";
 
 export type GlassButtonProminence = "standard" | "filled" | "tinted";

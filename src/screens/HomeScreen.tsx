@@ -18,7 +18,7 @@ import { ArticleProgressIndicator } from "../components/ArticleProgressIndicator
 import { ScaleButton } from "../components/ScaleButton";
 import { typography } from "../theme/typography";
 import { ReadingProgress } from "../types/ReadingProgress";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { HeroHeader } from "../components/HeroHeader";
 import { FeedStatusBanner } from "../components/FeedStatusBanner";
 import { Home as HomeIcon } from "lucide-react-native";

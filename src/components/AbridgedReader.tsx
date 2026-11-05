@@ -6,7 +6,7 @@ import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import Slider from "@react-native-community/slider";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { useSettings } from "../context/SettingsContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 

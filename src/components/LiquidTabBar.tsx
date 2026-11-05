@@ -10,7 +10,7 @@ import {
   LayoutChangeEvent,
   LayoutRectangle,
 } from "react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSettings } from "../context/SettingsContext";

@@ -20,7 +20,7 @@ import { RootStackParamList, TabParamList } from "../navigation/types";
 import { useSavedArticles } from "../context/SavedArticlesContext";
 import { ScaleButton } from "../components/ScaleButton";
 import { Bookmark, Star as Sparkles, Search, SlidersHorizontal, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { Article, ArticleCategory } from "../types/Article";
 import { HeroHeader } from "../components/HeroHeader";
