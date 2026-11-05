@@ -2,7 +2,7 @@ import { RawFeedItem } from "./types";
 
 export const FETCH_TIMEOUT_MS = 7000;
 
-const FETCH_HEADERS: RequestInit["headers"] = {
+const FETCH_HEADERS: Record<string, string> = {
   // Some publishers (e.g., WTAE) block default fetch UA; send a browser-ish string.
   "User-Agent":
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
@@ -13,12 +13,19 @@ const RSS2JSON_ENDPOINT = "https://api.rss2json.com/v1/api.json?rss_url=";
 const PROXY_URL = "https://corsproxy.io/?";
 const PROXY_ALT_URL = "https://api.allorigins.win/raw?url=";
 
-export const fetchWithTimeout = async (url: string): Promise<Response> => {
+/** `extraHeaders` override the defaults, e.g. a JSON endpoint that content-negotiates on Accept. */
+export const fetchWithTimeout = async (
+  url: string,
+  extraHeaders?: Record<string, string>,
+): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    return await fetch(url, { signal: controller.signal, headers: FETCH_HEADERS });
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: extraHeaders ? { ...FETCH_HEADERS, ...extraHeaders } : FETCH_HEADERS,
+    });
   } finally {
     clearTimeout(timeoutId);
   }

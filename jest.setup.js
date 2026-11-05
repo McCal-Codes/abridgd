@@ -45,6 +45,8 @@ jest.mock("react-native-safe-area-context", () => {
   const React = require("react");
   return {
     SafeAreaProvider: ({ children }) => React.createElement(React.Fragment, null, children),
+    SafeAreaView: ({ children, ...props }) =>
+      React.createElement(require("react-native").View, props, children),
     useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   };
 });
@@ -260,5 +262,20 @@ jest.mock("expo-av", () => {
     },
   };
 });
+
+// The Events card on Home would otherwise make real requests to the organizers' sites from any
+// test that renders Home. Tests of the events hook itself use jest.requireActual.
+jest.mock("./src/features/events/useEvents", () => ({
+  useEvents: jest.fn(() => ({
+    events: [],
+    loading: false,
+    refreshing: false,
+    error: null,
+    stale: false,
+    failedSources: [],
+    lastUpdated: null,
+    refresh: jest.fn(async () => ({ count: 0, failed: false })),
+  })),
+}));
 
 // Use real console for better error visibility during debugging

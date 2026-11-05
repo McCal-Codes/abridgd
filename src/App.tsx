@@ -14,6 +14,7 @@ import {
 import { RootNavigator } from "./navigation/RootNavigator";
 import { SettingsProvider } from "./context/SettingsContext";
 import { SavedArticlesProvider } from "./context/SavedArticlesContext";
+import { SavedEventsProvider } from "./features/events/SavedEventsContext";
 import { ProfileProvider } from "./context/ProfileContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 import { ReadingProgressProvider } from "./context/ReadingProgressContext";
@@ -47,15 +48,17 @@ const AppContent = () => {
       <ErrorBoundary>
         <ProfileProvider>
           <SavedArticlesProvider>
-            <ReadingProgressProvider>
-              <SettingsProvider>
-                <RootNavigator />
-                <StatusBar
-                  style={isDark ? "light" : "dark"}
-                  backgroundColor={colors.background}
-                />
-              </SettingsProvider>
-            </ReadingProgressProvider>
+            <SavedEventsProvider>
+              <ReadingProgressProvider>
+                <SettingsProvider>
+                  <RootNavigator />
+                  <StatusBar
+                    style={isDark ? "light" : "dark"}
+                    backgroundColor={colors.background}
+                  />
+                </SettingsProvider>
+              </ReadingProgressProvider>
+            </SavedEventsProvider>
           </SavedArticlesProvider>
         </ProfileProvider>
       </ErrorBoundary>

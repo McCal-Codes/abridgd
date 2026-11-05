@@ -367,6 +367,11 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Not done yet (tracked in the audit plan)**: profile export/import rework (saved articles are lost on import and duplicated in `profiles_v1`), settings startup as a single `multiGet`, scroll-progress re-render fan-out, and measuring real AsyncStorage size on a device.
   - **Completed**: See CHANGELOG [Unreleased]
 
+- [x] **TODO-141** | **Unreleased** | Local events (Home card, Events screen, add to calendar)
+  - **Status**: Completed (Android-first; not yet run on a device or emulator)
+  - **Description**: `src/features/events`. Read-only, keyless, direct-from-organizer listings (supersedes TODO-028/029/030, which assumed a backend). One parser covers every The Events Calendar site, so a new organizer is a config entry. Filter chips are derived from the data. Add to calendar uses `expo-calendar`'s system add-event screen with no permission and no config plugin. Saved events are per profile and cleared with local data. See `docs/product/events.md`.
+  - **Not done yet**: `.ics` / RSS parser kinds (Mattress Factory, East Liberty Development, Downtown Partnership, Pitt), device check of all-day event times, a native build (`expo-calendar` is a native module, so this ships in a store build, not OTA), and privacy page text for the new hosts.
+
 
 
 

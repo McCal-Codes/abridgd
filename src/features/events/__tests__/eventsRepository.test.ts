@@ -139,6 +139,15 @@ describe("events repository", () => {
     expect(calls.some((u) => u.includes("evil.example"))).toBe(false);
   });
 
+  it("asks every source for JSON, because Legistar answers XML to the feed transport's default Accept", async () => {
+    mockFetch.mockImplementation((url: string) => ok(url.includes("legistar") ? [] : { events: [] }));
+    await loadEvents({ now: NOW });
+    expect(mockFetch).toHaveBeenCalled();
+    for (const call of mockFetch.mock.calls) {
+      expect(call[1]).toEqual({ Accept: "application/json" });
+    }
+  });
+
   it("reads cached events without the network", async () => {
     mockFetch.mockImplementation((url: string) => ok(url.includes("kidsburgh") ? { events: [tribeEvent(1, "Story hour")] } : url.includes("legistar") ? [] : { events: [] }));
     await loadEvents({ now: NOW });

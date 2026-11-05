@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Buffer } from "buffer";
 import { clearSavedArticles, getSavedArticlesStorageKey } from "../utils/storage";
 import { clearAllReadingProgress, getReadingProgressStorageKey } from "../utils/readingProgressStorage";
+import { clearSavedEvents, getSavedEventsStorageKey } from "../features/events/savedEventsStorage";
 
 // Ensure Buffer exists in React Native runtime
 const globalWithBuffer = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
@@ -498,6 +499,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     // clear the on-device data, the caller must not report the deletion as successful.
     await clearSavedArticles(getSavedArticlesStorageKey(profileToDelete.id));
     await clearAllReadingProgress(getReadingProgressStorageKey(profileToDelete.id));
+    await clearSavedEvents(getSavedEventsStorageKey(profileToDelete.id));
 
     const remaining = profiles.filter((p) => p.id !== profileToDelete.id);
 

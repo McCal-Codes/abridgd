@@ -26,6 +26,7 @@ import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { formatUpdatedAgo } from "../utils/relativeTime";
 import { announceRefreshResult } from "../utils/announce";
+import { EventsSection } from "../features/events/ui/EventsSection";
 
 type ContinueReadingItem = {
   article: Article;
@@ -285,6 +286,7 @@ export const HomeScreen: React.FC = () => {
               ) : stale ? (
                 <FeedStatusBanner testID="home-feed-status" message="Showing your last saved brief while we check for fresh stories." />
               ) : null}
+              <EventsSection onSeeAll={() => navigation.navigate("Events")} />
               {isContinueReadingEnabled && (
                 <ContinueReadingSection
                   items={continueReadingItems}

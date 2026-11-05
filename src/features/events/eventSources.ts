@@ -46,7 +46,8 @@ export const EVENT_SOURCES: EventSource[] = [
     baseUrl: "https://www.bloomfieldpgh.org",
     defaultArea: "Lawrenceville & Bloomfield",
     health: "healthy",
-    healthNote: "2026-11-05: JSON API 200, 2 events in a 2-week window (community meetings, no venue given).",
+    healthNote:
+      "2026-11-05: JSON API 200, 2 events in a 2-week window (community meetings, no venue given). The host sits behind SiteGround's anti-bot captcha, which answered some clients (curl) and challenged others (Node fetch from a datacenter address). A challenge reads as a failed fetch and the last good events are kept.",
   },
   {
     id: "parks",

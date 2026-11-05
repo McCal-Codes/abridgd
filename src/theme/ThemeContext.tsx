@@ -25,6 +25,10 @@ export const lightColors = {
 
   // Tints & Accents
   tint: "#0097A7",
+  // Teal for text and filled controls that must meet 4.5:1 on the light surfaces. `tint` stays
+  // the brand fill; #0097A7 is only 3.3:1 against the background and 3.5:1 against white.
+  tintStrong: "#00778A",
+  onTintStrong: "#FFFFFF",
   accent: "#8B2E2E",
   primary: "#0097A7",
 
@@ -53,6 +57,8 @@ export const darkColors = {
   border: "#2A2A2A",
 
   tint: "#00BCD4",
+  tintStrong: "#00BCD4",
+  onTintStrong: "#0C0C0C",
   accent: "#B86464",
   primary: "#00BCD4",
 

@@ -35,8 +35,12 @@ const sameOrigin = (url: string, base: string): boolean => {
   return origin(url) !== undefined && origin(url) === origin(base);
 };
 
+/** The feed transport's default `Accept` prefers XML, and Legistar honours it: with that header
+ * the City of Pittsburgh API answers `<ArrayOfGranicusEvent>` XML, not JSON. Always ask for JSON. */
+const JSON_HEADERS = { Accept: "application/json" };
+
 const fetchJson = async (url: string): Promise<unknown> => {
-  const response = await fetchWithTimeout(url);
+  const response = await fetchWithTimeout(url, JSON_HEADERS);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 };

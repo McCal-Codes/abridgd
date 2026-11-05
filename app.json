@@ -23,7 +23,9 @@
         ]
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCalendarsUsageDescription": "Abridgd opens your calendar's new-event screen so you can add a local event. It does not read your calendar.",
+        "NSCalendarsWriteOnlyAccessUsageDescription": "Abridgd opens your calendar's new-event screen so you can add a local event. It does not read your calendar."
       }
     },
     "android": {
@@ -38,6 +40,8 @@
         "android.permission.VIBRATE"
       ],
       "blockedPermissions": [
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

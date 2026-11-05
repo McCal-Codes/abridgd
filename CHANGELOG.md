@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- Local events. A "This week" card on Home and an Events screen list what is happening around Pittsburgh in the next 14 days, grouped by day, with filter chips built from what is listed (Today, This weekend, and the parts of town that have events). Events come from public organizer calendars read directly, with no proxy: Kidsburgh, WQED, Bloomfield Development Corporation, Pittsburgh Parks Conservancy, Heinz History Center, Carnegie Museums, and City of Pittsburgh council meetings. Each event credits and links to its organizer, can be saved, shared, and added to your calendar. (TODO-141)
+- Add to calendar uses your phone's own new-event screen, so Abridgd asks for no calendar permission and never reads your calendar. If that screen is unavailable it opens a calendar link in the browser. (TODO-141)
+
 ### Fixed
 - Saved articles and reading progress could be wiped by a failed read. The loaders returned an empty value on a read error or an unrecognised schema, and the contexts' autosave then wrote that empty value over the stored data. Loaders now tell "empty" from "unreadable": a read failure or newer-schema data throws, damaged data is copied to `<key>.bak` before starting empty, and autosave stays off for any key whose data was not read. (TODO-140)
 - A saved comprehensive tab layout was reset on every launch. Settings validated the saved tabs and default tab against the initial "minimal" layout, because the persisted layout had not been applied yet, and wrote the stripped list back. The persisted layout is now read first. (TODO-140)
