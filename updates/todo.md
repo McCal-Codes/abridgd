@@ -372,6 +372,11 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `src/features/events`. Read-only, keyless, direct-from-organizer listings (supersedes TODO-028/029/030, which assumed a backend). One parser covers every The Events Calendar site, so a new organizer is a config entry. Filter chips are derived from the data. Add to calendar uses `expo-calendar`'s system add-event screen with no permission and no config plugin. Saved events are per profile and cleared with local data. See `docs/product/events.md`.
   - **Not done yet**: `.ics` / RSS parser kinds (Mattress Factory, East Liberty Development, Downtown Partnership, Pitt), device check of all-day event times, a native build (`expo-calendar` is a native module, so this ships in a store build, not OTA), and privacy page text for the new hosts.
 
+- [x] **TODO-142** | **Unreleased** | Resources in Settings (local help and services)
+  - **Status**: Completed (not yet run on a device)
+  - **Description**: `src/features/resources`. A bundled, offline list of local crisis lines and everyday services with Call/Text hand-off (`tel:`/`sms:` built only from the bundled list), an emergency banner, and a "last checked" date. A time-based test fails when the list has not been re-verified in a year. See `docs/product/resources.md`.
+  - **Not done yet**: Pittsburgh 311 (number not confirmed), a "report a wrong number" shortcut in App info, and a device check of the text-message hand-off on both platforms.
+
 
 
 

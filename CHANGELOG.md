@@ -8,6 +8,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Added
 - Local events. A "This week" card on Home and an Events screen list what is happening around Pittsburgh in the next 14 days, grouped by day, with filter chips built from what is listed (Today, This weekend, and the parts of town that have events). Events come from public organizer calendars read directly, with no proxy: Kidsburgh, WQED, Bloomfield Development Corporation, Pittsburgh Parks Conservancy, Heinz History Center, Carnegie Museums, and City of Pittsburgh council meetings. Each event credits and links to its organizer, can be saved, shared, and added to your calendar. (TODO-141)
+- Resources, in Settings. Local help in one place: 988, Re:solve Crisis Network, Crisis Text Line, 211, the Greater Pittsburgh Community Food Bank and Allegheny Link, with "In an emergency, call 911" at the top. It is bundled with the app, works offline, and never records what anyone opens. Call and Text buttons hand off to your phone; on a device that cannot place calls, it shows the number. (TODO-142)
 - Add to calendar uses your phone's own new-event screen, so Abridgd asks for no calendar permission and never reads your calendar. If that screen is unavailable it opens a calendar link in the browser. (TODO-141)
 
 ### Fixed

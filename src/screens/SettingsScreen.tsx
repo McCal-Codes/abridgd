@@ -12,6 +12,7 @@ import {
   Rss,
   Newspaper,
   HeartPulse,
+  LifeBuoy,
   Compass,
   Eye,
   Info,
@@ -77,6 +78,12 @@ export const SettingsScreen: React.FC = () => {
       description: "Reduce motion, animation pacing",
       icon: <Eye size={24} color={colors.primary} />,
       screen: "AccessibilitySettings",
+    },
+    {
+      title: "Resources",
+      description: "Local help and services",
+      icon: <LifeBuoy size={24} color={colors.primary} />,
+      screen: "Resources",
     },
     {
       title: "App Info",

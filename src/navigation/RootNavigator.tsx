@@ -23,6 +23,7 @@ import { SourcesSettingsScreen } from "../screens/SourcesSettingsScreen";
 import { TabBarSettingsScreen } from "../screens/TabBarSettingsScreen";
 import { DebugSettingsScreen } from "../screens/DebugSettingsScreen";
 import { EventsScreen } from "../features/events/ui/EventsScreen";
+import { ResourcesScreen } from "../features/resources/ResourcesScreen";
 import { IOS26DemoScreen } from "../screens/iOS26DemoScreen";
 import { AchievementsScreen } from "../screens/AchievementsScreen";
 import { useSettings, sanitizeTabs } from "../context/SettingsContext";
@@ -334,6 +335,14 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Tab Bar",
+            }}
+          />
+          <Stack.Screen
+            name="Resources"
+            component={ResourcesScreen}
+            options={{
+              headerShown: true,
+              title: "Resources",
             }}
           />
           <Stack.Screen

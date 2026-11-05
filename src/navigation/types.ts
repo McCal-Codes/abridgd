@@ -16,6 +16,7 @@ export type RootStackParamList = {
   TabBarSettings: undefined;
   DebugSettings: undefined;
   Events: undefined;
+  Resources: undefined;
   Achievements: undefined;
   Onboarding: { mode?: "firstRun" | "whatsNew"; startSlideId?: string } | undefined;
   Digest: undefined;
