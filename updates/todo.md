@@ -403,6 +403,11 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Also**: build number bumped 39 -> 40 with `scripts/audit/version-bump.js build` so a preview build is distinguishable from the released 1.5.7.
   - **Not done**: the profile still mirrors every saved article's full HTML into `profiles_v1` (the mirror is what makes the recovery above possible; slimming it to ids is a separate change), and the Profile screen still shares the key as plain text.
 
+- [x] **TODO-147** | **0.2.0 beta 1** | Cut 0.2.0 beta 1 (build 41)
+  - **Status**: Version, label, release notes and changelog prepared; Android APK built by the Release Mobile Build workflow (`platform: android`, `profile: preview`, no release attachment)
+  - **Description**: `node scripts/audit/version-bump.js 0.2.0` (version 0.2.0, build 41), `APP_RELEASE_LABEL = "beta 1"` shown in App Info and bug reports, a reader-facing `RELEASE_NOTES["0.2.0"]` entry (existing readers see What's New once, because the check is `lastSeenVersion !== APP_VERSION`), and the changelog's `[Unreleased]` section renamed `[0.2.0-beta.1]`.
+  - **Note**: the version number goes down from 1.5.7. Android is unaffected (versionCode 41 > 39, so it installs as an update). An iOS or TestFlight upload would be rejected, because App Store Connect requires the version string to be at least the previously uploaded one.
+
 
 
 

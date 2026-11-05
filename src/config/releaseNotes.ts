@@ -17,6 +17,16 @@ export interface ReleaseNote {
  * missing entry is handled gracefully but wastes the moment.
  */
 export const RELEASE_NOTES: Record<string, Omit<ReleaseNote, "version">> = {
+  "0.2.0": {
+    headline: "Events, local help, and a calmer welcome",
+    items: [
+      "See what's on around Pittsburgh: a \"This week\" card on Home and an Events screen, with a one-tap way to add any event to your calendar.",
+      "Resources, in Settings: crisis lines and local services in one place, working offline.",
+      "A new welcome that lets you pick your newsrooms and choose how heavy stories are handled.",
+      "Dark mode that follows your phone, easier-to-read text, and stories that now show a lead photo and byline.",
+      "Fixes: saved articles now survive a profile import, and the Haptics setting actually works.",
+    ],
+  },
   "1.5.7": {
     headline: "Every section, and where you left off",
     items: [
