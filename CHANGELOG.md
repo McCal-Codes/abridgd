@@ -6,6 +6,18 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+- Saved articles and reading progress could be wiped by a failed read. The loaders returned an empty value on a read error or an unrecognised schema, and the contexts' autosave then wrote that empty value over the stored data. Loaders now tell "empty" from "unreadable": a read failure or newer-schema data throws, damaged data is copied to `<key>.bak` before starting empty, and autosave stays off for any key whose data was not read. (TODO-140)
+- A saved comprehensive tab layout was reset on every launch. Settings validated the saved tabs and default tab against the initial "minimal" layout, because the persisted layout had not been applied yet, and wrote the stripped list back. The persisted layout is now read first. (TODO-140)
+- Native builds no longer send feed URLs or opened articles to third-party relays. corsproxy.io, allorigins.win and rss2json were fallbacks on every platform; there is no CORS on a device, so they are web-only now. (TODO-140)
+- Full-story URL checks matched substrings, so any URL containing `triblive.com` anywhere took the TribLive path. They now compare the host, the WordPress slug is validated, and the TribLive API request has a timeout. Article URLs are no longer written to logs. (TODO-140)
+- The shared on-device storage could grow without limit. The full-story cache keeps at most 30 bodies, verifies the cached URL on read (the key is a 32-bit hash), and feed snapshots for sources that are no longer configured are removed; the existing expiry sweep now actually runs, once per launch. (TODO-140)
+- Digest AI summaries called a retired Perplexity model name and had no timeout, so a stalled connection could leave the digest loading indefinitely. (TODO-140)
+
+### Changed
+- "Debug & Advanced" is a development-only screen. It could dump and clear all stored data, and it logged the settings object including the API key; it is hidden in release builds, and its dumps now redact keys, tokens, emails and Apple ids. (TODO-140)
+- Crash reports no longer record what was read: console breadcrumbs are dropped, network and navigation breadcrumbs keep only the host, `sendDefaultPii` is off, and the environment is tagged. (TODO-140)
+
 ## [1.5.7] - 2026-09-07
 
 ### Fixed

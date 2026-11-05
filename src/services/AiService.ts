@@ -83,39 +83,56 @@ const getStoredPerplexityApiKey = async (): Promise<string> => {
   }
 };
 
+const PERPLEXITY_TIMEOUT_MS = 15000;
+
+/** Perplexity retired the `llama-3.1-sonar-*` names; `sonar` is the current base search model.
+ * Verify against https://docs.perplexity.ai/ if requests start returning 400. */
+export const PERPLEXITY_MODEL = "sonar";
+
+export const buildPerplexityRequestBody = (prompt: {
+  system: string;
+  user: string;
+  maxTokens: number;
+}) => ({
+  model: PERPLEXITY_MODEL,
+  messages: [
+    { role: "system", content: prompt.system },
+    { role: "user", content: prompt.user },
+  ],
+  max_tokens: prompt.maxTokens,
+  temperature: 0.2,
+});
+
 const requestPerplexitySummary = async (
   apiKey: string,
   prompt: { system: string; user: string; maxTokens: number },
 ): Promise<string | null> => {
-  const response = await fetch(PERPLEXITY_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-sonar-small-128k-online",
-      messages: [
-        {
-          role: "system",
-          content: prompt.system,
-        },
-        {
-          role: "user",
-          content: prompt.user,
-        },
-      ],
-      max_tokens: prompt.maxTokens,
-      temperature: 0.2,
-    }),
-  });
+  // A hung connection would otherwise leave the digest spinner up indefinitely (digest mode
+  // issues several of these in parallel).
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PERPLEXITY_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error(`Perplexity API error: ${response.status}`);
+  try {
+    const response = await fetch(PERPLEXITY_API_URL, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(buildPerplexityRequestBody(prompt)),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Perplexity API error: ${response.status}`);
+    }
+
+    // Still inside the timeout window: a stalled body must abort too, not just stalled headers.
+    const data = (await response.json()) as PerplexityResponse;
+    return normalizeWhitespace(data.choices?.[0]?.message?.content?.trim() || "") || null;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = (await response.json()) as PerplexityResponse;
-  return normalizeWhitespace(data.choices?.[0]?.message?.content?.trim() || "") || null;
 };
 
 const getPublishedAt = (article: Article) =>

@@ -20,6 +20,7 @@ import { ReadingProgressProvider } from "./context/ReadingProgressContext";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { runStorageHousekeeping } from "./services/storageHousekeeping";
+import { scrubBreadcrumb } from "./utils/sentryScrub";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -31,6 +32,10 @@ if (SENTRY_DSN) {
     dsn: SENTRY_DSN,
     debug: __DEV__,
     tracesSampleRate: 0.2,
+    environment: __DEV__ ? "development" : "production",
+    // Crash reports must not identify the reader or record what they read.
+    sendDefaultPii: false,
+    beforeBreadcrumb: scrubBreadcrumb,
   });
 }
 

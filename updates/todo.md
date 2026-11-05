@@ -361,6 +361,12 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `normalizeUri` in `ArticleScreen` prefixed any non-http src with `https:`, so root-relative paths became `https:/images/a.jpg` and `data:` URIs were mangled — both showed the "Image unavailable" placeholder. Replaced with `resolveMediaUri`, which resolves relative paths against the article's origin and is deliberately string-based, since React Native's URL constructor appends a trailing slash that would corrupt every resolved path. Also removed the stale `EXPO_PUBLIC_PERPLEXITY_API_KEY` from `.env` (never bundled, because nothing referenced it, but one reference away from being), extended the feed https guard to disabled sources, and stopped Jest scanning `.claude/worktrees`, which was adding another branch's tests to local runs.
   - **Completed**: September 5, 2026
 
+- [x] **TODO-140** | **Unreleased** | Phase 0 audit fixes: data loss, privacy, bounded caches
+  - **Status**: Completed
+  - **Description**: Audit follow-up (Android-first, shared JS). Loaders for saved articles and reading progress no longer return an empty value on failure, so autosave cannot overwrite real data; damaged or newer-schema data is backed up to `<key>.bak`. Settings validates saved tabs against the persisted layout. Debug & Advanced is `__DEV__`-only with redacted dumps. Native fetches go direct to publishers (CORS proxies and rss2json are web-only). Full-story URL matching compares hosts. Full-story cache is capped and collision-checked, orphaned feed snapshots are pruned, and the sweeps run once per launch. Sentry breadcrumbs are scrubbed of URLs and console text. Perplexity request uses a current model name and a timeout.
+  - **Not done yet (tracked in the audit plan)**: profile export/import rework (saved articles are lost on import and duplicated in `profiles_v1`), settings startup as a single `multiGet`, scroll-progress re-render fan-out, and measuring real AsyncStorage size on a device.
+  - **Completed**: See CHANGELOG [Unreleased]
+
 
 
 
