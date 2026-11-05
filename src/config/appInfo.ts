@@ -1,7 +1,7 @@
 // App-level constants used across the app
 export const APP_NAME = "Abridgd";
 export const APP_VERSION = "1.5.7";
-export const APP_BUILD = "39";
+export const APP_BUILD = "40";
 
 // Update this to your real contact email before shipping
 export const CONTACT_EMAIL = "contact@mcc-cal.com";

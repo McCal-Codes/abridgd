@@ -9,6 +9,7 @@ import { clearSavedArticles, getSavedArticlesStorageKey } from "../utils/storage
 import { clearAllReadingProgress, getReadingProgressStorageKey } from "../utils/readingProgressStorage";
 import { clearSavedEvents, getSavedEventsStorageKey } from "../features/events/savedEventsStorage";
 import { useAppleCredentialCheck } from "../hooks/useAppleCredentialCheck";
+import { mergeSavedArticles, parseProfileTransfer, serializeProfileForTransfer } from "../utils/profileTransfer";
 
 // Ensure Buffer exists in React Native runtime
 const globalWithBuffer = globalThis as typeof globalThis & { Buffer?: typeof Buffer };
@@ -32,6 +33,9 @@ interface ProfileContextType {
   exportProfileKey: () => string | null;
   importProfileKey: (key: string) => boolean;
   updateSavedArticles: (articles: Article[]) => void;
+  /** Bumps on every successful import, so the saved-articles context reloads even when the
+   * imported profile has the same id as the active one. */
+  importRevision: number;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -258,6 +262,7 @@ const ensureCodename = async () => {
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
+  const [importRevision, setImportRevision] = useState(0);
   const activateProfile = useCallback((profile: Profile | null) => {
     setActiveProfile(profile);
     void persistActiveProfileId(profile?.id ?? null);
@@ -589,9 +594,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const exportProfileKey = useCallback(() => {
     if (!activeProfile) return null;
     try {
-      const normalized = applyAchievements(activeProfile);
-      const payload = JSON.stringify(normalized);
-      return toBase64(payload);
+      // See utils/profileTransfer: compressed, and without email, Apple id or display name.
+      return serializeProfileForTransfer(applyAchievements(activeProfile));
     } catch (e) {
       console.error("Failed to export profile key", e);
       return null;
@@ -600,38 +604,40 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
   const importProfileKey = useCallback(
     (key: string) => {
+      // Validated and bounded; identity fields never come from a pasted key.
+      const parsed = parseProfileTransfer(key);
+      if (!parsed) return false;
+
       try {
-        const json = fromBase64(key);
-        const parsed: Profile = JSON.parse(json);
-        if (!parsed?.id || !parsed?.name) return false;
-        const used = new Set(profiles.map((p) => p.codename).filter(Boolean) as string[]);
+        const existingIdx = profiles.findIndex(
+          (p) => p.id === parsed.id || (!!parsed.transferKey && p.transferKey === parsed.transferKey),
+        );
+        const existing = existingIdx >= 0 ? profiles[existingIdx] : undefined;
+        // Reuse the existing profile's own codename; only a new profile needs a fresh one.
+        const used = new Set(
+          profiles.filter((p) => p !== existing).map((p) => p.codename).filter(Boolean) as string[],
+        );
+
         const sanitized = withProfileDefaults(
           {
             ...parsed,
-            stats: parsed.stats || {
-              articlesRead: 0,
-              savedActions: 0,
-              lastReadAt: null,
-              lastSavedAt: null,
-              lastFetchedArticleIds: [],
-              lastFetchedAt: null,
-            },
-            savedArticles: parsed.savedArticles || [],
+            // Keep this device's own sign-in details and id; a key carries none.
+            id: existing?.id ?? parsed.id,
+            appleUserId: existing?.appleUserId,
+            email: existing?.email,
+            displayName: existing?.displayName,
+            // Importing onto a profile that already has saved articles adds to them.
+            savedArticles: mergeSavedArticles(existing?.savedArticles ?? [], parsed.savedArticles),
           },
           used,
         );
-        const existingIdx = profiles.findIndex(
-          (p) => p.id === sanitized.id || p.transferKey === sanitized.transferKey,
-        );
-        let next: Profile[];
-        if (existingIdx >= 0) {
-          next = [...profiles];
-          next[existingIdx] = sanitized;
-        } else {
-          next = [...profiles, sanitized];
-        }
+
+        const next = existing
+          ? profiles.map((p, i) => (i === existingIdx ? sanitized : p))
+          : [...profiles, sanitized];
         activateProfile(sanitized);
         persistProfiles(next);
+        setImportRevision((revision) => revision + 1);
         return true;
       } catch (e) {
         console.error("Failed to import profile key", e);
@@ -658,6 +664,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       exportProfileKey,
       importProfileKey,
       updateSavedArticles,
+      importRevision,
     }),
     [
       profiles,
@@ -675,6 +682,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       exportProfileKey,
       importProfileKey,
       updateSavedArticles,
+      importRevision,
     ],
   );
 

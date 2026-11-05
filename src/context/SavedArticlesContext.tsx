@@ -16,6 +16,7 @@ import {
   markMigrationComplete,
   getSavedArticlesStorageKey,
 } from "../utils/storage";
+import { mergeSavedArticles } from "../utils/profileTransfer";
 import { useProfilesOptional } from "./ProfileContext";
 
 interface SavedArticlesContextType {
@@ -42,6 +43,13 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
     () => getSavedArticlesStorageKey(activeProfileId),
     [activeProfileId],
   );
+  const importRevision = profileContext?.importRevision ?? 0;
+  // The profile keeps a mirror of its saved articles. Normally it matches storage, but after an
+  // import (or if a storage write was lost) it holds articles that storage does not. Folding it in
+  // on load recovers them; before, the load replaced the mirror with the empty stored list and an
+  // imported profile came up with no saved articles at all.
+  const mirroredArticlesRef = useRef<Article[] | undefined>(undefined);
+  mirroredArticlesRef.current = profileContext?.activeProfile?.savedArticles;
   const syncProfileSavedArticles = useMemo(
     () => profileContext?.updateSavedArticles ?? (() => {}),
     [profileContext?.updateSavedArticles],
@@ -74,8 +82,9 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
         const migrationDone = await isMigrationComplete();
 
         // Load articles from storage (namespaced per profile)
-        const articles = await loadArticlesFromStorage(3, 100, storageKey);
+        const stored = await loadArticlesFromStorage(3, 100, storageKey);
         if (cancelled) return;
+        const articles = mergeSavedArticles(stored, mirroredArticlesRef.current);
         setSavedArticles(articles);
         syncProfileSavedArticlesRef.current(articles);
 
@@ -107,7 +116,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
     };
     // Deliberately excludes syncProfileSavedArticles — see the ref above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, importRevision]);
 
   // Auto-save to AsyncStorage whenever savedArticles changes
   useEffect(() => {

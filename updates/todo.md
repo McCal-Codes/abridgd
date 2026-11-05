@@ -396,6 +396,13 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Fixed**: `pageContent.selectContentNode` (first article-sized match, then paragraph-density fallback), `pageMetadata.extractPageMetadata` (og:image / JSON-LD / twitter:image, JSON-LD byline), `FullStoryContent.imageUrl`, `useFullStoryEnrichment.enrichedImageUrl` (fetches when a story has no photo, never replaces a feed photo), a lead image in `ArticleScreen`, selectors for four more sites, and `resolveFeedUrl` refusing non-http schemes. After: lead photo for 19 of 19 sampled sources; real stories for TribLive and the Allegheny Front; bylines for WESA, Steelers and TribLive.
   - **Not fixed (honest limits)**: the five Post-Gazette feeds (Top, Biz, Sports, A&E and Local) still get no story text because their pages are paywalled or script-rendered, only the photo and sometimes the byline; DK Pittsburgh Sports' feed items link to a category feed, not articles (a publisher problem); list cards for the photo-less feeds stay text-only, because fetching a page per card would be 25 requests per refresh.
 
+- [x] **TODO-146** | **Unreleased** | Profile import/export: fix lost saved articles, smaller and safer keys; build 40
+  - **Status**: Completed (reproduced with a failing integration test first; not run on a device)
+  - **Root cause**: `importProfileKey` activated the imported profile, `SavedArticlesProvider` reloaded the new profile's own storage key (empty), then synced `[]` back into the profile's mirror, erasing the imported `savedArticles`. Nothing ever wrote them to the per-profile storage key.
+  - **Fix**: `SavedArticlesProvider` folds the profile's mirror into what it loads (`mergeSavedArticles`), and reloads on a new `importRevision` so a same-id import also takes effect. `utils/profileTransfer`: v2 keys (`abr2:` + lz-string), no `email`/`appleUserId`/`displayName` in or out, validated import (known fields, <= 500 articles), legacy base64 keys still readable (with the UTF-8 decode fixed). Import keeps this device's own sign-in details and unions saved articles.
+  - **Also**: build number bumped 39 -> 40 with `scripts/audit/version-bump.js build` so a preview build is distinguishable from the released 1.5.7.
+  - **Not done**: the profile still mirrors every saved article's full HTML into `profiles_v1` (the mirror is what makes the recovery above possible; slimming it to ids is a separate change), and the Profile screen still shares the key as plain text.
+
 
 
 
