@@ -24,17 +24,13 @@ export const fetchWithTimeout = async (url: string): Promise<Response> => {
   }
 };
 
-/** Builds the ordered list of URLs to attempt for a given feed: direct (native only), then
- * two CORS-proxy fallbacks, matching the resilience chain the app has relied on since launch. */
-export const buildFetchTargets = (url: string, isWeb: boolean): string[] => {
-  const targets: string[] = [];
-  if (!isWeb) {
-    targets.push(url);
-  }
-  targets.push(PROXY_URL + encodeURIComponent(url));
-  targets.push(PROXY_ALT_URL + encodeURIComponent(url));
-  return targets;
-};
+/** Builds the ordered list of URLs to attempt for a given feed.
+ *
+ * Native requests go straight to the publisher: there is no CORS on device, and a proxy would
+ * learn which feeds the reader follows. The CORS proxies exist only for the web build, where a
+ * browser blocks direct cross-origin feed requests. */
+export const buildFetchTargets = (url: string, isWeb: boolean): string[] =>
+  isWeb ? [PROXY_URL + encodeURIComponent(url), PROXY_ALT_URL + encodeURIComponent(url)] : [url];
 
 /** Attempts each target in order, returning the first ok response. Returns the last error
  * encountered (if any) so callers can report a useful failure reason. */
