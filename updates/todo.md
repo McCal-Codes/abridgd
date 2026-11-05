@@ -388,6 +388,12 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Also done**: the crash screen and emotion prompt are themed (the remaining literals in the codebase are shadow colours and text on dark overlays, which are fine in both themes); Sign in with Apple revocation is checked at launch and on foreground (`useAppleCredentialCheck`).
   - **Not done yet**: adaptive/monochrome Android icon and padded splash art (needs design assets), predictive back (needs an Android 16 device test), the Liquid Glass decision, and the tab-bar and large-screen work (Phase 3).
 
+- [x] **TODO-145** | **Unreleased** | RSS stories and photos: measured against the live feeds and fixed
+  - **Status**: Completed (verified by running the real parser and extractor over the 19 enabled live feeds and 38 real article pages; not run on a device)
+  - **Measured first**: the feed parser was not at fault for photos. TribLive, Kidsburgh, NEXTpittsburgh and DK Pittsburgh Sports publish no image element at all; the Allegheny Front 2 of 10. Bodies over 500 characters came from only 6 of 19 feeds; the rest are teasers completed on open. On the pages, the extractor failed for TribLive and the five Post-Gazette feeds, returned a 28-character teaser for the Allegheny Front, and every page had an `og:image` the app never used.
+  - **Fixed**: `pageContent.selectContentNode` (first article-sized match, then paragraph-density fallback), `pageMetadata.extractPageMetadata` (og:image / JSON-LD / twitter:image, JSON-LD byline), `FullStoryContent.imageUrl`, `useFullStoryEnrichment.enrichedImageUrl` (fetches when a story has no photo, never replaces a feed photo), a lead image in `ArticleScreen`, selectors for four more sites, and `resolveFeedUrl` refusing non-http schemes. After: lead photo for 19 of 19 sampled sources; real stories for TribLive and the Allegheny Front; bylines for WESA, Steelers and TribLive.
+  - **Not fixed (honest limits)**: the five Post-Gazette feeds (Top, Biz, Sports, A&E and Local) still get no story text because their pages are paywalled or script-rendered, only the photo and sometimes the byline; DK Pittsburgh Sports' feed items link to a category feed, not articles (a publisher problem); list cards for the photo-less feeds stay text-only, because fetching a page per card would be 25 requests per refresh.
+
 
 
 

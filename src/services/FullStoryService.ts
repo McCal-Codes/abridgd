@@ -1,13 +1,18 @@
 
 import { Platform } from 'react-native';
 import { parse } from 'node-html-parser';
+import { selectContentNode } from './pageContent';
+import { extractPageMetadata } from './pageMetadata';
 
 const PROXY_URL = 'https://corsproxy.io/?';
 const FETCH_TIMEOUT_MS = 7000;
 
 export interface FullStoryContent {
+    /** Article HTML. Empty when the page held no extractable story but did carry a photo or byline. */
     body: string;
     author?: string;
+    /** The page's lead photo (og:image / JSON-LD), for stories whose feed carried none. */
+    imageUrl?: string;
 }
 
 const AUTHOR_SELECTORS = [
@@ -95,7 +100,13 @@ const SELECTORS: Record<string, string[]> = {
     'pghcitypaper.com': ['.entry-content', '.story-body', '#story-body-content'],
     'triblive.com': ['.entry-content', 'article', '.story-content'],
     'cbsnews.com': ['.content__body', '.content-body'],
-    'wpxi.com': ['.article-body', '.story-body']
+    'wpxi.com': ['.article-body', '.story-body'],
+    // The Allegheny Front's pages carry seven <article> elements (the story is the last), so a
+    // bare `article` picked a teaser card; its story lives in .entry-content.
+    'alleghenyfront.org': ['.entry-content', '.single-content'],
+    'wesanews.org': ['article'],
+    'nextpittsburgh.com': ['.entry-content', 'article'],
+    'kidsburgh.org': ['.entry-content', 'article']
 };
 
 export const fetchFullArticleBody = async (url: string): Promise<FullStoryContent | null> => {
@@ -145,21 +156,22 @@ export const fetchFullArticleBody = async (url: string): Promise<FullStoryConten
         const domain = Object.keys(SELECTORS).find(d => hostMatchesDomain(url, d));
         const candidates = domain ? SELECTORS[domain] : ['article', 'main', '.entry-content', '.content'];
 
-        let contentNode = null;
-        for (const selector of candidates) {
-            contentNode = root.querySelector(selector);
-            if (contentNode) break;
-        }
+        // Read the page's own metadata before the body is carved out of it.
+        const meta = extractPageMetadata(root, url);
+        const author = extractAuthorFromHtml(root) ?? meta.author;
+
+        const contentNode = selectContentNode(root, candidates);
 
         if (contentNode) {
-            // fast-html-parser structure gives us 'innerHTML' or we can reconstruct it?
-            // fast-html-parser doesn't have .innerHTML access directly in all versions,
-            // but usually valid RSS parsers used earlier returned raw HTML.
-            // Let's check fast-html-parser docs or properties.
-            // It has .toString() on the node which returns the outer HTML usually.
+            // Drop scripts and styles that sit inside the story container.
+            contentNode.querySelectorAll('script, style, noscript').forEach((node) => node.remove());
+            return { body: contentNode.innerHTML, author, imageUrl: meta.imageUrl };
+        }
 
-            // We want the inner HTML to keep structure
-            return { body: contentNode.innerHTML, author: extractAuthorFromHtml(root) };
+        // No story could be extracted (a paywalled or script-rendered page), but a photo or
+        // byline still improves the article the reader sees from the feed's own text.
+        if (meta.imageUrl || author) {
+            return { body: '', author, imageUrl: meta.imageUrl };
         }
 
         return null; // No content found

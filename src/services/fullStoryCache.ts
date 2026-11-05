@@ -12,6 +12,7 @@ type FullStoryCacheEntry = {
   url: string;
   html: string;
   author?: string;
+  imageUrl?: string;
   fetchedAt: number;
   schemaVersion: 1;
 };
@@ -41,7 +42,7 @@ export const getCachedFullStory = async (url: string): Promise<FullStoryContent 
       await AsyncStorage.removeItem(keyFor(url));
       return null;
     }
-    return { body: entry.html, author: entry.author };
+    return { body: entry.html, author: entry.author, imageUrl: entry.imageUrl };
   } catch (error) {
     console.warn("Failed to read full-story cache", error);
     return null;
@@ -53,6 +54,7 @@ const writeCachedFullStory = async (url: string, content: FullStoryContent): Pro
     url,
     html: content.body,
     author: content.author,
+    imageUrl: content.imageUrl,
     fetchedAt: Date.now(),
     schemaVersion: 1,
   };

@@ -226,6 +226,13 @@ export const ArticleScreen: React.FC = () => {
 
   const VideoComponent = VideoModule?.Video ?? null;
 
+  // Full-story enrichment (cache-first, deduped) — upgrades bodyContent once/if it resolves.
+  const { enrichedBody, enrichedAuthor, enrichedImageUrl, isLoadingFullStory } = useFullStoryEnrichment(
+    article,
+    bodyContent.length,
+  );
+  const displayAuthor = article.author || enrichedAuthor;
+
   const parsedContent = useMemo(() => {
     const nodes = parseHtmlContent(bodyContent);
     const existingSources = new Set(
@@ -249,8 +256,20 @@ export const ArticleScreen: React.FC = () => {
         credit: src === article.imageUrl ? article.imageCredit : undefined,
       }));
 
-    return [...nodes, ...extraVideos, ...extraImages];
+    // A lead photo recovered from the story's page leads the article, but only when the story
+    // has no photo of its own (neither in its body nor in the feed's media).
+    const hasOwnImage =
+      nodes.some((n) => n.type === "image") ||
+      !!article.imageUrl ||
+      (article.mediaImages?.length ?? 0) > 0;
+    const leadImage =
+      enrichedImageUrl && !hasOwnImage
+        ? [{ type: "image" as const, src: enrichedImageUrl, caption: undefined, credit: undefined }]
+        : [];
+
+    return [...leadImage, ...nodes, ...extraVideos, ...extraImages];
   }, [
+    enrichedImageUrl,
     article.mediaImages,
     article.mediaVideos,
     article.imageUrl,
@@ -270,13 +289,6 @@ export const ArticleScreen: React.FC = () => {
       }
     }
   };
-
-  // Full-story enrichment (cache-first, deduped) — upgrades bodyContent once/if it resolves.
-  const { enrichedBody, enrichedAuthor, isLoadingFullStory } = useFullStoryEnrichment(
-    article,
-    bodyContent.length,
-  );
-  const displayAuthor = article.author || enrichedAuthor;
 
   useEffect(() => {
     if (enrichedBody && enrichedBody.length > bodyContent.length) {

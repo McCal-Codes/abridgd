@@ -164,6 +164,10 @@ export const resolveFeedUrl = (raw?: string, base?: string): string | undefined 
     return value.replace(/^http:\/\//i, "https://");
   }
 
+  // Any other scheme (javascript:, mailto:, tel:, intent:) is not a URL we can load. Without this
+  // it fell through to the path-relative branch and came out as "https://host/dir/javascript:...".
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return undefined;
+
   if (value.startsWith("//")) return `https:${value}`;
 
   const origin = base?.match(/^https?:\/\/[^/?#]+/i)?.[0]?.replace(/^http:\/\//i, "https://");

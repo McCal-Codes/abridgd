@@ -382,3 +382,21 @@ describe("normalizeFeedItem image caption and credit", () => {
     expect(article.imageCredit).toBeUndefined();
   });
 });
+
+describe("resolveFeedUrl scheme handling", () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { resolveFeedUrl } = require("../parser");
+
+  it("refuses non-http schemes instead of treating them as relative paths", () => {
+    for (const bad of ["javascript:alert(1)", "mailto:a@b.com", "tel:5551234", "intent://x#Intent;end", "JaVaScRiPt:1"]) {
+      expect(resolveFeedUrl(bad, "https://example.com/news/story")).toBeUndefined();
+    }
+  });
+
+  it("still resolves real relative references", () => {
+    expect(resolveFeedUrl("/img/a.jpg", "https://example.com/news/story")).toBe("https://example.com/img/a.jpg");
+    expect(resolveFeedUrl("a.jpg", "https://example.com/news/story")).toBe("https://example.com/news/a.jpg");
+    expect(resolveFeedUrl("//cdn.example.com/a.jpg")).toBe("https://cdn.example.com/a.jpg");
+    expect(resolveFeedUrl("http://example.com/a.jpg")).toBe("https://example.com/a.jpg");
+  });
+});
