@@ -37,8 +37,29 @@ Most local organizers use The Events Calendar plugin. To add one:
    event is in one part of town).
 3. Run `npm run audit:events`, then add a dated `healthNote`.
 
-Sites that only offer an `.ics` export or RSS (Mattress Factory, East Liberty Development, the
-Downtown Partnership, Pitt's campus calendar) need a new parser kind and are not included yet.
+### Candidates checked and rejected (2026-11-05)
+
+An earlier version of this page said iCal/RSS-only organizers "need a new parser kind". Checking each
+one against the live site found none worth a parser:
+
+| Candidate | What was found |
+|---|---|
+| East Liberty Development, Downtown Pittsburgh Partnership | `feed/?post_type=tribe_events` is not an events feed on these sites: it returns the ordinary news posts (no event dates), and `?ical=1` returns HTML. Their events are not machine-readable without a key. |
+| Mattress Factory | The iCal export ignores date filters and paging: the same 50 events from Nov 2023 to Aug 2025, none upcoming. |
+| Pitt campus calendar | A 1.6 MB iCal of 1,500 mostly campus-only events. Too heavy and the wrong audience. |
+
+Build an iCal or RSS reader when there is an organizer that needs one and passes this check. Until
+then it would be code with no consumer.
+
+## Photos
+
+The Events Calendar's JSON lists an event's photo with its resized versions. `pickEventImage` takes
+the smallest version at least 600px wide (not the original upload), upgrades http to https, and
+rejects non-http schemes and tracking beacons. Of 117 live events checked, 68 (58%) had a photo
+(Kidsburgh 43 of 50, WQED 16 of 50, Parks Conservancy 7 of 7, Bloomfield 2 of 2, Heinz History
+Center 0 of 8). The photo shows at the top of the event detail sheet, is decorative to screen
+readers, is skipped in "text-only" image mode, and disappears if it fails to load. List cards stay
+text-only.
 
 ## Areas and filters
 

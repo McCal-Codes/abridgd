@@ -1,11 +1,12 @@
 import React from "react";
-import { Modal, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { Image, Modal, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { CalendarDays, CalendarPlus, ExternalLink, MapPin, Share2, X } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing } from "../../../theme/spacing";
 import { fontScaleLimit, typography } from "../../../theme/typography";
 import { ThemeColors, useThemeOptional } from "../../../theme/ThemeContext";
 import { useThemedStyles } from "../../../theme/useThemedStyles";
+import { useSettings } from "../../../context/SettingsContext";
 import { announceForAccessibility } from "../../../utils/announce";
 import { openExternalUrl } from "../../../utils/openExternalUrl";
 import { addEventToCalendar, AddToCalendarResult } from "../calendar";
@@ -36,15 +37,20 @@ export const EventDetailSheet: React.FC<Props> = ({ event, onClose }) => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const { isEventSaved, toggleSavedEvent } = useSavedEventsOptional();
+  const { imageLoadingMode } = useSettings();
   const [status, setStatus] = React.useState<string | null>(null);
+  const [photoFailed, setPhotoFailed] = React.useState(false);
 
   // A different event should not inherit the last one's status line.
   React.useEffect(() => {
     setStatus(null);
+    setPhotoFailed(false);
   }, [event?.id]);
 
   if (!event) return null;
   const saved = isEventSaved(event.id);
+  // Honour the Data & Performance setting: "text-only" means no photos anywhere.
+  const showPhoto = !!event.imageUrl && imageLoadingMode !== "text-only" && !photoFailed;
 
   const onCalendar = async () => {
     const message = calendarMessage(await addEventToCalendar(event));
@@ -76,6 +82,17 @@ export const EventDetailSheet: React.FC<Props> = ({ event, onClose }) => {
         />
         <SafeAreaView edges={["bottom"]} style={styles.sheet}>
           <View style={styles.handle} />
+          {showPhoto ? (
+            <Image
+              testID="event-photo"
+              source={{ uri: event.imageUrl }}
+              style={styles.photo}
+              resizeMode="cover"
+              // Decorative: the title, time and place carry the meaning.
+              accessible={false}
+              onError={() => setPhotoFailed(true)}
+            />
+          ) : null}
           <View style={styles.headerRow}>
             <Text style={styles.title} accessibilityRole="header">
               {event.title}
@@ -187,6 +204,14 @@ const createStyles = (colors: ThemeColors) =>
       borderRadius: 3,
       backgroundColor: colors.opaqueSeparator,
       marginBottom: spacing.md,
+    },
+    photo: {
+      width: "100%",
+      aspectRatio: 16 / 9,
+      maxHeight: 220,
+      borderRadius: 14,
+      marginBottom: spacing.md,
+      backgroundColor: colors.secondaryBackground,
     },
     headerRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
     title: {

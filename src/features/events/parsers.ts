@@ -1,3 +1,4 @@
+import { isLikelyTrackingImage } from "../../services/feed/parser";
 import { decodeHtmlEntities } from "../../utils/htmlEntities";
 import { resolveArea } from "./areas";
 import { easternWallTimeToUtcMs, parseClock12 } from "./time";
@@ -42,6 +43,35 @@ const localToUtcMs = (date: string, time: string): number => {
 // The Events Calendar (WordPress) JSON: /wp-json/tribe/events/v1/events
 // ---------------------------------------------------------------------------------------------
 
+interface TribeImage {
+  url?: string;
+  width?: number;
+  sizes?: Record<string, { url?: string; width?: number }>;
+}
+
+/** Wide enough for a phone-width sheet on a 2x screen without fetching the original upload. */
+const TARGET_IMAGE_WIDTH = 600;
+
+/**
+ * An event photo URL from The Events Calendar's `image` object, which lists the original and a
+ * set of resized versions. Picks the smallest version at least `TARGET_IMAGE_WIDTH` wide, else the
+ * widest there is, so a card never downloads a 4000px upload for a 390pt-wide slot. Only https
+ * images that are not tracking beacons are accepted.
+ */
+export const pickEventImage = (image: unknown): string | undefined => {
+  if (!image || typeof image !== "object") return undefined;
+  const img = image as TribeImage;
+  const candidates = [{ url: img.url, width: img.width }, ...Object.values(img.sizes ?? {})]
+    .filter((c): c is { url: string; width?: number } => typeof c?.url === "string")
+    .map((c) => ({ url: c.url.trim().replace(/^http:\/\//i, "https://"), width: Number(c.width) || 0 }))
+    .filter((c) => /^https:\/\//i.test(c.url) && !isLikelyTrackingImage(c.url));
+
+  if (candidates.length === 0) return undefined;
+  const wideEnough = candidates.filter((c) => c.width >= TARGET_IMAGE_WIDTH).sort((a, b) => a.width - b.width);
+  if (wideEnough.length > 0) return wideEnough[0].url;
+  return candidates.sort((a, b) => b.width - a.width)[0].url;
+};
+
 interface TribeVenue {
   venue?: string;
   address?: string;
@@ -62,6 +92,8 @@ interface TribeEvent {
   excerpt?: string;
   venue?: TribeVenue | unknown[];
   categories?: Array<{ name?: string }>;
+  /** `false` (not an object) when the event has no photo. */
+  image?: TribeImage | false;
 }
 
 export const parseTribeEvent = (raw: TribeEvent, source: EventSource): AppEvent | null => {
@@ -116,6 +148,7 @@ export const parseTribeEvent = (raw: TribeEvent, source: EventSource): AppEvent 
     category: decodeHtmlEntities(asString(raw.categories?.[0]?.name) ?? "") || undefined,
     cost: asString(raw.cost),
     summary: summary || undefined,
+    imageUrl: pickEventImage(raw.image),
     url,
     sourceId: source.id,
     sourceName: source.name,

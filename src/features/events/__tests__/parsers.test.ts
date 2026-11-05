@@ -1,4 +1,4 @@
-import { htmlToPlainText, parseLegistarResponse, parseTribeEvent, parseTribeResponse } from "../parsers";
+import { htmlToPlainText, parseLegistarResponse, parseTribeEvent, parseTribeResponse, pickEventImage } from "../parsers";
 import { EVENT_SOURCES } from "../eventSources";
 import { EventSource } from "../types";
 
@@ -164,5 +164,54 @@ describe("parseLegistarResponse (City of Pittsburgh meetings)", () => {
 
   it("returns [] for anything that is not a list", () => {
     expect(parseLegistarResponse({ oops: true }, city)).toEqual([]);
+  });
+});
+
+describe("event photos", () => {
+  const kidsburgh = source("kidsburgh");
+  const image = {
+    url: "https://www.kidsburgh.org/wp-content/uploads/2023/11/a.png",
+    width: 3000,
+    sizes: {
+      thumbnail: { url: "https://www.kidsburgh.org/wp-content/uploads/2023/11/a-150.png", width: 150 },
+      medium: { url: "https://www.kidsburgh.org/wp-content/uploads/2023/11/a-300.png", width: 300 },
+      large: { url: "https://www.kidsburgh.org/wp-content/uploads/2023/11/a-768.png", width: 768 },
+    },
+  };
+
+  it("picks the smallest version that is wide enough, not the original upload", () => {
+    expect(pickEventImage(image)).toBe("https://www.kidsburgh.org/wp-content/uploads/2023/11/a-768.png");
+  });
+
+  it("falls back to the widest version when none is wide enough", () => {
+    const small = { url: "https://x.example/a.png", width: 500, sizes: { thumbnail: { url: "https://x.example/t.png", width: 150 } } };
+    expect(pickEventImage(small)).toBe("https://x.example/a.png");
+  });
+
+  it("upgrades http to https and rejects other schemes and beacons", () => {
+    expect(pickEventImage({ url: "http://x.example/a.png", width: 800 })).toBe("https://x.example/a.png");
+    expect(pickEventImage({ url: "javascript:alert(1)", width: 800 })).toBeUndefined();
+    expect(pickEventImage({ url: "https://x.example/pixel.gif", width: 800 })).toBeUndefined();
+  });
+
+  it("returns undefined for the plugin's `false` (no photo) and for junk", () => {
+    expect(pickEventImage(false)).toBeUndefined();
+    expect(pickEventImage(undefined)).toBeUndefined();
+    expect(pickEventImage("a.png")).toBeUndefined();
+    expect(pickEventImage({})).toBeUndefined();
+  });
+
+  it("puts the photo on the parsed event, and leaves it off when there is none", () => {
+    const raw = {
+      id: 1,
+      title: "Story hour",
+      url: "https://www.kidsburgh.org/ec/story-hour/",
+      start_date: "2026-11-07 10:30:00",
+      end_date: "2026-11-07 11:30:00",
+    };
+    expect(parseTribeEvent({ ...raw, image }, kidsburgh)!.imageUrl).toBe(
+      "https://www.kidsburgh.org/wp-content/uploads/2023/11/a-768.png",
+    );
+    expect(parseTribeEvent({ ...raw, image: false }, kidsburgh)!.imageUrl).toBeUndefined();
   });
 });

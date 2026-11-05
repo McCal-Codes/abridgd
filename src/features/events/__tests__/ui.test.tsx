@@ -12,6 +12,11 @@ jest.mock("../calendar", () => ({ addEventToCalendar: jest.fn() }));
 jest.mock("../../../utils/openExternalUrl", () => ({ openExternalUrl: jest.fn() }));
 jest.mock("../../../hooks/useReduceMotion", () => ({ useReduceMotion: () => true }));
 
+let mockImageMode = "full";
+jest.mock("../../../context/SettingsContext", () => ({
+  useSettings: () => ({ imageLoadingMode: mockImageMode }),
+}));
+
 const mockUseEvents = useEvents as jest.Mock;
 
 const today = getEasternParts(Date.now()).date;
@@ -174,6 +179,36 @@ describe("EventDetailSheet", () => {
     fireEvent.press(screen.getByLabelText("Add to calendar"));
     await waitFor(() => expect(addEventToCalendar).toHaveBeenCalled());
     expect(screen.getByText(/Abridgd never reads your calendar/)).toBeTruthy();
+  });
+
+  describe("event photo", () => {
+    const withPhoto = { ...event, imageUrl: "https://cdn.example.com/event.jpg" };
+
+    it("shows the organizer's photo, decorative to screen readers", () => {
+      render(<EventDetailSheet event={withPhoto} onClose={jest.fn()} />);
+      const photo = screen.getByTestId("event-photo");
+      expect(photo.props.source).toEqual({ uri: "https://cdn.example.com/event.jpg" });
+      expect(photo.props.accessible).toBe(false);
+    });
+
+    it("shows nothing when the event has no photo", () => {
+      render(<EventDetailSheet event={event} onClose={jest.fn()} />);
+      expect(screen.queryByTestId("event-photo")).toBeNull();
+    });
+
+    it("drops the photo if it fails to load, keeping the rest of the sheet", () => {
+      render(<EventDetailSheet event={withPhoto} onClose={jest.fn()} />);
+      fireEvent(screen.getByTestId("event-photo"), "error");
+      expect(screen.queryByTestId("event-photo")).toBeNull();
+      expect(screen.getByLabelText("Add to calendar")).toBeTruthy();
+    });
+
+    it("shows no photo in text-only image mode", () => {
+      mockImageMode = "text-only";
+      render(<EventDetailSheet event={withPhoto} onClose={jest.fn()} />);
+      expect(screen.queryByTestId("event-photo")).toBeNull();
+      mockImageMode = "full";
+    });
   });
 
   it("renders nothing without an event and closes from the close button", () => {

@@ -28,6 +28,8 @@ export interface AppEvent {
   cost?: string;
   /** Plain-text summary, a few sentences at most. */
   summary?: string;
+  /** The organizer's own photo for the event (https), when the listing has one. */
+  imageUrl?: string;
   /** The organizer's own page for this event. Always http(s). */
   url: string;
   sourceId: string;
