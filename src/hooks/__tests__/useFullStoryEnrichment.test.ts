@@ -69,7 +69,13 @@ describe("useFullStoryEnrichment", () => {
 
   it("does not trigger enrichment for a long body from an unlisted source", async () => {
     const longBody = "z".repeat(1000);
-    const article = buildArticle({ source: "Some Other Source", body: longBody });
+    // The article has a photo, so there is nothing left to fetch the page for. (A long body with
+    // no photo does fetch now, to recover the lead image: see the "lead photo" tests below.)
+    const article = buildArticle({
+      source: "Some Other Source",
+      body: longBody,
+      imageUrl: "https://cdn.example.com/own.jpg",
+    });
 
     renderHook(({ art, len }: { art: Article; len: number }) => useFullStoryEnrichment(art, len), {
       initialProps: { art: article, len: longBody.length },
@@ -104,5 +110,41 @@ describe("useFullStoryEnrichment", () => {
     rerender({ art: article, len: article.body.length });
     await new Promise((resolve) => setTimeout(resolve, 700));
     expect(fetchAndCacheFullStory).toHaveBeenCalledTimes(1);
+  });
+
+  describe("lead photo", () => {
+    const longBody = "x".repeat(2000);
+    const render = (art: Article) =>
+      renderHook(({ a }: { a: Article }) => useFullStoryEnrichment(a, a.body.length), { initialProps: { a: art } });
+
+    it("recovers a lead photo for a story whose feed carried none, even with a full-length body", async () => {
+      (fetchAndCacheFullStory as jest.Mock).mockResolvedValue({ body: "", imageUrl: "https://cdn.example.com/lead.jpg" });
+      const { result } = render(buildArticle({ source: "Random Source", body: longBody }));
+
+      await waitFor(() => expect(result.current.enrichedImageUrl).toBe("https://cdn.example.com/lead.jpg"), { timeout: 2000 });
+      expect(result.current.enrichedBody).toBeNull(); // an empty body never replaces the feed's text
+    });
+
+    it("does not fetch at all when the story is long and already has a photo", async () => {
+      const { result } = render(buildArticle({ source: "Random Source", body: longBody, imageUrl: "https://cdn.example.com/own.jpg" }));
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      expect(fetchAndCacheFullStory).not.toHaveBeenCalled();
+      expect(result.current.enrichedImageUrl).toBeNull();
+    });
+
+    it("never replaces a photo the feed supplied", async () => {
+      (fetchAndCacheFullStory as jest.Mock).mockResolvedValue({ body: `<p>${"y".repeat(2500)}</p>`, imageUrl: "https://cdn.example.com/page.jpg" });
+      const { result } = render(buildArticle({ source: "Random Source", body: "short", imageUrl: "https://cdn.example.com/own.jpg" }));
+
+      await waitFor(() => expect(result.current.enrichedBody).not.toBeNull(), { timeout: 2000 });
+      expect(result.current.enrichedImageUrl).toBeNull();
+    });
+
+    it("treats feed media images as the story's own photo", async () => {
+      const { result } = render(buildArticle({ source: "Random Source", body: longBody, mediaImages: ["https://cdn.example.com/m.jpg"] }));
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      expect(fetchAndCacheFullStory).not.toHaveBeenCalled();
+      expect(result.current.enrichedImageUrl).toBeNull();
+    });
   });
 });

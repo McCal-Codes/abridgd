@@ -1,6 +1,6 @@
 # Onboarding + What’s New Standard (iOS 26)
 
-Last Updated: 2026-06-10
+Last Updated: 2026-11-05
 
 **Caleb voice-preserving rules.** Default rubric for reviewing/revising onboarding (first run + major re-entry) and What’s New (post-update highlights). Goal: improve clarity, pacing, and iOS 26 fit **without rewriting Caleb’s voice**. Micro-adjustments only.
 
@@ -135,3 +135,43 @@ Pass: readable in <20s, exits cleanly.
 ## Output Requirements When Using This Standard
 - When auditing: keep original text visible; propose minimal edits; flag internal items.
 - When changing code: do **not** modify files in place; create a COPY file (e.g., `WhatsNewScreen.v2.tsx`) and include a short changelog comment at top.
+
+---
+
+# Onboarding v2 (2026-11-05)
+
+The owner asked for a full redo of first-run onboarding, which is a deliberate departure from
+"micro-adjustments only" above. The standard's other rules still apply, and v2 was built as a copy
+(`src/screens/OnboardingScreen.v2.tsx`, steps in `src/features/onboarding/`) with the previous
+flow left in place for comparison. Mockups were reviewed before any code.
+
+## The six steps
+
+1. **Welcome:** the real shape of the app, a short brief that ends ("You're caught up").
+2. **Your newsrooms:** working switches; each writes the same source preference as Settings >
+   News Sources, immediately.
+3. **Read it your way:** the speed reader as tap-to-try. It never starts on its own.
+4. **Heavy stories:** content notes only / a breathing pause / off, mapped onto
+   `isGroundingEnabled`, `sensitivePromptLevel` and `sensitiveActionPreference`. The breathing
+   styles appear only when the pause is chosen. Says where to change it.
+5. **More than the news:** introduces Events (labelled examples; no network request during
+   onboarding) and Resources, so neither is buried in Settings.
+6. **You're all set:** the trust pledge, then "Start reading" or "Fine-tune settings first".
+
+## Kept from this standard
+
+No dead buttons; Skip is always available (steps 1 to 5) and keeps every choice already made;
+choices are reversible and say where to change them; Reduce Motion is respected (there is no
+step animation); the pledge wording is exact ("no analytics on how you read", not "no tracking",
+because crash reports exist).
+
+## Voice
+
+Plain, warm and specific. The previous playful lines (the "chicken on a stick" demo, "massage for
+your brain") were dropped from the new copy; reinstate any in `src/features/onboarding/` if wanted.
+
+## Start ids
+
+`resolveStartStep` accepts the new step ids and the ids the old flow used. App Info used to send
+`"practice"`, which matched no slide; it now opens onboarding normally, and
+`startSlideId: "reader"` opens the reader step.

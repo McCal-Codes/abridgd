@@ -74,7 +74,8 @@
 - [x] Quality sweep: restore TypeScript/Jest/docs lint gates on the current SDK 54 baseline
 - [x] Quality sweep: rename Home around a finite Morning Brief with cached-state and retry copy
 - [x] Quality sweep: simplify onboarding to a five-slide reader-first welcome with one reversible choice and overflow-safe previews/actions
-- [ ] Save/load resilience for SavedArticles (error handling + migration from in-memory on first launch)
+- [x] Save/load resilience for SavedArticles: a failed or unreadable load can no longer be autosaved over the stored data; damaged data is backed up first (TODO-140)
+- [ ] Audit follow-ups still open: profile export/import rework, single multiGet for settings, scroll-progress re-render fan-out, measure AsyncStorage size on a device (see updates/todo.md TODO-140)
 - [x] Network/Feed error states (offline-friendly cached messaging, retries, last-updated labeling)
 - [ ] Loading/skeleton experience (avoid blank screens; progressive image loading)
 - [ ] Offline indicator + queued actions (save/unsave) until reconnected

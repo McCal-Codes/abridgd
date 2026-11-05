@@ -11,6 +11,7 @@ import {
   BUG_EMAIL_SUBJECT,
   BUG_EMAIL_BODY_TEMPLATE,
   APP_VERSION,
+  APP_VERSION_LABEL,
   APP_BUILD,
   PRIVACY_URL,
   TERMS_URL,
@@ -36,7 +37,7 @@ export const AppInfoScreen: React.FC = () => {
             onPress={async () => {
               await resetOnboarding();
               try {
-                (navigation as any).navigate("Onboarding", { startSlideId: "practice" });
+                (navigation as any).navigate("Onboarding");
               } catch {}
             }}
           >
@@ -110,7 +111,7 @@ export const AppInfoScreen: React.FC = () => {
 
           <View style={[styles.actionRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.versionText}>
-              Version {APP_VERSION} (build {APP_BUILD})
+              Version {APP_VERSION_LABEL} (build {APP_BUILD})
             </Text>
           </View>
 

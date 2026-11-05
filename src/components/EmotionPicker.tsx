@@ -1,7 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
+import { Frown, Meh, Smile } from "lucide-react-native";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
+import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
+import { useThemedStyles } from "../theme/useThemedStyles";
 import { ScaleButton } from "./ScaleButton";
 
 interface EmotionPickerProps {
@@ -10,13 +13,18 @@ interface EmotionPickerProps {
   onDismiss: () => void;
 }
 
+// Lucide icons rather than emoji: the app's rule is "Lucide only, no emojis" (AGENTS.md), and an
+// emoji renders in whatever the platform's emoji font is, which differs a lot between devices.
 const EMOTIONS = [
-  { value: "positive" as const, emoji: "😊", label: "This was helpful" },
-  { value: "neutral" as const, emoji: "😐", label: "Neutral" },
-  { value: "negative" as const, emoji: "😔", label: "Hard to read" },
+  { value: "positive" as const, Icon: Smile, label: "This was helpful" },
+  { value: "neutral" as const, Icon: Meh, label: "Neutral" },
+  { value: "negative" as const, Icon: Frown, label: "Hard to read" },
 ];
 
 export const EmotionPicker: React.FC<EmotionPickerProps> = ({ visible, onSelect, onDismiss }) => {
+  const { colors } = useThemeOptional();
+  const styles = useThemedStyles(createStyles);
+
   const handleSelectEmotion = (emotion: "positive" | "neutral" | "negative") => {
     onSelect(emotion);
     onDismiss();
@@ -40,14 +48,16 @@ export const EmotionPicker: React.FC<EmotionPickerProps> = ({ visible, onSelect,
           <Text style={styles.subtitle}>Your feedback helps us show you better content</Text>
 
           <View style={styles.emotionGrid}>
-            {EMOTIONS.map((emotion) => (
+            {EMOTIONS.map(({ value, Icon, label }) => (
               <TouchableOpacity
-                key={emotion.value}
+                key={value}
                 style={styles.emotionButton}
-                onPress={() => handleSelectEmotion(emotion.value)}
+                onPress={() => handleSelectEmotion(value)}
+                accessibilityRole="button"
+                accessibilityLabel={label}
               >
-                <Text style={styles.emoji}>{emotion.emoji}</Text>
-                <Text style={styles.emotionLabel}>{emotion.label}</Text>
+                <Icon size={40} color={colors.tintStrong} strokeWidth={1.6} />
+                <Text style={styles.emotionLabel}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -61,63 +71,65 @@ export const EmotionPicker: React.FC<EmotionPickerProps> = ({ visible, onSelect,
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  container: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: spacing.lg,
-    maxWidth: 320,
-    width: "100%",
-  },
-  title: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.lg,
-    fontWeight: "700",
-    marginBottom: spacing.sm,
-    textAlign: "center",
-    color: "#1a1a1a",
-  },
-  subtitle: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: "#666",
-    marginBottom: spacing.lg,
-    textAlign: "center",
-  },
-  emotionGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: spacing.lg,
-  },
-  emotionButton: {
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-  },
-  emoji: {
-    fontSize: 40,
-    marginBottom: spacing.xs,
-  },
-  emotionLabel: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.xs,
-    color: "#666",
-    textAlign: "center",
-    maxWidth: 70,
-  },
-  skipButton: {
-    marginTop: spacing.sm,
-  },
-  skipButtonText: {
-    fontFamily: typography.fontFamily.sans,
-    fontSize: typography.size.sm,
-    color: "#666",
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: spacing.lg,
+    },
+    container: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: spacing.lg,
+      maxWidth: 320,
+      width: "100%",
+    },
+    title: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.lg,
+      fontWeight: "700",
+      marginBottom: spacing.sm,
+      textAlign: "center",
+      color: colors.label,
+    },
+    subtitle: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.lg,
+      textAlign: "center",
+    },
+    emotionGrid: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginBottom: spacing.lg,
+    },
+    emotionButton: {
+      alignItems: "center",
+      gap: spacing.xs,
+      minHeight: 44,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.sm,
+    },
+    emotionLabel: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.xs,
+      color: colors.textSecondary,
+      textAlign: "center",
+      maxWidth: 70,
+    },
+    skipButton: {
+      marginTop: spacing.sm,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    skipButtonText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+    },
+  });

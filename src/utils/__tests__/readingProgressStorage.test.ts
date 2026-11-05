@@ -49,6 +49,42 @@ describe("readingProgressStorage", () => {
     expect(loaded).toEqual(progressData);
   });
 
+  describe("loadReadingProgress failure handling", () => {
+    const storageKey = "@abridged_reading_progress_reader-1";
+
+    it("returns {} when nothing is stored", async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+      await expect(loadReadingProgress(3, 0, storageKey)).resolves.toEqual({});
+    });
+
+    it("throws instead of returning {} when the read keeps failing", async () => {
+      (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error("disk"));
+
+      await expect(loadReadingProgress(2, 0, storageKey)).rejects.toMatchObject({
+        name: "StorageReadError",
+        reason: "transient",
+      });
+      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it("backs up and throws for a newer schema version", async () => {
+      const newer = JSON.stringify({ version: 7, progressData: {}, timestamp: 1 });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(newer);
+
+      await expect(loadReadingProgress(3, 0, storageKey)).rejects.toMatchObject({
+        reason: "unsupported-version",
+      });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(`${storageKey}.bak`, newer);
+    });
+
+    it("backs up damaged JSON and starts empty", async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue("oops{");
+
+      await expect(loadReadingProgress(3, 0, storageKey)).resolves.toEqual({});
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(`${storageKey}.bak`, "oops{");
+    });
+  });
+
   it("merges updates without losing existing metadata", () => {
     const existing: ReadingProgressState = {
       "article-1": {

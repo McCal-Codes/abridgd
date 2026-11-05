@@ -85,7 +85,8 @@ const fetchSingleSource = async (
     const { response, error: fetchError } = await fetchFeedXml(source.url, isWeb);
 
     if (!response || !response.ok) {
-      const rss2JsonItems = await fetchViaRss2Json(source.url);
+      // rss2json is a third-party relay; like the CORS proxies it is a web-only fallback.
+      const rss2JsonItems = isWeb ? await fetchViaRss2Json(source.url) : null;
       if (rss2JsonItems?.length) {
         const articles = rss2JsonItems.map((raw) =>
           normalizeFeedItem(raw, category, source.name, provenance()),

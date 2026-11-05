@@ -71,6 +71,7 @@ jest.mock("../../context/SavedArticlesContext", () => ({
 
 jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
+  selectionAsync: jest.fn(),
   ImpactFeedbackStyle: { Medium: "medium" },
 }));
 
@@ -200,7 +201,7 @@ describe("SavedScreen", () => {
     expect(mockParentNavigate).toHaveBeenCalledWith("Top");
   });
 
-  it("shows no-results state when search has no matches and clears filters", () => {
+  it("shows no-results state when search has no matches and clears filters", async () => {
     jest.useFakeTimers();
     mockSavedArticlesState = createSavedArticlesState([
       {
@@ -234,7 +235,12 @@ describe("SavedScreen", () => {
     });
 
     expect(getByTestId("saved-no-results")).toBeTruthy();
-    fireEvent.press(getByText("Clear search & filters"));
+    // The handler awaits a haptic before it clears. The mock used to lack selectionAsync, so the
+    // call threw synchronously and the clear ran in the same tick; with a real (async) haptic the
+    // clear lands a microtask later, so the press has to be awaited inside act.
+    await act(async () => {
+      fireEvent.press(getByText("Clear search & filters"));
+    });
     act(() => jest.advanceTimersByTime(20));
 
     expect(queryByText("Saved Story")).toBeTruthy();

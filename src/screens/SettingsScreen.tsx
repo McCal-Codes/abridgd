@@ -12,6 +12,7 @@ import {
   Rss,
   Newspaper,
   HeartPulse,
+  LifeBuoy,
   Compass,
   Eye,
   Info,
@@ -79,17 +80,29 @@ export const SettingsScreen: React.FC = () => {
       screen: "AccessibilitySettings",
     },
     {
+      title: "Resources",
+      description: "Local help and services",
+      icon: <LifeBuoy size={24} color={colors.primary} />,
+      screen: "Resources",
+    },
+    {
       title: "App Info",
       description: "Version, policies, feedback, tutorials",
       icon: <Info size={24} color={colors.primary} />,
       screen: "AppInfo",
     },
-    {
-      title: "Debug & Advanced",
-      description: "Developer tools and diagnostics",
-      icon: <Bug size={24} color={colors.primary} />,
-      screen: "DebugSettings",
-    },
+    // Developer tools only. The screen can dump and clear all stored data, so it is not
+    // reachable from release builds (the route is registered under the same flag).
+    ...(__DEV__
+      ? [
+          {
+            title: "Debug & Advanced",
+            description: "Developer tools and diagnostics",
+            icon: <Bug size={24} color={colors.primary} />,
+            screen: "DebugSettings" as const,
+          },
+        ]
+      : []),
   ];
 
   return (

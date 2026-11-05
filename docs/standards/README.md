@@ -1,6 +1,6 @@
 # Abridged App — Standards Home
 Version 1.0
-Last Updated: January 21, 2026
+Last Updated: November 5, 2026
 
 Welcome to the authoritative source for all standards, workflows, and decision records for the Abridged app.
 

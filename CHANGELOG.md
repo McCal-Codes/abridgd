@@ -6,6 +6,43 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.2.0-beta.1] - 2026-11-05
+
+Version 0.2.0 (build 41), beta 1. Numbering restarts here, after 1.5.7, at the owner's direction. The in-app version reads "0.2.0 beta 1"; the stage is kept out of the version string itself because iOS only accepts numeric version strings.
+
+### Added
+- Local events. A "This week" card on Home and an Events screen list what is happening around Pittsburgh in the next 14 days, grouped by day, with filter chips built from what is listed (Today, This weekend, and the parts of town that have events). Events come from public organizer calendars read directly, with no proxy: Kidsburgh, WQED, Bloomfield Development Corporation, Pittsburgh Parks Conservancy, Heinz History Center, Carnegie Museums, and City of Pittsburgh council meetings. Each event credits and links to its organizer, can be saved, shared, and added to your calendar, and shows the organizer's photo when it has one. (TODO-141)
+- Resources, in Settings. Local help in one place: 988, Re:solve Crisis Network, Crisis Text Line, 211, the Greater Pittsburgh Community Food Bank and Allegheny Link, with "In an emergency, call 911" at the top. It is bundled with the app, works offline, and never records what anyone opens. Call and Text buttons hand off to your phone; on a device that cannot place calls, it shows the number. (TODO-142)
+- A redone welcome. Six steps, each with Skip and Back: the finite brief, working switches for which newsrooms you read, a tap-to-try speed reader, a choice for how heavy stories are handled (content notes only, a breathing pause, or off), a look at Events and Resources, and the trust pledge. Every choice saves as you make it, so skipping never loses one. The earlier flow's playful lines were dropped from the new copy. (TODO-143)
+- Add to calendar uses your phone's own new-event screen, so Abridgd asks for no calendar permission and never reads your calendar. If that screen is unavailable it opens a calendar link in the browser. (TODO-141)
+
+### Fixed
+- Importing a profile lost its saved articles. The import brought the profile in, but the saved-articles list then loaded the new profile's own (empty) storage and overwrote the imported list, so the profile always came up with none. The imported articles are now folded in and saved, and importing onto a profile that already has saved articles adds to them. (TODO-146)
+- Profile keys are smaller, safer and no longer garble text. The old key was plain base64 of the whole profile, so a few dozen saved stories made a multi-megabyte share message, and curly quotes and dashes in headlines came back as garbage on import. Keys are now compressed and carry no email, Apple ID or display name; importing ignores those fields, so a pasted key can't claim someone's Apple account, and an import keeps this device's own sign-in details. Imports are validated (unknown fields dropped, at most 500 saved articles, names bounded). Old keys still import. (TODO-146)
+- Stories now get a lead photo and a byline when their feed has none. A check of all 19 enabled feeds found four (TribLive, Kidsburgh, NEXTpittsburgh, DK Pittsburgh Sports) that carry no photo at all and several with no author. Every article page publishes a link-preview image and structured byline, so opening a story now picks those up (never replacing a photo or byline the feed supplied), including for stories whose full text can't be fetched, such as the paywalled Post-Gazette. (TODO-145)
+- Full stories were missing or empty for some outlets. The extractor took the first matching container even when it was a 28-character teaser card (the Allegheny Front, whose pages carry seven `<article>` elements) and found nothing on pages with unfamiliar markup (TribLive). It now takes the first article-sized match, falls back to the densest block of paragraphs, and strips inline scripts from the story. (TODO-145)
+- A feed image or link starting with `javascript:`, `mailto:`, `tel:` or `intent:` was turned into a bogus `https://` address instead of being ignored. (TODO-145)
+- Dark mode now actually follows the phone. The app was pinned to light (`userInterfaceStyle: "light"`), so the dark theme could never appear on iPhone and was inconsistent on Android. It now follows the system setting, with a matching dark splash screen, and Android no longer restarts the screen when the system theme changes. (TODO-144)
+- Light-mode text and controls were too faint. The teal used for text, icons and buttons was 3.3:1 against the background and 3.5:1 under white text, and the grey used for timestamps and captions was 3.1:1. They are now 4.9:1, 5.2:1 and 5.0:1 (WCAG AA needs 4.5:1), and a test checks every text colour against every surface in both themes. (TODO-144)
+- The Haptics setting did nothing. "Off" and "Subtle" were stored but the roughly 25 haptic calls never read them. Every haptic now goes through one module that honours the setting. (TODO-144)
+- Bottom sheets and the grounding overlay measured the screen once at launch, so they were the wrong size after rotating, unfolding a foldable, or resizing a window. They now follow the current window. (TODO-144)
+- Revoking Sign in with Apple in iOS Settings now signs the profile out. Before, the profile stayed "signed in" indefinitely. The app checks at launch and whenever it returns to the foreground, and does nothing if the state can't be read. (TODO-144)
+- The "Something went wrong" screen was hard-coded white (a bright flash in dark mode) and showed internal error text to readers. It is now themed, reassures that saved articles and settings are safe, and shows the technical message only in development. The "How did this article make you feel?" prompt is themed too and uses icons instead of emoji. (TODO-144)
+- Saved articles and reading progress could be wiped by a failed read. The loaders returned an empty value on a read error or an unrecognised schema, and the contexts' autosave then wrote that empty value over the stored data. Loaders now tell "empty" from "unreadable": a read failure or newer-schema data throws, damaged data is copied to `<key>.bak` before starting empty, and autosave stays off for any key whose data was not read. (TODO-140)
+- A saved comprehensive tab layout was reset on every launch. Settings validated the saved tabs and default tab against the initial "minimal" layout, because the persisted layout had not been applied yet, and wrote the stripped list back. The persisted layout is now read first. (TODO-140)
+- Native builds no longer send feed URLs or opened articles to third-party relays. corsproxy.io, allorigins.win and rss2json were fallbacks on every platform; there is no CORS on a device, so they are web-only now. (TODO-140)
+- Full-story URL checks matched substrings, so any URL containing `triblive.com` anywhere took the TribLive path. They now compare the host, the WordPress slug is validated, and the TribLive API request has a timeout. Article URLs are no longer written to logs. (TODO-140)
+- The shared on-device storage could grow without limit. The full-story cache keeps at most 30 bodies, verifies the cached URL on read (the key is a 32-bit hash), and feed snapshots for sources that are no longer configured are removed; the existing expiry sweep now actually runs, once per launch. (TODO-140)
+- Digest AI summaries called a retired Perplexity model name and had no timeout, so a stalled connection could leave the digest loading indefinitely. (TODO-140)
+
+### Fixed
+- "Redo Onboarding Welcome" in App Info opened onboarding on a slide id that never existed. It now opens the welcome from the start, and "Revisit the Abridged reader tour" opens the reader step. (TODO-143)
+
+### Changed
+- The Android build now includes x86_64, so the APK installs on standard emulators and Chromebooks, and iOS declares the crash and performance data Sentry collects in its privacy manifest. (TODO-144)
+- "Debug & Advanced" is a development-only screen. It could dump and clear all stored data, and it logged the settings object including the API key; it is hidden in release builds, and its dumps now redact keys, tokens, emails and Apple ids. (TODO-140)
+- Crash reports no longer record what was read: console breadcrumbs are dropped, network and navigation breadcrumbs keep only the host, `sendDefaultPii` is off, and the environment is tagged. (TODO-140)
+
 ## [1.5.7] - 2026-09-07
 
 ### Fixed

@@ -143,3 +143,15 @@ describe("AiService", () => {
     expect(digest[0].article.id).toBe("top-fresh");
   });
 });
+
+describe("Perplexity request body", () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { buildPerplexityRequestBody, PERPLEXITY_MODEL } = require("../AiService");
+
+  it("targets a current model, not a retired llama-3.1-sonar-* name", () => {
+    const body = buildPerplexityRequestBody({ system: "s", user: "u", maxTokens: 50 });
+    expect(body.model).toBe(PERPLEXITY_MODEL);
+    expect(body.model).not.toMatch(/^llama-3\.1-sonar/);
+    expect(body.max_tokens).toBe(50);
+  });
+});

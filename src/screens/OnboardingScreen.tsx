@@ -1,3 +1,8 @@
+/**
+ * SUPERSEDED by OnboardingScreen.v2.tsx, which is what the navigator routes to. Kept unchanged
+ * for comparison, as docs/standards/onboarding-whats-new.md asks, and so its tests keep guarding
+ * the copy it shipped with. Do not extend this file.
+ */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
