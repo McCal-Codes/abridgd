@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Added
 - Local events. A "This week" card on Home and an Events screen list what is happening around Pittsburgh in the next 14 days, grouped by day, with filter chips built from what is listed (Today, This weekend, and the parts of town that have events). Events come from public organizer calendars read directly, with no proxy: Kidsburgh, WQED, Bloomfield Development Corporation, Pittsburgh Parks Conservancy, Heinz History Center, Carnegie Museums, and City of Pittsburgh council meetings. Each event credits and links to its organizer, can be saved, shared, and added to your calendar. (TODO-141)
 - Resources, in Settings. Local help in one place: 988, Re:solve Crisis Network, Crisis Text Line, 211, the Greater Pittsburgh Community Food Bank and Allegheny Link, with "In an emergency, call 911" at the top. It is bundled with the app, works offline, and never records what anyone opens. Call and Text buttons hand off to your phone; on a device that cannot place calls, it shows the number. (TODO-142)
+- A redone welcome. Six steps, each with Skip and Back: the finite brief, working switches for which newsrooms you read, a tap-to-try speed reader, a choice for how heavy stories are handled (content notes only, a breathing pause, or off), a look at Events and Resources, and the trust pledge. Every choice saves as you make it, so skipping never loses one. The earlier flow's playful lines were dropped from the new copy. (TODO-143)
 - Add to calendar uses your phone's own new-event screen, so Abridgd asks for no calendar permission and never reads your calendar. If that screen is unavailable it opens a calendar link in the browser. (TODO-141)
 
 ### Fixed
@@ -18,6 +19,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Full-story URL checks matched substrings, so any URL containing `triblive.com` anywhere took the TribLive path. They now compare the host, the WordPress slug is validated, and the TribLive API request has a timeout. Article URLs are no longer written to logs. (TODO-140)
 - The shared on-device storage could grow without limit. The full-story cache keeps at most 30 bodies, verifies the cached URL on read (the key is a 32-bit hash), and feed snapshots for sources that are no longer configured are removed; the existing expiry sweep now actually runs, once per launch. (TODO-140)
 - Digest AI summaries called a retired Perplexity model name and had no timeout, so a stalled connection could leave the digest loading indefinitely. (TODO-140)
+
+### Fixed
+- "Redo Onboarding Welcome" in App Info opened onboarding on a slide id that never existed. It now opens the welcome from the start, and "Revisit the Abridged reader tour" opens the reader step. (TODO-143)
 
 ### Changed
 - "Debug & Advanced" is a development-only screen. It could dump and clear all stored data, and it logged the settings object including the API key; it is hidden in release builds, and its dumps now redact keys, tokens, emails and Apple ids. (TODO-140)

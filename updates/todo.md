@@ -377,6 +377,11 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `src/features/resources`. A bundled, offline list of local crisis lines and everyday services with Call/Text hand-off (`tel:`/`sms:` built only from the bundled list), an emergency banner, and a "last checked" date. A time-based test fails when the list has not been re-verified in a year. See `docs/product/resources.md`.
   - **Not done yet**: Pittsburgh 311 (number not confirmed), a "report a wrong number" shortcut in App info, and a device check of the text-message hand-off on both platforms.
 
+- [x] **TODO-143** | **Unreleased** | Redo first-run onboarding (v2)
+  - **Status**: Completed (not yet run on a device)
+  - **Description**: `OnboardingScreen.v2.tsx` plus `src/features/onboarding/`: six steps (welcome, newsrooms, reader, heavy stories, Events and Resources, pledge) with Skip and Back, choices that write through immediately, and start ids resolved by `resolveStartStep` (also fixes App Info's dead "practice" id). Built as a copy; the previous flow is kept and marked superseded. A deliberate departure from "micro-adjustments only", documented in `docs/standards/onboarding-whats-new.md`.
+  - **Not done yet**: dark-mode pass (waits on the Phase 1 dark-mode work), VoiceOver/TalkBack and large-text check on a device, optional deletion of the old `OnboardingScreen.tsx` once v2 has shipped, and What's New copy for this release.
+
 
 
 

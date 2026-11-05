@@ -36,7 +36,7 @@ export const AppInfoScreen: React.FC = () => {
             onPress={async () => {
               await resetOnboarding();
               try {
-                (navigation as any).navigate("Onboarding", { startSlideId: "practice" });
+                (navigation as any).navigate("Onboarding");
               } catch {}
             }}
           >

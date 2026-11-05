@@ -10,7 +10,7 @@ import { SectionScreen } from "../screens/SectionScreen";
 import { SavedScreen } from "../screens/SavedScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
-import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { OnboardingScreenV2 as OnboardingScreen } from "../screens/OnboardingScreen.v2";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { ReadingSettingsScreen } from "../screens/ReadingSettingsScreen";
 import { DataPerformanceSettingsScreen } from "../screens/DataPerformanceSettingsScreen";
