@@ -20,6 +20,14 @@ const mockStorage = (entries: Record<string, string | null>) => {
 
     return Promise.resolve(null);
   });
+  (AsyncStorage.multiGet as jest.Mock).mockImplementation((keys: string[]) =>
+    Promise.resolve(
+      keys.map((key) => [
+        key,
+        Object.prototype.hasOwnProperty.call(entries, key) ? entries[key] : null,
+      ]),
+    ),
+  );
   (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
   (AsyncStorage.multiSet as jest.Mock).mockResolvedValue(undefined);
   (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
@@ -203,5 +211,48 @@ describe("SettingsProvider", () => {
     });
 
     expect(AsyncStorage.getItem).not.toHaveBeenCalledWith("perplexityApiKey");
+  });
+
+  it("reads every stored setting in one batched call instead of one round trip per key", async () => {
+    mockStorage({ hasCompletedOnboarding: "true", lastSeenVersion: "1.3.9" });
+    (AsyncStorage.getItem as jest.Mock).mockClear();
+    (AsyncStorage.multiGet as jest.Mock).mockClear();
+
+    render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-loading")).toHaveTextContent("loaded");
+    });
+
+    expect(AsyncStorage.multiGet).toHaveBeenCalledTimes(1);
+    const keys = (AsyncStorage.multiGet as jest.Mock).mock.calls[0][0] as string[];
+    // Settings the app persists must all be in that one read; a missed key would silently reset.
+    expect(keys).toEqual(
+      expect.arrayContaining(["hasCompletedOnboarding", "tabLayout", "activeTabs", "hapticIntensity"]),
+    );
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys).not.toContain("perplexityApiKey");
+    expect(AsyncStorage.getItem).not.toHaveBeenCalledWith("fontSize");
+  });
+
+  it("still finishes loading, on defaults, when the stored settings cannot be read", async () => {
+    mockStorage({});
+    (AsyncStorage.multiGet as jest.Mock).mockRejectedValue(new Error("disk unavailable"));
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
+    render(
+      <SettingsProvider>
+        <TestConsumer />
+      </SettingsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-loading")).toHaveTextContent("loaded");
+    });
+    expect(screen.getByTestId("settings-onboarding")).toHaveTextContent("incomplete");
   });
 });

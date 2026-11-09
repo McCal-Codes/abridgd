@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- [Changed] Faster start: settings are read from storage in one batch instead of about 48 separate reads.
+- [Fixed] Reading progress no longer makes unrelated screens redraw whenever its provider re-renders.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 

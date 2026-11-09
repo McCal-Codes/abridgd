@@ -267,6 +267,58 @@ export const sanitizeTabs = (tabs: string[], layout: "minimal" | "comprehensive"
   return normalized;
 };
 
+/** Every plain AsyncStorage key `loadSettings` reads, fetched together in one `multiGet`. */
+const SETTINGS_LOAD_KEYS = [
+  "hasCompletedOnboarding",
+  "rsvpHighlightColor",
+  "rsvpAnchorStrategy",
+  "groundingColor",
+  "isReaderEnabled",
+  "isGroundingEnabled",
+  "isSummarizationEnabled",
+  "isContinueReadingEnabled",
+  "lastAppVisit",
+  "digestSummaryMode",
+  "groundingBreathDuration",
+  "groundingCycles",
+  "groundingAnimationStyle",
+  "showGroundingPrompts",
+  "readingSpeed",
+  "fontSize",
+  "autoSaveOnComplete",
+  "defaultTab",
+  "activeTabs",
+  "subscriptionFeaturesLocked",
+  "tabBarStyle",
+  "showTabLabels",
+  "tabIconSize",
+  "tabBarDockedHeight",
+  "tabBarHiddenHeight",
+  "tabBarBlur",
+  "tabBarFloatingHeight",
+  "enableAdvancedHeightControls",
+  "dockedHeightStep",
+  "hiddenHeightStep",
+  "floatingHeightStep",
+  "allowContentUnderTabBar",
+  "tabBadgeStyle",
+  "tabIndicatorStyle",
+  "modalPresentationStyle",
+  "animationsEnabled",
+  "reduceMotion",
+  "animationScale",
+  "sensitivePromptLevel",
+  "sensitiveActionPreference",
+  "sensitiveTone",
+  "lastSeenVersion",
+  "tabLayout",
+  "experimentalIOS26NavBar",
+  "lineHeight",
+  "imageLoadingMode",
+  "dataSaverMode",
+  "hapticIntensity",
+] as const;
+
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [rsvpHighlightColor, setRsvpHighlightColorState] = useState("#0097A7"); // Colorblind-friendly cyan
@@ -383,58 +435,60 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const loadSettings = async () => {
     try {
-      const onboarding = await AsyncStorage.getItem("hasCompletedOnboarding");
-      const highlightColor = await AsyncStorage.getItem("rsvpHighlightColor");
-      const anchorStrategy = await AsyncStorage.getItem("rsvpAnchorStrategy");
-      const savedGroundingColor = await AsyncStorage.getItem("groundingColor");
-      const readerEnabled = await AsyncStorage.getItem("isReaderEnabled");
-      const groundingEnabled = await AsyncStorage.getItem("isGroundingEnabled");
-      const summarizationEnabled = await AsyncStorage.getItem("isSummarizationEnabled");
-      const continueReadingEnabled = await AsyncStorage.getItem("isContinueReadingEnabled");
-      const lastVisit = await AsyncStorage.getItem("lastAppVisit");
-      const savedDigestMode = await AsyncStorage.getItem("digestSummaryMode");
-      const savedPerplexityApiKey = await migrateFromAsyncStorage(
-        SETTINGS_STORAGE_KEYS.perplexityApiKey,
-      );
-      const savedBreathDuration = await AsyncStorage.getItem("groundingBreathDuration");
-      const savedCycles = await AsyncStorage.getItem("groundingCycles");
-      const savedAnimationStyle = await AsyncStorage.getItem("groundingAnimationStyle");
-      const savedShowPrompts = await AsyncStorage.getItem("showGroundingPrompts");
-      const savedReadingSpeed = await AsyncStorage.getItem("readingSpeed");
-      const savedFontSize = await AsyncStorage.getItem("fontSize");
-      const savedAutoSave = await AsyncStorage.getItem("autoSaveOnComplete");
-      const savedDefaultTab = await AsyncStorage.getItem("defaultTab");
-      const savedActiveTabs = await AsyncStorage.getItem("activeTabs");
-      const savedSubscriptionFeaturesLocked = await AsyncStorage.getItem(
-        "subscriptionFeaturesLocked",
-      );
+      // One batched read instead of ~48 sequential round trips through the native bridge.
+      // The key migration touches SecureStore, not AsyncStorage, so it runs alongside.
+      const [entries, savedPerplexityApiKey] = await Promise.all([
+        AsyncStorage.multiGet([...SETTINGS_LOAD_KEYS]),
+        migrateFromAsyncStorage(SETTINGS_STORAGE_KEYS.perplexityApiKey),
+      ]);
+      const values = new Map<string, string | null>(entries);
+      const read = (key: (typeof SETTINGS_LOAD_KEYS)[number]): string | null => values.get(key) ?? null;
+
+      const onboarding = read("hasCompletedOnboarding");
+      const highlightColor = read("rsvpHighlightColor");
+      const anchorStrategy = read("rsvpAnchorStrategy");
+      const savedGroundingColor = read("groundingColor");
+      const readerEnabled = read("isReaderEnabled");
+      const groundingEnabled = read("isGroundingEnabled");
+      const summarizationEnabled = read("isSummarizationEnabled");
+      const continueReadingEnabled = read("isContinueReadingEnabled");
+      const lastVisit = read("lastAppVisit");
+      const savedDigestMode = read("digestSummaryMode");
+      const savedBreathDuration = read("groundingBreathDuration");
+      const savedCycles = read("groundingCycles");
+      const savedAnimationStyle = read("groundingAnimationStyle");
+      const savedShowPrompts = read("showGroundingPrompts");
+      const savedReadingSpeed = read("readingSpeed");
+      const savedFontSize = read("fontSize");
+      const savedAutoSave = read("autoSaveOnComplete");
+      const savedDefaultTab = read("defaultTab");
+      const savedActiveTabs = read("activeTabs");
+      const savedSubscriptionFeaturesLocked = read("subscriptionFeaturesLocked");
 
       // Load tab bar appearance
-      const savedTabBarStyle = await AsyncStorage.getItem("tabBarStyle");
-      const savedShowLabels = await AsyncStorage.getItem("showTabLabels");
-      const savedIconSize = await AsyncStorage.getItem("tabIconSize");
-      const savedTabBarDockedHeight = await AsyncStorage.getItem("tabBarDockedHeight");
-      const savedTabBarHiddenHeight = await AsyncStorage.getItem("tabBarHiddenHeight");
-      const savedTabBarBlur = await AsyncStorage.getItem("tabBarBlur");
-      const savedTabBarFloatingHeight = await AsyncStorage.getItem("tabBarFloatingHeight");
-      const savedEnableAdvanced = await AsyncStorage.getItem("enableAdvancedHeightControls");
-      const savedDockedStep = await AsyncStorage.getItem("dockedHeightStep");
-      const savedHiddenStep = await AsyncStorage.getItem("hiddenHeightStep");
-      const savedFloatingStep = await AsyncStorage.getItem("floatingHeightStep");
-      const savedAllowUnder = await AsyncStorage.getItem("allowContentUnderTabBar");
-      const savedBadgeStyle = await AsyncStorage.getItem("tabBadgeStyle");
-      const savedIndicatorStyle = await AsyncStorage.getItem("tabIndicatorStyle");
-      const savedModalPresentation = await AsyncStorage.getItem("modalPresentationStyle");
+      const savedTabBarStyle = read("tabBarStyle");
+      const savedShowLabels = read("showTabLabels");
+      const savedIconSize = read("tabIconSize");
+      const savedTabBarDockedHeight = read("tabBarDockedHeight");
+      const savedTabBarHiddenHeight = read("tabBarHiddenHeight");
+      const savedTabBarBlur = read("tabBarBlur");
+      const savedTabBarFloatingHeight = read("tabBarFloatingHeight");
+      const savedEnableAdvanced = read("enableAdvancedHeightControls");
+      const savedDockedStep = read("dockedHeightStep");
+      const savedHiddenStep = read("hiddenHeightStep");
+      const savedFloatingStep = read("floatingHeightStep");
+      const savedAllowUnder = read("allowContentUnderTabBar");
+      const savedBadgeStyle = read("tabBadgeStyle");
+      const savedIndicatorStyle = read("tabIndicatorStyle");
+      const savedModalPresentation = read("modalPresentationStyle");
       // Global animation controls
-      const savedAnimationsEnabled = await AsyncStorage.getItem("animationsEnabled");
-      const savedReduceMotion = await AsyncStorage.getItem("reduceMotion");
-      const savedAnimationScale = await AsyncStorage.getItem("animationScale");
-      const savedSensitivePromptLevel = await AsyncStorage.getItem("sensitivePromptLevel");
-      const savedSensitiveActionPreference = await AsyncStorage.getItem(
-        "sensitiveActionPreference",
-      );
-      const savedSensitiveTone = await AsyncStorage.getItem("sensitiveTone");
-      const savedVersion = await AsyncStorage.getItem("lastSeenVersion");
+      const savedAnimationsEnabled = read("animationsEnabled");
+      const savedReduceMotion = read("reduceMotion");
+      const savedAnimationScale = read("animationScale");
+      const savedSensitivePromptLevel = read("sensitivePromptLevel");
+      const savedSensitiveActionPreference = read("sensitiveActionPreference");
+      const savedSensitiveTone = read("sensitiveTone");
+      const savedVersion = read("lastSeenVersion");
 
       if (onboarding === "true") setHasCompletedOnboarding(true);
       if (highlightColor) setRsvpHighlightColorState(highlightColor);
@@ -487,7 +541,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // The tab layout must be known BEFORE the saved tabs are validated. `tabLayout` in this
       // closure is still the initial "minimal" (state has not been applied yet), so validating
       // against it stripped a comprehensive user's tabs and wrote the result back every launch.
-      const storedTabLayout = await AsyncStorage.getItem("tabLayout");
+      const storedTabLayout = read("tabLayout");
       const layoutForTabs: "minimal" | "comprehensive" =
         storedTabLayout === "minimal" || storedTabLayout === "comprehensive"
           ? storedTabLayout
@@ -542,7 +596,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setModalPresentationStyleState(savedModalPresentation as any);
 
       // Load experimental settings
-      const savedExperimentalIOS26 = await AsyncStorage.getItem("experimentalIOS26NavBar");
+      const savedExperimentalIOS26 = read("experimentalIOS26NavBar");
       if (savedExperimentalIOS26 !== null)
         setExperimentalIOS26NavBarState(savedExperimentalIOS26 === "true");
 
@@ -580,13 +634,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       // Load QoL settings
-      const savedLineHeight = await AsyncStorage.getItem("lineHeight");
+      const savedLineHeight = read("lineHeight");
       if (savedLineHeight) {
         const height = Math.min(2.0, Math.max(1.0, parseFloat(savedLineHeight)));
         setLineHeightState(height);
       }
 
-      const savedImageLoadingMode = await AsyncStorage.getItem("imageLoadingMode");
+      const savedImageLoadingMode = read("imageLoadingMode");
       if (
         savedImageLoadingMode &&
         ["full", "compressed", "text-only"].includes(savedImageLoadingMode)
@@ -594,12 +648,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setImageLoadingModeState(savedImageLoadingMode as ImageLoadingMode);
       }
 
-      const savedDataSaverMode = await AsyncStorage.getItem("dataSaverMode");
+      const savedDataSaverMode = read("dataSaverMode");
       if (savedDataSaverMode !== null) {
         setDataSaverModeState(savedDataSaverMode === "true");
       }
 
-      const savedHapticIntensity = await AsyncStorage.getItem("hapticIntensity");
+      const savedHapticIntensity = read("hapticIntensity");
       if (
         savedHapticIntensity &&
         ["off", "subtle", "normal", "strong"].includes(savedHapticIntensity)
