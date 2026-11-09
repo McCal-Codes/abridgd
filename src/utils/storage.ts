@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Article } from "../types/Article";
 import { compressToUTF16, decompressFromUTF16 } from "lz-string";
-import { StorageReadError, backupRawValue } from "./storageRecovery";
+import { StorageReadError, backupRawValue, removeWithBackup } from "./storageRecovery";
 
 // Schema versioning for future migrations
 const STORAGE_SCHEMA_VERSION = 2;
@@ -228,7 +228,7 @@ export const clearSavedArticles = async (
   storageKey: string = SAVED_ARTICLES_KEY,
 ): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(storageKey);
+    await removeWithBackup(storageKey);
   } catch (error) {
     console.error("Failed to clear saved articles:", error);
     throw error;

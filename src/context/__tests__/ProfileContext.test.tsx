@@ -38,6 +38,7 @@ const mockStorage = (entries: Record<string, string | null>) => {
   });
   (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
   (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
+  (AsyncStorage.multiRemove as jest.Mock).mockResolvedValue(undefined);
 };
 
 const TestConsumer = () => {
@@ -190,8 +191,14 @@ describe("ProfileContext", () => {
         expect(screen.getByTestId("profile-count")).toHaveTextContent("1");
       });
 
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles_profile-1");
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_reading_progress_profile-1");
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_saved_articles_profile-1",
+        "@abridged_saved_articles_profile-1.bak",
+      ]);
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_reading_progress_profile-1",
+        "@abridged_reading_progress_profile-1.bak",
+      ]);
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         PROFILES_STORAGE_KEY,
         expect.not.stringContaining('"id":"profile-1"'),
@@ -230,8 +237,14 @@ describe("ProfileContext", () => {
         expect(screen.getByTestId("active-profile")).not.toHaveTextContent("solo");
       });
 
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles_solo");
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_reading_progress_solo");
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_saved_articles_solo",
+        "@abridged_saved_articles_solo.bak",
+      ]);
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_reading_progress_solo",
+        "@abridged_reading_progress_solo.bak",
+      ]);
     });
 
     it("gives the fallback profile a fresh id, not the deleted profile's own id", async () => {
@@ -275,7 +288,7 @@ describe("ProfileContext", () => {
         [PROFILES_STORAGE_KEY]: JSON.stringify(storedProfiles),
         [ACTIVE_PROFILE_STORAGE_KEY]: "profile-1",
       });
-      (AsyncStorage.removeItem as jest.Mock).mockRejectedValueOnce(new Error("disk full"));
+      (AsyncStorage.multiRemove as jest.Mock).mockRejectedValueOnce(new Error("disk full"));
 
       let caughtError: unknown = null;
       const ThrowingConsumer = () => {

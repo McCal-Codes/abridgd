@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { EventsSection } from "../ui/EventsSection";
 import { EventsScreen } from "../ui/EventsScreen";
 import { EventDetailSheet } from "../ui/EventDetailSheet";
@@ -179,6 +179,15 @@ describe("EventDetailSheet", () => {
     fireEvent.press(screen.getByLabelText("Add to calendar"));
     await waitFor(() => expect(addEventToCalendar).toHaveBeenCalled());
     expect(screen.getByText(/Abridgd never reads your calendar/)).toBeTruthy();
+  });
+
+  it("keeps the sheet inside the screen and scrolls its content", () => {
+    render(<EventDetailSheet event={event} onClose={jest.fn()} />);
+    const scroll = screen.getByTestId("event-detail-scroll");
+    // The actions live inside the scroll view, so they stay reachable when content overflows.
+    expect(within(scroll).getByLabelText("Add to calendar")).toBeTruthy();
+    expect(within(scroll).getByLabelText("Share event")).toBeTruthy();
+    expect(within(scroll).getByText(/Open on Kidsburgh/)).toBeTruthy();
   });
 
   describe("event photo", () => {

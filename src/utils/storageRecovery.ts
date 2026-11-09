@@ -36,3 +36,11 @@ export const backupRawValue = async (storageKey: string, raw: string): Promise<v
     console.warn("Could not back up unreadable storage value:", error);
   }
 };
+
+/**
+ * Remove a value and its recovery backup. "Delete local data" must not leave a readable copy of
+ * the user's saved stories or reading history behind in the `.bak` key.
+ */
+export const removeWithBackup = async (storageKey: string): Promise<void> => {
+  await AsyncStorage.multiRemove([storageKey, getBackupKey(storageKey)]);
+};

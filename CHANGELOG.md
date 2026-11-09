@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
+- [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
+
 ## [0.2.0-beta.1] - 2026-11-05
 
 Version 0.2.0 (build 41), beta 1. Numbering restarts here, after 1.5.7, at the owner's direction. The in-app version reads "0.2.0 beta 1"; the stage is kept out of the version string itself because iOS only accepts numeric version strings.

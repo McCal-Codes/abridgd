@@ -294,16 +294,19 @@ describe("Storage Utilities", () => {
   });
 
   describe("clearSavedArticles", () => {
-    it("should remove saved articles from storage", async () => {
-      (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
+    it("should remove saved articles and their recovery backup from storage", async () => {
+      (AsyncStorage.multiRemove as jest.Mock).mockResolvedValue(undefined);
 
       await clearSavedArticles();
 
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles");
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_saved_articles",
+        "@abridged_saved_articles.bak",
+      ]);
     });
 
     it("should throw error on failure", async () => {
-      (AsyncStorage.removeItem as jest.Mock).mockRejectedValue(new Error("Storage error"));
+      (AsyncStorage.multiRemove as jest.Mock).mockRejectedValue(new Error("Storage error"));
 
       await expect(clearSavedArticles()).rejects.toThrow("Storage error");
     });

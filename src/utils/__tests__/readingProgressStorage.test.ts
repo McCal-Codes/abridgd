@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   getInProgressArticlesFromState,
   getReadingProgressStorageKey,
+  clearAllReadingProgress,
   getReadingStatsFromState,
   loadReadingProgress,
   mergeReadingProgress,
@@ -47,6 +48,19 @@ describe("readingProgressStorage", () => {
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(storageKey, expect.any(String));
     expect(AsyncStorage.getItem).toHaveBeenCalledWith(storageKey);
     expect(loaded).toEqual(progressData);
+  });
+
+  describe("clearAllReadingProgress", () => {
+    it("removes the progress and its recovery backup", async () => {
+      (AsyncStorage.multiRemove as jest.Mock).mockResolvedValue(undefined);
+
+      await clearAllReadingProgress("@abridged_reading_progress_reader-1");
+
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_reading_progress_reader-1",
+        "@abridged_reading_progress_reader-1.bak",
+      ]);
+    });
   });
 
   describe("loadReadingProgress failure handling", () => {

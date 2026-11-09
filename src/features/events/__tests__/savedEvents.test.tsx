@@ -4,6 +4,7 @@ import { Pressable, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SavedEventsProvider, useSavedEventsOptional } from "../SavedEventsContext";
 import {
+  clearSavedEvents,
   getSavedEventsStorageKey,
   loadSavedEvents,
   pruneSavedEvents,
@@ -139,6 +140,17 @@ describe("SavedEventsProvider", () => {
     const wroteOriginal = setItem.mock.calls.some(([k]) => k === getSavedEventsStorageKey());
     expect(wroteOriginal).toBe(false);
     expect(await AsyncStorage.getItem(getSavedEventsStorageKey())).toBe(newer);
+  });
+
+  it("clearing saved events also removes the recovery backup", async () => {
+    const key = getSavedEventsStorageKey("p1");
+    await AsyncStorage.setItem(key, "unreadable");
+    await AsyncStorage.setItem(`${key}.bak`, "an older copy of someone's saved events");
+
+    await clearSavedEvents(key);
+
+    expect(await AsyncStorage.getItem(key)).toBeNull();
+    expect(await AsyncStorage.getItem(`${key}.bak`)).toBeNull();
   });
 
   it("falls back to a no-op outside the provider", () => {

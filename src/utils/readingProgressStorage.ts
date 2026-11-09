@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ReadingProgress, ReadingProgressState } from "../types/ReadingProgress";
-import { StorageReadError, backupRawValue } from "./storageRecovery";
+import { StorageReadError, backupRawValue, removeWithBackup } from "./storageRecovery";
 
 const READING_PROGRESS_KEY = "@abridged_reading_progress";
 const STORAGE_SCHEMA_VERSION = 1;
@@ -229,7 +229,7 @@ export const clearAllReadingProgress = async (
   storageKey = READING_PROGRESS_KEY,
 ): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(storageKey);
+    await removeWithBackup(storageKey);
   } catch (error) {
     console.error("Failed to clear reading progress:", error);
     throw error;

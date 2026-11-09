@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StorageReadError, backupRawValue } from "../../utils/storageRecovery";
+import { StorageReadError, backupRawValue, removeWithBackup } from "../../utils/storageRecovery";
 import { AppEvent } from "./types";
 
 const SAVED_EVENTS_KEY = "@abridged_saved_events";
@@ -70,5 +70,5 @@ export const saveSavedEvents = async (events: AppEvent[], storageKey: string): P
 };
 
 export const clearSavedEvents = async (storageKey: string): Promise<void> => {
-  await AsyncStorage.removeItem(storageKey);
+  await removeWithBackup(storageKey);
 };
