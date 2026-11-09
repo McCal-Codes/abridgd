@@ -420,6 +420,10 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
 
 ### 🚀 v1.1.0 (Current) — Build & Branding Complete
 
+- [x] **TODO-148** | **Unreleased** | Saved events view and review fixes
+  - **Status**: Done
+  - **Description**: An "Upcoming | Saved" switch on the Events screen lists saved events from the persisted collection (offline, no 14-day limit, ended events muted for 30 days, empty state). Also from the 0.2.0 review: the event detail sheet scrolls within the screen, and Delete local data removes the `.bak` recovery copies.
+
 - [x] **TODO-001** | **v1.1.0** | Fix app icon loading regression
   - **Status**: ✅ Completed
   - **Description**: Regenerated native iOS/Android folders via prebuild to resolve icon display issue

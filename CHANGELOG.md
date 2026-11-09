@@ -6,6 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- [Added] Saved events: a Saved tab on the Events screen lists everything you have bookmarked, works offline, keeps events that have dropped off the organizer's calendar, and sets ended events apart for 30 days.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 

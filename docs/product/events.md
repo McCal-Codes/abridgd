@@ -88,7 +88,13 @@ reviews the event, picks a calendar and saves it.
 
 Saved events are stored on the device per profile (`@abridged_saved_events_<profileId>`), with the
 full event, so they stay readable after the listing leaves the window. They are dropped a month
-after they end, and cleared by "Delete local data". A failed read never overwrites stored data.
+after they end, and cleared by "Delete local data" (recovery backups included). A failed read never
+overwrites stored data.
+
+The Events screen has an "Upcoming | Saved" switch. Saved lists the persisted collection, not the
+live feed: events still ahead are grouped by day with no 14-day limit, and events that have ended
+sit in a muted "Ended" group until the month is up. It has no area chips, works offline, and says
+"Nothing saved yet" when empty. Mockup: `Saved events` boards in the Events mockup canvas.
 
 ## Limits
 

@@ -1,5 +1,8 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SavedEventsProvider } from "../SavedEventsContext";
+import { getSavedEventsStorageKey, serializeSavedEvents } from "../savedEventsStorage";
 import { EventsSection } from "../ui/EventsSection";
 import { EventsScreen } from "../ui/EventsScreen";
 import { EventDetailSheet } from "../ui/EventDetailSheet";
@@ -144,6 +147,85 @@ describe("EventsScreen", () => {
     fireEvent.press(screen.getByLabelText(/^Story hour,/));
     expect(screen.getByLabelText("Add to calendar")).toBeTruthy();
     expect(screen.getByLabelText("Open on b")).toBeTruthy();
+  });
+});
+
+describe("EventsScreen saved view", () => {
+  const listed = [make("a:1", "Council meeting", 1), make("b:2", "Story hour", 2)];
+  const endedEvent = (() => {
+    const { date, ms } = at(-3, 9);
+    return make("k:old", "Neighborhood cleanup day", -3, {
+      startsAt: ms,
+      endsAt: ms + 2 * 3600_000,
+      localDate: date,
+      localTime: "09:00",
+    });
+  })();
+  // Saved long ago and no longer in the live feed: it must still be there.
+  const gone = make("w:gone", "Evening lecture series", 5);
+
+  const renderWithSaved = async (saved: AppEvent[]) => {
+    await AsyncStorage.setItem(getSavedEventsStorageKey(), serializeSavedEvents(saved));
+    // Let the provider finish reading storage before the test touches anything.
+    render(
+      <SavedEventsProvider>
+        <EventsScreen />
+      </SavedEventsProvider>,
+    );
+    await act(async () => {});
+  };
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockUseEvents.mockReturnValue(state(listed));
+  });
+
+  it("opens on Upcoming and shows the saved count on the Saved tab", async () => {
+    await renderWithSaved([gone, endedEvent]);
+    expect(screen.getByLabelText("Upcoming, tab, 1 of 2")).toBeTruthy();
+    expect(screen.getByLabelText("Saved, 2 events, tab, 2 of 2")).toBeTruthy();
+    expect(screen.getByText("Council meeting")).toBeTruthy();
+    expect(screen.queryByText("Evening lecture series")).toBeNull();
+  });
+
+  it("lists saved events that are no longer in the live feed, with ended ones set apart", async () => {
+    await renderWithSaved([gone, endedEvent]);
+    fireEvent.press(screen.getByLabelText("Saved, 2 events, tab, 2 of 2"));
+
+    expect(screen.getByText("Evening lecture series")).toBeTruthy();
+    expect(screen.getByText("Ended")).toBeTruthy();
+    expect(screen.getByText("Neighborhood cleanup day")).toBeTruthy();
+    expect(screen.getByText("Ended. Stays here for 30 days, then clears itself.")).toBeTruthy();
+    // The live feed is not what this view shows.
+    expect(screen.queryByText("Council meeting")).toBeNull();
+    // Area chips belong to Upcoming only.
+    expect(screen.queryByLabelText("East End")).toBeNull();
+    expect(screen.getByText("Kept on this phone · Works offline")).toBeTruthy();
+  });
+
+  it("opens a saved event that has dropped off the organizer's calendar", async () => {
+    await renderWithSaved([gone]);
+    fireEvent.press(screen.getByLabelText("Saved, 1 event, tab, 2 of 2"));
+    fireEvent.press(screen.getByLabelText(/^Evening lecture series,/));
+    expect(screen.getByLabelText("Add to calendar")).toBeTruthy();
+    expect(screen.getByLabelText("Open on w")).toBeTruthy();
+  });
+
+  it("removes an event from Saved when its bookmark is tapped", async () => {
+    await renderWithSaved([gone]);
+    fireEvent.press(screen.getByLabelText("Saved, 1 event, tab, 2 of 2"));
+    fireEvent.press(screen.getByLabelText("Remove Evening lecture series from saved events"));
+    await waitFor(() => expect(screen.getByTestId("saved-events-empty")).toBeTruthy());
+  });
+
+  it("says plainly when nothing is saved and leads back to Upcoming", async () => {
+    await renderWithSaved([]);
+    fireEvent.press(screen.getByLabelText("Saved, 0 events, tab, 2 of 2"));
+    expect(screen.getByText("Nothing saved yet.")).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText("See upcoming events"));
+    expect(screen.getByText("Council meeting")).toBeTruthy();
+    expect(screen.getByLabelText("Upcoming, tab, 1 of 2").props.accessibilityState.selected).toBe(true);
   });
 });
 
