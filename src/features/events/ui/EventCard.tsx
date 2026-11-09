@@ -5,7 +5,8 @@ import { spacing } from "../../../theme/spacing";
 import { fontScaleLimit, typography } from "../../../theme/typography";
 import { ThemeColors, useThemeOptional } from "../../../theme/ThemeContext";
 import { useThemedStyles } from "../../../theme/useThemedStyles";
-import { describeEvent, formatEventPlace, formatEventTime } from "../format";
+import { describeEvent, formatEndedWhen, formatEventPlace, formatEventTime } from "../format";
+import { SAVED_EVENT_GRACE_DAYS } from "../savedEventsStorage";
 import { AppEvent } from "../types";
 import { SaveEventButton } from "./SaveEventButton";
 
@@ -14,28 +15,30 @@ interface Props {
   saved: boolean;
   onPress: (event: AppEvent) => void;
   onToggleSave: (event: AppEvent) => void;
+  /** The event is over: shown muted, with its own date, and a note about how long it is kept. */
+  ended?: boolean;
 }
 
-export const EventCard: React.FC<Props> = React.memo(({ event, saved, onPress, onToggleSave }) => {
+export const EventCard: React.FC<Props> = React.memo(({ event, saved, onPress, onToggleSave, ended = false }) => {
   const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, ended && styles.cardEnded]}>
       <Pressable
         style={styles.body}
         onPress={() => onPress(event)}
         accessibilityRole="button"
-        accessibilityLabel={describeEvent(event, saved)}
+        accessibilityLabel={describeEvent(event, saved, ended)}
         accessibilityHint="Opens the event details"
       >
-        <Text style={styles.title} numberOfLines={3}>
+        <Text style={[styles.title, ended && styles.titleEnded]} numberOfLines={3}>
           {event.title}
         </Text>
         <View style={styles.metaRow}>
           <Clock size={14} color={colors.textSecondary} />
           <Text style={styles.meta} maxFontSizeMultiplier={fontScaleLimit.meta}>
-            {formatEventTime(event)}
+            {ended ? formatEndedWhen(event) : formatEventTime(event)}
           </Text>
           <MapPin size={14} color={colors.textSecondary} />
           <Text style={[styles.meta, styles.metaFlex]} numberOfLines={1} maxFontSizeMultiplier={fontScaleLimit.meta}>
@@ -43,7 +46,9 @@ export const EventCard: React.FC<Props> = React.memo(({ event, saved, onPress, o
           </Text>
         </View>
         <Text style={styles.source} maxFontSizeMultiplier={fontScaleLimit.meta}>
-          Listed by {event.sourceName}
+          {ended
+            ? `Ended. Stays here for ${SAVED_EVENT_GRACE_DAYS} days, then clears itself.`
+            : `Listed by ${event.sourceName}`}
         </Text>
       </Pressable>
       <SaveEventButton saved={saved} title={event.title} onPress={() => onToggleSave(event)} />
@@ -67,6 +72,8 @@ const createStyles = (colors: ThemeColors) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
+    cardEnded: { backgroundColor: colors.background },
+    titleEnded: { color: colors.textTertiary },
     body: { flex: 1, minWidth: 0, paddingVertical: 10, minHeight: 44 },
     title: {
       fontFamily: typography.fontFamily.serifSemibold,

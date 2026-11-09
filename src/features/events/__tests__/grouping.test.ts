@@ -1,4 +1,13 @@
-import { applyFilter, buildFilterChips, filtersEqual, groupByDay, pickHomeEvents, selectUpcoming } from "../grouping";
+import {
+  applyFilter,
+  buildFilterChips,
+  filtersEqual,
+  groupByDay,
+  groupSavedEvents,
+  isEventEnded,
+  pickHomeEvents,
+  selectUpcoming,
+} from "../grouping";
 import { easternWallTimeToUtcMs } from "../time";
 import { AppEvent } from "../types";
 
@@ -115,5 +124,57 @@ describe("pickHomeEvents", () => {
       ev({ id: "a2", localDate: "2026-11-06", sourceId: "a" }),
     ];
     expect(pickHomeEvents(events, 3).map((e) => e.id)).toEqual(["a1", "a2"]);
+  });
+});
+
+describe("groupSavedEvents", () => {
+  const ended = ev({
+    id: "ended",
+    localDate: "2026-11-01",
+    startsAt: easternWallTimeToUtcMs(2026, 11, 1, 9, 0),
+    endsAt: easternWallTimeToUtcMs(2026, 11, 1, 11, 0),
+  });
+  const olderEnded = ev({
+    id: "older",
+    localDate: "2026-10-20",
+    startsAt: easternWallTimeToUtcMs(2026, 10, 20, 9, 0),
+    endsAt: easternWallTimeToUtcMs(2026, 10, 20, 11, 0),
+  });
+
+  it("splits what is still ahead from what has ended, most recently ended first", () => {
+    const groups = groupSavedEvents(
+      [olderEnded, ev({ id: "sat", localDate: "2026-11-07" }), ended, ev({ id: "tue", localDate: "2026-11-10" })],
+      NOW,
+    );
+    expect(groups.upcoming.map((g) => g.events.map((e) => e.id))).toEqual([["sat"], ["tue"]]);
+    expect(groups.ended.map((e) => e.id)).toEqual(["ended", "older"]);
+  });
+
+  it("does not cap saved events at the 14-day window", () => {
+    const far = ev({ id: "far", localDate: "2027-01-20" });
+    expect(groupSavedEvents([far], NOW).upcoming[0].events).toEqual([far]);
+  });
+
+  it("keeps an event that is still on under today and removes duplicate ids", () => {
+    const ongoing = ev({
+      id: "ongoing",
+      localDate: "2026-11-01",
+      allDay: true,
+      endsAt: easternWallTimeToUtcMs(2026, 11, 30, 23, 0),
+    });
+    const groups = groupSavedEvents([ongoing, ongoing], NOW);
+    expect(groups.upcoming).toHaveLength(1);
+    expect(groups.upcoming[0].label).toMatch(/^Today ·/);
+    expect(groups.upcoming[0].events).toHaveLength(1);
+  });
+
+  it("returns nothing for nothing", () => {
+    expect(groupSavedEvents([], NOW)).toEqual({ upcoming: [], ended: [] });
+  });
+
+  it("treats an event with no end as over two hours after it starts", () => {
+    const noEnd = ev({ id: "noend", localDate: "2026-11-05", startsAt: easternWallTimeToUtcMs(2026, 11, 5, 6, 0) });
+    expect(isEventEnded(noEnd, NOW)).toBe(true);
+    expect(isEventEnded(ev({ id: "later", localDate: "2026-11-05" }), NOW)).toBe(false);
   });
 });

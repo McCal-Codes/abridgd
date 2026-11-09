@@ -1,7 +1,7 @@
 import React from "react";
-import { RefreshControl, SectionList, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { CalendarDays } from "lucide-react-native";
+import { Bookmark, CalendarDays } from "lucide-react-native";
 import { FeedStatusBanner } from "../../../components/FeedStatusBanner";
 import { HeroHeader } from "../../../components/HeroHeader";
 import { Skeleton } from "../../../components/Skeleton";
@@ -19,6 +19,7 @@ import {
   EventFilter,
   filtersEqual,
   groupByDay,
+  groupSavedEvents,
 } from "../grouping";
 import { useSavedEventsOptional } from "../SavedEventsContext";
 import { AppEvent } from "../types";
@@ -26,6 +27,7 @@ import { useEvents } from "../useEvents";
 import { EventCard } from "./EventCard";
 import { EventDetailSheet } from "./EventDetailSheet";
 import { EventFilterChips } from "./EventFilterChips";
+import { EventsView, EventsViewToggle } from "./EventsViewToggle";
 
 const SkeletonCards = () => {
   const styles = useThemedStyles(createStyles);
@@ -54,21 +56,33 @@ export const EventsScreen: React.FC = () => {
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { events, loading, refreshing, error, stale, failedSources, lastUpdated, refresh } = useEvents();
-  const { isEventSaved, toggleSavedEvent } = useSavedEventsOptional();
+  const { savedEvents, isEventSaved, toggleSavedEvent } = useSavedEventsOptional();
+  const [view, setView] = React.useState<EventsView>("upcoming");
   const [filter, setFilter] = React.useState<EventFilter>(ALL_FILTER);
   const [open, setOpen] = React.useState<AppEvent | null>(null);
 
   const chips = React.useMemo(() => buildFilterChips(events, Date.now()), [events]);
   // If the chosen chip no longer exists in the data (a refresh removed that area), show everything.
   const activeFilter = chips.some((chip) => filtersEqual(chip.filter, filter)) ? filter : ALL_FILTER;
-  const sections = React.useMemo(
+  const upcomingSections = React.useMemo(
     () =>
       groupByDay(applyFilter(events, activeFilter, Date.now()), Date.now()).map((group) => ({
         title: group.label,
         data: group.events,
+        ended: false,
       })),
     [events, activeFilter],
   );
+  // Saved events come from the persisted collection, not the live feed, so they stay available
+  // offline and after the organizer removes the listing.
+  const savedSections = React.useMemo(() => {
+    const { upcoming, ended } = groupSavedEvents(savedEvents, Date.now());
+    const result = upcoming.map((group) => ({ title: group.label, data: group.events, ended: false }));
+    if (ended.length > 0) result.push({ title: "Ended", data: ended, ended: true });
+    return result;
+  }, [savedEvents]);
+  const showingSaved = view === "saved";
+  const sections = showingSaved ? savedSections : upcomingSections;
 
   const onRefresh = async () => {
     const outcome = await refresh();
@@ -81,12 +95,20 @@ export const EventsScreen: React.FC = () => {
     );
   };
 
-  const subtitle = ["Pittsburgh, next 14 days", formatUpdatedAgo(lastUpdated)].filter(Boolean).join(" · ");
+  const subtitle = showingSaved
+    ? "Kept on this phone · Works offline"
+    : ["Pittsburgh, next 14 days", formatUpdatedAgo(lastUpdated)].filter(Boolean).join(" · ");
+
+  const onChangeView = (next: EventsView) => {
+    setView(next);
+    announceForAccessibility(next === "saved" ? "Saved events" : "Upcoming events");
+  };
 
   const header = (
     <View>
       <HeroHeader title="Events" subtitle={subtitle} Icon={CalendarDays} />
-      {error && events.length === 0 ? null : failedSources.length > 0 ? (
+      <EventsViewToggle view={view} savedCount={savedEvents.length} onChange={onChangeView} />
+      {showingSaved ? null : error && events.length === 0 ? null : failedSources.length > 0 ? (
         <FeedStatusBanner
           testID="events-status"
           message={`Couldn't reach ${failedSources.join(", ")}. Showing what we have.`}
@@ -94,12 +116,20 @@ export const EventsScreen: React.FC = () => {
       ) : stale ? (
         <FeedStatusBanner testID="events-status" message="Showing your last saved events while we check for new ones." />
       ) : null}
-      <EventFilterChips chips={chips} selected={activeFilter} onSelect={setFilter} />
+      {showingSaved ? null : <EventFilterChips chips={chips} selected={activeFilter} onSelect={setFilter} />}
     </View>
   );
 
-  const footer =
+  const footer = showingSaved ? (
     sections.length > 0 ? (
+      <View style={styles.footer} testID="saved-events-end">
+        <Text style={styles.footerNote} maxFontSizeMultiplier={fontScaleLimit.meta}>
+          Saved events stay readable even if the organizer takes them down. Tap the bookmark to remove one.
+          Check the organizer for changes.
+        </Text>
+      </View>
+    ) : null
+  ) : sections.length > 0 ? (
       <View style={styles.footer} testID="events-end">
         <Text style={styles.footerTitle}>That's everything for the next 14 days.</Text>
         <Text style={styles.footerNote} maxFontSizeMultiplier={fontScaleLimit.meta}>
@@ -109,7 +139,27 @@ export const EventsScreen: React.FC = () => {
     ) : null;
 
   let empty: React.ReactNode = null;
-  if (loading) {
+  if (showingSaved) {
+    empty = (
+      <View style={styles.centered} testID="saved-events-empty">
+        <Bookmark size={36} color={styles.emptyIcon.color} />
+        <Text style={styles.emptyTitle}>Nothing saved yet.</Text>
+        <Text style={styles.emptyBody}>
+          Tap the bookmark on any event to keep it here, even after it drops off the organizer's calendar.
+        </Text>
+        <Pressable
+          onPress={() => onChangeView("upcoming")}
+          style={styles.emptyAction}
+          accessibilityRole="button"
+          accessibilityLabel="See upcoming events"
+        >
+          <Text style={styles.emptyActionText} maxFontSizeMultiplier={fontScaleLimit.action}>
+            See upcoming events
+          </Text>
+        </Pressable>
+      </View>
+    );
+  } else if (loading) {
     empty = <SkeletonCards />;
   } else if (error && events.length === 0) {
     empty = (
@@ -149,12 +199,13 @@ export const EventsScreen: React.FC = () => {
             {section.title}
           </Text>
         )}
-        renderItem={({ item }) => (
+        renderItem={({ item, section }) => (
           <EventCard
             event={item}
             saved={isEventSaved(item.id)}
             onPress={setOpen}
             onToggleSave={toggleSavedEvent}
+            ended={section.ended}
           />
         )}
         contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
@@ -208,6 +259,22 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 14,
       lineHeight: 21,
       color: colors.textSecondary,
+    },
+    emptyAction: {
+      marginTop: spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: spacing.lg - 4,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.tintStrong,
+    },
+    emptyActionText: {
+      fontFamily: typography.fontFamily.sans,
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.tintStrong,
     },
     footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, alignItems: "center" },
     footerTitle: {

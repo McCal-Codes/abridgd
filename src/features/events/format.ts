@@ -1,4 +1,4 @@
-import { formatClock, formatLongDay, monthDay, weekdayShort } from "./time";
+import { formatClock, formatLongDay, formatShortDay, monthDay, weekdayShort } from "./time";
 import { AppEvent } from "./types";
 
 /** "10:30 AM", "All day", or "10:30 AM to 11:30 AM" for the detail view. */
@@ -24,14 +24,19 @@ export const dateBlockParts = (event: AppEvent): { weekday: string; day: string 
 });
 
 /** One spoken sentence for the whole card, so a screen reader gets it in a single focus stop. */
-export const describeEvent = (event: AppEvent, saved: boolean): string =>
+export const describeEvent = (event: AppEvent, saved: boolean, ended = false): string =>
   [
     event.title,
     formatLongDay(event.localDate),
     formatEventTime(event, true),
     formatEventPlace(event),
     `Listed by ${event.sourceName}`,
+    ended ? "Ended" : null,
     saved ? "Saved" : null,
   ]
     .filter(Boolean)
     .join(", ");
+
+/** "Sun, Nov 1 · 9:00 AM": the ended group mixes days, so each card carries its own date. */
+export const formatEndedWhen = (event: AppEvent): string =>
+  `${formatShortDay(event.localDate)} · ${formatEventTime(event)}`;

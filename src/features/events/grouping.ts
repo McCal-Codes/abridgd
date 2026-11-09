@@ -42,8 +42,7 @@ export const selectUpcoming = (events: readonly AppEvent[], now: number): AppEve
     .filter((event) => {
       if (seen.has(event.id)) return false;
       seen.add(event.id);
-      const endsAt = event.endsAt ?? event.startsAt + (event.allDay ? 24 * 3600_000 : 2 * 3600_000);
-      return endsAt >= now && event.localDate <= lastDay;
+      return endOf(event) >= now && event.localDate <= lastDay;
     })
     .sort(
       (a, b) =>
@@ -53,6 +52,12 @@ export const selectUpcoming = (events: readonly AppEvent[], now: number): AppEve
         a.title.localeCompare(b.title),
     );
 };
+
+const endOf = (event: AppEvent): number =>
+  event.endsAt ?? event.startsAt + (event.allDay ? 24 * 3600_000 : 2 * 3600_000);
+
+/** Whether an event is over. Saved events are kept for a while after this (see SAVED_EVENT_GRACE_MS). */
+export const isEventEnded = (event: AppEvent, now: number): boolean => endOf(event) < now;
 
 const isWeekend = (date: string) => {
   const day = weekdayOfDate(date);
@@ -134,4 +139,29 @@ export const pickHomeEvents = (events: readonly AppEvent[], count: number): AppE
     if (!picked.includes(event)) picked.push(event);
   }
   return picked.sort((a, b) => events.indexOf(a) - events.indexOf(b));
+};
+
+export interface SavedEventGroups {
+  /** Saved events still to come (or under way), grouped by day, soonest first. No 14-day limit. */
+  upcoming: DayGroup[];
+  /** Saved events that are over, most recent first. */
+  ended: AppEvent[];
+}
+
+/** Splits the saved collection for the Saved view: what is still ahead, and what has ended. */
+export const groupSavedEvents = (saved: readonly AppEvent[], now: number): SavedEventGroups => {
+  const seen = new Set<string>();
+  const unique = saved.filter((event) => !seen.has(event.id) && !!seen.add(event.id));
+  const today = getEasternParts(now).date;
+  const ahead = unique
+    .filter((event) => !isEventEnded(event, now))
+    .sort(
+      (a, b) =>
+        displayDateOf(a, today).localeCompare(displayDateOf(b, today)) ||
+        Number(b.allDay) - Number(a.allDay) ||
+        a.startsAt - b.startsAt ||
+        a.title.localeCompare(b.title),
+    );
+  const ended = unique.filter((event) => isEventEnded(event, now)).sort((a, b) => b.startsAt - a.startsAt);
+  return { upcoming: groupByDay(ahead, now), ended };
 };

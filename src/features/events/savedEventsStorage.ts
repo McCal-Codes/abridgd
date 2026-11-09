@@ -5,7 +5,8 @@ import { AppEvent } from "./types";
 const SAVED_EVENTS_KEY = "@abridged_saved_events";
 const SCHEMA_VERSION = 1;
 /** Saved events stay for a month after they end, then drop out on their own. */
-export const SAVED_EVENT_GRACE_MS = 30 * 24 * 3600_000;
+export const SAVED_EVENT_GRACE_DAYS = 30;
+export const SAVED_EVENT_GRACE_MS = SAVED_EVENT_GRACE_DAYS * 24 * 3600_000;
 
 interface Envelope {
   version: number;
