@@ -703,3 +703,8 @@ Example:
 - Auto-shows WhatsNewScreen on version mismatch
 - Closes TODO-005 for v1.2.0
 ```
+
+- [x] **TODO-149** | **Unreleased** | Startup and scroll performance: batched settings read, memoized reading-progress value
+  - **Status**: Done
+  - **Description**: `loadSettings` read 48 keys one at a time over the native bridge; it is now a single `multiGet` (with the SecureStore key migration running alongside). `ReadingProgressProvider` now memoizes its context value, with a regression test that fails without it.
+  - **Not done**: `SettingsContext` still builds its provider value inline (its setters are not wrapped in `useCallback`), and cold-start time has not been measured on a device.

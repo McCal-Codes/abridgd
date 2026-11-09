@@ -176,23 +176,34 @@ export const ReadingProgressProvider = ({ children }: { children: ReactNode }) =
     setError(null);
   }, []);
 
-  return (
-    <ReadingProgressContext.Provider
-      value={{
-        progressData,
-        isLoading,
-        error,
-        updateProgress,
-        getProgress,
-        clearProgress,
-        inProgressArticles,
-        readingStats,
-        refreshStats,
-      }}
-    >
-      {children}
-    </ReadingProgressContext.Provider>
+  // A fresh object literal every render made every consumer re-render whenever this provider
+  // did, even if nothing it exposes had changed. Memoized, consumers only update on real changes.
+  const value = useMemo<ReadingProgressContextType>(
+    () => ({
+      progressData,
+      isLoading,
+      error,
+      updateProgress,
+      getProgress,
+      clearProgress,
+      inProgressArticles,
+      readingStats,
+      refreshStats,
+    }),
+    [
+      progressData,
+      isLoading,
+      error,
+      updateProgress,
+      getProgress,
+      clearProgress,
+      inProgressArticles,
+      readingStats,
+      refreshStats,
+    ],
   );
+
+  return <ReadingProgressContext.Provider value={value}>{children}</ReadingProgressContext.Provider>;
 };
 
 export const useReadingProgress = () => {
