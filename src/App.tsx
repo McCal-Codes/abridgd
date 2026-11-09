@@ -14,11 +14,14 @@ import {
 import { RootNavigator } from "./navigation/RootNavigator";
 import { SettingsProvider } from "./context/SettingsContext";
 import { SavedArticlesProvider } from "./context/SavedArticlesContext";
+import { SavedEventsProvider } from "./features/events/SavedEventsContext";
 import { ProfileProvider } from "./context/ProfileContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 import { ReadingProgressProvider } from "./context/ReadingProgressContext";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { runStorageHousekeeping } from "./services/storageHousekeeping";
+import { scrubBreadcrumb } from "./utils/sentryScrub";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -30,6 +33,10 @@ if (SENTRY_DSN) {
     dsn: SENTRY_DSN,
     debug: __DEV__,
     tracesSampleRate: 0.2,
+    environment: __DEV__ ? "development" : "production",
+    // Crash reports must not identify the reader or record what they read.
+    sendDefaultPii: false,
+    beforeBreadcrumb: scrubBreadcrumb,
   });
 }
 
@@ -41,15 +48,17 @@ const AppContent = () => {
       <ErrorBoundary>
         <ProfileProvider>
           <SavedArticlesProvider>
-            <ReadingProgressProvider>
-              <SettingsProvider>
-                <RootNavigator />
-                <StatusBar
-                  style={isDark ? "light" : "dark"}
-                  backgroundColor={colors.background}
-                />
-              </SettingsProvider>
-            </ReadingProgressProvider>
+            <SavedEventsProvider>
+              <ReadingProgressProvider>
+                <SettingsProvider>
+                  <RootNavigator />
+                  <StatusBar
+                    style={isDark ? "light" : "dark"}
+                    backgroundColor={colors.background}
+                  />
+                </SettingsProvider>
+              </ReadingProgressProvider>
+            </SavedEventsProvider>
           </SavedArticlesProvider>
         </ProfileProvider>
       </ErrorBoundary>
@@ -70,6 +79,15 @@ export default Sentry.wrap(function App() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
+
+  // Trim the feed and full-story caches once per launch, after the first screen has had a
+  // moment to render, so it never competes with startup reads.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      runStorageHousekeeping().catch(() => {});
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;

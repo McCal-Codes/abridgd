@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ReadingProgress, ReadingProgressState } from "../types/ReadingProgress";
+import { StorageReadError, backupRawValue, removeWithBackup } from "./storageRecovery";
 
 const READING_PROGRESS_KEY = "@abridged_reading_progress";
 const STORAGE_SCHEMA_VERSION = 1;
@@ -25,41 +26,56 @@ export const serializeReadingProgress = (progressData: ReadingProgressState): st
 };
 
 /**
- * Deserialize reading progress from JSON with validation
+ * Strict parser: throws `StorageReadError` for a schema this build does not know and a plain
+ * `Error` for damaged JSON, so loaders can keep "unreadable" distinct from "empty".
+ */
+const parseReadingProgressStrict = (data: string): ReadingProgressState => {
+  const schema = JSON.parse(data) as StorageSchema;
+
+  if (schema?.version !== STORAGE_SCHEMA_VERSION) {
+    throw new StorageReadError(
+      "unsupported-version",
+      `Schema version mismatch: expected ${STORAGE_SCHEMA_VERSION}, got ${schema?.version}`,
+    );
+  }
+
+  return schema.progressData || {};
+};
+
+/**
+ * Deserialize reading progress from JSON with validation.
+ *
+ * Lenient on purpose: any failure yields `{}`. `loadReadingProgress` is the variant to use
+ * when the result may be written back.
  */
 export const deserializeReadingProgress = (data: string): ReadingProgressState => {
   try {
-    const schema = JSON.parse(data) as StorageSchema;
-
-    if (schema.version !== STORAGE_SCHEMA_VERSION) {
-      console.warn(
-        `Schema version mismatch: expected ${STORAGE_SCHEMA_VERSION}, got ${schema.version}`,
-      );
-      return {};
-    }
-
-    return schema.progressData || {};
+    return parseReadingProgressStrict(data);
   } catch (error) {
-    console.error("Failed to deserialize reading progress:", error);
+    console.warn("Failed to deserialize reading progress:", error);
     return {};
   }
 };
 
 /**
- * Load reading progress from AsyncStorage
+ * Load reading progress from AsyncStorage.
+ *
+ * - Nothing stored: resolves `{}`.
+ * - Damaged JSON: the raw value is copied to `<key>.bak` and `{}` is returned.
+ * - Newer schema, or the read kept failing: throws `StorageReadError`. Callers must not
+ *   autosave over the stored value in that case.
  */
 export const loadReadingProgress = async (
   retries = 3,
   delay = 100,
   storageKey = READING_PROGRESS_KEY,
 ): Promise<ReadingProgressState> => {
+  let raw: string | null = null;
+
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const data = await AsyncStorage.getItem(storageKey);
-      if (!data) {
-        return {};
-      }
-      return deserializeReadingProgress(data);
+      raw = await AsyncStorage.getItem(storageKey);
+      break;
     } catch (error) {
       console.warn(`Load attempt ${attempt + 1}/${retries} failed:`, error);
 
@@ -67,11 +83,28 @@ export const loadReadingProgress = async (
         await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, attempt)));
       } else {
         console.error(`Failed to load reading progress after ${retries} attempts: ${error}`);
-        return {};
+        throw new StorageReadError(
+          "transient",
+          `Failed to load reading progress after ${retries} attempts`,
+        );
       }
     }
   }
-  return {};
+
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return parseReadingProgressStrict(raw);
+  } catch (error) {
+    await backupRawValue(storageKey, raw);
+    if (error instanceof StorageReadError) {
+      throw error;
+    }
+    console.error("Reading progress was unreadable; backed up and starting empty:", error);
+    return {};
+  }
 };
 
 /**
@@ -196,7 +229,7 @@ export const clearAllReadingProgress = async (
   storageKey = READING_PROGRESS_KEY,
 ): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(storageKey);
+    await removeWithBackup(storageKey);
   } catch (error) {
     console.error("Failed to clear reading progress:", error);
     throw error;

@@ -92,6 +92,26 @@ export const touchSourceAttempt = async (
   await writeSourceSnapshot({ ...existing, attemptedAt });
 };
 
+/** Removes persisted snapshots for sources that are no longer configured (a feed that was
+ * dropped or renamed keeps its entry forever otherwise). Returns the number removed. */
+export const pruneOrphanedFeedCache = async (
+  configured: ReadonlyArray<{ category: ArticleCategory; sourceName: string }>,
+): Promise<number> => {
+  try {
+    const valid = new Set(configured.map(({ category, sourceName }) => sourceKey(category, sourceName)));
+    const keys = await AsyncStorage.getAllKeys();
+    const orphans = keys.filter((key) => key.startsWith(KEY_PREFIX) && !valid.has(key));
+    if (orphans.length === 0) return 0;
+
+    orphans.forEach((key) => mirror.delete(key));
+    await AsyncStorage.multiRemove(orphans);
+    return orphans.length;
+  } catch (error) {
+    console.warn("Failed to prune orphaned feed cache", error);
+    return 0;
+  }
+};
+
 export const clearAllFeedCache = async (): Promise<void> => {
   mirror.clear();
   try {

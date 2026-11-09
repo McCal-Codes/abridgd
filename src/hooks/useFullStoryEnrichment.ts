@@ -9,6 +9,8 @@ const FETCH_DELAY_MS = 500;
 export interface FullStoryEnrichmentState {
   enrichedBody: string | null;
   enrichedAuthor: string | null;
+  /** A lead photo from the story's page, only set when the feed gave the article none. */
+  enrichedImageUrl: string | null;
   isLoadingFullStory: boolean;
 }
 
@@ -24,16 +26,22 @@ export const useFullStoryEnrichment = (
 ): FullStoryEnrichmentState => {
   const [enrichedBody, setEnrichedBody] = useState<string | null>(null);
   const [enrichedAuthor, setEnrichedAuthor] = useState<string | null>(null);
+  const [enrichedImageUrl, setEnrichedImageUrl] = useState<string | null>(null);
   const [isLoadingFullStory, setIsLoadingFullStory] = useState(false);
 
   useEffect(() => {
     setEnrichedBody(null);
     setEnrichedAuthor(null);
+    setEnrichedImageUrl(null);
 
     const isTruncatedSource = TRUNCATED_SOURCES.some((source) => article.source.includes(source));
     const isShort = currentBodyLength < SHORT_BODY_THRESHOLD;
 
-    if (!article.link || (!isShort && !isTruncatedSource)) {
+    // Some feeds (TribLive, Kidsburgh, NEXTpittsburgh, DK Pittsburgh Sports) carry no photo at
+    // all, so a story with a full-length body can still be missing its lead image.
+    const needsPhoto = !article.imageUrl && !(article.mediaImages && article.mediaImages.length > 0);
+
+    if (!article.link || (!isShort && !isTruncatedSource && !needsPhoto)) {
       return;
     }
 
@@ -48,6 +56,9 @@ export const useFullStoryEnrichment = (
         if (fullStory?.author) {
           setEnrichedAuthor(fullStory.author);
         }
+        if (needsPhoto && fullStory?.imageUrl) {
+          setEnrichedImageUrl(fullStory.imageUrl);
+        }
         setIsLoadingFullStory(false);
       }
     }, FETCH_DELAY_MS);
@@ -61,5 +72,5 @@ export const useFullStoryEnrichment = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article.link]);
 
-  return { enrichedBody, enrichedAuthor, isLoadingFullStory };
+  return { enrichedBody, enrichedAuthor, enrichedImageUrl, isLoadingFullStory };
 };

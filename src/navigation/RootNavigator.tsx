@@ -10,7 +10,7 @@ import { SectionScreen } from "../screens/SectionScreen";
 import { SavedScreen } from "../screens/SavedScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
-import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { OnboardingScreenV2 as OnboardingScreen } from "../screens/OnboardingScreen.v2";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { ReadingSettingsScreen } from "../screens/ReadingSettingsScreen";
 import { DataPerformanceSettingsScreen } from "../screens/DataPerformanceSettingsScreen";
@@ -22,6 +22,8 @@ import { AppInfoScreen } from "../screens/AppInfoScreen";
 import { SourcesSettingsScreen } from "../screens/SourcesSettingsScreen";
 import { TabBarSettingsScreen } from "../screens/TabBarSettingsScreen";
 import { DebugSettingsScreen } from "../screens/DebugSettingsScreen";
+import { EventsScreen } from "../features/events/ui/EventsScreen";
+import { ResourcesScreen } from "../features/resources/ResourcesScreen";
 import { IOS26DemoScreen } from "../screens/iOS26DemoScreen";
 import { AchievementsScreen } from "../screens/AchievementsScreen";
 import { useSettings, sanitizeTabs } from "../context/SettingsContext";
@@ -336,13 +338,31 @@ export const RootNavigator = () => {
             }}
           />
           <Stack.Screen
-            name="DebugSettings"
-            component={DebugSettingsScreen}
+            name="Resources"
+            component={ResourcesScreen}
             options={{
               headerShown: true,
-              title: "Debug & Advanced",
+              title: "Resources",
             }}
           />
+          <Stack.Screen
+            name="Events"
+            component={EventsScreen}
+            options={{
+              headerShown: true,
+              title: "Events",
+            }}
+          />
+          {__DEV__ && (
+            <Stack.Screen
+              name="DebugSettings"
+              component={DebugSettingsScreen}
+              options={{
+                headerShown: true,
+                title: "Debug & Advanced",
+              }}
+            />
+          )}
           {__DEV__ && (
             <Stack.Screen
               name="iOS26Demo"

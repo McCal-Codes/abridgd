@@ -361,6 +361,53 @@ not reach, settings that did nothing, and an upgrade flow that treated returning
   - **Description**: `normalizeUri` in `ArticleScreen` prefixed any non-http src with `https:`, so root-relative paths became `https:/images/a.jpg` and `data:` URIs were mangled — both showed the "Image unavailable" placeholder. Replaced with `resolveMediaUri`, which resolves relative paths against the article's origin and is deliberately string-based, since React Native's URL constructor appends a trailing slash that would corrupt every resolved path. Also removed the stale `EXPO_PUBLIC_PERPLEXITY_API_KEY` from `.env` (never bundled, because nothing referenced it, but one reference away from being), extended the feed https guard to disabled sources, and stopped Jest scanning `.claude/worktrees`, which was adding another branch's tests to local runs.
   - **Completed**: September 5, 2026
 
+- [x] **TODO-140** | **Unreleased** | Phase 0 audit fixes: data loss, privacy, bounded caches
+  - **Status**: Completed
+  - **Description**: Audit follow-up (Android-first, shared JS). Loaders for saved articles and reading progress no longer return an empty value on failure, so autosave cannot overwrite real data; damaged or newer-schema data is backed up to `<key>.bak`. Settings validates saved tabs against the persisted layout. Debug & Advanced is `__DEV__`-only with redacted dumps. Native fetches go direct to publishers (CORS proxies and rss2json are web-only). Full-story URL matching compares hosts. Full-story cache is capped and collision-checked, orphaned feed snapshots are pruned, and the sweeps run once per launch. Sentry breadcrumbs are scrubbed of URLs and console text. Perplexity request uses a current model name and a timeout.
+  - **Not done yet (tracked in the audit plan)**: profile export/import rework (saved articles are lost on import and duplicated in `profiles_v1`), settings startup as a single `multiGet`, scroll-progress re-render fan-out, and measuring real AsyncStorage size on a device.
+  - **Completed**: See CHANGELOG [Unreleased]
+
+- [x] **TODO-141** | **Unreleased** | Local events (Home card, Events screen, add to calendar)
+  - **Status**: Completed (Android-first; not yet run on a device or emulator)
+  - **Description**: `src/features/events`. Read-only, keyless, direct-from-organizer listings (supersedes TODO-028/029/030, which assumed a backend). One parser covers every The Events Calendar site, so a new organizer is a config entry. Filter chips are derived from the data. Add to calendar uses `expo-calendar`'s system add-event screen with no permission and no config plugin. Saved events are per profile and cleared with local data. See `docs/product/events.md`.
+  - **Checked and not needed**: `.ics` / RSS event sources. East Liberty and the Downtown Partnership's `tribe_events` RSS is just their news posts, Mattress Factory's iCal is stale (latest event Aug 2025, ignores filters), Pitt's is 1.6 MB of campus events. See `docs/product/events.md`.
+  - **Photos**: event photos from the Events Calendar JSON (58% of 117 live events), shown in the detail sheet only.
+  - **Not done yet**: device check of all-day event times, a native build (`expo-calendar` is a native module, so this ships in a store build, not OTA), and privacy page text for the new hosts.
+
+- [x] **TODO-142** | **Unreleased** | Resources in Settings (local help and services)
+  - **Status**: Completed (not yet run on a device)
+  - **Description**: `src/features/resources`. A bundled, offline list of local crisis lines and everyday services with Call/Text hand-off (`tel:`/`sms:` built only from the bundled list), an emergency banner, and a "last checked" date. A time-based test fails when the list has not been re-verified in a year. See `docs/product/resources.md`.
+  - **Not done yet**: Pittsburgh 311 (number not confirmed), a "report a wrong number" shortcut in App info, and a device check of the text-message hand-off on both platforms.
+
+- [x] **TODO-143** | **Unreleased** | Redo first-run onboarding (v2)
+  - **Status**: Completed (not yet run on a device)
+  - **Description**: `OnboardingScreen.v2.tsx` plus `src/features/onboarding/`: six steps (welcome, newsrooms, reader, heavy stories, Events and Resources, pledge) with Skip and Back, choices that write through immediately, and start ids resolved by `resolveStartStep` (also fixes App Info's dead "practice" id). Built as a copy; the previous flow is kept and marked superseded. A deliberate departure from "micro-adjustments only", documented in `docs/standards/onboarding-whats-new.md`.
+  - **Not done yet**: dark-mode pass (waits on the Phase 1 dark-mode work), VoiceOver/TalkBack and large-text check on a device, optional deletion of the old `OnboardingScreen.tsx` once v2 has shipped, and What's New copy for this release.
+
+- [x] **TODO-144** | **Unreleased** | Platform pass: dark mode, contrast, haptics, window size, privacy manifest
+  - **Status**: Completed (checked in a web render of both themes; not yet run on a device)
+  - **Description**: `userInterfaceStyle` automatic + `expo-system-ui` + a dark splash; light `tint`/`primary` darkened to `#00778A` and `tertiaryLabel` to `#6B6B70`, with `theme/__tests__/contrast.test.ts` asserting WCAG AA for every text token on every surface in both themes; every haptic goes through `src/utils/haptics.ts`, which honours `hapticIntensity`; `BlurSheet` and `GroundingOverlay` use `useWindowDimensions`; `x86_64` added to the Android ABIs; `ios.privacyManifests` declares crash and performance data. A prebuild confirmed `UIUserInterfaceStyle=Automatic`, `uiMode` in the activity's `configChanges`, `values-night`, `reactNativeArchitectures` with x86_64, and the generated `PrivacyInfo.xcprivacy`.
+  - **Also done**: the crash screen and emotion prompt are themed (the remaining literals in the codebase are shadow colours and text on dark overlays, which are fine in both themes); Sign in with Apple revocation is checked at launch and on foreground (`useAppleCredentialCheck`).
+  - **Not done yet**: adaptive/monochrome Android icon and padded splash art (needs design assets), predictive back (needs an Android 16 device test), the Liquid Glass decision, and the tab-bar and large-screen work (Phase 3).
+
+- [x] **TODO-145** | **Unreleased** | RSS stories and photos: measured against the live feeds and fixed
+  - **Status**: Completed (verified by running the real parser and extractor over the 19 enabled live feeds and 38 real article pages; not run on a device)
+  - **Measured first**: the feed parser was not at fault for photos. TribLive, Kidsburgh, NEXTpittsburgh and DK Pittsburgh Sports publish no image element at all; the Allegheny Front 2 of 10. Bodies over 500 characters came from only 6 of 19 feeds; the rest are teasers completed on open. On the pages, the extractor failed for TribLive and the five Post-Gazette feeds, returned a 28-character teaser for the Allegheny Front, and every page had an `og:image` the app never used.
+  - **Fixed**: `pageContent.selectContentNode` (first article-sized match, then paragraph-density fallback), `pageMetadata.extractPageMetadata` (og:image / JSON-LD / twitter:image, JSON-LD byline), `FullStoryContent.imageUrl`, `useFullStoryEnrichment.enrichedImageUrl` (fetches when a story has no photo, never replaces a feed photo), a lead image in `ArticleScreen`, selectors for four more sites, and `resolveFeedUrl` refusing non-http schemes. After: lead photo for 19 of 19 sampled sources; real stories for TribLive and the Allegheny Front; bylines for WESA, Steelers and TribLive.
+  - **Not fixed (honest limits)**: the five Post-Gazette feeds (Top, Biz, Sports, A&E and Local) still get no story text because their pages are paywalled or script-rendered, only the photo and sometimes the byline; DK Pittsburgh Sports' feed items link to a category feed, not articles (a publisher problem); list cards for the photo-less feeds stay text-only, because fetching a page per card would be 25 requests per refresh.
+
+- [x] **TODO-146** | **Unreleased** | Profile import/export: fix lost saved articles, smaller and safer keys; build 40
+  - **Status**: Completed (reproduced with a failing integration test first; not run on a device)
+  - **Root cause**: `importProfileKey` activated the imported profile, `SavedArticlesProvider` reloaded the new profile's own storage key (empty), then synced `[]` back into the profile's mirror, erasing the imported `savedArticles`. Nothing ever wrote them to the per-profile storage key.
+  - **Fix**: `SavedArticlesProvider` folds the profile's mirror into what it loads (`mergeSavedArticles`), and reloads on a new `importRevision` so a same-id import also takes effect. `utils/profileTransfer`: v2 keys (`abr2:` + lz-string), no `email`/`appleUserId`/`displayName` in or out, validated import (known fields, <= 500 articles), legacy base64 keys still readable (with the UTF-8 decode fixed). Import keeps this device's own sign-in details and unions saved articles.
+  - **Also**: build number bumped 39 -> 40 with `scripts/audit/version-bump.js build` so a preview build is distinguishable from the released 1.5.7.
+  - **Not done**: the profile still mirrors every saved article's full HTML into `profiles_v1` (the mirror is what makes the recovery above possible; slimming it to ids is a separate change), and the Profile screen still shares the key as plain text.
+
+- [x] **TODO-147** | **0.2.0 beta 1** | Cut 0.2.0 beta 1 (build 41)
+  - **Status**: Version, label, release notes and changelog prepared; Android APK built by the Release Mobile Build workflow (`platform: android`, `profile: preview`, no release attachment)
+  - **Description**: `node scripts/audit/version-bump.js 0.2.0` (version 0.2.0, build 41), `APP_RELEASE_LABEL = "beta 1"` shown in App Info and bug reports, a reader-facing `RELEASE_NOTES["0.2.0"]` entry (existing readers see What's New once, because the check is `lastSeenVersion !== APP_VERSION`), and the changelog's `[Unreleased]` section renamed `[0.2.0-beta.1]`.
+  - **Note**: the version number goes down from 1.5.7. Android is unaffected (versionCode 41 > 39, so it installs as an update). An iOS or TestFlight upload would be rejected, because App Store Connect requires the version string to be at least the previously uploaded one.
+
 
 
 

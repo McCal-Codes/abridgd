@@ -6,6 +6,7 @@ import { APP_VERSION } from "../config/appInfo";
 import { allowedTabs, defaultTabs } from "../navigation/tabs";
 import { SETTINGS_STORAGE_KEYS } from "../shared/settings/storageKeys";
 import { migrateFromAsyncStorage, setSecureValue } from "../shared/settings/secureApiKeyStorage";
+import { configureHaptics } from "../utils/haptics";
 
 // Every setting persists via the same "AsyncStorage write, then update state" shape below;
 // this centralizes the failure log so all ~50 call sites report consistently instead of each
@@ -334,6 +335,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [imageLoadingMode, setImageLoadingModeState] = useState<ImageLoadingMode>("full");
   const [dataSaverMode, setDataSaverModeState] = useState(false);
   const [hapticIntensity, setHapticIntensityState] = useState<HapticIntensity>("normal");
+  // Keep the haptics module (src/utils/haptics.ts) in step with the setting, including the value
+  // loaded from storage, so every haptic in the app honours it.
+  useEffect(() => {
+    configureHaptics(hapticIntensity);
+  }, [hapticIntensity]);
 
   const tabBarHeight = useMemo(() => {
     if (tabBarStyle === "floating") {
@@ -478,8 +484,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedAutoSave !== null) {
         setAutoSaveOnCompleteState(savedAutoSave === "true");
       }
+      // The tab layout must be known BEFORE the saved tabs are validated. `tabLayout` in this
+      // closure is still the initial "minimal" (state has not been applied yet), so validating
+      // against it stripped a comprehensive user's tabs and wrote the result back every launch.
+      const storedTabLayout = await AsyncStorage.getItem("tabLayout");
+      const layoutForTabs: "minimal" | "comprehensive" =
+        storedTabLayout === "minimal" || storedTabLayout === "comprehensive"
+          ? storedTabLayout
+          : tabLayout;
+
       if (savedDefaultTab) {
-        const allowed = allowedTabs[tabLayout] as readonly string[];
+        const allowed = allowedTabs[layoutForTabs] as readonly string[];
         const resolved = allowed.includes(savedDefaultTab) ? savedDefaultTab : allowed[0];
         setDefaultTabState(resolved);
       }
@@ -487,7 +502,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         try {
           const tabs = JSON.parse(savedActiveTabs);
           if (Array.isArray(tabs)) {
-            const normalized = sanitizeTabs(tabs, tabLayout);
+            const normalized = sanitizeTabs(tabs, layoutForTabs);
             setActiveTabsState(normalized);
             await AsyncStorage.setItem("activeTabs", JSON.stringify(normalized));
           }
@@ -560,9 +575,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedVersion) setLastSeenVersion(savedVersion);
 
       // Load tab layout preference
-      const savedTabLayout = await AsyncStorage.getItem("tabLayout");
-      if (savedTabLayout && ["minimal", "comprehensive"].includes(savedTabLayout)) {
-        setTabLayoutState(savedTabLayout as "minimal" | "comprehensive");
+      if (storedTabLayout === "minimal" || storedTabLayout === "comprehensive") {
+        setTabLayoutState(storedTabLayout);
       }
 
       // Load QoL settings

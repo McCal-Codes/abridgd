@@ -16,6 +16,7 @@ import {
   markMigrationComplete,
   getSavedArticlesStorageKey,
 } from "../utils/storage";
+import { mergeSavedArticles } from "../utils/profileTransfer";
 import { useProfilesOptional } from "./ProfileContext";
 
 interface SavedArticlesContextType {
@@ -33,12 +34,22 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
   const [savedArticles, setSavedArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Storage key whose stored data could not be read. While it matches the active key, autosave
+  // is disabled so a failed read can never turn into a destructive write.
+  const [loadFailedKey, setLoadFailedKey] = useState<string | null>(null);
   const profileContext = useProfilesOptional?.() ?? undefined;
   const activeProfileId = profileContext?.activeProfile?.id;
   const storageKey = useMemo(
     () => getSavedArticlesStorageKey(activeProfileId),
     [activeProfileId],
   );
+  const importRevision = profileContext?.importRevision ?? 0;
+  // The profile keeps a mirror of its saved articles. Normally it matches storage, but after an
+  // import (or if a storage write was lost) it holds articles that storage does not. Folding it in
+  // on load recovers them; before, the load replaced the mirror with the empty stored list and an
+  // imported profile came up with no saved articles at all.
+  const mirroredArticlesRef = useRef<Article[] | undefined>(undefined);
+  mirroredArticlesRef.current = profileContext?.activeProfile?.savedArticles;
   const syncProfileSavedArticles = useMemo(
     () => profileContext?.updateSavedArticles ?? (() => {}),
     [profileContext?.updateSavedArticles],
@@ -65,13 +76,15 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
       try {
         setIsLoading(true);
         setError(null);
+        setLoadFailedKey(null);
 
         // Check if migration has been completed
         const migrationDone = await isMigrationComplete();
 
         // Load articles from storage (namespaced per profile)
-        const articles = await loadArticlesFromStorage(3, 100, storageKey);
+        const stored = await loadArticlesFromStorage(3, 100, storageKey);
         if (cancelled) return;
+        const articles = mergeSavedArticles(stored, mirroredArticlesRef.current);
         setSavedArticles(articles);
         syncProfileSavedArticlesRef.current(articles);
 
@@ -84,7 +97,10 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
         const errorMessage = err instanceof Error ? err.message : "Failed to load saved articles";
         console.error("Storage initialization error:", err);
         setError(errorMessage);
-        // Continue with empty array on error to avoid blocking the app
+        // Show an empty list so the app is usable, but remember the stored data was NOT read.
+        // Autosave stays off for this key; otherwise the empty list would be written over
+        // whatever the user had saved.
+        setLoadFailedKey(storageKey);
         setSavedArticles([]);
       } finally {
         if (!cancelled) {
@@ -100,11 +116,11 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
     };
     // Deliberately excludes syncProfileSavedArticles — see the ref above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, importRevision]);
 
   // Auto-save to AsyncStorage whenever savedArticles changes
   useEffect(() => {
-    if (!isLoading && savedArticles.length >= 0) {
+    if (!isLoading && loadFailedKey !== storageKey) {
       const saveToStorage = async () => {
         try {
           await saveArticlesToStorage(savedArticles, 3, 100, storageKey);
@@ -120,7 +136,7 @@ export const SavedArticlesProvider = ({ children }: { children: ReactNode }) => 
       const timeout = setTimeout(saveToStorage, 500);
       return () => clearTimeout(timeout);
     }
-  }, [savedArticles, isLoading, storageKey]);
+  }, [savedArticles, isLoading, storageKey, loadFailedKey]);
 
   // Every ArticleCard now consumes this context for swipe-to-save, so a feed is dozens of
   // subscribers. Recreating these functions each render made every one of them a new prop

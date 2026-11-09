@@ -199,12 +199,53 @@ describe("Storage Utilities", () => {
       expect(AsyncStorage.getItem).toHaveBeenCalledTimes(2);
     });
 
-    it("should return empty array after max retries", async () => {
+    it("should throw (not return empty) after max retries so callers never autosave over real data", async () => {
       (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error("Persistent failure"));
 
-      const loaded = await loadArticlesFromStorage(2, 10);
+      await expect(loadArticlesFromStorage(2, 10)).rejects.toMatchObject({
+        name: "StorageReadError",
+        reason: "transient",
+      });
+      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it("should back up damaged data and start empty", async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue("{not json");
+
+      const loaded = await loadArticlesFromStorage();
 
       expect(loaded).toEqual([]);
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        "@abridged_saved_articles.bak",
+        "{not json",
+      );
+    });
+
+    it("should back up and throw for a schema written by a newer app version", async () => {
+      const newer = JSON.stringify({ version: 99, payload: "{}", timestamp: 1 });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(newer);
+
+      await expect(loadArticlesFromStorage()).rejects.toMatchObject({
+        name: "StorageReadError",
+        reason: "unsupported-version",
+      });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith("@abridged_saved_articles.bak", newer);
+    });
+
+    it("should back up a v2 payload that fails to decompress", async () => {
+      const broken = JSON.stringify({
+        version: 2,
+        compressed: true,
+        compression: "lz-string-utf16",
+        payload: "",
+        timestamp: 1,
+      });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(broken);
+
+      const loaded = await loadArticlesFromStorage();
+
+      expect(loaded).toEqual([]);
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith("@abridged_saved_articles.bak", broken);
     });
   });
 
@@ -253,16 +294,19 @@ describe("Storage Utilities", () => {
   });
 
   describe("clearSavedArticles", () => {
-    it("should remove saved articles from storage", async () => {
-      (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
+    it("should remove saved articles and their recovery backup from storage", async () => {
+      (AsyncStorage.multiRemove as jest.Mock).mockResolvedValue(undefined);
 
       await clearSavedArticles();
 
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@abridged_saved_articles");
+      expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+        "@abridged_saved_articles",
+        "@abridged_saved_articles.bak",
+      ]);
     });
 
     it("should throw error on failure", async () => {
-      (AsyncStorage.removeItem as jest.Mock).mockRejectedValue(new Error("Storage error"));
+      (AsyncStorage.multiRemove as jest.Mock).mockRejectedValue(new Error("Storage error"));
 
       await expect(clearSavedArticles()).rejects.toThrow("Storage error");
     });

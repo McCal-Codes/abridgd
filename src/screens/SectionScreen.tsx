@@ -12,7 +12,7 @@ import { RootStackParamList, TabParamList } from "../navigation/types";
 import { spacing } from "../theme/spacing";
 import { Article, ArticleCategory } from "../types/Article";
 import { typography } from "../theme/typography";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "../utils/haptics";
 import { HeroHeader } from "../components/HeroHeader";
 import { FeedStatusBanner } from "../components/FeedStatusBanner";
 import { MapPin, Newspaper } from "lucide-react-native";
