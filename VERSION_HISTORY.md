@@ -1,5 +1,7 @@
 # Version History
 
+> Legacy planning file, not kept current. `CHANGELOG.md` is the record of what shipped; see `docs/standards/versioning.md`.
+
 This document tracks all updates, features, and fixes for the Abridged app.
 
 ---
