@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- [Added] Stories with more than one photo now show a swipeable photo strip under the headline, with each caption and credit. Tap a photo to enlarge it.
+- [Fixed] Full stories no longer pull in publisher logos, author avatars, share bars or related-story thumbnails as part of the text.
+- [Fixed] The Daily Digest and Settings titles now line up with the other screens, and Settings no longer starts with a large empty gap.
+- [Fixed] Story cards no longer repeat the headline as a description, or show the outlet name twice in the byline.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 

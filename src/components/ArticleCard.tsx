@@ -30,6 +30,16 @@ import { useSavedArticlesOptional } from "../context/SavedArticlesContext";
 import { useReduceMotion } from "../hooks/useReduceMotion";
 import { useThemeOptional } from "../theme/ThemeContext";
 
+const normalize = (text?: string) => (text ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+/** Feeds often reuse the headline as the description. Showing it twice reads as a bug. */
+export const hasDistinctSummary = (headline: string, summary?: string): boolean => {
+  const s = normalize(summary);
+  if (!s) return false;
+  const h = normalize(headline);
+  return !(s === h || h.startsWith(s) || s.startsWith(h));
+};
+
 /** Drag distance at which the swipe commits. Short enough to feel light, long enough that a
  * horizontal nudge while scrolling a list doesn't save an article by accident. */
 const SWIPE_THRESHOLD = 88;
@@ -130,9 +140,11 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
         <View style={styles.cardContent}>
           <View style={styles.textContainer}>
             <Text style={styles.headline}>{article.headline}</Text>
-            <Text style={styles.summary} numberOfLines={2}>
-              {article.summary}
-            </Text>
+            {hasDistinctSummary(article.headline, article.summary) ? (
+              <Text style={styles.summary} numberOfLines={2}>
+                {article.summary}
+              </Text>
+            ) : null}
             <View style={styles.metaContainer}>
               <Text style={styles.metaText} maxFontSizeMultiplier={fontScaleLimit.meta}>
                 {article.source}
@@ -143,7 +155,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = React.memo(({ article, on
               <Text style={styles.metaText} maxFontSizeMultiplier={fontScaleLimit.meta}>
                 {article.timestamp}
               </Text>
-              {article.author ? (
+              {article.author && normalize(article.author) !== normalize(article.source) ? (
                 <>
                   <Text style={styles.metaText}> • </Text>
                   <Text

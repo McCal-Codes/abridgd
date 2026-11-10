@@ -216,6 +216,8 @@ const createStyles = (colors: ThemeColors) =>
     headerContainer: {
       backgroundColor: colors.background,
       paddingBottom: spacing.xs,
+      // HeroHeader pads itself by the gutter, and the content already does: cancel one.
+      marginHorizontal: -spacing.gutter,
     },
     loadingContainer: {
       // FunLoadingIndicator is flex:1, so inside an auto-height parent it

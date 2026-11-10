@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetchFullArticleBody, FullStoryContent } from "./FullStoryService";
 
-const KEY_PREFIX = "abridged:fullStoryCache:v1:";
+// v2/v3: bodies are now stripped of page chrome and repeated photos; older entries held logos, thumbnails and duplicate headlines.
+const KEY_PREFIX = "abridged:fullStoryCache:v3:";
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours — full article bodies rarely change post-publish
 // Full article HTML is large (one source's whole RSS feed measured ~160 KB), and AsyncStorage
 // on Android is a single database with a default ~6 MB cap shared with settings, profile and

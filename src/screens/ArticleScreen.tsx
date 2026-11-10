@@ -30,6 +30,8 @@ import { GroundingOverlay } from "../components/GroundingOverlay";
 import { BlurSheet } from "../components/BlurSheet";
 import { ArticleProvenancePanel } from "../components/ArticleProvenancePanel";
 import { ArticleBodyImage } from "../components/ArticleBodyImage";
+import { PhotoGallery } from "../components/PhotoGallery";
+import { selectGalleryPhotos } from "../utils/galleryPhotos";
 import { parseHtmlContent } from "../utils/contentParser";
 import { useFullStoryEnrichment } from "../hooks/useFullStoryEnrichment";
 import { Waypoints, Zap, Bookmark, Wind, ArrowRightCircle, Info } from "lucide-react-native";
@@ -277,6 +279,21 @@ export const ArticleScreen: React.FC = () => {
     article.imageCredit,
     bodyContent,
   ]);
+
+  // Editorial photos only, for the swipeable strip under the headline (see selectGalleryPhotos
+  // for what counts). Photos also stay in the body where the writer placed them. Text-only mode
+  // shows none.
+  const galleryPhotos = useMemo(
+    () =>
+      imageLoadingMode === "text-only"
+        ? []
+        : selectGalleryPhotos(
+            parsedContent,
+            [article.imageUrl, ...(article.mediaImages || [])],
+            article.link,
+          ),
+    [parsedContent, imageLoadingMode, article.imageUrl, article.mediaImages, article.link],
+  );
 
   // Auto-save article when reading completes (if enabled)
   const handleReaderComplete = async () => {
@@ -699,6 +716,10 @@ export const ArticleScreen: React.FC = () => {
               )}
             </View>
           )}
+
+          {galleryPhotos.length >= 2 ? (
+            <PhotoGallery photos={galleryPhotos} compressed={imageLoadingMode === "compressed"} />
+          ) : null}
 
           {parsedContent.map((node, index) => {
             if (node.type === "text" && node.text) {
