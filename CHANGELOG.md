@@ -6,6 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- [Fixed] On Android the floating tab bar is now solid. Headlines used to show through it, which made the tab labels hard to read in dark mode.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 
