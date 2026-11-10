@@ -199,7 +199,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
 
         {!loading && !error ? (
           <Text style={styles.footer}>
-            This digest is automatically generated from top local sources without bias.
+            This digest is assembled automatically from top local sources. Every item links back to the original story.
           </Text>
         ) : null}
       </ScrollView>
