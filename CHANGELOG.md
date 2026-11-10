@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- [Changed] New color palette: a muted teal-green as the main accent and a muted berry for small highlights, in light and dark mode. Text and buttons still meet contrast guidelines.
+- [Changed] Profile is a short, calm summary now. The title lines up with the other tabs and the cards have proper padding. Achievements, Reading stats, Account and backup, Settings and Resources are proper buttons. Sign in, backup, support and Delete local data moved to their own Account and backup screen.
+- [Fixed] Profile no longer promises sync that does not exist, and the initials on the avatar are readable in dark mode. Avatar colors now come from the same berry palette.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 

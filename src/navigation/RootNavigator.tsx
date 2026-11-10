@@ -9,6 +9,7 @@ import { HomeScreen } from "../screens/HomeScreen";
 import { SectionScreen } from "../screens/SectionScreen";
 import { SavedScreen } from "../screens/SavedScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import AccountScreen from "../screens/AccountScreen";
 
 import { OnboardingScreenV2 as OnboardingScreen } from "../screens/OnboardingScreen.v2";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -335,6 +336,14 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Tab Bar",
+            }}
+          />
+          <Stack.Screen
+            name="Account"
+            component={AccountScreen}
+            options={{
+              headerShown: true,
+              title: "Account and backup",
             }}
           />
           <Stack.Screen

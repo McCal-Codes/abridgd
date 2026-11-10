@@ -4,48 +4,35 @@
  * Profile management with reading stats and account tools.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  Alert,
-  Linking,
+  Pressable,
   ScrollView,
-  Share as NativeShare,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import {
-  BookOpen,
-  Mail,
-  Shield,
-  Sparkles,
-  UploadCloud,
-  Download,
+  ChevronDown,
+  ChevronRight,
   User,
 } from "lucide-react-native";
-import { GlassButton } from "../components/GlassButton";
-import { SignInWithApple } from "../components/SignInWithApple";
 import { Skeleton } from "../components/Skeleton";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useSettings } from "../context/SettingsContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { HeroHeader } from "../components/HeroHeader";
-import {
-  APP_BUILD,
-  APP_NAME,
-  APP_VERSION,
-  BUG_EMAIL_BODY_TEMPLATE,
-  BUG_EMAIL_SUBJECT,
-  CONTACT_EMAIL,
-} from "../config/appInfo";
 import { useProfiles, getAchievementStatuses } from "../context/ProfileContext";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { getAvatarColor, getInitials } from "../utils/avatar";
+
+/** Avatar fills are mid-tone in both themes, so initials stay white rather than following the
+ *  theme background (which turned them near-black on the red avatar in dark mode). */
+const AVATAR_TEXT = "#FFFFFF";
 
 const KARMA_TIERS = [
   { label: "Fresh", min: 0 },
@@ -93,7 +80,6 @@ const formatRelativeDate = (timestamp?: number | null) => {
 };
 
 const ProfileScreen: React.FC = () => {
-  const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -109,28 +95,11 @@ const ProfileScreen: React.FC = () => {
     insets.bottom +
     spacing.lg;
 
-  const {
-    activeProfile,
-    signInWithAppleProfile,
-    signOut,
-    deleteActiveProfile,
-    exportProfileKey,
-    importProfileKey,
-    updateSettingsTag,
-  } = useProfiles();
+  const { activeProfile } = useProfiles();
   const { readingStats } = useReadingProgressOptional();
 
-  const [settingsTagInput, setSettingsTagInput] = useState(activeProfile?.settingsTag || "");
-  const [importCode, setImportCode] = useState("");
-  const [tagSaved, setTagSaved] = useState(false);
-  const tagSavedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [statsOpen, setStatsOpen] = useState(false);
   const profileReady = Boolean(activeProfile);
-
-  useEffect(() => {
-    return () => {
-      if (tagSavedTimeout.current) clearTimeout(tagSavedTimeout.current);
-    };
-  }, []);
 
   const achievementStatuses = useMemo(
     () => getAchievementStatuses(activeProfile || undefined),
@@ -161,94 +130,7 @@ const ProfileScreen: React.FC = () => {
     : "—";
   const karmaTierLabel = profileReady ? `${currentTier.label} tier` : "—";
 
-  useEffect(() => {
-    setSettingsTagInput(activeProfile?.settingsTag || "");
-  }, [activeProfile?.settingsTag]);
-
   const handleSettings = () => navigation.navigate("Settings" as never);
-
-  const handleShare = async () => {
-    try {
-      await NativeShare.share({
-        message: `Try ${APP_NAME} — calm, Pittsburgh-focused news with RSVP reading. (${APP_VERSION} build ${APP_BUILD})`,
-        url: "https://abridgd.app",
-      });
-    } catch {
-      Alert.alert("Error", "Unable to open share sheet.");
-    }
-  };
-
-  const handleFeedback = async () => {
-    try {
-      const subject = BUG_EMAIL_SUBJECT;
-      const body = BUG_EMAIL_BODY_TEMPLATE;
-      const mailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      const supported = await Linking.canOpenURL(mailto);
-      if (supported) {
-        await Linking.openURL(mailto);
-      } else {
-        Alert.alert("No mail app", "No mail client is available on this device.");
-      }
-    } catch {
-      Alert.alert("Error", "Unable to open mail composer.");
-    }
-  };
-
-  const handleSettingsTagBlur = () => {
-    const cleaned = settingsTagInput.trim();
-    updateSettingsTag(cleaned || "Local profile");
-    setSettingsTagInput(cleaned || "Local profile");
-
-    setTagSaved(true);
-    if (tagSavedTimeout.current) clearTimeout(tagSavedTimeout.current);
-    tagSavedTimeout.current = setTimeout(() => setTagSaved(false), 1800);
-  };
-
-  const handleExportProfile = () => {
-    const key = exportProfileKey();
-    if (!key) {
-      Alert.alert("Export failed", "Could not generate a profile key. Try again.");
-      return;
-    }
-    NativeShare.share({
-      message: `Abridgd profile key: ${key}`,
-    });
-  };
-
-  const handleImportProfile = () => {
-    const cleaned = importCode.trim();
-    if (!cleaned) return;
-    const success = importProfileKey(cleaned);
-    if (success) {
-      Alert.alert("Imported", "Profile imported and activated.");
-      setImportCode("");
-    } else {
-      Alert.alert("Import failed", "Please check the code and try again.");
-    }
-  };
-
-  const handleDeleteLocalData = () => {
-    Alert.alert(
-      "Delete local data",
-      "This removes this profile along with its saved articles and reading progress from this device. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const profile = await deleteActiveProfile();
-              Alert.alert("Deleted", `Local data removed. Switched to ${profile.name}.`);
-            } catch (e) {
-              console.error("Failed to delete local data:", e);
-              Alert.alert("Error", "Couldn't delete local data. Please try again.");
-            }
-          },
-        },
-      ],
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -257,10 +139,11 @@ const ProfileScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={[styles.headerContainer, { paddingTop: spacing.md }]}>
-          <HeroHeader title="Profile" subtitle="Reading and account basics" Icon={User} />
+        <View style={styles.headerContainer}>
+          <HeroHeader title="Profile" subtitle="Your reading, kept on this device" Icon={User} />
         </View>
 
+        <View style={styles.body}>
         <View style={styles.card}>
           <View style={styles.profileRow}>
             {profileReady ? (
@@ -273,29 +156,22 @@ const ProfileScreen: React.FC = () => {
                 {getInitials(activeProfile?.name) ? (
                   <Text style={styles.avatarInitials}>{getInitials(activeProfile?.name)}</Text>
                 ) : (
-                  <User size={46} color={colors.background} strokeWidth={1.5} />
+                  <User size={28} color={AVATAR_TEXT} strokeWidth={1.5} />
                 )}
               </View>
             ) : (
-              <Skeleton width={88} height={88} borderRadius={44} />
+              <Skeleton width={56} height={56} borderRadius={28} />
             )}
             <View style={styles.profileTextBlock}>
               {profileReady ? (
                 <>
-                  <Text style={styles.profileName}>{activeProfile?.name || "Anonymous Reader"}</Text>
+                  <Text style={styles.profileName}>{activeProfile?.name || "Reader"}</Text>
                   <Text style={styles.profileSubtext}>
-                    Codename: {activeProfile?.codename || "Generating…"}
-                  </Text>
-                  <Text style={styles.profileSubtext}>
+                    {activeProfile?.codename ? `${activeProfile.codename} · ` : ""}
                     {activeProfile?.appleUserId
                       ? `Signed in with Apple${activeProfile?.email ? ` · ${activeProfile.email}` : ""}`
-                      : "Not signed in · data stays on this device"}
+                      : "local only"}
                   </Text>
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>
-                      {activeProfile?.settingsTag || "Local profile"}
-                    </Text>
-                  </View>
                 </>
               ) : (
                 <>
@@ -331,33 +207,24 @@ const ProfileScreen: React.FC = () => {
             )}
           </View>
 
-          {profileReady ? (
-            <Text style={styles.noteText}>
-              Reading stats come from tracked sessions and stay on this device until sync launches.
-            </Text>
-          ) : null}
-
-          <GlassButton
-            label="Open settings"
-            prominence="standard"
-            onPress={handleSettings}
-            accessibilityLabel="Open settings"
-            style={styles.cardAction}
-          />
-          <GlassButton
-            label={`View achievements (${achievementCopy})`}
-            prominence="tinted"
-            onPress={() => navigation.navigate("Achievements" as never)}
-            accessibilityLabel="View achievements"
-            accessibilityHint="Opens the achievements screen"
-            style={styles.cardAction}
-            icon={<BookOpen size={16} color={colors.text} strokeWidth={2} />}
-          />
         </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="Reading" />
-          <View style={styles.statGroup}>
+        <View style={styles.navGroup}>
+          <NavRow
+            label={`View achievements (${achievementCopy})`}
+            accessibilityLabel="View achievements"
+            accessibilityHint="Opens the achievements screen"
+            onPress={() => navigation.navigate("Achievements" as never)}
+            primary
+          />
+          <NavRow
+            label="Reading stats"
+            accessibilityLabel="Reading stats"
+            accessibilityHint={statsOpen ? "Hides your reading stats" : "Shows your reading stats"}
+            onPress={() => setStatsOpen((open) => !open)}
+            expanded={statsOpen}
+          />
+          {statsOpen ? <View style={styles.statGroup}>
             <StatRow
               label="Articles read"
               value={articlesReadDisplay}
@@ -390,200 +257,71 @@ const ProfileScreen: React.FC = () => {
               hint={nextTier ? `${nextTier.label} up next` : "Top tier reached"}
               isLast
             />
-          </View>
+          </View> : null}
+          <NavRow
+            label="Account and backup"
+            accessibilityLabel="Account and backup"
+            accessibilityHint="Opens sign in, backup, support and delete data"
+            onPress={() => navigation.navigate("Account" as never)}
+          />
+          <NavRow
+            label="Settings"
+            accessibilityLabel="Open settings"
+            accessibilityHint="Opens app settings"
+            onPress={handleSettings}
+          />
+          <NavRow
+            label="Resources"
+            accessibilityLabel="Resources"
+            accessibilityHint="Opens crisis lines and local services"
+            onPress={() => navigation.navigate("Resources" as never)}
+          />
         </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="Account & backup" />
-
-          <View style={[styles.card, styles.transferCard]}>
-            <SectionHeader title="Sign in" compact style={styles.subsectionTitle} />
-            <View style={styles.connectedRow}>
-              <View style={styles.connectedIcon}>
-                <Shield size={18} color={colors.textSecondary} />
-              </View>
-              <View style={styles.connectedTextBlock}>
-                <Text style={styles.connectedTitle}>Apple Account</Text>
-                <Text style={styles.connectedDesc}>
-                  {activeProfile?.appleUserId
-                    ? "Signed in. Your codename and stats stay tied to this Apple ID."
-                    : "Sign in to keep your codename and stats recoverable if you switch devices."}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.connectedBadge,
-                  activeProfile?.appleUserId && styles.connectedBadgeActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.connectedBadgeText,
-                    activeProfile?.appleUserId && styles.connectedBadgeTextActive,
-                  ]}
-                >
-                  {activeProfile?.appleUserId ? "Connected" : "Local only"}
-                </Text>
-              </View>
-            </View>
-
-            {activeProfile?.appleUserId ? (
-              <GlassButton
-                label="Sign out"
-                prominence="standard"
-                onPress={() => {
-                  const profile = signOut();
-                  Alert.alert("Signed out", `Switched to ${profile.name}.`);
-                }}
-                accessibilityLabel="Sign out of Apple account"
-                style={styles.cardAction}
-              />
-            ) : (
-              <SignInWithApple
-                onSuccess={(user) => {
-                  const profile = signInWithAppleProfile({
-                    id: user.id,
-                    email: user.email,
-                    displayName: user.displayName,
-                  });
-                  Alert.alert("Signed in", `Welcome back, ${profile.name}!`);
-                }}
-                onError={(error) => {
-                  console.error("Sign in error:", error);
-                }}
-              />
-            )}
-          </View>
-
-          <View style={[styles.card, styles.transferCard]}>
-            <SectionHeader title="Backup & transfer" compact style={styles.subsectionTitle} />
-            <Text style={styles.sectionDesc}>
-              Label this device, keep a backup code handy, and import a profile when you need to
-              move settings later.
-            </Text>
-
-            <Text style={styles.transferLabel}>Profile label</Text>
-            <TextInput
-              value={settingsTagInput}
-              onChangeText={setSettingsTagInput}
-              onBlur={handleSettingsTagBlur}
-              placeholder="e.g., iPhone main settings"
-              style={styles.textInput}
-              accessibilityLabel="Profile settings tag"
-              accessibilityHint="Identifies this profile when exporting or importing."
-              placeholderTextColor={colors.textSecondary}
-              returnKeyType="done"
-            />
-            {tagSaved ? (
-              <Text style={styles.savedFeedback} accessibilityLiveRegion="polite">
-                Saved
-              </Text>
-            ) : null}
-
-            <View style={styles.cardDivider} />
-
-            <Text style={styles.transferLabel}>Profile key</Text>
-            <Text style={styles.transferCode} selectable>
-              {activeProfile?.transferKey || "Unavailable"}
-            </Text>
-            <GlassButton
-              label="Share code"
-              prominence="standard"
-              onPress={handleExportProfile}
-              accessibilityLabel="Share profile code"
-              accessibilityHint="Opens the share sheet with your profile code."
-              style={styles.cardAction}
-              icon={<UploadCloud size={16} color={colors.text} strokeWidth={2} />}
-            />
-
-            <TextInput
-              value={importCode}
-              onChangeText={setImportCode}
-              placeholder="Paste profile code to import"
-              style={[styles.textInput, styles.secondaryFieldSpacing]}
-              accessibilityLabel="Import profile code"
-              accessibilityHint="Paste a code to import settings and achievements."
-              placeholderTextColor={colors.textSecondary}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-            />
-            <GlassButton
-              label="Import profile"
-              prominence="standard"
-              onPress={handleImportProfile}
-              accessibilityLabel="Import profile"
-              accessibilityHint="Imports the profile using the provided code."
-              style={styles.cardAction}
-              icon={<Download size={16} color={colors.text} strokeWidth={2} />}
-            />
-            <Text style={styles.transferHint}>Keep this code private.</Text>
-          </View>
-
-          <View style={[styles.card, styles.dangerCard]}>
-            <SectionHeader title="Danger zone" compact style={styles.subsectionTitle} />
-            <GlassButton
-              label="Delete local data"
-              prominence="standard"
-              destructive
-              onPress={handleDeleteLocalData}
-              accessibilityLabel="Delete local data"
-              accessibilityHint="Removes this profile's saved articles and reading progress from this device."
-            />
-            <Text style={styles.transferHint}>
-              Removes this profile's saved articles and reading progress from this device. App
-              settings stay as they are. This cannot be undone.
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Support" />
-          <View style={styles.actionsRow}>
-            <ActionButton
-              label="Send feedback"
-              Icon={Mail}
-              onPress={handleFeedback}
-              accessibilityLabel="Send feedback"
-              accessibilityHint="Opens your mail app with a pre-filled report template."
-              prominence="standard"
-            />
-            <ActionButton
-              label="Share app"
-              Icon={Sparkles}
-              onPress={handleShare}
-              accessibilityLabel="Share app"
-              accessibilityHint="Opens the native share sheet with a link to Abridgd."
-              prominence="tinted"
-            />
-          </View>
-        </View>
-
-        <View style={styles.footerInfo}>
-          <Text style={styles.footerText}>
-            {APP_NAME} {APP_VERSION} (build {APP_BUILD})
-          </Text>
-          <Text style={styles.footerTextSecondary}>Support uses this for troubleshooting.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const SectionHeader = ({
-  title,
-  compact,
-  style,
+const NavRow = ({
+  label,
+  onPress,
+  accessibilityLabel,
+  accessibilityHint,
+  primary,
+  expanded,
 }: {
-  title: string;
-  compact?: boolean;
-  style?: any;
+  label: string;
+  onPress: () => void;
+  accessibilityLabel: string;
+  accessibilityHint?: string;
+  primary?: boolean;
+  /** Set on rows that expand in place; shows a down chevron and exposes the state. */
+  expanded?: boolean;
 }) => {
+  const { colors } = useThemeOptional();
   const styles = useThemedStyles(createStyles);
+  const Chevron = expanded ? ChevronDown : ChevronRight;
+  const fg = primary ? colors.onTintStrong : colors.text;
   return (
-    <Text style={[styles.sectionTitle, compact && { marginBottom: spacing.sm }, style]}>
-      {title}
-    </Text>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={expanded === undefined ? undefined : { expanded }}
+      style={({ pressed }) => [
+        styles.navRow,
+        primary && styles.navRowPrimary,
+        pressed && styles.navRowPressed,
+      ]}
+    >
+      <Text style={[styles.navRowLabel, { color: fg }]} maxFontSizeMultiplier={1.5}>
+        {label}
+      </Text>
+      <Chevron size={18} color={primary ? colors.onTintStrong : colors.textSecondary} strokeWidth={2} />
+    </Pressable>
   );
 };
 
@@ -651,36 +389,6 @@ const ProfilePill = ({
   );
 };
 
-const ActionButton = ({
-  label,
-  Icon,
-  onPress,
-  accessibilityLabel,
-  prominence = "standard",
-  accessibilityHint,
-}: {
-  label: string;
-  Icon: typeof User;
-  onPress: () => void;
-  accessibilityLabel: string;
-  prominence?: "standard" | "filled" | "tinted";
-  accessibilityHint?: string;
-}) => {
-  const { colors } = useThemeOptional();
-  const styles = useThemedStyles(createStyles);
-  return (
-    <GlassButton
-      label={label}
-      prominence={prominence}
-      onPress={onPress}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={accessibilityHint}
-      style={styles.actionButton}
-      icon={<Icon size={18} color={colors.text} strokeWidth={2} />}
-    />
-  );
-};
-
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
@@ -691,9 +399,41 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.background,
     paddingBottom: spacing.xs,
   },
+  // HeroHeader pads itself by the gutter, so the scroll content stays unpadded and the rest of
+  // the screen sits in `body`. Padding both indented the title twice (x=85 vs 43 on Home).
   content: {
-    paddingHorizontal: spacing.gutter,
     paddingBottom: spacing.xxl + spacing.lg,
+  },
+  body: {
+    paddingHorizontal: spacing.gutter,
+  },
+  navGroup: {
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  navRow: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  navRowPrimary: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  navRowPressed: {
+    opacity: 0.8,
+  },
+  navRowLabel: {
+    flex: 1,
+    fontFamily: typography.fontFamily.sans,
+    fontSize: 16,
+    fontWeight: "600",
   },
   section: {
     marginBottom: spacing.xxl,
@@ -713,7 +453,9 @@ const createStyles = (colors: ThemeColors) =>
     lineHeight: 20,
   },
   card: {
-    padding: spacing.xl + spacing.sm,
+    // 20pt inside the card, matching the 16pt screen gutter and the nav rows' 16pt inset.
+    // This was 40pt, which squeezed every card's content into a narrow column.
+    padding: spacing.md + spacing.xs,
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
@@ -726,9 +468,9 @@ const createStyles = (colors: ThemeColors) =>
     marginBottom: spacing.sm,
   },
   avatarContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
@@ -737,9 +479,9 @@ const createStyles = (colors: ThemeColors) =>
   },
   avatarInitials: {
     fontFamily: typography.fontFamily.sans,
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "700",
-    color: colors.background,
+    color: AVATAR_TEXT,
   },
   profileTextBlock: { flex: 1, marginLeft: spacing.md },
   profileName: {

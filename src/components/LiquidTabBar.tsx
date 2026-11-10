@@ -445,7 +445,7 @@ const AnimatedIndicator: React.FC<IndicatorProps> = ({
   const hasLayout = !!(activeRouteKey && tabLayouts[activeRouteKey]);
   const shouldRenderIndicator = tabIndicatorStyle !== "none" && hasLayout;
   const indicatorColor = colors.tint;
-  const bubbleColor = isDark ? "rgba(0,188,212,0.2)" : "rgba(0,151,167,0.12)";
+  const bubbleColor = isDark ? "rgba(124,192,178,0.2)" : "rgba(53,114,104,0.12)";
 
   return (
     <View style={{ width: "100%" }}>
