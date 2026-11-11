@@ -22,8 +22,7 @@ docs/
 ├── research/                    # Research notes & references
 ├── build/                       # Build troubleshooting
 ├── scripts/                     # Documentation scripts
-├── standards/                   # Detailed standards & ADRs
-└── NDA/                         # Legal documents
+└── standards/                   # Detailed standards & ADRs
 ```
 
 ## Core Documentation
@@ -96,12 +95,6 @@ Detailed standards and guidelines for maintaining code quality.
 
 📁 **[scripts/](scripts/)** — Documentation for automation scripts
 - [Doc Lint](scripts/doc-lint.js) — Documentation validation script
-
-### 📄 Legal & Compliance
-
-📁 **[NDA/](NDA/)** — Non-disclosure agreements and legal documents
-- [Beta NDA](NDA/Abridgd_Beta_NDA.md) — Beta tester non-disclosure agreement
-- [Beta License](NDA/Abridgd_Beta_License.md) — Beta software license agreement
 
 ---
 
