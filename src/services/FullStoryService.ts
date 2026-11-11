@@ -1,7 +1,7 @@
 
 import { Platform } from 'react-native';
 import { parse } from 'node-html-parser';
-import { selectContentNode } from './pageContent';
+import { selectContentNode, stripPageChrome } from './pageContent';
 import { extractPageMetadata } from './pageMetadata';
 
 const PROXY_URL = 'https://corsproxy.io/?';
@@ -165,6 +165,7 @@ export const fetchFullArticleBody = async (url: string): Promise<FullStoryConten
         if (contentNode) {
             // Drop scripts and styles that sit inside the story container.
             contentNode.querySelectorAll('script, style, noscript').forEach((node) => node.remove());
+            stripPageChrome(contentNode);
             return { body: contentNode.innerHTML, author, imageUrl: meta.imageUrl };
         }
 

@@ -199,7 +199,7 @@ export const DigestScreen: React.FC<DigestScreenProps> = ({ isWelcomeBack, onCon
 
         {!loading && !error ? (
           <Text style={styles.footer}>
-            This digest is automatically generated from top local sources without bias.
+            This digest is assembled automatically from top local sources. Every item links back to the original story.
           </Text>
         ) : null}
       </ScrollView>
@@ -216,6 +216,8 @@ const createStyles = (colors: ThemeColors) =>
     headerContainer: {
       backgroundColor: colors.background,
       paddingBottom: spacing.xs,
+      // HeroHeader pads itself by the gutter, and the content already does: cancel one.
+      marginHorizontal: -spacing.gutter,
     },
     loadingContainer: {
       // FunLoadingIndicator is flex:1, so inside an auto-height parent it

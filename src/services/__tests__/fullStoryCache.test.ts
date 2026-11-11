@@ -7,7 +7,7 @@ jest.mock("../FullStoryService", () => ({
 }));
 
 const URL = "https://example.com/article";
-const KEY_PREFIX = "abridged:fullStoryCache:v1:";
+const KEY_PREFIX = "abridged:fullStoryCache:v3:";
 
 describe("fullStoryCache", () => {
   beforeEach(async () => {

@@ -150,7 +150,8 @@ const createStyles = (colors: ThemeColors) =>
   },
   content: {
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.md,
     paddingBottom: 150,
   },
   header: {

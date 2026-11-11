@@ -164,9 +164,9 @@ export const SectionScreen: React.FC = () => {
     </>
   );
 
-  const listPaddingBottom = allowContentUnderTabBar
-    ? spacing.lg + insets.bottom + 8
-    : spacing.lg +
+  // The list always ends clear of the tab bar; it still scrolls behind it.
+  const listPaddingBottom =
+    spacing.lg +
       (tabBarStyle === "floating"
         ? tabBarFloatingHeight || 64
         : tabBarDockedHeight || tabBarHeight) +
