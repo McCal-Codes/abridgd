@@ -17,6 +17,7 @@ export type RootStackParamList = {
   DebugSettings: undefined;
   Events: undefined;
   Resources: undefined;
+  Account: undefined;
   Achievements: undefined;
   Onboarding: { mode?: "firstRun" | "whatsNew"; startSlideId?: string } | undefined;
   Digest: undefined;

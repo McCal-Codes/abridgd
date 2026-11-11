@@ -1,0 +1,205 @@
+import React from "react";
+import { act, fireEvent, render } from "@testing-library/react-native";
+import { Alert } from "react-native";
+import AccountScreen from "../AccountScreen";
+
+const mockNavigation = {
+  navigate: jest.fn(),
+  getParent: () => ({
+    setOptions: jest.fn(),
+  }),
+};
+
+jest.mock("@react-navigation/native", () => {
+  const actual = jest.requireActual("@react-navigation/native");
+  return {
+    ...actual,
+    useNavigation: () => mockNavigation,
+  };
+});
+
+jest.mock("react-native-safe-area-context", () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+jest.mock("lucide-react-native", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+
+  const createMockIcon = () =>
+    React.forwardRef((props: object, ref: React.Ref<typeof View>) =>
+      React.createElement(View, { ref, ...props }),
+    );
+
+  return {
+    BookOpen: createMockIcon(),
+    ChevronDown: createMockIcon(),
+    ChevronRight: createMockIcon(),
+    Flame: createMockIcon(),
+    Mail: createMockIcon(),
+    Shield: createMockIcon(),
+    Sparkles: createMockIcon(),
+    Target: createMockIcon(),
+    UploadCloud: createMockIcon(),
+    Download: createMockIcon(),
+    User: createMockIcon(),
+  };
+});
+
+jest.mock("../../components/GlassButton", () => ({
+  GlassButton: ({ label, onPress }: { label: string; onPress?: () => void }) => {
+    const React = require("react");
+    const { Pressable, Text } = require("react-native");
+    return React.createElement(
+      Pressable,
+      { onPress },
+      React.createElement(Text, {}, label),
+    );
+  },
+}));
+
+jest.mock("../../components/SignInWithApple", () => ({
+  SignInWithApple: () => {
+    const React = require("react");
+    const { Text } = require("react-native");
+    return React.createElement(Text, {}, "Sign in with Apple");
+  },
+}));
+
+jest.mock("../../components/ComingSoon", () => ({
+  ComingSoon: ({ title }: { title: string }) => {
+    const React = require("react");
+    const { Text } = require("react-native");
+    return React.createElement(Text, {}, title);
+  },
+}));
+
+jest.mock("../../components/HeroHeader", () => ({
+  HeroHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => {
+    const React = require("react");
+    const { View, Text } = require("react-native");
+    return React.createElement(
+      View,
+      {},
+      React.createElement(Text, {}, title),
+      subtitle ? React.createElement(Text, {}, subtitle) : null,
+    );
+  },
+}));
+
+const twoDaysAgo = (() => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2, 12).getTime();
+})();
+
+const todayAtNoon = (() => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime();
+})();
+
+let mockProfiles: any = {
+  activeProfile: {
+    id: "profile-1",
+    name: "Test Reader",
+    codename: "Calm Otter",
+    email: "",
+    settingsTag: "Local profile",
+    transferKey: "profile-key-123",
+    savedArticles: [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }],
+    stats: {
+      articlesRead: 2,
+      savedActions: 3,
+      lastReadAt: twoDaysAgo,
+      lastSavedAt: todayAtNoon,
+    },
+  },
+  signInWithAppleProfile: jest.fn(),
+  signOut: jest.fn(),
+  deleteActiveProfile: jest.fn(() => Promise.resolve({ id: "anonymous", name: "Reader" })),
+  exportProfileKey: jest.fn(() => "profile-key-123"),
+  importProfileKey: jest.fn(() => true),
+  updateSettingsTag: jest.fn(),
+};
+
+jest.mock("../../context/ProfileContext", () => ({
+  useProfiles: () => mockProfiles,
+  getAchievementStatuses: () => [{ earned: true }, { earned: false }, { earned: false }],
+}));
+
+let mockSettings = {
+  subscriptionFeaturesLocked: false,
+  reduceMotion: false,
+};
+
+jest.mock("../../context/SettingsContext", () => ({
+  useSettings: () => mockSettings,
+}));
+
+let mockReadingProgress = {
+  readingStats: {
+    totalArticlesRead: 5,
+    totalReadTimeSeconds: 600,
+    averageCompletionPercentage: 68,
+    articlesInProgress: 2,
+  },
+};
+
+jest.mock("../../context/ReadingProgressContext", () => ({
+  useReadingProgressOptional: () => mockReadingProgress,
+}));
+
+describe("AccountScreen", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSettings = {
+      subscriptionFeaturesLocked: false,
+      reduceMotion: false,
+    };
+    mockReadingProgress = {
+      readingStats: {
+        totalArticlesRead: 5,
+        totalReadTimeSeconds: 600,
+        averageCompletionPercentage: 68,
+        articlesInProgress: 2,
+      },
+    };
+  });
+
+  it("keeps sign in, backup, support and the version on this screen", () => {
+    const { getByText } = render(<AccountScreen />);
+
+    expect(getByText("Account & backup")).toBeTruthy();
+    expect(getByText("Support")).toBeTruthy();
+    expect(getByText("Delete local data")).toBeTruthy();
+  });
+
+  it("deletes local data after the user confirms the destructive alert", async () => {
+    jest.spyOn(Alert, "alert");
+    const { getByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText("Delete local data"));
+
+    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
+    const deleteButton = buttons.find((b: { text: string }) => b.text === "Delete");
+
+    await act(async () => {
+      await deleteButton.onPress();
+    });
+
+    expect(mockProfiles.deleteActiveProfile).toHaveBeenCalled();
+  });
+
+  it("does not delete anything if the user cancels", () => {
+    jest.spyOn(Alert, "alert");
+    const { getByText } = render(<AccountScreen />);
+
+    fireEvent.press(getByText("Delete local data"));
+
+    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
+    const cancelButton = buttons.find((b: { text: string }) => b.text === "Cancel");
+
+    expect(cancelButton).toBeTruthy();
+    expect(mockProfiles.deleteActiveProfile).not.toHaveBeenCalled();
+  });
+});
