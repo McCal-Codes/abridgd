@@ -7,7 +7,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [Unreleased]
 
 - [Fixed] Emoji in the app are now Lucide icons: the loading-screen facts, the tips in Data and Performance, the note in News Sources, and the check mark on finished stories.
-
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 
