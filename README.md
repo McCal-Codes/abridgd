@@ -173,4 +173,4 @@ Start here: [CHANGELOG.md](./CHANGELOG.md)
 
 ## License
 
-The source is public. License terms are being finalized; until a `LICENSE` file is added, all rights are reserved by the author.
+Abridgd is released under the [MIT License](./LICENSE).
