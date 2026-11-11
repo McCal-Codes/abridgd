@@ -1,6 +1,6 @@
 # r/Pittsburgh launch post (draft)
 
-Last updated: 2026-11-05
+Last updated: 2026-11-11
 
 A draft for a human to review, edit and post under their own account. Nothing here has been posted.
 
@@ -9,7 +9,7 @@ A draft for a human to review, edit and post under their own account. Nothing he
 1. **Read r/Pittsburgh's rules first.** They could not be retrieved while drafting this, so nothing below is checked against them. Look at the sidebar and wiki for self-promotion limits, required flair, or a designated weekly thread. If the rules are unclear, message the mods before posting. Many city subreddits remove app promotion from accounts with no other history.
 2. **Merge the site copy fix** (`abridgd-site` PR "Make launch-page claims match the app"), so the page the post links to doesn't list City Paper or claim "0 trackers".
 3. **Add the three screenshots** the launch page references (`assets/shot-brief.png`, `shot-reader.png`, `shot-saved.png`). They don't exist yet, so the page currently shows placeholders.
-4. **Have working install links**: the current TestFlight public link and the latest GitHub release APK. Test both from a clean phone.
+4. **Publish the beta 2 GitHub release first** (it is a draft today), after the real-phone check and the README/NDA decision. Then have working install links: the current TestFlight public link and the latest GitHub release APK. Test both from a clean phone.
 5. Only list sources that are enabled and healthy in `src/data/feedConfig.ts` on the day you post. Run `npm run audit:feeds` first.
 6. Don't mention Events or dark mode until they ship.
 
@@ -29,7 +29,7 @@ What it does:
 - Saved articles and your reading progress stay on your phone. No account, no ads
 - Turn any outlet off, so the feed is yours
 
-It's a beta and it's rough in places. iPhone is through TestFlight: [link]. Android isn't on Google Play yet, so it's an APK you install yourself, with steps here: [link]. The app links out to the original stories and credits each outlet.
+It's a beta and it's rough in places. iPhone is through TestFlight: [link]. Android isn't on Google Play yet, so it's an APK you install yourself (0.2.0 beta 2, Android 7+, 64-bit phones), with steps here: [link]. You can also pick your app icon in Settings. The app links out to the original stories and credits each outlet.
 
 I'd really like to hear what's missing or broken, and which local sources I should add. Happy to answer questions about how it works.
 
@@ -43,6 +43,7 @@ I'd really like to hear what's missing or broken, and which local sources I shou
 | Is it paid? | No upsell tier today. |
 | Do the outlets know about this? | The app reads their public RSS feeds and shows their content with attribution and a link back (see `docs/compliance/rss_content_audit.md`). Don't claim any partnership. |
 | Why a sideloaded APK? | Play Store release is in progress. |
+| Will updates keep my saved stories? | The beta is debug-signed, so a later build may need an uninstall first. Export your profile from Profile, then Account and backup, beforehand. |
 | How do I report a bug? | [contact address from the site] |
 
 ## Image and video kit
