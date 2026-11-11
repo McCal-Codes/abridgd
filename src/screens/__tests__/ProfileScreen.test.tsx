@@ -1,6 +1,5 @@
 import React from "react";
-import { act, fireEvent, render } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 import ProfileScreen from "../ProfileScreen";
 
 const mockNavigation = {
@@ -34,6 +33,8 @@ jest.mock("lucide-react-native", () => {
 
   return {
     BookOpen: createMockIcon(),
+    ChevronDown: createMockIcon(),
+    ChevronRight: createMockIcon(),
     Flame: createMockIcon(),
     Mail: createMockIcon(),
     Shield: createMockIcon(),
@@ -165,10 +166,14 @@ describe("ProfileScreen", () => {
   });
 
   it("shows derived reading metrics and relative profile activity", () => {
-    const { getByLabelText, getByText, queryByText } = render(<ProfileScreen />);
+    const { getByLabelText, getByText, queryByText, queryByLabelText } = render(<ProfileScreen />);
 
     expect(getByLabelText("Reads tracked 5")).toBeTruthy();
     expect(getByLabelText("Saved articles 4")).toBeTruthy();
+
+    // The full stats list sits behind the "Reading stats" row until it is opened.
+    expect(queryByLabelText("In progress, 2. Articles with saved reading progress")).toBeNull();
+    fireEvent.press(getByLabelText("Reading stats"));
     expect(getByLabelText("In progress, 2. Articles with saved reading progress")).toBeTruthy();
     expect(
       getByLabelText("Average completion, 68%. Average completion across tracked reads"),
@@ -178,43 +183,18 @@ describe("ProfileScreen", () => {
     expect(getByLabelText("Last read, 2 days ago. Relative to today")).toBeTruthy();
     expect(getByLabelText("Last saved, Today. Most recent save action")).toBeTruthy();
     expect(getByLabelText("Karma tier, Warm tier. Steady up next")).toBeTruthy();
-    expect(getByText("Account & backup")).toBeTruthy();
-    expect(getByText("Support")).toBeTruthy();
+    // Account, backup and support live one tap deeper so this tab stays short.
+    expect(getByLabelText("Account and backup")).toBeTruthy();
+    expect(queryByText("Account & backup")).toBeNull();
+    expect(queryByText("Support")).toBeNull();
+    expect(queryByText("Delete local data")).toBeNull();
     expect(getByText("View achievements (1/3)")).toBeTruthy();
-    expect(
-      getByText("Reading stats come from tracked sessions and stay on this device until sync launches."),
-    ).toBeTruthy();
+    expect(getByLabelText("Open settings")).toBeTruthy();
+    expect(getByLabelText("Resources")).toBeTruthy();
+    // Copy removed: it promised sync that does not exist and clashed with "local only".
+    expect(queryByText(/until sync launches/)).toBeNull();
     expect(queryByText("Personalization & advanced features")).toBeNull();
     expect(queryByText("Sync & privacy")).toBeNull();
     expect(queryByText("Reading streak")).toBeNull();
-  });
-
-  it("deletes local data after the user confirms the destructive alert", async () => {
-    jest.spyOn(Alert, "alert");
-    const { getByText } = render(<ProfileScreen />);
-
-    fireEvent.press(getByText("Delete local data"));
-
-    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
-    const deleteButton = buttons.find((b: { text: string }) => b.text === "Delete");
-
-    await act(async () => {
-      await deleteButton.onPress();
-    });
-
-    expect(mockProfiles.deleteActiveProfile).toHaveBeenCalled();
-  });
-
-  it("does not delete anything if the user cancels", () => {
-    jest.spyOn(Alert, "alert");
-    const { getByText } = render(<ProfileScreen />);
-
-    fireEvent.press(getByText("Delete local data"));
-
-    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0];
-    const cancelButton = buttons.find((b: { text: string }) => b.text === "Cancel");
-
-    expect(cancelButton).toBeTruthy();
-    expect(mockProfiles.deleteActiveProfile).not.toHaveBeenCalled();
   });
 });

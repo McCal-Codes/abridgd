@@ -5,7 +5,7 @@ import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { useSettings } from "../context/SettingsContext";
-import { HardDrive, Zap, Wifi } from "lucide-react-native";
+import { HardDrive, Zap, Wifi, Lightbulb, RefreshCw } from "lucide-react-native";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { SettingsToggleRow } from "../components/settings/SettingsRow";
 
@@ -159,14 +159,20 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Performance Tips</Text>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>💡 WiFi Prefetching</Text>
+            <View style={styles.tipTitleRow}>
+              <Lightbulb size={16} color={colors.tint} />
+              <Text style={styles.tipTitle}>WiFi Prefetching</Text>
+            </View>
             <Text style={styles.tipDesc}>
               Articles are prefetched over WiFi when you're idle, making navigation faster.
             </Text>
           </View>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>⚡ Battery Optimization</Text>
+            <View style={styles.tipTitleRow}>
+              <Zap size={16} color={colors.tint} />
+              <Text style={styles.tipTitle}>Battery Optimization</Text>
+            </View>
             <Text style={styles.tipDesc}>
               Data Saver Mode reduces CPU usage by skipping unnecessary animations and image
               loading.
@@ -174,7 +180,10 @@ export const DataPerformanceSettingsScreen: React.FC = () => {
           </View>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipTitle}>🔄 Smart Refresh</Text>
+            <View style={styles.tipTitleRow}>
+              <RefreshCw size={16} color={colors.tint} />
+              <Text style={styles.tipTitle}>Smart Refresh</Text>
+            </View>
             <Text style={styles.tipDesc}>
               Feeds refresh only when needed, not constantly in the background.
             </Text>
@@ -342,12 +351,17 @@ const createStyles = (colors: ThemeColors) =>
     borderColor: colors.border,
     marginBottom: spacing.md,
   },
+  tipTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   tipTitle: {
     fontFamily: typography.fontFamily.sans,
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: spacing.xs,
   },
   tipDesc: {
     fontFamily: typography.fontFamily.sans,

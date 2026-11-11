@@ -6,6 +6,21 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.2.0-beta.2] - 2026-11-11
+
+Version 0.2.0 (build 42), beta 2. Android APK on GitHub; iOS is not part of this build.
+
+- [Added] Stories with more than one photo now show a swipeable photo strip under the headline, with each caption and credit. Tap a photo to enlarge it.
+- [Fixed] Full stories no longer pull in publisher logos, author avatars, share bars or related-story thumbnails as part of the text.
+- [Fixed] The Daily Digest and Settings titles now line up with the other screens, and Settings no longer starts with a large empty gap.
+- [Fixed] Story cards no longer repeat the headline as a description, or show the outlet name twice in the byline.
+- [Fixed] The last story in Home, Discover and Saved now scrolls clear of the tab bar, Saved search and filter buttons sit on the title row, and the Digest footer no longer claims to be "without bias".
+- [Changed] New color palette: a muted teal-green as the main accent and a muted berry for small highlights, in light and dark mode. Text and buttons still meet contrast guidelines.
+- [Changed] Profile is a short, calm summary now. The title lines up with the other tabs and the cards have proper padding. Achievements, Reading stats, Account and backup, Settings and Resources are proper buttons. Sign in, backup, support and Delete local data moved to their own Account and backup screen.
+- [Fixed] Profile no longer promises sync that does not exist, and the initials on the avatar are readable in dark mode. Avatar colors now come from the same berry palette.
+- [Fixed] On Android the floating tab bar is now solid. Headlines used to show through it, which made the tab labels hard to read in dark mode.
+- [Added] On Android you can now pick the app icon in Settings: the default slate logo, or the same mark in teal, berry or paper. The app closes briefly when the icon changes.
+- [Fixed] Emoji in the app are now Lucide icons: the loading-screen facts, the tips in Data and Performance, the note in News Sources, and the check mark on finished stories.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 

@@ -307,9 +307,7 @@ export const HomeScreen: React.FC = () => {
           contentContainerStyle={[
             styles.listContent,
             {
-              paddingBottom: allowContentUnderTabBar
-                ? spacing.lg + insets.bottom + 8
-                : spacing.lg +
+              paddingBottom: spacing.lg +
                   (tabBarStyle === "floating"
                     ? tabBarFloatingHeight || 64
                     : tabBarDockedHeight || tabBarHeight) +

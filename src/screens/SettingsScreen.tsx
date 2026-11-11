@@ -7,6 +7,9 @@ import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { useThemedStyles } from "../theme/useThemedStyles";
+import { getAppIconName, supportsAlternateIcons } from "expo-alternate-app-icons";
+import { canChooseAppIcon } from "../utils/appIconSupport";
+import { getAppIconLabel } from "../config/appIcons";
 import {
   BookOpen,
   Rss,
@@ -18,6 +21,7 @@ import {
   Info,
   Bug,
   ChevronRight,
+  Palette,
   Zap,
 } from "lucide-react-native";
 
@@ -79,6 +83,16 @@ export const SettingsScreen: React.FC = () => {
       icon: <Eye size={24} color={colors.primary} />,
       screen: "AccessibilitySettings",
     },
+    ...(canChooseAppIcon(supportsAlternateIcons)
+      ? [
+          {
+            title: "App Icon",
+            description: `${getAppIconLabel(getAppIconName())}, choose another`,
+            icon: <Palette size={24} color={colors.primary} />,
+            screen: "AppIconSettings" as const,
+          },
+        ]
+      : []),
     {
       title: "Resources",
       description: "Local help and services",
@@ -150,7 +164,8 @@ const createStyles = (colors: ThemeColors) =>
   },
   content: {
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingHorizontal: spacing.gutter,
+    paddingTop: spacing.md,
     paddingBottom: 150,
   },
   header: {

@@ -14,9 +14,11 @@ export type RootStackParamList = {
   AppInfo: undefined;
   SourcesSettings: undefined;
   TabBarSettings: undefined;
+  AppIconSettings: undefined;
   DebugSettings: undefined;
   Events: undefined;
   Resources: undefined;
+  Account: undefined;
   Achievements: undefined;
   Onboarding: { mode?: "firstRun" | "whatsNew"; startSlideId?: string } | undefined;
   Digest: undefined;

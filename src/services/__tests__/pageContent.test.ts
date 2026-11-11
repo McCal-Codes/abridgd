@@ -1,5 +1,52 @@
 import { parse } from "node-html-parser";
-import { MIN_BODY_CHARS, selectContentNode } from "../pageContent";
+import { MIN_BODY_CHARS, selectContentNode, stripPageChrome } from "../pageContent";
+
+describe("stripPageChrome", () => {
+  const body = `<p>${"The council voted on the measure after a long debate. ".repeat(8)}</p>`;
+
+  it("removes logos, related-story cards and share bars but keeps story photos", () => {
+    const root = parse(`<div id="s">
+      <img src="https://cdn.example.com/wtae-logo.png">
+      ${body}
+      <figure><img src="https://cdn.example.com/photo-1.jpg"><figcaption>A crowd gathers.</figcaption></figure>
+      <div class="related-stories"><a href="/x"><img src="https://cdn.example.com/thumb.jpg">Other story</a></div>
+      <aside><img src="https://cdn.example.com/ad.jpg"></aside>
+    </div>`);
+    const node = root.querySelector("#s")!;
+    stripPageChrome(node);
+    expect(node.innerHTML).toContain("photo-1.jpg");
+    expect(node.innerHTML).toContain("A crowd gathers.");
+    expect(node.innerHTML).not.toContain("logo");
+    expect(node.innerHTML).not.toContain("thumb.jpg");
+    expect(node.innerHTML).not.toContain("ad.jpg");
+  });
+
+  it("removes the repeated headline and dateline furniture but keeps prose", () => {
+    const root = parse(`<div id="s"><h1>Big headline</h1><div>Updated: 12:11 PM EST Nov 10, 2026</div>
+      <div>Editorial Standards ⓘ</div><div>Digital Content Manager</div>${body}</div>`);
+    const node = root.querySelector("#s")!;
+    stripPageChrome(node);
+    expect(node.text).not.toContain("Big headline");
+    expect(node.text).not.toContain("Updated");
+    expect(node.text).not.toContain("Editorial Standards");
+    expect(node.text).not.toContain("Digital Content Manager");
+    expect(node.text).toContain("The council voted");
+  });
+
+  it("keeps one copy of a photo embedded twice at different sizes", () => {
+    const root = parse(`<div id="s">${body}<img src="https://x.com/a/photo.jpg?w=800"><img src="https://x.com/a/photo-300x200.jpg"><img src="https://x.com/a/other.jpg"></div>`);
+    const node = root.querySelector("#s")!;
+    stripPageChrome(node);
+    expect(node.querySelectorAll("img").length).toBe(2);
+  });
+
+  it("never removes a wrapper that holds most of the story", () => {
+    const root = parse(`<div id="s"><div class="share-wrapper">${body}</div></div>`);
+    const node = root.querySelector("#s")!;
+    stripPageChrome(node);
+    expect(node.text).toContain("The council voted");
+  });
+});
 
 const prose = (n: number) => `<p>${"The council voted on the measure after a long debate. ".repeat(n)}</p>`;
 

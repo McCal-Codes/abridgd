@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Check } from "lucide-react-native";
 import { useReadingProgressOptional } from "../context/ReadingProgressContext";
 import { spacing } from "../theme/spacing";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
@@ -92,17 +93,21 @@ export const ArticleProgressIndicator: React.FC<ArticleProgressIndicatorProps> =
 
       {/* Optional label */}
       {showLabel && progressLevel !== "unread" && (
-        <Text
-          style={[
-            styles.label,
-            {
-              fontSize: sizeConfig.textSize,
-              color: progressColor,
-            },
-          ]}
-        >
-          {progressLevel === "completed" ? "✓" : progressLevel}
-        </Text>
+        progressLevel === "completed" ? (
+          <Check size={sizeConfig.textSize + 2} color={progressColor} strokeWidth={3} />
+        ) : (
+          <Text
+            style={[
+              styles.label,
+              {
+                fontSize: sizeConfig.textSize,
+                color: progressColor,
+              },
+            ]}
+          >
+            {progressLevel}
+          </Text>
+        )
       )}
     </View>
   );

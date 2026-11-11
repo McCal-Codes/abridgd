@@ -8,7 +8,7 @@ export const lightColors = {
   secondaryBackground: "#FFFFFF",
   surface: "#FFFFFF",
   groupedBackground: "#FFFFFF",
-  tintTransparent: "rgba(0,119,138,0.12)",
+  tintTransparent: "rgba(53,114,104,0.12)",
 
   // Labels (Text)
   label: "#121212",
@@ -25,15 +25,15 @@ export const lightColors = {
   border: "#E0E0E0",
 
   // Tints & Accents
-  // The brand teal (#0097A7) is the icon and splash colour, but as text it is only 3.3:1 on the
-  // light background and 3.5:1 against white, and `tint` / `primary` are used for text, icons
-  // and filled controls across ~80 call sites. The in-app teal is therefore #00778A (4.9:1 on the
-  // background, 5.2:1 for white on it). `tintStrong` is the same value, named for new code.
-  tint: "#00778A",
-  tintStrong: "#00778A",
+  // The brand muted teal-green (#3E7F73) is the icon and splash colour, but as text it is only
+  // 4.4:1 on the light background, and `tint` / `primary` are used for text, icons and filled
+  // controls across ~80 call sites. The in-app teal-green is therefore #357268 (5.3:1 on the
+  // background, 5.6:1 for white on it). `tintStrong` is the same value, named for new code.
+  tint: "#357268",
+  tintStrong: "#357268",
   onTintStrong: "#FFFFFF",
-  accent: "#8B2E2E",
-  primary: "#00778A",
+  accent: "#7F3E4A",
+  primary: "#357268",
 
   // System colors
   systemRed: "#D32F2F",
@@ -46,7 +46,7 @@ export const darkColors = {
   secondaryBackground: "#121212",
   surface: "#1A1A1A",
   groupedBackground: "#121212",
-  tintTransparent: "rgba(0,188,212,0.12)",
+  tintTransparent: "rgba(124,192,178,0.12)",
 
   label: "#F5F5F7",
   secondaryLabel: "#B0B0B0",
@@ -59,11 +59,11 @@ export const darkColors = {
   opaqueSeparator: "#3A3A3C",
   border: "#2A2A2A",
 
-  tint: "#00BCD4",
-  tintStrong: "#00BCD4",
+  tint: "#7CC0B2",
+  tintStrong: "#7CC0B2",
   onTintStrong: "#0C0C0C",
-  accent: "#B86464",
-  primary: "#00BCD4",
+  accent: "#D393A1",
+  primary: "#7CC0B2",
 
   systemRed: "#FF453A",
   systemBlue: "#0A84FF",

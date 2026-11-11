@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { ArticleCard } from "../ArticleCard";
+import { ArticleCard, hasDistinctSummary } from "../ArticleCard";
 
 const mockOnPress = jest.fn();
 const mockProgress = jest.fn();
@@ -164,5 +164,17 @@ describe("ArticleCard swipe-to-save", () => {
     const { getByText } = render(<ArticleCard article={fixture} onPress={jest.fn()} />);
 
     expect(getByText("Unsave")).toBeTruthy();
+  });
+});
+
+describe("hasDistinctSummary", () => {
+  it("hides a summary that repeats or truncates the headline", () => {
+    expect(hasDistinctSummary("Council votes on budget", "Council votes on budget")).toBe(false);
+    expect(hasDistinctSummary("Council votes on budget", "council votes on budget...")).toBe(false);
+    expect(hasDistinctSummary("Council votes on budget", undefined)).toBe(false);
+  });
+
+  it("keeps a summary that adds information", () => {
+    expect(hasDistinctSummary("Council votes", "Members approved the plan 6-3 after a long debate.")).toBe(true);
   });
 });

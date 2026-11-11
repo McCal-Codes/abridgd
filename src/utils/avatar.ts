@@ -2,7 +2,7 @@ const AVATAR_PALETTE = [
   "#D9822B", // amber
   "#4A7C59", // moss
   "#3B6E91", // slate blue
-  "#A6483B", // brick
+  "#7F3E4A", // berry
   "#7A5C9E", // plum
   "#4C8C7A", // teal
 ];

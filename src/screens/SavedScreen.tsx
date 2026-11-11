@@ -598,9 +598,7 @@ export const SavedScreen: React.FC = () => {
           contentContainerStyle={[
             styles.listContent,
             {
-              paddingBottom: allowContentUnderTabBar
-                ? spacing.lg + insets.bottom + 8
-                : spacing.lg +
+              paddingBottom: spacing.lg +
                   (tabBarStyle === "floating"
                     ? tabBarFloatingHeight || 64
                     : tabBarDockedHeight || tabBarHeight) +
@@ -712,9 +710,10 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    alignSelf: "flex-end",
-    paddingHorizontal: spacing.gutter,
-    marginTop: -spacing.lg,
+    // Sits on the title row, at the trailing edge, rather than on a row of its own.
+    position: "absolute",
+    right: spacing.gutter,
+    top: spacing.sm + 6,
   },
   iconButton: {
     width: 40,

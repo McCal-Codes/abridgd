@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Lightbulb } from "lucide-react-native";
 import { ThemeColors, useThemeOptional } from "../theme/ThemeContext";
 import { typography } from "../theme/typography";
 import { spacing } from "../theme/spacing";
@@ -155,8 +156,9 @@ export const SourcesSettingsScreen: React.FC = () => {
         </View>
 
         <View style={styles.infoBox}>
+          <Lightbulb size={18} color={colors.primary} style={styles.infoIcon} />
           <Text style={styles.infoText}>
-            💡 Turning a source off hides its stories everywhere — the feed, sections, and the
+            Turning a source off hides its stories everywhere — the feed, sections, and the
             daily digest. Sources marked unavailable stopped publishing a working feed; they stay
             listed so they can be switched back on if that changes.
           </Text>
@@ -336,6 +338,9 @@ const createStyles = (colors: ThemeColors) =>
     borderRadius: 8,
     borderLeftWidth: 4,
     borderLeftColor: colors.primary,
+  },
+  infoIcon: {
+    marginBottom: spacing.xs,
   },
   infoText: {
     fontFamily: typography.fontFamily.sans,

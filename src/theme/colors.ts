@@ -7,7 +7,7 @@ const light = {
   secondaryBackground: "#FFFFFF", // systemSecondaryBackground
   surface: "#FFFFFF", // grouped background/card surface
   groupedBackground: "#FFFFFF",
-  tintTransparent: "rgba(0,151,167,0.12)",
+  tintTransparent: "rgba(53,114,104,0.12)",
 
   // Labels (Text)
   label: "#121212", // primary text
@@ -19,8 +19,8 @@ const light = {
   opaqueSeparator: "#C6C6C8", // thicker separator
 
   // Tints & Accents
-  tint: "#0097A7", // primary interactive color (colorblind-friendly cyan)
-  accent: "#8B2E2E", // secondary emphasis color
+  tint: "#357268", // primary interactive color (colorblind-friendly cyan)
+  accent: "#7F3E4A", // secondary emphasis color
 
   // System colors
   systemRed: "#D32F2F",
@@ -30,7 +30,7 @@ const light = {
   text: "#121212",
   textSecondary: "#555555",
   border: "#E0E0E0",
-  primary: "#0097A7", // Colorblind-friendly cyan (same as tint)
+  primary: "#357268", // muted teal-green (same as tint)
   error: "#D32F2F",
 };
 
@@ -39,7 +39,7 @@ const dark = {
   secondaryBackground: "#121212",
   surface: "#1A1A1A",
   groupedBackground: "#121212",
-  tintTransparent: "rgba(0,188,212,0.12)",
+  tintTransparent: "rgba(124,192,178,0.12)",
 
   label: "#F5F5F7",
   secondaryLabel: "#B0B0B0",
@@ -48,8 +48,8 @@ const dark = {
   separator: "#2A2A2A",
   opaqueSeparator: "#3A3A3C",
 
-  tint: "#00BCD4", // Colorblind-friendly bright cyan
-  accent: "#B86464",
+  tint: "#7CC0B2", // muted teal-green (light tint)
+  accent: "#D393A1",
 
   systemRed: "#FF453A",
   systemBlue: "#0A84FF",
@@ -57,7 +57,7 @@ const dark = {
   text: "#F5F5F7",
   textSecondary: "#B0B0B0",
   border: "#2A2A2A",
-  primary: "#00BCD4", // Colorblind-friendly cyan (same as tint)
+  primary: "#7CC0B2", // muted teal-green (same as tint)
   error: "#FF453A",
 };
 
