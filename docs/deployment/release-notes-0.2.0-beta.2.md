@@ -1,12 +1,14 @@
 # Abridgd 0.2.0 beta 2 (Android)
 
+Last updated: 2026-11-11
+
 A calmer way to read Pittsburgh news: one finite brief, no infinite scroll, no ads, no account. This is an early beta. It works, and it has rough edges.
 
 **Android only.** iPhone testers get builds through TestFlight, separately from this release.
 
 ## Install
 
-Download `abridgd-0.2.0-beta.2-android-arm64.apk` below and follow the [install guide](https://github.com/McCal-Codes/abridgd/blob/chore/beta-2-build/docs/deployment/android-beta-install.md). Android 7.0 or newer, 64-bit phones.
+Download `abridgd-0.2.0-beta.2-android-arm64.apk` below and follow the [install guide](https://github.com/McCal-Codes/abridgd/blob/master/docs/deployment/android-beta-install.md). Android 7.0 or newer, 64-bit phones.
 
 **Read this before updating:** this beta is signed with a debug key. If a later build will not install over this one, you will need to uninstall first. Export your profile from Profile, then Account and backup, before you do, so your saved stories come back.
 
