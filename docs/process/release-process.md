@@ -1,5 +1,5 @@
 # Release Process — Abridged
-Last Updated: 2026-08-25
+Last Updated: 2026-11-11
 
 This is the missing piece connecting docs that already existed separately: [push-policy.md](../push-policy.md)
 (branch/PR policy), [branching-and-prs.md](branching-and-prs.md) (PR mechanics), `CHANGELOG.md`
@@ -114,6 +114,11 @@ is *already built* to trigger automatically on `release: published` — creating
 the tag kicks off an EAS production build, waits for it, downloads the finished `.ipa`, and attaches
 it to the release as a downloadable asset. Skipping the tag means skipping all of that and falling
 back to running `eas build` by hand.
+
+Pre-releases are the exception: publishing a GitHub pre-release (for example a sideloaded Android
+beta) does **not** start a build, so no EAS credits are spent and no `.ipa` or `.aab` lands on the
+public release. To build for a pre-release on purpose, run `Release Mobile Build` by hand
+(`workflow_dispatch`) and set `release_tag`.
 
 ```bash
 git checkout master && git pull
