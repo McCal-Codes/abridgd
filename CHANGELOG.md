@@ -20,6 +20,7 @@ Version 0.2.0 (build 42), beta 2. Android APK on GitHub; iOS is not part of this
 - [Fixed] Profile no longer promises sync that does not exist, and the initials on the avatar are readable in dark mode. Avatar colors now come from the same berry palette.
 - [Fixed] On Android the floating tab bar is now solid. Headlines used to show through it, which made the tab labels hard to read in dark mode.
 - [Added] On Android you can now pick the app icon in Settings: the default slate logo, or the same mark in teal, berry or paper. The app closes briefly when the icon changes.
+- [Fixed] Emoji in the app are now Lucide icons: the loading-screen facts, the tips in Data and Performance, the note in News Sources, and the check mark on finished stories.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 
