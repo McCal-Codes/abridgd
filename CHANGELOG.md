@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.2.0-beta.2] - 2026-11-11
+
+Version 0.2.0 (build 42), beta 2. Android APK on GitHub; iOS is not part of this build.
+
 - [Added] Stories with more than one photo now show a swipeable photo strip under the headline, with each caption and credit. Tap a photo to enlarge it.
 - [Fixed] Full stories no longer pull in publisher logos, author avatars, share bars or related-story thumbnails as part of the text.
 - [Fixed] The Daily Digest and Settings titles now line up with the other screens, and Settings no longer starts with a large empty gap.
