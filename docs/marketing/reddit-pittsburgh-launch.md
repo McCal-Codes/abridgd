@@ -9,7 +9,7 @@ A draft for a human to review, edit and post under their own account. Nothing he
 1. **Read r/Pittsburgh's rules first.** They could not be retrieved while drafting this, so nothing below is checked against them. Look at the sidebar and wiki for self-promotion limits, required flair, or a designated weekly thread. If the rules are unclear, message the mods before posting. Many city subreddits remove app promotion from accounts with no other history.
 2. **Merge the site copy fix** (`abridgd-site` PR "Make launch-page claims match the app"), so the page the post links to doesn't list City Paper or claim "0 trackers".
 3. **Add the three screenshots** the launch page references (`assets/shot-brief.png`, `shot-reader.png`, `shot-saved.png`). They don't exist yet, so the page currently shows placeholders.
-4. **Publish the beta 2 GitHub release first** (it is a draft today), after the real-phone check and the README/NDA decision. Then have working install links: the current TestFlight public link and the latest GitHub release APK. Test both from a clean phone.
+4. **The beta 2 GitHub release is published** (pre-release, v0.2.0-beta.2). Have working install links: the current TestFlight public link and the latest GitHub release APK. Test both from a clean phone.
 5. Only list sources that are enabled and healthy in `src/data/feedConfig.ts` on the day you post. Run `npm run audit:feeds` first.
 6. Don't mention Events or dark mode until they ship.
 

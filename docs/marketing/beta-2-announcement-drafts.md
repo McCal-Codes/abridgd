@@ -6,7 +6,7 @@ Drafts only. Nothing here has been posted. Review, edit and post under your own 
 
 ## Before any of this goes out
 
-1. Publish the GitHub draft release only after the Android APK has been run on a real phone, and after you decide how the NDA/proprietary README wording fits a public download.
+1. The beta 2 GitHub release is published as a pre-release. The README now links the MIT license and no longer mentions the NDA. Re-test the APK link from a clean phone before posting.
 2. Check each subreddit's self-promotion rules first (see `reddit-pittsburgh-launch.md`).
 3. Screenshots are still missing (Morning Brief, Reader, Saved, a content note, the App Icon picker). Capture them from the beta 2 build.
 4. Run `npm run audit:feeds` and only name outlets that are healthy that day. WTAE stories with photos still lay out badly (TODO-148), so avoid showcasing WTAE.
