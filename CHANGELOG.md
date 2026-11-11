@@ -15,6 +15,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - [Changed] Profile is a short, calm summary now. The title lines up with the other tabs and the cards have proper padding. Achievements, Reading stats, Account and backup, Settings and Resources are proper buttons. Sign in, backup, support and Delete local data moved to their own Account and backup screen.
 - [Fixed] Profile no longer promises sync that does not exist, and the initials on the avatar are readable in dark mode. Avatar colors now come from the same berry palette.
 - [Fixed] On Android the floating tab bar is now solid. Headlines used to show through it, which made the tab labels hard to read in dark mode.
+- [Added] On Android you can now pick the app icon in Settings: the default slate logo, or the same mark in teal, berry or paper. The app closes briefly when the icon changes.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
 

@@ -84,6 +84,35 @@
       "expo-secure-store",
       "./plugins/withFoldableConfigChanges",
       [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Teal",
+            "ios": "./assets/app-icons/teal.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/teal-foreground.png",
+              "backgroundColor": "#3E7F73"
+            }
+          },
+          {
+            "name": "Berry",
+            "ios": "./assets/app-icons/berry.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/berry-foreground.png",
+              "backgroundColor": "#7F3E4A"
+            }
+          },
+          {
+            "name": "Paper",
+            "ios": "./assets/app-icons/paper.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/paper-foreground.png",
+              "backgroundColor": "#F1EFE8"
+            }
+          }
+        ]
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",

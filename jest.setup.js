@@ -12,6 +12,15 @@ jest.mock("expo-secure-store", () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Native module with no jest mock of its own. Default to "no alternate icons"; the picker's own
+// test overrides this with jest.mock.
+jest.mock("expo-alternate-app-icons", () => ({
+  supportsAlternateIcons: false,
+  getAppIconName: jest.fn(() => null),
+  setAlternateAppIcon: jest.fn(() => Promise.resolve(null)),
+  resetAppIcon: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock("@sentry/react-native", () => ({
   init: jest.fn(),
   addBreadcrumb: jest.fn(),
