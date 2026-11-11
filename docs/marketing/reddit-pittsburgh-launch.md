@@ -11,7 +11,7 @@ A draft for a human to review, edit and post under their own account. Nothing he
 3. **Add the three screenshots** the launch page references (`assets/shot-brief.png`, `shot-reader.png`, `shot-saved.png`). They don't exist yet, so the page currently shows placeholders.
 4. **The beta 2 GitHub release is published** (pre-release, v0.2.0-beta.2). Have working install links: the current TestFlight public link and the latest GitHub release APK. Test both from a clean phone.
 5. Only list sources that are enabled and healthy in `src/data/feedConfig.ts` on the day you post. Run `npm run audit:feeds` first.
-6. Don't mention Events or dark mode until they ship.
+6. Events (the "This week" card) and dark mode are in beta 2 and were seen on a real phone, so they can be mentioned. Don't claim anything that wasn't.
 
 ## Post
 

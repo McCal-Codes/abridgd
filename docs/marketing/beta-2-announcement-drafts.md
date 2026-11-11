@@ -8,9 +8,9 @@ Drafts only. Nothing here has been posted. Review, edit and post under your own 
 
 1. The beta 2 GitHub release is published as a pre-release. The README now links the MIT license and no longer mentions the NDA. Re-test the APK link from a clean phone before posting.
 2. Check each subreddit's self-promotion rules first (see `reddit-pittsburgh-launch.md`).
-3. Screenshots are still missing (Morning Brief, Reader, Saved, a content note, the App Icon picker). Capture them from the beta 2 build.
+3. Marketing images are in `images/beta-2/` (see `README.md`). Still to capture: a multi-photo story for the photo strip, and the content note screen.
 4. Run `npm run audit:feeds` and only name outlets that are healthy that day. WTAE stories with photos still lay out badly (TODO-148), so avoid showcasing WTAE.
-5. Keep claims to what ships: no Events, no dark mode claims unless checked on a device.
+5. Keep claims to what ships. Events and dark mode both show on a real device in beta 2, but do not claim anything that was not seen on a phone.
 
 ## 1. Short post (Bluesky, Threads, Mastodon)
 
