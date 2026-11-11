@@ -9,6 +9,15 @@ Last Updated: August 8, 2026
 
 ---
 
+## Beta 2 findings (November 11, 2026)
+
+- [ ] **TODO-148** | **0.2.0** | WTAE full-story parsing and formatting with images
+  - **Status**: Open
+  - **Description**: Reported by the owner: WTAE stories still parse and format badly when they carry images. PR #36 already strips logos, avatars, share bars, related-story thumbnails, the repeated headline and dateline block, and duplicate copies of one photo, and bumps the full-story cache so old bodies refresh. What is not yet understood is how images inside the body lay out (spacing, captions, order against the text, anything WTAE embeds that is not an `img`). Capture a few current WTAE page samples with images, compare the parsed body against the page, and fix the extractor or the renderer.
+  - **Effort**: 3 hours
+  - **Definition of Done**: Three or more WTAE stories with photos read cleanly on a device: photos sit where the page put them, captions stay with their photo, nothing from the page chrome leaks in. A fixture test per failure found.
+  - **Dependencies**: PR #36 (photo strip and story-text cleanup)
+
 ## Audit Priority Queue (March 22, 2026)
 
 - [x] **TODO-031** | **v1.3.1** | Restore engineering gates: TypeScript + Jest
