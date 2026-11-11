@@ -18,6 +18,10 @@ This folder (`docs/standards/`) is the **single source of truth** for how we bui
 → Read [**Afterflight**](afterflight.md)
 *Code review gates, changelog, regression tests, release metadata before merge.*
 
+### I'm choosing a version number or cutting a beta
+→ Read [**Versioning**](versioning.md)
+*Version vs build number, beta tags, resets, where the numbers live.*
+
 ### I want to understand how we make engineering decisions
 → Read [**Standards Governance Agent**](standards-governance-agent.md)
 *Roles, responsibilities, acceptance criteria, how to propose standards changes.*
