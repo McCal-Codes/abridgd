@@ -21,7 +21,7 @@ Without a systematic approach, individual screens might use different shades of 
 **Use semantic color tokens (CSS-in-JS pattern) with a centralized theme file.**
 
 Specifically:
-- Define colors in `src/theme/colors.ts` using semantic names:
+- Define colors in `src/theme/ThemeContext.tsx` using semantic names:
   - `primary` (brand color for main actions)
   - `secondary` (alternate actions)
   - `success` (positive feedback, e.g., saved article)
@@ -31,7 +31,7 @@ Specifically:
   - `border`, `divider` (layout)
 - Each semantic token has a light-mode and dark-mode variant.
 - Use `useColorScheme()` from React Native to detect system mode.
-- Components import from `src/theme/colors.ts` instead of hardcoding hex values.
+- Components import from `src/theme/ThemeContext.tsx` instead of hardcoding hex values.
 
 **Rationale:**
 - Semantic tokens reduce decision-making ("what color should this button be?" → check `primary`).
@@ -105,7 +105,7 @@ export const colors = {
 
 ## Implementation notes
 
-- Colors are defined in `src/theme/colors.ts`.
+- Colors are defined in `src/theme/ThemeContext.tsx`.
 - Theme is selected via `useColorScheme()` hook (React Native).
 - Components use `useTheme()` custom hook to access the current theme.
 - See `src/theme/typography.ts` and `src/theme/spacing.ts` for related design tokens.

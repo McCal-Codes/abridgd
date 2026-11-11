@@ -82,7 +82,7 @@ This document tracks the audit status and known gaps.
 - [ ] Use WebAIM Contrast Checker or similar tool to verify all color pairs
 - [ ] Minimum ratio for normal text: 4.5:1
 - [ ] Minimum ratio for large text (18pt+): 3:1
-- [ ] Check both light and dark mode; document in `src/theme/colors.ts`
+- [ ] Check both light and dark mode; document in `src/theme/ThemeContext.tsx`
 
 ---
 
