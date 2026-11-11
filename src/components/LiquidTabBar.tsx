@@ -92,7 +92,11 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
   // Enhanced blur intensity for experimental iOS 26 navbar effect. Reduce Transparency
   // overrides everything else — a translucent, blurred bar is exactly what that setting
   // asks apps to avoid, so it wins regardless of the user's tabBarBlur preference.
-  const blurIntensity = reduceTransparency
+  // Android does not render expo-blur's blur without an opt-in, so the translucent wash alone
+  // let headlines show through the bar (illegible tab labels in dark mode). Treat Android like
+  // Reduce Transparency: a solid bar.
+  const solidBar = reduceTransparency || Platform.OS !== "ios";
+  const blurIntensity = solidBar
     ? 0
     : experimentalIOS26NavBar && tabBarBlur
       ? 80
@@ -122,8 +126,8 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
           styles.blur,
           {
             borderRadius: isStandard ? 0 : 32,
-            opacity: reduceTransparency ? 1 : blurOpacity,
-            backgroundColor: reduceTransparency
+            opacity: solidBar ? 1 : blurOpacity,
+            backgroundColor: solidBar
               ? isDark
                 ? "rgb(18, 18, 18)"
                 : "rgb(255, 255, 255)"
@@ -146,6 +150,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
         tint={isDark ? "dark" : "light"}
       >
         {/* Glass morphism background with subtle gradient */}
+        {solidBar ? null : (
         <View style={styles.gradientWrapper} pointerEvents="none">
           <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
             <Defs>
@@ -167,6 +172,7 @@ export const LiquidTabBar: React.FC<BottomTabBarProps> = (props) => {
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#tabGrad)" />
           </Svg>
         </View>
+        )}
         {/* inner padding: when floating we avoid duplicating safe area padding because container is already above it */}
         <Animated.View
           style={[
