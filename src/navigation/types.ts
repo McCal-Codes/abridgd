@@ -14,6 +14,7 @@ export type RootStackParamList = {
   AppInfo: undefined;
   SourcesSettings: undefined;
   TabBarSettings: undefined;
+  AppIconSettings: undefined;
   DebugSettings: undefined;
   Events: undefined;
   Resources: undefined;

@@ -21,6 +21,7 @@ import { NavigationSettingsScreen } from "../screens/NavigationSettingsScreen";
 import { AppInfoScreen } from "../screens/AppInfoScreen";
 import { SourcesSettingsScreen } from "../screens/SourcesSettingsScreen";
 import { TabBarSettingsScreen } from "../screens/TabBarSettingsScreen";
+import { AppIconSettingsScreen } from "../screens/AppIconSettingsScreen";
 import { DebugSettingsScreen } from "../screens/DebugSettingsScreen";
 import { EventsScreen } from "../features/events/ui/EventsScreen";
 import { ResourcesScreen } from "../features/resources/ResourcesScreen";
@@ -335,6 +336,14 @@ export const RootNavigator = () => {
             options={{
               headerShown: true,
               title: "Tab Bar",
+            }}
+          />
+          <Stack.Screen
+            name="AppIconSettings"
+            component={AppIconSettingsScreen}
+            options={{
+              headerShown: true,
+              title: "App Icon",
             }}
           />
           <Stack.Screen
