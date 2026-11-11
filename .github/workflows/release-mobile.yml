@@ -58,6 +58,11 @@ concurrency:
 jobs:
   setup:
     name: Resolve build settings
+    # Pre-releases (for example a sideloaded Android beta APK) must not start
+    # paid EAS builds or attach store binaries to a public release. Build jobs
+    # depend on this one, so skipping it skips the whole run. To build for a
+    # pre-release on purpose, run this workflow by hand with workflow_dispatch.
+    if: github.event_name != 'release' || !github.event.release.prerelease
     runs-on: ubuntu-latest
     permissions:
       contents: read
