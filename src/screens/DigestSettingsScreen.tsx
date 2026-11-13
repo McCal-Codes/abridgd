@@ -86,7 +86,7 @@ export const DigestSettingsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.header}>Digest & Launch</Text>
         <Text style={styles.description}>
-          Control what greets you on launch and how Abridged builds summaries.
+          Control what greets you on launch and how Abridgd builds summaries.
         </Text>
 
         <View style={styles.section}>
@@ -209,7 +209,7 @@ export const DigestSettingsScreen: React.FC = () => {
           </View>
 
           <Text style={styles.helperText}>
-            If no key is saved, Abridged uses extractive summaries instead of calling Perplexity.
+            If no key is saved, Abridgd uses extractive summaries instead of calling Perplexity.
           </Text>
         </View>
       </ScrollView>

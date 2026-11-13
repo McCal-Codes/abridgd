@@ -23,6 +23,7 @@ Version 0.2.0 (build 42), beta 2. Android APK on GitHub; iOS is not part of this
 - [Fixed] Emoji in the app are now Lucide icons: the loading-screen facts, the tips in Data and Performance, the note in News Sources, and the check mark on finished stories.
 - [Fixed] Event details now scroll on small screens, in landscape and at large text sizes, so Add to calendar, Save and Share are always reachable.
 - [Fixed] Delete local data now also removes the recovery backup copies of saved stories, reading progress and saved events.
+- [Changed] On-screen text now uses the app's display name, Abridgd, in the reader toggle, Reading and Digest settings, and the reader tour link, matching `docs/standards/branding.md`. The README follows suit. Technical identifiers (`abridged`, `AbridgedReader`) are unchanged.
 
 ## [0.2.0-beta.1] - 2026-11-05
 
